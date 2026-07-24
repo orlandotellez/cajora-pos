@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus, Search, X } from "lucide-react";
+import { Plus, Search, X, Camera } from "lucide-react";
 import { productsApi, type CreateProductPayload } from "@/api/products";
 import { categoriesApi } from "@/api/categories";
 import { suppliersApi } from "@/api/suppliers";
@@ -9,6 +9,7 @@ import { UNIT_TYPE_LABELS } from "@/lib/constants";
 import { useToast } from "@/components/common/ui/Toast";
 import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
 import { ProductTable } from "@/components/pages/products/ProductTable";
+import { BarcodeScanner } from "@/components/common/BarcodeScanner";
 import styles from "./Products.module.css";
 
 const LIMIT = 10;
@@ -45,6 +46,7 @@ export default function Products() {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [barcodeScannerOpen, setBarcodeScannerOpen] = useState(false);
 
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -201,7 +203,17 @@ export default function Products() {
               </div>
               <div className={styles.field}>
                 <label className={styles.fieldLabel}>Código de barras</label>
-                <input value={form.barcode} onChange={(e) => setForm({ ...form, barcode: e.target.value })} className={styles.input} />
+                <div className={styles["barcode-wrapper"]}>
+                  <input value={form.barcode} onChange={(e) => setForm({ ...form, barcode: e.target.value })} className={styles["barcode-input"]} placeholder="Escanear o escribir" />
+                  <button
+                    type="button"
+                    onClick={() => setBarcodeScannerOpen(true)}
+                    className={styles["barcode-scan-btn"]}
+                    title="Escanear código de barras"
+                  >
+                    <Camera size={18} />
+                  </button>
+                </div>
               </div>
               <div className={styles["form-grid"]}>
                 <div className={styles.field}>
@@ -270,6 +282,15 @@ export default function Products() {
           </div>
         </div>
       )}
+
+      <BarcodeScanner
+        open={barcodeScannerOpen}
+        onScan={(code) => {
+          setForm({ ...form, barcode: code });
+          setBarcodeScannerOpen(false);
+        }}
+        onClose={() => setBarcodeScannerOpen(false)}
+      />
 
       <ConfirmDialog
         open={deleteTarget !== null}

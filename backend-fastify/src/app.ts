@@ -36,7 +36,7 @@ export const buildApp = async () => {
   await app.register(helmet)
 
   await app.register(cors, {
-    origin: process.env.CORS_ORIGIN?.split(",") ?? ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:1420", "http://192.168.0.9:1420", 'http://tauri.localhost'],
+    origin: process.env.CORS_ORIGIN?.split(",") ?? ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:1420", "http://192.168.0.10:1420", 'http://tauri.localhost'],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
   })

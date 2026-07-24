@@ -1,19 +1,22 @@
 import { crossFetch } from "@/lib/fetch";
 
 export const API_URL_STORAGE_KEY = "POS_API_URL";
-
 export const BOOTSTRAP_URL =
   "https://pub-17156739f1d5412cb62a579bb0ccbc35.r2.dev/config-api.json";
-
 export const BOOTSTRAP_FETCH_TIMEOUT_MS = 2500;
+export const DEFAULT_API_URL = "http://192.168.0.10:3000/api/v1";
 
-export const DEFAULT_API_URL = "http://localhost:3000/api/v1";
+// En dev (vite dev / pnpm dev) se usa el servidor local
+// En producción se usa la URL obtenida del bootstrap remoto
+const IS_DEV = import.meta.env.DEV === true;
 
 export function isValidApiUrl(value: unknown): value is string {
   return typeof value === "string" && /^https?:\/\/[^\s]+$/i.test(value);
 }
 
 export function readApiUrl(): string {
+  if (IS_DEV) return DEFAULT_API_URL;
+
   try {
     const stored = localStorage.getItem(API_URL_STORAGE_KEY);
     if (isValidApiUrl(stored)) return stored;
@@ -30,17 +33,20 @@ export function writeApiUrl(value: string): void {
 export async function fetchAndStoreApiUrl(
   externalSignal?: AbortSignal,
 ): Promise<boolean> {
-  if (externalSignal?.aborted) return false;
+  // En dev no consultamos el bootstrap remoto: usamos el servidor local directamente
+  if (IS_DEV) {
+    writeApiUrl(DEFAULT_API_URL);
+    return true;
+  }
 
+  if (externalSignal?.aborted) return false;
   const controller = new AbortController();
   const timeoutId = window.setTimeout(
     () => controller.abort(),
     BOOTSTRAP_FETCH_TIMEOUT_MS,
   );
-
   const onAbort = () => controller.abort();
   externalSignal?.addEventListener("abort", onAbort);
-
   try {
     const response = await crossFetch(BOOTSTRAP_URL, {
       signal: controller.signal,
@@ -50,7 +56,6 @@ export async function fetchAndStoreApiUrl(
       cache: "no-cache",
     });
     if (!response.ok) return false;
-
     const data = (await response.json()) as { current_api_url?: unknown };
     if (!isValidApiUrl(data.current_api_url)) return false;
     if (externalSignal?.aborted) return false;
