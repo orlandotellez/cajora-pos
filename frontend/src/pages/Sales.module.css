@@ -18,7 +18,7 @@
 
 @media (max-width: 768px) {
   .header {
-    padding: 0px 24px 0px 24px;
+    padding: 16px 24px 0px 24px;
   }
 
   .filters {
