@@ -1,14 +1,65 @@
 <!doctype html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Dashboard Suite — Punto de venta</title>
-    <meta name="robots" content="noindex, nofollow" />
-    <link rel="icon" type="image/svg+xml" href="/src/assets/logo_dark.svg" />
-  </head>
-  <body class="bg-background text-foreground">
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+
+<head>
+  <script>
+    (function () {
+      var theme = localStorage.getItem('caja-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+      var isDark = theme === 'dark';
+      document.documentElement.style.setProperty('--splash-bg', isDark ? '#040609' : '#f8fafc');
+      document.documentElement.style.setProperty('--splash-fg', isDark ? '#e2e8f0' : '#0f172a');
+    })();
+  </script>
+  <style>
+    html,
+    body {
+      background-color: var(--splash-bg, #040609);
+      margin: 0;
+      padding: 0;
+    }
+
+    #splash-root {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--splash-bg, #040609);
+      color: var(--splash-fg, #e2e8f0);
+      font-family: system-ui, sans-serif;
+      z-index: 9999;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .splash-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--splash-fg, #e2e8f0);
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Dashboard Suite — Punto de venta</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" type="image/svg+xml" href="/src/assets/logo_dark.svg" />
+</head>
+
+<body>
+  <div id="root">
+    <div id="splash-root">
+      <div class="splash-spinner"></div>
+    </div>
+  </div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>

@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { Store, ShoppingCart, Package, BarChart3, Shield, Building2, ArrowLeft } from "lucide-react";
+import { useTheme } from "@/context/ThemeContext";
+import { Store, ShoppingCart, Package, BarChart3, Shield, Building2, ArrowLeft, Sun, Moon } from "lucide-react";
 import styles from "./Auth.module.css";
 
 type AuthMode = "login" | "register";
 
 export default function Auth() {
   const { user, loading, login, registerStore } = useAuth();
+  const { theme, toggle } = useTheme();
   const [mode, setMode] = useState<AuthMode>("login");
 
   if (!loading && user) {
@@ -16,6 +18,11 @@ export default function Auth() {
 
   return (
     <div className={styles.container}>
+      {/* Theme toggle */}
+      <button onClick={toggle} className={styles.themeToggle}>
+        {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+      </button>
+
       {/* Left panel: branding */}
       <div className={styles.brand}>
         <div className={styles.brandInner}>

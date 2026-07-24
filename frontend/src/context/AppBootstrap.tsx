@@ -17,7 +17,16 @@ type State =
     prevError: string | null;
   };
 
-function SplashScreen() {
+const spinnerStyle: React.CSSProperties = {
+  width: 32,
+  height: 32,
+  border: "3px solid var(--splash-fg, #e2e8f0)",
+  borderTopColor: "transparent",
+  borderRadius: "50%",
+  animation: "spin 0.7s linear infinite",
+};
+
+export function SplashScreen() {
   return (
     <div
       role="status"
@@ -28,14 +37,13 @@ function SplashScreen() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "var(--background, #0f172a)",
-        color: "var(--foreground, #e2e8f0)",
-        fontSize: "1rem",
+        background: "var(--splash-bg, #040609)",
+        color: "var(--splash-fg, #e2e8f0)",
         fontFamily: "system-ui, sans-serif",
         zIndex: 9999,
       }}
     >
-      <span>Cargando...</span>
+      <div style={spinnerStyle} />
     </div>
   );
 }
