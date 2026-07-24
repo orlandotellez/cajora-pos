@@ -160,11 +160,6 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       <main className={styles.main}>{children}</main>
-
-      {/* Theme toggle fab — desktop only now */}
-      <button onClick={toggle} className={styles.themeToggle}>
-        {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-      </button>
     </div>
   );
 }

@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ScanBarcode } from "lucide-react";
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 import { productsApi, type Product } from "@/api/products";
 import { servicesApi, type Service } from "@/api/services";
 import { salesApi, type CreateSalePayload } from "@/api/sales";
@@ -13,6 +15,8 @@ import { PosPaymentPanel } from "@/components/pages/pos/PosPaymentPanel";
 import { PosCompletedSaleModal } from "@/components/pages/pos/PosCompletedSaleModal";
 import { PosDialog } from "@/components/pages/pos/PosDialog";
 import styles from "./Pos.module.css";
+
+const SCANNER_STORAGE_KEY = "pos-scanner-active";
 
 export default function Pos() {
   const scanRef = useRef<HTMLInputElement>(null);
@@ -41,6 +45,18 @@ export default function Pos() {
     variant: "alert" | "confirm";
     onConfirm?: () => void;
   } | null>(null);
+
+  const [showMobileCheckout, setShowMobileCheckout] = useState(false);
+
+  const [scannerActive, setScannerActive] = useState(() => localStorage.getItem(SCANNER_STORAGE_KEY) === "true");
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const scannerContainerRef = useRef<HTMLDivElement>(null);
+  const scannerToggleRef = useRef<HTMLButtonElement>(null);
+  const lastScannedRef = useRef<{ barcode: string; time: number } | null>(null);
+  const scannerActiveRef = useRef(false);
+  const lastToggleRef = useRef(0);
+  const SCAN_DEBOUNCE_MS = 2000;
+  const TOGGLE_THROTTLE_MS = 500;
 
   const showAlert = useCallback((message: string) => setDialog({ message, variant: "alert" }), []);
   const showConfirm = useCallback((message: string, onConfirm: () => void) => setDialog({ message, variant: "confirm", onConfirm }), []);
@@ -80,7 +96,113 @@ export default function Pos() {
       .catch((err) => console.warn("Error al cargar config:", err));
   }, []);
 
-  useEffect(() => { scanRef.current?.focus(); }, []);
+  // ─── Inline barcode scanner ────────────────────────────────────────────
+  useEffect(() => {
+    scannerActiveRef.current = scannerActive;
+
+    if (!scannerActive) {
+      stopScanner();
+      return;
+    }
+
+    const elId = "pos-barcode-scanner";
+    queueMicrotask(() => {
+      // Si el usuario ya desactivó el scanner mientras esperábamos, no iniciar
+      if (!scannerActiveRef.current) return;
+
+      const el = document.getElementById(elId);
+      if (!el) return;
+
+      // Si ya hay un scanner corriendo, no crear otro
+      if (scannerRef.current) return;
+
+      const scanner = new Html5Qrcode(elId, {
+        formatsToSupport: [
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.CODE_39,
+          Html5QrcodeSupportedFormats.CODE_93,
+          Html5QrcodeSupportedFormats.CODABAR,
+          Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.EAN_8,
+          Html5QrcodeSupportedFormats.UPC_A,
+          Html5QrcodeSupportedFormats.UPC_E,
+          Html5QrcodeSupportedFormats.ITF,
+          Html5QrcodeSupportedFormats.PDF_417,
+        ],
+        verbose: false,
+      });
+      scannerRef.current = scanner;
+
+      scanner
+        .start(
+          { facingMode: "environment" },
+          { fps: 10, aspectRatio: 1.0 },
+          async (decodedText) => {
+            // Debounce: evitar escanear el mismo código repetidamente
+            const now = Date.now();
+            if (
+              lastScannedRef.current &&
+              lastScannedRef.current.barcode === decodedText &&
+              now - lastScannedRef.current.time < SCAN_DEBOUNCE_MS
+            ) {
+              return;
+            }
+            lastScannedRef.current = { barcode: decodedText, time: now };
+
+            // Scan success — look up product by barcode
+            try {
+              const product = await productsApi.getByBarcode(decodedText);
+              const result: SearchResult = {
+                _type: "product",
+                id: product.id,
+                name: product.name,
+                barcode: product.barcode,
+                price: product.price,
+                data: product,
+              };
+              addToCart(result);
+              setScan("");
+              setShowResults(false);
+            } catch {
+              showAlert(`Producto con código "${decodedText}" no encontrado`);
+            }
+          },
+          () => { /* scan error — ignore */ },
+        )
+        .catch((err) => console.warn("[PosScanner] Error:", err));
+    });
+
+    return () => {
+      stopScanner();
+    };
+  }, [scannerActive]);
+
+  function stopScanner() {
+    const scanner = scannerRef.current;
+    if (!scanner) return;
+    scannerRef.current = null;
+    try {
+      scanner.stop()
+        .catch(() => {})
+        .finally(() => {
+          try { scanner.clear(); } catch { /* ignore */ }
+        });
+    } catch {
+      // stop() lanzó error síncrono (e.g. "scanner is not running")
+    }
+  }
+
+  // Sincronizar estado del scanner con localStorage
+  useEffect(() => {
+    localStorage.setItem(SCANNER_STORAGE_KEY, String(scannerActive));
+  }, [scannerActive]);
+
+  function toggleScanner() {
+    const now = Date.now();
+    if (now - lastToggleRef.current < TOGGLE_THROTTLE_MS) return;
+    lastToggleRef.current = now;
+    setScannerActive((prev) => !prev);
+  }
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -139,7 +261,6 @@ export default function Pos() {
           usePosStore.getState().addToCart(product);
           setScan("");
           setShowResults(false);
-          scanRef.current?.focus();
         });
         return;
       }
@@ -156,7 +277,6 @@ export default function Pos() {
     }
     setScan("");
     setShowResults(false);
-    scanRef.current?.focus();
   }
 
   function handleSetQty(item: CartItem, newQty: number) {
@@ -287,14 +407,94 @@ export default function Pos() {
     setCompletedSale(null);
     clearCart();
     setCheckingOut(false);
-    scanRef.current?.focus();
+    setShowMobileCheckout(false);
   }
 
 
 
   return (
     <div className={styles.grid}>
-      <div className={styles.leftPanel}>
+      {/* ─── Mobile checkout view ───────────────────────────── */}
+      {showMobileCheckout && (
+        <div className={styles["mobile-checkout"]}>
+          <div className={styles["mobile-checkout-header"]}>
+            <button
+              onClick={() => setShowMobileCheckout(false)}
+              className={styles["mobile-checkout-back"]}
+            >
+              ← Regresar
+            </button>
+            <span className={styles["mobile-checkout-title"]}>Cobrar</span>
+          </div>
+
+          <div className={styles["mobile-checkout-cart"]}>
+            <PosCartTable
+              cart={cart}
+              products={products}
+              addingToService={addingToService}
+              serviceProductSearch={serviceProductSearch}
+              onSetQty={handleSetQty}
+              onDelete={(id) => setQty(id, 0)}
+              onAddingToService={setAddingToService}
+              onServiceProductSearch={setServiceProductSearch}
+              onAddServiceProduct={addServiceProduct}
+              showAlert={showAlert}
+            />
+          </div>
+
+          <div className={styles["mobile-checkout-payment"]}>
+            <PosPaymentPanel
+              totals={totals}
+              cartLength={cart.length}
+              discountPct={discountPct}
+              payment={payment}
+              received={received}
+              manualAmount={manualAmount}
+              checkingOut={checkingOut}
+              onDiscountPct={setDiscountPct}
+              onPayment={setPayment}
+              onReceived={setReceived}
+              onManualAmount={setManualAmount}
+              onCheckout={checkout}
+              onClearCart={clearCart}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ─── Main POS view ─────────────────────────────────── */}
+      <div className={`${styles.leftPanel} ${scannerActive ? styles["left-panel-scanner-active"] : ""}`}>
+        {/* Barcode scanner toggle + viewfinder */}
+        <div className={styles["scanner-section"]}>
+          <button
+            ref={scannerToggleRef}
+            onClick={toggleScanner}
+            className={`${styles["scanner-toggle-btn"]} ${scannerActive ? styles["scanner-toggle-btn-active"] : ""}`}
+            title={scannerActive ? "Desactivar escáner" : "Activar escáner de código de barras"}
+          >
+            <ScanBarcode size={18} />
+          </button>
+
+          <div
+            className={styles["scanner-container"]}
+            style={{
+              maxHeight: scannerActive ? 350 : 0,
+              opacity: scannerActive ? 1 : 0,
+            }}
+          >
+            <div className={styles["scanner-camera-wrap"]}>
+              <div
+                id="pos-barcode-scanner"
+                ref={scannerContainerRef}
+                className={styles["scanner-viewfinder"]}
+              />
+              {/* Corner brackets + scan line (igual que en /products) */}
+              <div className={styles["scanner-overlay-brackets"]} />
+              <div className={styles["scanner-overlay-line"]} />
+            </div>
+          </div>
+        </div>
+
         <PosSearchBar
           searchTerm={scan}
           showResults={showResults}
@@ -322,8 +522,29 @@ export default function Pos() {
             showAlert={showAlert}
           />
         </div>
+
+        {/* Mobile bottom bar — only visible on mobile when cart has items */}
+        {cart.length > 0 && (
+          <div className={styles["mobile-bottom-bar"]}>
+            <div className={styles["mobile-bottom-bar-totals"]}>
+              <span className={styles["mobile-bottom-subtotal"]}>
+                Subtotal: {money(totals.subtotal, currency)}
+              </span>
+              <span className={styles["mobile-bottom-total"]}>
+                Total: {money(totals.total, currency)}
+              </span>
+            </div>
+            <button
+              onClick={() => setShowMobileCheckout(true)}
+              className={styles["mobile-bottom-checkout-btn"]}
+            >
+              Ir a cobrar
+            </button>
+          </div>
+        )}
       </div>
 
+      {/* Desktop right panel — hidden on mobile when in checkout mode */}
       <div className={styles.rightPanel}>
         <PosPaymentPanel
           totals={totals}

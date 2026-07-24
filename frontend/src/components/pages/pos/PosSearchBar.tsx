@@ -50,7 +50,6 @@ export function PosSearchBar({
           onKeyDown={onKeyDown}
           placeholder="Escanea o escribe código / nombre"
           className={styles.searchInput}
-          autoFocus
         />
       </form>
       {showResults && searchResults.length > 0 && (

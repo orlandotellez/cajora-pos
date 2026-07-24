@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
-import { Store, ShoppingCart, Package, BarChart3, Shield, Building2, ArrowLeft, Sun, Moon } from "lucide-react";
+import { Store, ShoppingCart, Package, BarChart3, Shield, Building2, ArrowLeft, Sun, Moon, Eye, EyeOff } from "lucide-react";
 import styles from "./Auth.module.css";
 
 type AuthMode = "login" | "register";
@@ -66,6 +66,7 @@ function LoginForm({ onRegisterClick }: { onRegisterClick: () => void }) {
   const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -108,16 +109,27 @@ function LoginForm({ onRegisterClick }: { onRegisterClick: () => void }) {
 
         <div className={styles.field}>
           <label htmlFor="password" className={styles.label}>Contraseña</label>
-          <input
-            id="password"
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className={styles.input}
-            placeholder="••••••••"
-          />
+          <div className={styles.passwordWrapper}>
+            <input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className={styles.input}
+              placeholder="••••••••"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((p) => !p)}
+              className={styles.passwordToggle}
+              tabIndex={-1}
+              aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
         </div>
 
         {error && <p className={styles.error}>{error}</p>}
@@ -154,6 +166,7 @@ function RegisterForm({ onBackClick }: { onBackClick: () => void }) {
   const [adminName, setAdminName] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -265,17 +278,28 @@ function RegisterForm({ onBackClick }: { onBackClick: () => void }) {
 
           <div className={styles.field}>
             <label htmlFor="adminPassword" className={styles.label}>Contraseña</label>
-            <input
-              id="adminPassword"
-              type="password"
-              autoComplete="new-password"
-              value={adminPassword}
-              onChange={(e) => setAdminPassword(e.target.value)}
-              required
-              minLength={8}
-              className={styles.input}
-              placeholder="••••••••"
-            />
+            <div className={styles.passwordWrapper}>
+              <input
+                id="adminPassword"
+                type={showAdminPassword ? "text" : "password"}
+                autoComplete="new-password"
+                value={adminPassword}
+                onChange={(e) => setAdminPassword(e.target.value)}
+                required
+                minLength={8}
+                className={styles.input}
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowAdminPassword((p) => !p)}
+                className={styles.passwordToggle}
+                tabIndex={-1}
+                aria-label={showAdminPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+              >
+                {showAdminPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
         </fieldset>
 

@@ -274,24 +274,6 @@
   }
 }
 
-.themeToggle {
-  position: fixed;
-  bottom: calc(16px + env(safe-area-inset-bottom));
-  right: calc(16px + env(safe-area-inset-right));
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: var(--card);
-  border: 1px solid var(--border);
-  color: var(--foreground);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 5;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
 @keyframes fadeIn {
   from {
     opacity: 0;

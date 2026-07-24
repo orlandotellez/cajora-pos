@@ -16,11 +16,144 @@
   flex-direction: column;
   overflow: hidden;
   border-right: 1px solid var(--border);
+  position: relative;
+}
+
+@media (max-width: 767px) {
+  .left-panel-scanner-active {
+    padding-top: 270px;
+  }
+}
+
+/* ─── Barcode scanner section ─────────────────────────────── */
+
+.scanner-section {
+  flex-shrink: 0;
+}
+
+.scanner-toggle-btn {
+  position: fixed;
+  top: calc(12px + env(safe-area-inset-top));
+  right: calc(12px + env(safe-area-inset-right));
+  z-index: 25;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.scanner-toggle-btn:hover {
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+.scanner-toggle-btn-active {
+  background: var(--foreground);
+  color: var(--background);
+  border-color: var(--foreground);
+}
+
+.scanner-toggle-btn-active:hover {
+  opacity: 0.9;
+}
+
+.scanner-container {
+  overflow: hidden;
+  transition: max-height 0.35s ease, opacity 0.3s ease;
+  background: #000;
+}
+
+@media (max-width: 767px) {
+  .scanner-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 15;
+  }
+}
+
+.scanner-viewfinder {
+  width: 100%;
+  height: 350px;
+}
+
+.scanner-camera-wrap {
+  position: relative;
+  width: 100%;
+  height: 350px;
+  overflow: hidden;
+}
+
+.scanner-overlay-brackets {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 260px;
+  height: 100px;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  border-radius: 12px;
+  pointer-events: none;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4);
+  z-index: 2;
+}
+
+.scanner-overlay-line {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 240px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #22d3ee, transparent);
+  animation: barcodeScanLine 1.5s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 3;
+}
+
+@keyframes barcodeScanLine {
+
+  0%,
+  100% {
+    top: calc(50% - 40px);
+  }
+
+  50% {
+    top: calc(50% + 40px);
+  }
 }
 
 .cartArea {
   flex: 1;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+}
+
+@media (max-width: 767px) {
+  .cartArea {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .cartArea::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .cartArea {
+    padding-bottom: 80px;
+  }
 }
 
 .emptyCart {
@@ -359,6 +492,145 @@
   overflow: auto;
   background: var(--card);
   padding: 24px;
+}
+
+/* ─── Mobile: ocultar el panel de cobro, se usa el flujo móvil ─── */
+@media (max-width: 767px) {
+  .rightPanel {
+    display: none;
+  }
+}
+
+/* ─── Mobile bottom bar (cart mode) ──────────────────────── */
+.mobile-bottom-bar {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .mobile-bottom-bar {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--border);
+    background: var(--card);
+    gap: 12px;
+  }
+}
+
+.mobile-bottom-bar-totals {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mobile-bottom-subtotal {
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+.mobile-bottom-total {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.mobile-bottom-checkout-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  background: var(--foreground);
+  color: var(--background);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+
+.mobile-bottom-checkout-btn:active {
+  opacity: 0.8;
+}
+
+/* ─── Mobile checkout view ───────────────────────────────── */
+.mobile-checkout {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: var(--background);
+  flex-direction: column;
+  animation: slideUp 0.25s ease;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@media (max-width: 767px) {
+  .mobile-checkout {
+    display: flex;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+.mobile-checkout-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: calc(12px + env(safe-area-inset-top)) 16px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  background: var(--background);
+  z-index: 1;
+}
+
+.mobile-checkout-back {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--foreground);
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.mobile-checkout-back:active {
+  background: var(--accent);
+}
+
+.mobile-checkout-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.mobile-checkout-cart {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.mobile-checkout-payment {
+  flex-shrink: 0;
+  padding: 16px;
+  border-top: 1px solid var(--border);
+  background: var(--card);
+  max-height: 60vh;
+  overflow-y: auto;
 }
 
 .totalsSection {

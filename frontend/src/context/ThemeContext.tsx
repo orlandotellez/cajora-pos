@@ -28,6 +28,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       document.head.appendChild(link);
     }
     link.href = theme === "dark" ? logoLight : logoDark;
+
   }, [theme]);
 
   const toggle = () => setTheme((t) => (t === "dark" ? "light" : "dark"));

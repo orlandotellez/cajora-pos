@@ -161,7 +161,7 @@ function ManualConfigForm({
             borderRadius: 8,
             border: "none",
             background: "var(--foreground, #2563eb)",
-            color: "#ffffff",
+            color: "var(--background)",
             fontSize: "0.95rem",
             cursor: retrying ? "wait" : "pointer",
             fontWeight: 600,
