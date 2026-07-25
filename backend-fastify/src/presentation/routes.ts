@@ -1,6 +1,6 @@
 import { authRoutes } from "@/modules/auth/presentation/auth.routes";
 import { productsRoutes } from "@/modules/products/presentation/products.routes";
-import { categoriesRoutes } from "@/modules/products/presentation/categories.routes";
+import { categoriesRoutes } from "@/modules/categories/presentation/categories.routes";
 import { salesRoutes } from "@/modules/sales/presentation/sales.routes";
 import { inventoryRoutes } from "@/modules/inventory/presentation/inventory.routes";
 import { batchInventoryRoutes } from "@/modules/batch-inventory/presentation/batch-inventory.routes";
