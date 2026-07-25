@@ -1,14 +1,15 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ScanBarcode } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { productsApi, type Product } from "@/api/products";
 import { servicesApi, type Service } from "@/api/services";
-import { salesApi, type CreateSalePayload } from "@/api/sales";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { usePosScanner } from "@/hooks/usePosScanner";
+import { useDialog } from "@/hooks/useDialog";
+import { useCheckout } from "@/hooks/useCheckout";
+import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
+import { PosScannerSection } from "@/components/pos/PosScannerSection";
+import { PosMobileCheckout } from "@/components/pos/PosMobileCheckout";
 import { usePosStore, type CartItem, type ProductCartItem, type ServiceCartItem } from "@/store/posStore";
 import { money } from "@/lib/format";
-import { printTicket } from "@/lib/pos-ticket";
-import { type PaymentMethod } from "@/lib/constants";
 import { PosSearchBar, type SearchResult } from "@/components/pages/pos/PosSearchBar";
 import { PosCartTable } from "@/components/pages/pos/PosCartTable";
 import { PosPaymentPanel } from "@/components/pages/pos/PosPaymentPanel";
@@ -24,29 +25,12 @@ export default function Pos() {
   const [scan, setScan] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
   const { storeName, storeAddress, storePhone, storeFooter } = useStoreSettings();
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [showResults, setShowResults] = useState(false);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [addingToService, setAddingToService] = useState<string | null>(null);
   const [serviceProductSearch, setServiceProductSearch] = useState("");
-  const [completedSale, setCompletedSale] = useState<{
-    saleId: string;
-    userName: string;
-    cart: CartItem[];
-    totals: { subtotal: number; discount: number; total: number; change: number };
-    payment: string;
-    received: string;
-    discountPct: number;
-  } | null>(null);
-
-  const [dialog, setDialog] = useState<{
-    message: string;
-    variant: "alert" | "confirm";
-    onConfirm?: () => void;
-  } | null>(null);
-
   const [showMobileCheckout, setShowMobileCheckout] = useState(false);
+
+  const { dialog, showAlert, showConfirm, closeDialog } = useDialog();
 
   const {
     active: scannerActive,
@@ -74,9 +58,6 @@ export default function Pos() {
     },
   });
 
-  const showAlert = useCallback((message: string) => setDialog({ message, variant: "alert" }), []);
-  const showConfirm = useCallback((message: string, onConfirm: () => void) => setDialog({ message, variant: "confirm", onConfirm }), []);
-
   const cart = usePosStore((s) => s.cart);
   const discountPct = usePosStore((s) => s.discountPct);
   const payment = usePosStore((s) => s.payment);
@@ -103,42 +84,24 @@ export default function Pos() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  useEffect(() => {
-    const term = scan.trim();
-    if (!term) {
-      setSearchResults([]);
-      return;
-    }
+  const { results: searchResults, loading: searchLoading } = useDebouncedSearch<SearchResult>({
+    query: scan,
+    fetcher: async (term) => {
+      const [prodRes, svcRes] = await Promise.all([
+        productsApi.list({ search: term, active: true, limit: 15 }),
+        servicesApi.list({ search: term, active: true, limit: 15 }),
+      ]);
 
-    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
-    searchTimerRef.current = setTimeout(async () => {
-      setSearchLoading(true);
-      try {
-        const [prodRes, svcRes] = await Promise.all([
-          productsApi.list({ search: term, active: true, limit: 15 }),
-          servicesApi.list({ search: term, active: true, limit: 15 }),
-        ]);
-
-        const results: SearchResult[] = [];
-
-        for (const p of prodRes.products) {
-          results.push({ _type: "product", id: p.id, name: p.name, barcode: p.barcode, price: p.price, data: p });
-        }
-
-        for (const s of svcRes.services) {
-          results.push({ _type: "service", id: s.id, name: s.name, barcode: undefined, price: s.base_price, data: s });
-        }
-
-        setSearchResults(results);
-      } catch {
-        setSearchResults([]);
-      } finally {
-        setSearchLoading(false);
+      const results: SearchResult[] = [];
+      for (const p of prodRes.products) {
+        results.push({ _type: "product", id: p.id, name: p.name, barcode: p.barcode, price: p.price, data: p });
       }
-    }, 300);
-
-    return () => { if (searchTimerRef.current) clearTimeout(searchTimerRef.current); };
-  }, [scan]);
+      for (const s of svcRes.services) {
+        results.push({ _type: "service", id: s.id, name: s.name, barcode: undefined, price: s.base_price, data: s });
+      }
+      return results;
+    },
+  });
 
   // Cargar productos solo cuando se abre el modal de agregar a servicio
   useEffect(() => {
@@ -225,179 +188,70 @@ export default function Pos() {
     return { subtotal, discount, total, change };
   }, [cart, discountPct, payment, received]);
 
-  async function checkout() {
-    if (!cart.length || checkingOut) return;
+  const { completedSale, checkout, handlePrintTicket, finalizeSale } = useCheckout({
+    cart,
+    totals,
+    payment,
+    received,
+    manualAmount,
+    currency,
+    discountPct,
+    userName: user?.name ?? "Sistema",
+    storeSettings: { storeName, storeAddress, storePhone, storeFooter },
+    showAlert,
+    setCheckingOut,
+    clearCart,
+  });
 
-    if ((payment === "efectivo" || manualAmount) && Number(received || 0) < totals.total) {
-      showAlert(`El monto recibido (${money(Number(received || 0), currency)}) es menor al total (${money(totals.total, currency)}).`);
-      setCheckingOut(false);
-      return;
-    }
-
-    setCheckingOut(true);
-
-    try {
-      const items = cart
-        .filter((x): x is ProductCartItem => x._type === "product")
-        .map((item) => ({
-          product_id: item.id,
-          product_name: item.name,
-          quantity: item.quantity,
-          unit_price: item.price,
-          line_total: item.price * item.quantity,
-        }));
-
-      const serviceItems = cart
-        .filter((x): x is ServiceCartItem => x._type === "service")
-        .map((item) => {
-          const svcQty = item.quantity;
-          const customProducts = item.products.map((sp) => ({
-            product_id: sp.product_id,
-            product_name: sp.product_name,
-            quantity: sp.quantity * svcQty,
-            unit_price: sp.unit_price,
-            line_total: sp.unit_price * sp.quantity * svcQty,
-            affects_price: sp.affects_price,
-          }));
-          const additiveTotal = customProducts
-            .filter((p) => p.affects_price)
-            .reduce((s, p) => s + p.line_total, 0);
-          return {
-            service_id: item.service_id,
-            service_name: item.name,
-            base_price: item.base_price,
-            line_total: item.base_price * svcQty + additiveTotal,
-            products: customProducts,
-          };
-        });
-
-      const shouldSendAmount = payment === "efectivo" || manualAmount;
-
-      const payload: CreateSalePayload = {
-        subtotal: totals.subtotal,
-        discount: totals.discount,
-        total: totals.total,
-        payment_method: payment as PaymentMethod,
-        amount_received: shouldSendAmount ? Number(received || 0) : undefined,
-        change_given: shouldSendAmount ? totals.change : undefined,
-        user_name: user?.name ?? "Sistema",
-        items: items.length > 0 ? items : undefined,
-        service_items: serviceItems.length > 0 ? serviceItems : undefined,
-      };
-
-      const sale = await salesApi.create(payload);
-      setCompletedSale({
-        saleId: sale.id,
-        userName: sale.user_name,
-        cart: [...cart],
-        totals: { ...totals },
-        payment,
-        received,
-        discountPct,
-      });
-    } catch (err) {
-      console.error("Error al crear venta:", err);
-      showAlert("Error al procesar la venta. Intenta de nuevo.");
-      setCheckingOut(false);
-    }
-  }
-
-  function handlePrintTicket(saleId: string, userName: string) {
-    if (!completedSale) return;
-    printTicket(saleId, userName, completedSale.cart, completedSale.totals, completedSale.payment, completedSale.received, storeName, storeAddress, storePhone, storeFooter, completedSale.discountPct);
+  function handleFinalizeSale() {
     finalizeSale();
-  }
-
-  function finalizeSale() {
-    setCompletedSale(null);
-    clearCart();
-    setCheckingOut(false);
     setShowMobileCheckout(false);
   }
-
-
 
   return (
     <div className={styles.grid}>
       {/* ─── Mobile checkout view ───────────────────────────── */}
       {showMobileCheckout && (
-        <div className={styles["mobile-checkout"]}>
-          <div className={styles["mobile-checkout-header"]}>
-            <button
-              onClick={() => setShowMobileCheckout(false)}
-              className={styles["mobile-checkout-back"]}
-            >
-              ← Regresar
-            </button>
-            <span className={styles["mobile-checkout-title"]}>Cobrar</span>
-          </div>
-
-          <div className={styles["mobile-checkout-cart"]}>
-            <PosCartTable
-              cart={cart}
-              products={products}
-              addingToService={addingToService}
-              serviceProductSearch={serviceProductSearch}
-              onSetQty={handleSetQty}
-              onDelete={(id) => setQty(id, 0)}
-              onAddingToService={setAddingToService}
-              onServiceProductSearch={setServiceProductSearch}
-              onAddServiceProduct={addServiceProduct}
-              showAlert={showAlert}
-            />
-          </div>
-
-          <div className={styles["mobile-checkout-payment"]}>
-            <PosPaymentPanel
-              totals={totals}
-              cartLength={cart.length}
-              discountPct={discountPct}
-              payment={payment}
-              received={received}
-              manualAmount={manualAmount}
-              checkingOut={checkingOut}
-              onDiscountPct={setDiscountPct}
-              onPayment={setPayment}
-              onReceived={setReceived}
-              onManualAmount={setManualAmount}
-              onCheckout={checkout}
-              onClearCart={clearCart}
-            />
-          </div>
-        </div>
+        <PosMobileCheckout
+          onClose={() => setShowMobileCheckout(false)}
+          cartProps={{
+            cart,
+            products,
+            addingToService,
+            serviceProductSearch,
+            onSetQty: handleSetQty,
+            onDelete: (id) => setQty(id, 0),
+            onAddingToService: setAddingToService,
+            onServiceProductSearch: setServiceProductSearch,
+            onAddServiceProduct: addServiceProduct,
+            showAlert,
+          }}
+          paymentProps={{
+            totals,
+            cartLength: cart.length,
+            discountPct,
+            payment,
+            received,
+            manualAmount,
+            checkingOut,
+            onDiscountPct: setDiscountPct,
+            onPayment: setPayment,
+            onReceived: setReceived,
+            onManualAmount: setManualAmount,
+            onCheckout: checkout,
+            onClearCart: clearCart,
+          }}
+        />
       )}
 
       {/* ─── Main POS view ─────────────────────────────────── */}
       <div className={`${styles.leftPanel} ${scannerActive ? styles["left-panel-scanner-active"] : ""}`}>
-        {/* Barcode scanner toggle + viewfinder */}
-        <div className={styles["scanner-section"]}>
-          <button
-            ref={scannerToggleRef}
-            onClick={toggleScanner}
-            className={`${styles["scanner-toggle-btn"]} ${scannerActive ? styles["scanner-toggle-btn-active"] : ""}`}
-            title={scannerActive ? "Desactivar escáner" : "Activar escáner de código de barras"}
-          >
-            <ScanBarcode size={18} />
-          </button>
-
-          <div
-            className={styles["scanner-container"]}
-            style={{
-              maxHeight: scannerActive ? 350 : 0,
-              opacity: scannerActive ? 1 : 0,
-            }}
-          >
-            <div className={styles["scanner-camera-wrap"]}>
-              <div
-                id={elementId}
-                className={styles["scanner-viewfinder"]}
-              />
-              {/* Corner brackets + scan line (igual que en /products) */}
-              <div className={styles["scanner-overlay-brackets"]} />
-              <div className={styles["scanner-overlay-line"]} />
-            </div>
-          </div>
-        </div>
+        <PosScannerSection
+          active={scannerActive}
+          onToggle={toggleScanner}
+          toggleRef={scannerToggleRef}
+          elementId={elementId}
+        />
 
         <PosSearchBar
           searchTerm={scan}
@@ -476,11 +330,11 @@ export default function Pos() {
           storePhone={storePhone}
           storeFooter={storeFooter}
           onPrint={handlePrintTicket}
-          onClose={finalizeSale}
+          onClose={handleFinalizeSale}
         />
       )}
 
-      <PosDialog dialog={dialog} onClose={() => setDialog(null)} />
+      <PosDialog dialog={dialog} onClose={closeDialog} />
     </div>
   );
 }

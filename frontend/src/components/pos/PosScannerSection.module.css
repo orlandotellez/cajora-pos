@@ -1,0 +1,114 @@
+.scanner-section {
+  flex-shrink: 0;
+}
+
+.scanner-toggle-btn {
+  position: fixed;
+  top: calc(12px + env(safe-area-inset-top));
+  right: calc(12px + env(safe-area-inset-right));
+  z-index: 25;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.scanner-toggle-btn:hover {
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+.scanner-toggle-btn-active {
+  background: var(--foreground);
+  color: var(--background);
+  border-color: var(--foreground);
+}
+
+.scanner-toggle-btn-active:hover {
+  opacity: 0.9;
+}
+
+.scanner-container {
+  overflow: hidden;
+  transition: max-height 0.35s ease, opacity 0.3s ease;
+  background: #000;
+}
+
+@media (max-width: 767px) {
+  .scanner-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 15;
+  }
+}
+
+.scanner-container-active {
+  max-height: 350px;
+  opacity: 1;
+}
+
+.scanner-container-inactive {
+  max-height: 0;
+  opacity: 0;
+}
+
+.scanner-viewfinder {
+  width: 100%;
+  height: 350px;
+}
+
+.scanner-camera-wrap {
+  position: relative;
+  width: 100%;
+  height: 350px;
+  overflow: hidden;
+}
+
+.scanner-overlay-brackets {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 260px;
+  height: 100px;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  border-radius: 12px;
+  pointer-events: none;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4);
+  z-index: 2;
+}
+
+.scanner-overlay-line {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 240px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #22d3ee, transparent);
+  animation: barcodeScanLine 1.5s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 3;
+}
+
+@keyframes barcodeScanLine {
+
+  0%,
+  100% {
+    top: calc(50% - 40px);
+  }
+
+  50% {
+    top: calc(50% + 40px);
+  }
+}
