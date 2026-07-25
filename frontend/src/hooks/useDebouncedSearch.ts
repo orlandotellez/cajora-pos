@@ -38,6 +38,14 @@ export interface UseDebouncedSearchReturn<T> {
  * **Mutable ref de `fetcher`**: idéntico al patrón de `useCrudPagination`
  * — evita que el debounced effect re-arme el timer si el parent crea una
  * nueva identidad de arrow function en cada render.
+ *
+ * **Race condition fix (generation counter)**:
+ * Si el usuario tipea rápido, varios fetches pueden quedar en vuelo y
+ * resolver fuera de orden. Cada llamada captura un `requestIdRef` antes
+ * del await; solo el último requestId aplica su resultado o error.
+ * Esto evita pisar `results` con data stale de un input previo. No
+ * requiere AbortSignal en la API (lo cual no está soportado en `api.ts`);
+ * descarta resultados viejos en lugar de cancelar HTTP requests.
  */
 export function useDebouncedSearch<T>(
   opts: UseDebouncedSearchOptions<T>,
@@ -47,6 +55,7 @@ export function useDebouncedSearch<T>(
   const [results, setResults] = useState<T[]>([]);
   const [loading, setLoading] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const requestIdRef = useRef(0);
 
   const fetcherRef = useRef(fetcher);
   useEffect(() => {
@@ -63,15 +72,18 @@ export function useDebouncedSearch<T>(
 
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(async () => {
+      const myRequestId = ++requestIdRef.current;
       setLoading(true);
       try {
         const data = await fetcherRef.current(term);
+        if (myRequestId !== requestIdRef.current) return;
         setResults(data);
       } catch (err) {
+        if (myRequestId !== requestIdRef.current) return;
         console.warn("Error al buscar:", err);
         setResults([]);
       } finally {
-        setLoading(false);
+        if (myRequestId === requestIdRef.current) setLoading(false);
       }
     }, delay);
 
