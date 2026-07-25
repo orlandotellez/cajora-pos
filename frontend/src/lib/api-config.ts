@@ -8,7 +8,8 @@ export const DEFAULT_API_URL = "http://192.168.0.10:3000/api/v1";
 
 // En dev (vite dev / pnpm dev) se usa el servidor local
 // En producción se usa la URL obtenida del bootstrap remoto
-const IS_DEV = import.meta.env.DEV === true;
+// Para probar bootstrap en dev: VITE_FORCE_PRODUCTION=true pnpm tauri dev
+const IS_DEV = import.meta.env.VITE_FORCE_PRODUCTION === "true" ? false : import.meta.env.DEV === true;
 
 export function isValidApiUrl(value: unknown): value is string {
   return typeof value === "string" && /^https?:\/\/[^\s]+$/i.test(value);
