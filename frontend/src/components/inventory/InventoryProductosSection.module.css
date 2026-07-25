@@ -1,0 +1,147 @@
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  margin-bottom: 24px;
+  border: 1px solid var(--warning);
+  border-radius: 8px;
+  background: color-mix(in oklch, var(--warning) 10%, transparent);
+  font-size: 14px;
+}
+
+.alertIcon {
+  margin-top: 2px;
+  color: var(--warning);
+  flex-shrink: 0;
+}
+
+.alertTitle {
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+.alertDesc {
+  color: var(--muted-foreground);
+  margin-top: 2px;
+}
+
+.toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .alert {
+    margin-inline: 24px;
+  }
+
+  .toolbar {
+    padding: 0px 24px 10px 24px;
+  }
+}
+
+@media (max-width: 767px) {
+  .searchWrapper {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .filterSelect {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .stockFilters {
+    width: 100%;
+  }
+
+  .stockFilterBtn {
+    flex: 1;
+    text-align: center;
+  }
+}
+
+.searchWrapper {
+  position: relative;
+  flex: 1;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted-foreground);
+}
+
+.searchInput {
+  width: 100%;
+  height: 40px;
+  padding: 8px 12px 8px 36px;
+  border: 1px solid var(--input);
+  border-radius: 6px;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 14px;
+  outline: none;
+}
+
+.searchInput:focus {
+  border-color: var(--ring);
+}
+
+.searchInput::placeholder {
+  color: var(--muted-foreground);
+}
+
+.filterSelect {
+  height: 40px;
+  padding: 8px 36px 8px 12px;
+  border: 1px solid var(--input);
+  border-radius: 6px;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 14px;
+  outline: none;
+  cursor: pointer;
+  min-width: 200px;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+}
+
+.filterSelect:focus {
+  border-color: var(--ring);
+}
+
+.stockFilters {
+  display: flex;
+  gap: 6px;
+}
+
+.stockFilterBtn {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--foreground);
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.stockFilterBtn:hover {
+  background: var(--accent);
+}
+
+.stockFilterActive {
+  background: var(--accent);
+  border-color: var(--ring);
+  font-weight: 500;
+}
