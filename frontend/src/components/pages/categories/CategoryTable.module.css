@@ -1,0 +1,13 @@
+.category-name {
+  font-weight: 500;
+}
+
+.category-desc {
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+.category-meta {
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
