@@ -5,9 +5,8 @@ import { cacheGet, cacheSet, cacheClear, cacheKey } from "@/lib/simple-cache";
 import { useToast } from "@/components/common/ui/Toast";
 import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
 import { CategoryTable } from "@/components/pages/categories/CategoryTable";
+import { PAGE_LIMIT as LIMIT } from "@/lib/constants";
 import styles from "./Categories.module.css";
-
-const LIMIT = 10;
 
 const emptyForm = { name: "", description: "" };
 

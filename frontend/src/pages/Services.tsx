@@ -8,9 +8,8 @@ import { cacheGet, cacheSet, cacheClear, cacheKey } from "@/lib/simple-cache";
 import { useToast } from "@/components/common/ui/Toast";
 import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
 import { ServiceTable } from "@/components/pages/services/ServiceTable";
+import { PAGE_LIMIT as LIMIT } from "@/lib/constants";
 import styles from "./Services.module.css";
-
-const LIMIT = 10;
 
 export default function Services() {
   const { toast } = useToast();

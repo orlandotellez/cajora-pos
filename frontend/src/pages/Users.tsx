@@ -1,28 +1,21 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Plus, Search, X } from "lucide-react";
 import { usersApi, type CreateUserPayload, type UpdateUserPayload } from "@/api/users";
 import type { UserResponse } from "@/api";
 import { useAuth } from "@/context/AuthContext";
+import { useAdminGuard } from "@/hooks/useAdminGuard";
 import { useToast } from "@/components/common/ui/Toast";
 import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
 import { UserTable } from "@/components/pages/users/UserTable";
+import { PAGE_LIMIT as LIMIT } from "@/lib/constants";
 import styles from "./Users.module.css";
-
-const LIMIT = 10;
 
 const emptyForm = { name: "", email: "", password: "", role: "cajero" as string, phone: "" };
 
 export default function Users() {
-  const navigate = useNavigate();
   const { user: currentUser } = useAuth();
+  useAdminGuard();
   const { toast } = useToast();
-
-  useEffect(() => {
-    if (currentUser && currentUser.role !== "admin") {
-      navigate("/pos", { replace: true });
-    }
-  }, [currentUser, navigate]);
 
   const [users, setUsers] = useState<UserResponse[]>([]);
   const [total, setTotal] = useState(0);

@@ -1,10 +1,10 @@
 import { Fragment, useEffect, useState } from "react";
 import { Search, X, Printer } from "lucide-react";
 import { salesApi, type Sale } from "@/api/sales";
-import { settingsApi } from "@/api/settings";
+import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { money } from "@/lib/format";
-import { printHtml, buildTicketHtml, buildTicketProductRow, buildTicketServiceRows } from "@/lib/print-ticket";
-import { PAYMENT_METHODS } from "@/lib/constants";
+import { printSaleTicket } from "@/lib/ticket-printer";
+import { PAGE_LIMIT as LIMIT, PAYMENT_METHODS } from "@/lib/constants";
 import { SaleTable } from "@/components/pages/sales/SaleTable";
 import styles from "./Sales.module.css";
 import { cacheGet, cacheKey, cacheSet } from "@/lib/simple-cache";
@@ -18,22 +18,9 @@ export default function Sales() {
   const [paymentFilter, setPaymentFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Sale | null>(null);
-  const [storeName, setStoreName] = useState("");
-  const [storeAddress, setStoreAddress] = useState("");
-  const [storePhone, setStorePhone] = useState("");
-  const [storeFooter, setStoreFooter] = useState("");
+  const { storeName, storeAddress, storePhone, storeFooter } = useStoreSettings();
 
-  const LIMIT = 10;
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
-
-  useEffect(() => {
-    settingsApi.get().then((res) => {
-      setStoreName(res.name);
-      if (res.address) setStoreAddress(res.address);
-      if (res.phone) setStorePhone(res.phone);
-      if (res.ticket_footer) setStoreFooter(res.ticket_footer);
-    }).catch((err) => console.warn("Error al cargar config:", err));
-  }, []);
 
   const fetchSales = async (p: number) => {
     const key = cacheKey("sales", p, startDate, endDate, paymentFilter);
@@ -81,7 +68,6 @@ export default function Sales() {
         </div>
       </header>
 
-      {}
       <div className={styles.filters}>
         <div className={styles.filterGroup}>
           <label className={styles.filterLabel}>Desde</label>
@@ -116,7 +102,6 @@ export default function Sales() {
         dimmed={false}
       />
 
-      {}
       {selected && (
         <div className={styles.overlay} onClick={() => setSelected(null)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
@@ -199,45 +184,4 @@ export default function Sales() {
       )}
     </div>
   );
-}
-
-function printSaleTicket(sale: Sale, storeName: string, userName: string, storeAddress?: string, storePhone?: string, storeFooter?: string) {
-  const date = new Date(sale.created_at).toLocaleString("es-MX");
-
-  const productRows = (sale.items ?? []).map((item) =>
-    buildTicketProductRow({ name: item.product_name, quantity: item.quantity, lineTotal: item.line_total })
-  ).join("");
-  const serviceRows = (sale.service_items ?? []).map((svc) =>
-    buildTicketServiceRows({
-      displayName: svc.service_name,
-      basePrice: svc.base_price,
-      lineTotal: svc.line_total,
-      products: svc.products.map((sp) => ({
-        name: sp.product_name,
-        quantity: sp.quantity,
-        unitPrice: sp.unit_price,
-        affectsPrice: sp.affects_price ?? false,
-      })),
-    })
-  ).join("");
-  const rows = productRows + serviceRows;
-
-  const html = buildTicketHtml({
-    storeName: storeName || "Tienda",
-    storeAddress,
-    storePhone,
-    storeFooter,
-    saleId: sale.id,
-    date,
-    userName,
-    rows,
-    subtotal: sale.subtotal,
-    discount: sale.discount,
-    total: sale.total,
-    paymentMethod: sale.payment_method,
-    amountReceived: sale.amount_received ?? sale.total,
-    changeGiven: sale.change_given ?? 0,
-  });
-
-  printHtml(html);
 }

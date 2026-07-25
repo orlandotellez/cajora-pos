@@ -10,9 +10,9 @@ import { useToast } from "@/components/common/ui/Toast";
 import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
 import { ProductTable } from "@/components/pages/products/ProductTable";
 import { BarcodeScanner } from "@/components/common/BarcodeScanner";
+import { PAGE_LIMIT as LIMIT } from "@/lib/constants";
 import styles from "./Products.module.css";
 
-const LIMIT = 10;
 
 const emptyForm = {
   name: "",

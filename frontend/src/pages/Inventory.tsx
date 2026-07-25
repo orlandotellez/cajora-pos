@@ -13,9 +13,8 @@ import { BatchMovementModal } from "@/components/pages/inventory/BatchMovementMo
 import { BatchDetailModal } from "@/components/pages/inventory/BatchDetailModal";
 import { MovementHistoryTable } from "@/components/pages/inventory/MovementHistoryTable";
 import { BatchHistoryTable } from "@/components/pages/inventory/BatchHistoryTable";
+import { PAGE_LIMIT as LIMIT } from "@/lib/constants";
 import styles from "./Inventory.module.css";
-
-const LIMIT = 10;
 
 type AdjustState = { id: string; name: string; stock: number } | null;
 

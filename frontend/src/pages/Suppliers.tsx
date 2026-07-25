@@ -6,9 +6,8 @@ import { cacheGet, cacheSet, cacheClear, cacheKey } from "@/lib/simple-cache";
 import { useToast } from "@/components/common/ui/Toast";
 import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
 import { SupplierTable } from "@/components/pages/suppliers/SupplierTable";
+import { PAGE_LIMIT as LIMIT } from "@/lib/constants";
 import styles from "./Suppliers.module.css";
-
-const LIMIT = 10;
 
 const emptyForm = { name: "", contact_name: "", email: "", phone: "", address: "", notes: "", is_active: true };
 

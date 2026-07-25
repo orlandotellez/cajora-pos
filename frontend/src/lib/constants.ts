@@ -35,3 +35,12 @@ export type CurrencyCode = (typeof CURRENCIES)[number]["code"];
 
 
 export const MOVEMENT_TYPES = ["entrada", "salida", "ajuste", "venta"] as const;
+
+/**
+ * Tamaño de página por defecto para los listados paginados de las páginas
+ * admin (Products, Services, Suppliers, Categories, Users, Sales, etc.).
+ *
+ * Si en el futuro el cliente quiere pág. de 20, 25, etc., cambiar este valor
+ * único propaga a todas las vistas.
+ */
+export const PAGE_LIMIT = 10;
