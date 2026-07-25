@@ -24,8 +24,7 @@ POST {{apiUrl}}/sales
 Content-Type: application/json
 
 {
-  "subtotal": 220.00,
-  "tax_total": 35.20,
+  "subtotal": 255.20,
   "discount": 0,
   "total": 255.20,
   "payment_method": "efectivo",
@@ -37,7 +36,6 @@ Content-Type: application/json
       "product_name": "Coca-Cola 600ml",
       "quantity": 2,
       "unit_price": 25.00,
-      "tax_rate": 16.00,
       "line_total": 50.00
     },
     {
@@ -45,7 +43,6 @@ Content-Type: application/json
       "product_name": "Tortas de Harina 100g",
       "quantity": 10,
       "unit_price": 17.00,
-      "tax_rate": 16.00,
       "line_total": 170.00
     }
   ]
@@ -57,9 +54,8 @@ Content-Type: application/json
 
 {
   "subtotal": 100.00,
-  "tax_total": 16.00,
   "discount": 0,
-  "total": 116.00,
+  "total": 100.00,
   "payment_method": "tarjeta",
   "items": [
     {
@@ -67,7 +63,6 @@ Content-Type: application/json
       "product_name": "Coca-Cola 600ml",
       "quantity": 4,
       "unit_price": 25.00,
-      "tax_rate": 16.00,
       "line_total": 100.00
     }
   ]

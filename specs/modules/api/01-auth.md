@@ -78,7 +78,7 @@ Endpoints de autenticación: registro inicial de tienda, login, refresh tokens, 
 1. INSERT `stores`.
 2. INSERT `users` (role=admin, email_verified=true, store_id=stores.id).
 3. INSERT `account` (provider=credentials, password=bcrypt hash).
-4. INSERT `settings` (tax_rate=16, low_stock_threshold=5).
+4. INSERT `settings` (low_stock_threshold=5).
 5. COMMIT.
 6. Generar tokens (access 15min, refresh 7d).
 7. INSERT `session` (refresh_token, expires_at=now+7d).

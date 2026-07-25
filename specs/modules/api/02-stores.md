@@ -67,7 +67,6 @@ Store es la unidad multi-tenant: cada usuario pertenece a una sola tienda. La ti
   "address": "Av. Siempre Viva 123",
   "phone": "+52 555 0001",
   "settings": {
-    "tax_rate": 16,
     "low_stock_threshold": 5,
     "ticket_footer": "Gracias por su compra",
     "printer_name": "EPSON-TM20",

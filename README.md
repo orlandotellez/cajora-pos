@@ -228,14 +228,14 @@ Aplicación SPA React con todas las pantallas funcionales:
 
 - **Auth** — login, registro, verificación de email, recuperación de contraseña.
 - **POS** (`/pos`) — buscador por código/nombre + carrito + pago con múltiples métodos (efectivo con cálculo de vuelto, tarjeta, transferencia) e impresión de ticket.
-- **Productos** — CRUD, gestión de precios, costo, impuesto, stock, umbral de stock bajo, unidad de medida.
+- **Productos** — CRUD, gestión de precios, costo, stock, umbral de stock bajo, unidad de medida.
 - **Inventario** — movimientos individuales + **lotes** masivos (entradas / salidas / ajustes) con historial y trazabilidad por usuario.
 - **Servicios** — servicios compuestos por N productos (receta) con precio base.
 - **Ventas** — listado con detalle, filtros por fecha, productos, usuario.
 - **Proveedores** — CRUD con productos asociados.
 - **Usuarios** — gestión de roles (`admin` / `cajero`).
 - **Reportes** — dashboard con KPIs, top productos, cierre de caja (gráficos con **Recharts**).
-- **Settings** — datos del negocio, impuesto global, umbral de stock bajo, pie de ticket.
+- **Settings** — datos del negocio, umbral de stock bajo, pie de ticket.
 - **Sistema** — theme (claro/oscuro vía `ThemeContext`), toasts, confirmaciones, skeleton loaders, error boundary.
 
 Empaquetado multiplataforma con **Tauri 2**: el mismo código React corre en navegador, escritorio (instalador nativo) y Android (`src-tauri/gen/android/`).

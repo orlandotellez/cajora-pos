@@ -15,7 +15,6 @@ Producto del catálogo. La pieza más importante del POS.
 | `supplier_id` | `UUID` | `FK → suppliers.id` `(ON DELETE SET NULL)` | Proveedor principal. |
 | `price` | `NUMERIC(10,2)` | `NOT NULL` | Precio de venta. |
 | `cost` | `NUMERIC(10,2)` | `NOT NULL DEFAULT 0` | Costo (para utilidad). |
-| `tax_rate` | `NUMERIC(10,2)` | `NOT NULL DEFAULT 0` | Tasa de impuesto aplicable (%). |
 | `stock` | `INTEGER` | `NOT NULL DEFAULT 0` | Stock actual. ⚠️ Hot field. |
 | `low_stock_threshold` | `INTEGER` | `NOT NULL DEFAULT 5` | Umbral de stock bajo. |
 | `active` | `BOOLEAN` | `NOT NULL DEFAULT true` | Activo/Inactivo en POS. |

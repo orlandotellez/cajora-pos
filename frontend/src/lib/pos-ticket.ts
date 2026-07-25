@@ -1,9 +1,6 @@
 import { buildTicketHtml, buildTicketProductRow, buildTicketServiceRows, printHtml } from "./print-ticket";
 import type { CartItem, ProductCartItem, ServiceCartItem } from "@/store/posStore";
 
-
-
-
 export function printTicket(
   saleId: string,
   cart: CartItem[],

@@ -34,7 +34,6 @@ Content-Type: application/json
   "category_id": "{{categoryId}}",
   "price": 25.00,
   "cost": 18.00,
-  "tax_rate": 16.00,
   "stock": 100,
   "low_stock_threshold": 10,
   "active": true
@@ -48,7 +47,6 @@ Content-Type: application/json
   "name": "Tortas de Harina 100g",
   "price": 15.50,
   "cost": 10.00,
-  "tax_rate": 16.00,
   "stock": 50,
   "low_stock_threshold": 5,
   "active": true

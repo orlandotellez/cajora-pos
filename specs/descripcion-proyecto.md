@@ -32,7 +32,7 @@ El monorepo se compone de tres directorios principales:
 - **Roles dentro de una tienda**:
   - `admin` — crea la tienda en `POST /auth/register-store`, único rol con permiso de crear otros usuarios y gestionar configuración global.
   - `cajero` — opera el POS: registra ventas, hace movimientos de inventario manuales; no puede crear usuarios.
-- **Decimal moneda**: todos los importes (`price`, `cost`, `tax_total`, etc.) son `DECIMAL(10,2)` en PostgreSQL, no floats.
+- **Decimal moneda**: todos los importes (`price`, `cost`, `subtotal`, `total`, `discount`, etc.) son `DECIMAL(10,2)` en PostgreSQL, no floats.
 - **Soft-delete**: las entidades con catalogo (`product`, `category`, `supplier`, `service`) usan `deleted_at TIMESTAMPTZ` para borrado logico.
 
 ---

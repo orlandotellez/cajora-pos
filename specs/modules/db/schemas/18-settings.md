@@ -11,7 +11,6 @@ Configuración del negocio + impresora POS. Una sola fila por tienda (`UNIQUE(st
 | `name` | `TEXT` | `NOT NULL DEFAULT 'Mi Negocio'` | Nombre comercial. |
 | `address` | `TEXT` | NULL | Dirección. |
 | `phone` | `TEXT` | NULL | Teléfono. |
-| `tax_rate` | `NUMERIC(10,2)` | `NOT NULL DEFAULT 16` | Impuesto default aplicado a productos nuevos. |
 | `low_stock_threshold` | `INTEGER` | `NOT NULL DEFAULT 5` | Umbral default de stock bajo. |
 | `ticket_footer` | `TEXT` | NULL | Texto al pie del ticket. |
 | `printer_name` | `TEXT` | NULL | Nombre de la impresora (e.g. "EPSON-TM20"). |

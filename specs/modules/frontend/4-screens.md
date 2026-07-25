@@ -64,7 +64,7 @@ Inventario completo de pantallas del POS System, con su proposito, estado actual
 │  [Chicles] [Cafe] [Pan] ...     │   │ Coca 600ml  x2 $50 │ │
 │                                 │   │ Cafe 1kg    x1 $80 │ │
 │  Resultados de busqueda         │   │ Subtotal:      $130│ │
-│  (lista vertical)               │   │ Tax 16%:       $21 │ │
+│  (lista vertical)               │   │                  │ │
 │                                 │   │ Total:         $151│ │
 │                                 │   │ [efectivo][tarj.]│ │
 │                                 │   │ Recibido:  $200   │ │
@@ -77,7 +77,7 @@ Inventario completo de pantallas del POS System, con su proposito, estado actual
 - Agregar producto al cart (click o barcode scan).
 - Modificar cantidad (input numerico o +/-).
 - Remover item.
-- Ver subtotal/tax/total en vivo.
+- Ver subtotal/descuento/total en vivo.
 - Seleccionar metodo de pago (4 botones).
 - Si `efectivo`: input "monto recibido", calcula cambio.
 - Confirm: `POST /sales` → ticket preview + opcion de imprimir.
@@ -102,7 +102,7 @@ Inventario completo de pantallas del POS System, con su proposito, estado actual
 - Boton "Nuevo" abre modal con form.
 - Click fila → edita.
 - Icon trash → confirm dialog → soft-delete.
-- Form tiene: name, barcode (opcional), unit_type, unit_quantity, category_id (select), supplier_id (select), price, cost, tax_rate, stock, low_stock_threshold.
+- Form tiene: name, barcode (opcional), unit_type, unit_quantity, category_id (select), supplier_id (select), price, cost, stock, low_stock_threshold.
 - `category_id`/`supplier_id` vacios → submit `null` → backend desenlaza.
 
 **Columnas**:
@@ -213,7 +213,7 @@ Inventario completo de pantallas del POS System, con su proposito, estado actual
 **Sections**:
 
 1. **Negocio**: nombre, address, phone, footer de ticket.
-2. **Impuestos y stock**: tax_rate default (16), low_stock_threshold default (5).
+2. **Stock mínimo**: low_stock_threshold default (5).
 3. **Impresora**: nombre, interface (USB / network / serial), IP, puerto, paper_size (80mm / 58mm), open_drawer (bool), cut_after (bool).
 
 **Submit**: PUT `/settings` (upsert).
@@ -247,7 +247,7 @@ Pantalla generica 404 con link a `/pos`.
 1. **KPIs del período seleccionado**:
    - Total de ventas (count).
    - Revenue total.
-   - Tax acumulado.
+   - Descuentos aplicados.
    - Descuentos aplicados.
    - Average ticket.
 

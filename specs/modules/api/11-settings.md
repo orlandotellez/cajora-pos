@@ -3,7 +3,7 @@
 > ❌ **Pendiente en Rust**.
 > ✅ Fastify en `backend-fastify/src/modules/settings/`.
 
-Configuración global de la tienda: datos del negocio,税率 por defecto, footer ticket, y configuración de impresora térmica.
+Configuración global de la tienda: datos del negocio, footer ticket, y configuración de impresora térmica.
 
 ## Tabla de endpoints
 
@@ -25,7 +25,6 @@ Configuración global de la tienda: datos del negocio,税率 por defecto, footer
   "name": "Mi Tienda",
   "address": "Av. Siempre Viva 123",
   "phone": "+52 555 0001",
-  "tax_rate": 16,
   "low_stock_threshold": 5,
   "ticket_footer": "¡Gracias por su compra!",
   "printer_name": "EPSON-TM20",
@@ -54,7 +53,7 @@ Configuración global de la tienda: datos del negocio,税率 por defecto, footer
 
 ### ⚠️ IMPORTANTE — Printer fields NO expuestos actualmente
 
-La tabla `settings` tiene columnas `printer_name`, `printer_interface`, `printer_ip`, `printer_port`, `paper_size`, `printer_cut_after`, `printer_open_drawer` agregadas por la migración `20260709033600_add_printer_settings`. Sin embargo, **el DTO actual del Fastify (`settings.dto.ts → UpdateSettingsDtoSchema`) NO incluye esos campos**. Solo expone `name`, `address`, `phone`, `tax_rate`, `low_stock_threshold`, `ticket_footer`.
+La tabla `settings` tiene columnas `printer_name`, `printer_interface`, `printer_ip`, `printer_port`, `paper_size`, `printer_cut_after`, `printer_open_drawer` agregadas por la migración `20260709033600_add_printer_settings`. Sin embargo, **el DTO actual del Fastify (`settings.dto.ts → UpdateSettingsDtoSchema`) NO incluye esos campos**. Solo expone `name`, `address`, `phone`, `low_stock_threshold`, `ticket_footer`.
 
 > 🆘 **Decisión para el port a Rust**: agregar `printer_*` al DTO de update y al menos aceptar opcionalmente en el request body. Sin esto, los valores de impresora quedan fijos en sus defaults. Configurar la impresora entonces requiere SQL directo a la tabla.
 
@@ -65,7 +64,6 @@ La tabla `settings` tiene columnas `printer_name`, `printer_interface`, `printer
   "name": "Mi Tienda",
   "address": "Av. Siempre Viva 123",
   "phone": "+52 555 0001",
-  "tax_rate": 16,
   "low_stock_threshold": 5,
   "ticket_footer": "¡Gracias por su compra!",
   "printer_name": "EPSON-TM20",
@@ -80,7 +78,7 @@ La tabla `settings` tiene columnas `printer_name`, `printer_interface`, `printer
 
 ### Validaciones
 
-- `tax_rate`: 0..100.
+
 - `low_stock_threshold`: int ≥ 0.
 - `name`: si presente, min 1.
 - resto: free text.
@@ -118,7 +116,6 @@ CREATE TABLE settings (
   name TEXT DEFAULT 'Mi Negocio',
   address TEXT,
   phone TEXT,
-  tax_rate DECIMAL(10,2) DEFAULT 16,
   low_stock_threshold INTEGER DEFAULT 5,
   ticket_footer TEXT,
   printer_name TEXT,
@@ -151,7 +148,7 @@ pub trait SettingsRepository {
 pub async fn get(store_id: Uuid) -> SettingsResponse {
     match repo.get(store_id).await? {
         Some(s) => SettingsResponse::from(s),
-        None => SettingsResponse::defaults(),  // tax_rate=16, low_stock_threshold=5, etc.
+        None => SettingsResponse::defaults(),  // low_stock_threshold=5, etc.
     }
 }
 

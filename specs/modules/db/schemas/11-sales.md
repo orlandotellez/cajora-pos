@@ -8,7 +8,6 @@ Cabecera de venta. Cada venta es UN row con totales agregados y referencias a la
 |---|---|---|---|
 | `id` | `UUID` | `PK` | — |
 | `subtotal` | `NUMERIC(10,2)` | `NOT NULL` | Suma de `sale_items.line_total + sale_services.line_total - discount`. |
-| `tax_total` | `NUMERIC(10,2)` | `NOT NULL DEFAULT 0` | Suma de los impuestos calculados. |
 | `discount` | `NUMERIC(10,2)` | `NOT NULL DEFAULT 0` | Descuento aplicado a nivel venta. |
 | `total` | `NUMERIC(10,2)` | `NOT NULL` | Total final a pagar. |
 | `payment_method` | `TEXT` | `NOT NULL` | Enum textual: `efectivo \| tarjeta \| transferencia \| credito`. |

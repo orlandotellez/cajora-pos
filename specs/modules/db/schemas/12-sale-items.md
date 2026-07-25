@@ -12,7 +12,6 @@ Items regulares vendidos dentro de un `sale`.
 | `product_name` | `TEXT` | `NOT NULL` | Snapshot del nombre al momento de venta. |
 | `quantity` | `INTEGER` | `NOT NULL` | Cantidad. |
 | `unit_price` | `NUMERIC(10,2)` | `NOT NULL` | Precio unitario al momento de venta (snapshot). |
-| `tax_rate` | `NUMERIC(10,2)` | `NOT NULL DEFAULT 0` | Tasa aplicada al item. |
 | `line_total` | `NUMERIC(10,2)` | `NOT NULL` | `quantity × unit_price`. |
 | `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT CURRENT_TIMESTAMP` | — |
 | `updated_at` | `TIMESTAMPTZ` | `NOT NULL` | Trigger. |

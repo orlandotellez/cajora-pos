@@ -57,9 +57,8 @@ El campo `sales.payment_method` en PostgreSQL es **`TEXT NOT NULL`** (no un `CRE
     {
       "id": "uuid",
       "subtotal": 220.0,
-      "tax_total": 35.2,
       "discount": 0,
-      "total": 255.2,
+      "total": 220.0,
       "payment_method": "efectivo",
       "amount_received": 300.0,
       "change_given": 44.8,
@@ -72,7 +71,6 @@ El campo `sales.payment_method` en PostgreSQL es **`TEXT NOT NULL`** (no un `CRE
           "product_name": "Coca-Cola 600ml",
           "quantity": 2,
           "unit_price": 25.0,
-          "tax_rate": 16.0,
           "line_total": 50.0
         }
       ],
@@ -104,8 +102,7 @@ Shape `ISaleResponse` (arriba), completo con items + service_items anidados.
 
 ```json
 {
-  "subtotal": 220.0,
-  "tax_total": 35.2,
+  "subtotal": 255.2,
   "discount": 0,
   "total": 255.2,
   "payment_method": "efectivo",
@@ -117,15 +114,13 @@ Shape `ISaleResponse` (arriba), completo con items + service_items anidados.
       "product_name": "Coca-Cola 600ml",
       "quantity": 2,
       "unit_price": 25.0,
-      "tax_rate": 16.0,
       "line_total": 50.0
     },
     {
       "product_id": "uuid2",
       "product_name": "Tortas de Harina 100g",
       "quantity": 10,
-      "unit_price": 17.0,
-      "tax_rate": 16.0,
+      "unit_price": 17.0
       "line_total": 170.0
     }
   ],
@@ -155,7 +150,7 @@ Shape `ISaleResponse` (arriba), completo con items + service_items anidados.
 | Campo | Reglas |
 |---|---|
 | `payment_method` | uno de: `efectivo`, `tarjeta`, `transferencia`, `credito`. |
-| `subtotal`, `total`, `tax_total`, `discount` | numéricos ≥ 0. `total` ≥ 0. |
+| `subtotal`, `total`, `discount` | numéricos ≥ 0. `total` ≥ 0. |
 | `amount_received` | opcional, positivo. Requerido si `payment_method === 'efectivo'` para calcular cambio. |
 | `items` y/o `service_items` | mindestens uno no vacío (refinamiento Zod/Rust: `items.len() > 0 || service_items.len() > 0`). |
 | `items[].product_id`, `quantity > 0`, `unit_price > 0`, `line_total ≥ 0`. | |
@@ -214,7 +209,7 @@ for (_, info) in &validation_map {
 
 ```sql
 -- INSERT sale (con user_id + store_id + totales)
-INSERT INTO sales (subtotal, tax_total, discount, total, payment_method,
+INSERT INTO sales (subtotal, discount, total, payment_method,
                    amount_received, change_given, user_id, store_id)
 VALUES (...)
 RETURNING id;
@@ -258,9 +253,7 @@ RETURNING id;
 
 ```json
 {
-  "total_sales": 312,
-  "total_revenue": 78456.20,
-  "total_tax": 12553.0,
+  "total_sales": 312,  "total_revenue": 78456.20,
   "total_discount": 254.30,
   "average_ticket": 251.46,
   "sales_by_payment_method": {

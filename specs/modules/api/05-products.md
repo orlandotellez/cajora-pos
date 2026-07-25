@@ -49,7 +49,6 @@ CRUD del catálogo de productos. Permite búsqueda rápida por barcode (escáner
       "supplier": { "id": "uuid", "name": "Coca-Cola FEMSA" },
       "price": 25.0,
       "cost": 18.0,
-      "tax_rate": 16.0,
       "stock": 100,
       "low_stock_threshold": 10,
       "active": true,
@@ -107,7 +106,6 @@ Shape `IProductResponse` o **404** `{ "message": "Product not found" }`.
   "supplier_id": "uuid",
   "price": 25.0,
   "cost": 18.0,
-  "tax_rate": 16.0,
   "stock": 100,
   "low_stock_threshold": 10,
   "active": true
@@ -126,7 +124,6 @@ Shape `IProductResponse` o **404** `{ "message": "Product not found" }`.
 | `supplier_id` | opcional; FK a `suppliers.id`. |
 | `price` | positivo (>0). |
 | `cost` | default 0. |
-| `tax_rate` | 0..100 (% ). |
 | `stock` | default 0. |
 | `low_stock_threshold` | default 5. |
 | `active` | default true. |
@@ -214,7 +211,6 @@ pub struct Product {
     pub supplier_id: Option<Uuid>,
     pub price: Decimal,
     pub cost: Decimal,
-    pub tax_rate: Decimal,
     pub stock: i32,
     pub low_stock_threshold: i32,
     pub active: bool,

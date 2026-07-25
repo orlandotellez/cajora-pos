@@ -34,7 +34,7 @@ sequenceDiagram
         B->>DB: INSERT INTO users (name, email, role=admin, email_verified=true, store_id)
         DB-->>B: user_id
         B->>DB: INSERT INTO accounts (account_id=user_id, provider_id='credentials', password=bcrypt, user_id)
-        B->>DB: INSERT INTO settings (store_id, name, address, phone, tax_rate=16, low_stock_threshold=5)
+        B->>DB: INSERT INTO settings (store_id, name, address, phone, low_stock_threshold=5)
         B->>DB: COMMIT TX
         B->>J: generateTokens(user_id, email, role=admin, store_id, store_name)
         J-->>B: accessToken, refreshToken

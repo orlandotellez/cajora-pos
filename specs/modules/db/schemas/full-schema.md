@@ -39,7 +39,7 @@ Columna `deleted_at TIMESTAMPTZ NULL` en: `users`, `categories`, `suppliers`, `p
 
 ## Decimal money
 
-`DECIMAL(10,2)` para `price`, `cost`, `tax_rate`, `subtotal`, `tax_total`, `total`, `discount`, `amount_received`, `change_given`, `base_price`, `unit_cost`, `settings.tax_rate`. Nunca `FLOAT`.
+`DECIMAL(10,2)` para `price`, `cost`, `subtotal`, `total`, `discount`, `amount_received`, `change_given`, `base_price`, `unit_cost`. Nunca `FLOAT`.
 
 ## UUIDs
 
