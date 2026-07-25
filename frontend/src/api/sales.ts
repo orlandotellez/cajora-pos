@@ -1,9 +1,5 @@
 import { api } from "./client";
 
-
-
-
-
 export interface SaleItem {
   id: string;
   product_id: string;
@@ -41,6 +37,7 @@ export interface Sale {
   amount_received?: number;
   change_given?: number;
   user_id: string;
+  user_name: string;
   created_at: string;
   items?: SaleItem[];
   service_items?: SaleServiceItem[];
@@ -66,10 +63,6 @@ export interface RevenueTrendItem {
   date: string;
   revenue: number;
 }
-
-
-
-
 
 export interface CreateSaleItemPayload {
   product_id: string;
@@ -103,13 +96,10 @@ export interface CreateSalePayload {
   payment_method: "efectivo" | "tarjeta" | "transferencia" | "credito";
   amount_received?: number;
   change_given?: number;
+  user_name: string;
   items?: CreateSaleItemPayload[];
   service_items?: CreateSaleServiceItemPayload[];
 }
-
-
-
-
 
 export const salesApi = {
   list: (params?: {

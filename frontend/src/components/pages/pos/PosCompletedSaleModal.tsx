@@ -6,6 +6,7 @@ import styles from "./PosCompletedSaleModal.module.css";
 
 interface CompletedSaleData {
   saleId: string;
+  userName: string;
   cart: CartItem[];
   totals: { subtotal: number; discount: number; total: number; change: number };
   payment: string;
@@ -19,7 +20,7 @@ interface PosCompletedSaleModalProps {
   storeAddress: string;
   storePhone: string;
   storeFooter: string;
-  onPrint: (saleId: string) => void;
+  onPrint: (saleId: string, userName: string) => void;
   onClose: () => void;
 }
 
@@ -49,6 +50,7 @@ export function PosCompletedSaleModal({
           {storePhone && <div className={styles.phone}>{storePhone}</div>}
           <div className={styles.date}>{new Date().toLocaleString("es-MX")}</div>
           <div className={styles.ticketId}>Ticket: {completedSale.saleId.slice(0, 8)}</div>
+          <div className={styles.ticketId}>Atendido por: {completedSale.userName}</div>
 
           <div className={styles.divider} />
 
@@ -140,7 +142,7 @@ export function PosCompletedSaleModal({
 
         <div className={styles.actions}>
           <button
-            onClick={() => onPrint(completedSale.saleId)}
+            onClick={() => onPrint(completedSale.saleId, completedSale.userName)}
             className={styles.printBtn}
             autoFocus
           >

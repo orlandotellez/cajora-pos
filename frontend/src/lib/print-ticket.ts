@@ -1,10 +1,5 @@
 import { money } from "./format";
 
-
-
-
-
-
 export interface TicketProductRow {
   name: string;
   quantity: number;
@@ -59,14 +54,6 @@ export function buildTicketServiceRows(svc: {
   return rows.join("");
 }
 
-
-
-
-
-
-
-
-
 export function printHtml(html: string): void {
   const iframe = document.createElement("iframe");
   iframe.style.position = "fixed";
@@ -83,20 +70,13 @@ export function printHtml(html: string): void {
   }, 500);
 }
 
-
-
-
-
-
-
-
-
 export function buildTicketHtml(opts: {
   storeName: string;
   storeAddress?: string;
   storePhone?: string;
   storeFooter?: string;
   saleId: string;
+  userName: string;
   date: string;
   rows: string;
   subtotal: number;
@@ -109,7 +89,7 @@ export function buildTicketHtml(opts: {
 }): string {
   const {
     storeName, storeAddress, storePhone, storeFooter,
-    saleId, date, rows,
+    saleId, userName, date, rows,
     subtotal, discount, discountPct,
     total, paymentMethod, amountReceived, changeGiven,
   } = opts;
@@ -133,13 +113,14 @@ ${storeAddress ? `<div class="m">${storeAddress}</div>` : ""}
 ${storePhone ? `<div class="m">${storePhone}</div>` : ""}
 <div class="m">${date}</div>
 <div class="m">Ticket: ${saleId.slice(0, 8)}</div>
+<div class="m">Atendido por: ${userName}</div>
 <div class="line"></div>
 <table>${rows}</table>
 <div class="line"></div>
 <div class="tot"><span>Subtotal</span><span>${money(subtotal)}</span></div>
 ${discount > 0
-  ? `<div class="tot"><span>Descuento${discountPct != null ? ` (${discountPct}%)` : ""}</span><span>−${money(discount)}</span></div>`
-  : `<div class="tot"><span>Descuento</span><span>${money(discount)}</span></div>`}
+      ? `<div class="tot"><span>Descuento${discountPct != null ? ` (${discountPct}%)` : ""}</span><span>−${money(discount)}</span></div>`
+      : `<div class="tot"><span>Descuento</span><span>${money(discount)}</span></div>`}
 <div class="big tot"><span>TOTAL</span><span>${money(total)}</span></div>
 <div class="tot"><span>Pago (${paymentMethod})</span><span>${money(amountReceived)}</span></div>
 ${changeGiven > 0 ? `<div class="tot"><span>Cambio</span><span>${money(changeGiven)}</span></div>` : ""}

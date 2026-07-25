@@ -15,10 +15,12 @@ import { PosPaymentPanel } from "@/components/pages/pos/PosPaymentPanel";
 import { PosCompletedSaleModal } from "@/components/pages/pos/PosCompletedSaleModal";
 import { PosDialog } from "@/components/pages/pos/PosDialog";
 import styles from "./Pos.module.css";
+import { useAuth } from "@/context/AuthContext";
 
 const SCANNER_STORAGE_KEY = "pos-scanner-active";
 
 export default function Pos() {
+  const { user } = useAuth()
   const scanRef = useRef<HTMLInputElement>(null);
   const searchWrapperRef = useRef<HTMLDivElement>(null);
   const [scan, setScan] = useState("");
@@ -36,6 +38,7 @@ export default function Pos() {
   const [serviceProductSearch, setServiceProductSearch] = useState("");
   const [completedSale, setCompletedSale] = useState<{
     saleId: string;
+    userName: string;
     cart: CartItem[];
     totals: { subtotal: number; discount: number; total: number; change: number };
     payment: string;
@@ -386,6 +389,7 @@ export default function Pos() {
         payment_method: payment as PaymentMethod,
         amount_received: shouldSendAmount ? Number(received || 0) : undefined,
         change_given: shouldSendAmount ? totals.change : undefined,
+        user_name: user?.name ?? "Sistema",
         items: items.length > 0 ? items : undefined,
         service_items: serviceItems.length > 0 ? serviceItems : undefined,
       };
@@ -393,6 +397,7 @@ export default function Pos() {
       const sale = await salesApi.create(payload);
       setCompletedSale({
         saleId: sale.id,
+        userName: sale.user_name,
         cart: [...cart],
         totals: { ...totals },
         payment,
@@ -406,9 +411,9 @@ export default function Pos() {
     }
   }
 
-  function handlePrintTicket(saleId: string) {
+  function handlePrintTicket(saleId: string, userName: string) {
     if (!completedSale) return;
-    printTicket(saleId, completedSale.cart, completedSale.totals, completedSale.payment, completedSale.received, storeName, storeAddress, storePhone, storeFooter, completedSale.discountPct);
+    printTicket(saleId, userName, completedSale.cart, completedSale.totals, completedSale.payment, completedSale.received, storeName, storeAddress, storePhone, storeFooter, completedSale.discountPct);
     finalizeSale();
   }
 

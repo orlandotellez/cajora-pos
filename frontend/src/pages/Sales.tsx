@@ -123,7 +123,7 @@ export default function Sales() {
             <div className={styles.modalHeader}>
               <h2 className={styles.modalTitle}>Ticket de venta</h2>
               <div className={styles.modalHeaderActions}>
-                <button onClick={() => printSaleTicket(selected, storeName, storeAddress, storePhone, storeFooter)} className={styles.printBtn}>
+                <button onClick={() => printSaleTicket(selected, storeName, selected.user_name, storeAddress, storePhone, storeFooter)} className={styles.printBtn}>
                   <Printer size={16} /> Reimprimir
                 </button>
                 <button onClick={() => setSelected(null)} className={styles.modalClose}>
@@ -141,6 +141,7 @@ export default function Sales() {
               <div className={styles.ticketMeta}>
                 <div>{new Date(selected.created_at).toLocaleString("es-MX")}</div>
                 <div>Ticket: {selected.id.slice(0, 8)}</div>
+                <div>Atendido por: {selected.user_name}</div>
               </div>
               <div className={styles.ticketDivider}></div>
 
@@ -200,7 +201,7 @@ export default function Sales() {
   );
 }
 
-function printSaleTicket(sale: Sale, storeName: string, storeAddress?: string, storePhone?: string, storeFooter?: string) {
+function printSaleTicket(sale: Sale, storeName: string, userName: string, storeAddress?: string, storePhone?: string, storeFooter?: string) {
   const date = new Date(sale.created_at).toLocaleString("es-MX");
 
   const productRows = (sale.items ?? []).map((item) =>
@@ -228,6 +229,7 @@ function printSaleTicket(sale: Sale, storeName: string, storeAddress?: string, s
     storeFooter,
     saleId: sale.id,
     date,
+    userName,
     rows,
     subtotal: sale.subtotal,
     discount: sale.discount,
