@@ -211,6 +211,8 @@ model product {
   @@index([supplier_id])
   @@index([active])
   @@index([store_id])
+  @@index([store_id, deleted_at])
+  @@index([store_id, name])
   @@map("products")
 }
 

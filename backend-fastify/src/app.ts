@@ -41,7 +41,7 @@ export const buildApp = async () => {
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
   })
 
-  await app.register(compress)
+  await app.register(compress, { threshold: 1024 })
 
   await app.register(rateLimit, {
     max: 100,
