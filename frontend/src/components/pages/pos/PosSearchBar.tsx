@@ -17,6 +17,7 @@ interface PosSearchBarProps {
   searchTerm: string;
   showResults: boolean;
   searchResults: SearchResult[];
+  searchLoading: boolean;
   searchWrapperRef: React.RefObject<HTMLDivElement | null>;
   inputRef: React.RefObject<HTMLInputElement | null>;
   onSearchChange: (value: string) => void;
@@ -30,6 +31,7 @@ export function PosSearchBar({
   searchTerm,
   showResults,
   searchResults,
+  searchLoading,
   searchWrapperRef,
   inputRef,
   onSearchChange,
@@ -52,7 +54,14 @@ export function PosSearchBar({
           className={styles.searchInput}
         />
       </form>
-      {showResults && searchResults.length > 0 && (
+      {showResults && searchLoading && searchResults.length === 0 && (
+        <div className={styles.searchLoading}>
+          <span className={styles.searchLoadingDot}></span>
+          <span className={styles.searchLoadingDot}></span>
+          <span className={styles.searchLoadingDot}></span>
+        </div>
+      )}
+      {showResults && !searchLoading && searchResults.length > 0 && (
         <div className={styles.searchResults}>
           {searchResults.map((r) => {
             const isOutOfStock = r._type === "product" && (r.data as Product).stock <= 0;

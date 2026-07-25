@@ -511,6 +511,7 @@ export default function Pos() {
           searchTerm={scan}
           showResults={showResults}
           searchResults={searchResults}
+          searchLoading={searchLoading}
           searchWrapperRef={searchWrapperRef}
           inputRef={scanRef}
           onSearchChange={(v) => { setScan(v); setShowResults(true); }}
