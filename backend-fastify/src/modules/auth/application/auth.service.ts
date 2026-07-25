@@ -173,7 +173,6 @@ export const createAuthService = (repository: IAuthRepository) => ({
           name: storeName,
           address: storeAddress || "",
           phone: storePhone || "",
-          tax_rate: 16,
           low_stock_threshold: 5,
         },
       })

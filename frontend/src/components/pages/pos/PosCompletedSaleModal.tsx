@@ -7,7 +7,7 @@ import styles from "./PosCompletedSaleModal.module.css";
 interface CompletedSaleData {
   saleId: string;
   cart: CartItem[];
-  totals: { subtotal: number; tax: number; discount: number; total: number; change: number };
+  totals: { subtotal: number; discount: number; total: number; change: number };
   payment: string;
   received: string;
   discountPct: number;

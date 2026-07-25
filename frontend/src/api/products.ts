@@ -24,7 +24,6 @@ export interface Product {
   supplier?: ProductSupplier | null;
   price: number;
   cost: number;
-  tax_rate: number;
   stock: number;
   low_stock_threshold: number;
   active: boolean;
@@ -56,7 +55,6 @@ export interface CreateProductPayload {
   supplier_id?: string | null;
   price: number;
   cost?: number;
-  tax_rate?: number;
   stock?: number;
   low_stock_threshold?: number;
   active?: boolean;

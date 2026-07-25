@@ -24,7 +24,6 @@ function mapProductToResponse(product: RichProductEntity): IProductResponse {
       : undefined,
     price: Number(product.price),
     cost: Number(product.cost),
-    tax_rate: Number(product.tax_rate),
     stock: product.stock,
     low_stock_threshold: product.low_stock_threshold,
     active: product.active,

@@ -13,7 +13,6 @@ export interface IProductResponse {
   supplier?: { id: string; name: string } | null
   price: number
   cost: number
-  tax_rate: number
   stock: number
   low_stock_threshold: number
   active: boolean

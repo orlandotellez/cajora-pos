@@ -84,7 +84,6 @@ async function migrate() {
       data: {
         store_id: store.id,
         name: DEFAULT_STORE_NAME,
-        tax_rate: 16,
         low_stock_threshold: 5,
       },
     })

@@ -12,7 +12,6 @@ export const settingsController = {
     if (!storeId) {
       return reply.status(200).send({
         name: "",
-        tax_rate: 16,
         low_stock_threshold: 5,
         updated_at: new Date().toISOString(),
       })

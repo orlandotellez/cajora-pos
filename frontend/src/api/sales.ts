@@ -10,7 +10,6 @@ export interface SaleItem {
   product_name: string;
   quantity: number;
   unit_price: number;
-  tax_rate: number;
   line_total: number;
 }
 
@@ -36,7 +35,6 @@ export interface SaleServiceItem {
 export interface Sale {
   id: string;
   subtotal: number;
-  tax_total: number;
   discount: number;
   total: number;
   payment_method: string;
@@ -58,7 +56,6 @@ export interface SaleListResponse {
 export interface SaleReport {
   total_sales: number;
   total_revenue: number;
-  total_tax: number;
   total_discount: number;
   average_ticket: number;
   sales_by_payment_method: Record<string, number>;
@@ -79,7 +76,6 @@ export interface CreateSaleItemPayload {
   product_name: string;
   quantity: number;
   unit_price: number;
-  tax_rate: number;
   line_total: number;
 }
 
@@ -102,7 +98,6 @@ export interface CreateSaleServiceItemPayload {
 
 export interface CreateSalePayload {
   subtotal: number;
-  tax_total: number;
   discount: number;
   total: number;
   payment_method: "efectivo" | "tarjeta" | "transferencia" | "credito";

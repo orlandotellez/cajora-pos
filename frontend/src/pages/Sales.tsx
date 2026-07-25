@@ -184,7 +184,6 @@ export default function Sales() {
 
               <div className={styles.ticketRows}>
                 <div className={styles.ticketRow}><span>Subtotal</span><span>{money(selected.subtotal)}</span></div>
-                {selected.tax_total > 0 && <div className={styles.ticketRow}><span>Impuestos</span><span>{money(selected.tax_total)}</span></div>}
                 {selected.discount > 0 && <div className={styles.ticketRow}><span>Descuento</span><span>−{money(selected.discount)}</span></div>}
                 <div className={`${styles.ticketRow} ${styles.ticketRowTotal}`}><span>TOTAL</span><span>{money(selected.total)}</span></div>
                 <div className={styles.ticketRow}><span>Pago ({selected.payment_method})</span><span>{money(selected.amount_received ?? selected.total)}</span></div>
@@ -231,7 +230,6 @@ function printSaleTicket(sale: Sale, storeName: string, storeAddress?: string, s
     date,
     rows,
     subtotal: sale.subtotal,
-    taxTotal: sale.tax_total,
     discount: sale.discount,
     total: sale.total,
     paymentMethod: sale.payment_method,

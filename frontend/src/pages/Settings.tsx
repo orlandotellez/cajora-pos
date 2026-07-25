@@ -25,7 +25,6 @@ export default function Settings() {
     name: "",
     address: "",
     phone: "",
-    tax_rate: 16,
     low_stock_threshold: 10,
     ticket_footer: "",
   });
@@ -40,7 +39,6 @@ export default function Settings() {
           name: res.name ?? "",
           address: res.address ?? "",
           phone: res.phone ?? "",
-          tax_rate: res.tax_rate,
           low_stock_threshold: res.low_stock_threshold,
           ticket_footer: res.ticket_footer ?? "",
         });
@@ -61,7 +59,6 @@ export default function Settings() {
         name: form.name,
         address: form.address || null,
         phone: form.phone || null,
-        tax_rate: form.tax_rate,
         low_stock_threshold: form.low_stock_threshold,
         ticket_footer: form.ticket_footer || null,
       });
@@ -122,16 +119,6 @@ export default function Settings() {
         </div>
 
         <div className={styles.fieldRow}>
-          <div className={styles.field}>
-            <label className={styles.label}>IVA por defecto %</label>
-            <input
-              type="number"
-              step="0.01"
-              value={form.tax_rate}
-              onChange={(e) => setForm({ ...form, tax_rate: Number(e.target.value) })}
-              className={styles.input}
-            />
-          </div>
           <div className={styles.field}>
             <label className={styles.label}>Stock mínimo por defecto</label>
             <input

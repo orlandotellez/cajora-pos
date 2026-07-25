@@ -100,7 +100,6 @@ export function buildTicketHtml(opts: {
   date: string;
   rows: string;
   subtotal: number;
-  taxTotal: number;
   discount: number;
   discountPct?: number;
   total: number;
@@ -111,7 +110,7 @@ export function buildTicketHtml(opts: {
   const {
     storeName, storeAddress, storePhone, storeFooter,
     saleId, date, rows,
-    subtotal, taxTotal, discount, discountPct,
+    subtotal, discount, discountPct,
     total, paymentMethod, amountReceived, changeGiven,
   } = opts;
 
@@ -138,7 +137,6 @@ ${storePhone ? `<div class="m">${storePhone}</div>` : ""}
 <table>${rows}</table>
 <div class="line"></div>
 <div class="tot"><span>Subtotal</span><span>${money(subtotal)}</span></div>
-${taxTotal > 0 ? `<div class="tot"><span>Impuestos</span><span>${money(taxTotal)}</span></div>` : ""}
 ${discount > 0
   ? `<div class="tot"><span>Descuento${discountPct != null ? ` (${discountPct}%)` : ""}</span><span>−${money(discount)}</span></div>`
   : `<div class="tot"><span>Descuento</span><span>${money(discount)}</span></div>`}

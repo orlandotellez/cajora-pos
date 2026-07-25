@@ -18,7 +18,7 @@ function Row({ label, value }: { label: string; value: string }) {
 
 
 interface PosPaymentPanelProps {
-  totals: { subtotal: number; tax: number; discount: number; total: number; change: number };
+  totals: { subtotal: number; discount: number; total: number; change: number };
   cartLength: number;
   discountPct: number;
   payment: string;
@@ -42,7 +42,6 @@ export function PosPaymentPanel({
     <>
       <div className={styles.totalsSection}>
         <Row label="Subtotal" value={money(totals.subtotal, currency)} />
-        {totals.tax > 0 && <Row label="Impuestos" value={money(totals.tax, currency)} />}
         <div className={styles.discountRow}>
           <label className={styles.discountLabel}>Descuento %</label>
           <input

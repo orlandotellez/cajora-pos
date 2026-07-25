@@ -7,7 +7,7 @@ import type { CartItem, ProductCartItem, ServiceCartItem } from "@/store/posStor
 export function printTicket(
   saleId: string,
   cart: CartItem[],
-  totals: { subtotal: number; tax: number; discount: number; total: number; change: number },
+  totals: { subtotal: number; discount: number; total: number; change: number },
   payment: string,
   received: string,
   storeName: string,
@@ -53,7 +53,6 @@ export function printTicket(
     date,
     rows,
     subtotal: totals.subtotal,
-    taxTotal: totals.tax,
     discount: totals.discount,
     discountPct,
     total: totals.total,

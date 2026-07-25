@@ -27,7 +27,6 @@ export const SaleRepository: ISaleRepository = {
       const created = await tx.sale.create({
         data: {
           subtotal: data.subtotal,
-          tax_total: data.tax_total,
           discount: data.discount,
           total: data.total,
           payment_method: data.payment_method,
@@ -41,7 +40,6 @@ export const SaleRepository: ISaleRepository = {
               product_name: item.product_name,
               quantity: item.quantity,
               unit_price: item.unit_price,
-              tax_rate: item.tax_rate,
               line_total: item.line_total,
             })),
           },
@@ -257,7 +255,6 @@ export const SaleRepository: ISaleRepository = {
 
     const totalSales = sales.length
     const totalRevenue = sales.reduce((sum, s) => sum + Number(s.total), 0)
-    const totalTax = sales.reduce((sum, s) => sum + Number(s.tax_total), 0)
     const totalDiscount = sales.reduce((sum, s) => sum + Number(s.discount), 0)
     const averageTicket = totalSales > 0 ? totalRevenue / totalSales : 0
 
@@ -297,7 +294,6 @@ export const SaleRepository: ISaleRepository = {
     return {
       totalSales,
       totalRevenue,
-      totalTax,
       totalDiscount,
       averageTicket,
       salesByPaymentMethod,

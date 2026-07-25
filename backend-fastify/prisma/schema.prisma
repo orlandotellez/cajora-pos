@@ -189,7 +189,6 @@ model product {
   supplier_id         String?
   price               Decimal   @db.Decimal(10, 2)
   cost                Decimal   @default(0) @db.Decimal(10, 2)
-  tax_rate            Decimal   @default(0) @db.Decimal(10, 2)
   stock               Int       @default(0)
   low_stock_threshold Int       @default(5)
   active              Boolean   @default(true)
@@ -260,7 +259,6 @@ model service_product {
 model sale {
   id              String    @id @default(uuid())
   subtotal        Decimal   @db.Decimal(10, 2)
-  tax_total       Decimal   @default(0) @db.Decimal(10, 2)
   discount        Decimal   @default(0) @db.Decimal(10, 2)
   total           Decimal   @db.Decimal(10, 2)
   payment_method  String    // "efectivo" | "tarjeta" | "transferencia"
@@ -329,7 +327,6 @@ model sale_item {
   product_name String
   quantity     Int
   unit_price   Decimal   @db.Decimal(10, 2)
-  tax_rate     Decimal   @default(0) @db.Decimal(10, 2)
   line_total   Decimal   @db.Decimal(10, 2)
 
   created_at   DateTime @default(now()) @db.Timestamptz
@@ -413,7 +410,6 @@ model settings {
   name                String   @default("Mi Negocio")
   address             String?
   phone               String?
-  tax_rate            Decimal  @default(16) @db.Decimal(10, 2)
   low_stock_threshold Int      @default(5)
   ticket_footer       String?
   store_id            String   @unique

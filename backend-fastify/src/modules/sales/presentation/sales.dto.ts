@@ -5,7 +5,6 @@ export const CreateSaleItemDtoSchema = z.object({
   product_name: z.string().min(1),
   quantity: z.number().int().positive(),
   unit_price: z.number().positive(),
-  tax_rate: z.number().min(0),
   line_total: z.number().positive(),
 })
 
@@ -28,7 +27,6 @@ export const CreateSaleServiceItemDtoSchema = z.object({
 
 export const CreateSaleDtoSchema = z.object({
   subtotal: z.number().positive(),
-  tax_total: z.number().min(0),
   discount: z.number().min(0),
   total: z.number().positive(),
   payment_method: z.enum(["efectivo", "tarjeta", "transferencia", "credito"]),

@@ -37,7 +37,7 @@ export default function Pos() {
   const [completedSale, setCompletedSale] = useState<{
     saleId: string;
     cart: CartItem[];
-    totals: { subtotal: number; tax: number; discount: number; total: number; change: number };
+    totals: { subtotal: number; discount: number; total: number; change: number };
     payment: string;
     received: string;
     discountPct: number;
@@ -325,11 +325,10 @@ export default function Pos() {
         .reduce((sum, sp) => sum + sp.unit_price * sp.quantity, 0);
       return s + (svc.base_price + additivePerInstance) * svc.quantity;
     }, 0);
-    const tax = 0;
     const discount = subtotal * (discountPct / 100);
     const total = subtotal - discount;
     const change = (payment === "efectivo" || manualAmount) && received ? Math.max(0, Number(received) - total) : 0;
-    return { subtotal, tax, discount, total, change };
+    return { subtotal, discount, total, change };
   }, [cart, discountPct, payment, received]);
 
   async function checkout() {
@@ -351,7 +350,6 @@ export default function Pos() {
           product_name: item.name,
           quantity: item.quantity,
           unit_price: item.price,
-          tax_rate: 0,
           line_total: item.price * item.quantity,
         }));
 
@@ -383,7 +381,6 @@ export default function Pos() {
 
       const payload: CreateSalePayload = {
         subtotal: totals.subtotal,
-        tax_total: 0,
         discount: totals.discount,
         total: totals.total,
         payment_method: payment as PaymentMethod,

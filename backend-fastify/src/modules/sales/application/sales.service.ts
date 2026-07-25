@@ -17,7 +17,6 @@ function mapSaleToResponse(sale: RichSale): ISaleResponse {
   return {
     id: sale.id,
     subtotal: Number(sale.subtotal),
-    tax_total: Number(sale.tax_total),
     discount: Number(sale.discount),
     total: Number(sale.total),
     payment_method: sale.payment_method,
@@ -31,7 +30,6 @@ function mapSaleToResponse(sale: RichSale): ISaleResponse {
       product_name: item.product_name,
       quantity: item.quantity,
       unit_price: Number(item.unit_price),
-      tax_rate: Number(item.tax_rate),
       line_total: Number(item.line_total),
     })),
     service_items: sale.service_items?.map((si: RichSaleService) => ({
@@ -225,7 +223,6 @@ export const createSaleService = (repository: ISaleRepository) => ({
     return {
       total_sales: report.totalSales,
       total_revenue: report.totalRevenue,
-      total_tax: report.totalTax,
       total_discount: report.totalDiscount,
       average_ticket: report.averageTicket,
       sales_by_payment_method: report.salesByPaymentMethod,

@@ -7,7 +7,6 @@ function mapSettingsToResponse(settings: ISettingsEntity): ISettingsResponse {
     name: settings.name,
     address: settings.address || undefined,
     phone: settings.phone || undefined,
-    tax_rate: Number(settings.tax_rate),
     low_stock_threshold: settings.low_stock_threshold,
     ticket_footer: settings.ticket_footer || undefined,
     updated_at: settings.updated_at instanceof Date ? settings.updated_at.toISOString() : settings.updated_at,
@@ -20,7 +19,6 @@ export const createSettingsService = (repository: ISettingsRepository) => ({
     if (!settings) {
       return {
         name: "",
-        tax_rate: 16,
         low_stock_threshold: 5,
         updated_at: new Date().toISOString(),
       }

@@ -7,7 +7,6 @@ export interface ISaleRepository {
   getReport(params?: { startDate?: Date; endDate?: Date; storeId?: string }): Promise<{
     totalSales: number
     totalRevenue: number
-    totalTax: number
     totalDiscount: number
     averageTicket: number
     salesByPaymentMethod: Record<string, number>

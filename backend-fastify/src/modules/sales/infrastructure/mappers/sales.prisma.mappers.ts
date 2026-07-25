@@ -10,7 +10,6 @@ export function mapPrismaSaleToEntity(sale: SaleWithRelations): ISaleEntity {
   return {
     id: sale.id,
     subtotal: sale.subtotal,
-    tax_total: sale.tax_total,
     discount: sale.discount,
     total: sale.total,
     payment_method: sale.payment_method,
@@ -32,7 +31,6 @@ export function mapPrismaSaleItemToEntity(item: sale_item): ISaleItemEntity {
     product_name: item.product_name,
     quantity: item.quantity,
     unit_price: item.unit_price,
-    tax_rate: item.tax_rate,
     line_total: item.line_total,
     created_at: item.created_at,
     updated_at: item.updated_at,

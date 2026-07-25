@@ -4,7 +4,6 @@ export interface ISaleItemResponse {
   product_name: string
   quantity: number
   unit_price: number
-  tax_rate: number
   line_total: number
 }
 
@@ -30,7 +29,6 @@ export interface ISaleServiceResponse {
 export interface ISaleResponse {
   id: string
   subtotal: number
-  tax_total: number
   discount: number
   total: number
   payment_method: string
@@ -52,7 +50,6 @@ export interface ISaleListResponse {
 export interface ISaleReport {
   total_sales: number
   total_revenue: number
-  total_tax: number
   total_discount: number
   average_ticket: number
   sales_by_payment_method: Record<string, number>

@@ -23,7 +23,6 @@ const emptyForm = {
   supplier_id: "",
   price: 0,
   cost: 0,
-  tax_rate: 16,
   stock: 0,
   low_stock_threshold: 5,
 };
@@ -65,7 +64,6 @@ export default function Products() {
       supplier_id: editing.supplier?.id ?? "",
       price: editing.price,
       cost: editing.cost,
-      tax_rate: editing.tax_rate,
       stock: editing.stock,
       low_stock_threshold: editing.low_stock_threshold,
     });
@@ -130,7 +128,6 @@ export default function Products() {
         supplier_id: valueOr(form.supplier_id),
         price: form.price,
         cost: form.cost || undefined,
-        tax_rate: form.tax_rate,
         stock: form.stock,
         low_stock_threshold: form.low_stock_threshold,
       };
@@ -271,10 +268,6 @@ export default function Products() {
                 <div className={styles.field}>
                   <label className={styles.fieldLabel}>Costo</label>
                   <input type="number" step="0.01" value={form.cost} onChange={(e) => setForm({ ...form, cost: Number(e.target.value) })} className={styles.input} />
-                </div>
-                <div className={styles.field}>
-                  <label className={styles.fieldLabel}>IVA %</label>
-                  <input type="number" step="0.01" value={form.tax_rate} onChange={(e) => setForm({ ...form, tax_rate: Number(e.target.value) })} className={styles.input} />
                 </div>
                 <div className={styles.field}>
                   <label className={styles.fieldLabel}>Stock</label>
