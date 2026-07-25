@@ -120,9 +120,10 @@ export function useCheckout(opts: UseCheckoutOptions): UseCheckoutReturn {
     if (!cart.length) return;
     if (usePosStore.getState().checkingOut) return;
 
-    if ((payment === "efectivo" || manualAmount) && Number(received || 0) < totals.total) {
+    const rcvd = parseFloat(received);
+    if ((payment === "efectivo" || manualAmount) && (!Number.isFinite(rcvd) || rcvd < totals.total)) {
       showAlert(
-        `El monto recibido (${money(Number(received || 0), currency)}) es menor al total (${money(totals.total, currency)}).`,
+        `El monto recibido (${money(Number.isFinite(rcvd) ? rcvd : 0, currency)}) es menor al total (${money(totals.total, currency)}).`,
       );
       return;
     }
@@ -171,7 +172,7 @@ export function useCheckout(opts: UseCheckoutOptions): UseCheckoutReturn {
         discount: totals.discount,
         total: totals.total,
         payment_method: payment as PaymentMethod,
-        amount_received: shouldSendAmount ? Number(received || 0) : undefined,
+        amount_received: shouldSendAmount && Number.isFinite(rcvd) ? rcvd : undefined,
         change_given: shouldSendAmount ? totals.change : undefined,
         user_name: userName,
         items: productItems.length > 0 ? productItems : undefined,
