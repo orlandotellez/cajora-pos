@@ -74,6 +74,7 @@ model user {
   @@index([email])
   @@index([role])
   @@index([store_id])
+  @@index([store_id, deleted_at])
   @@map("users")
 }
 
@@ -173,6 +174,8 @@ model supplier {
   @@index([name])
   @@index([is_active])
   @@index([store_id])
+  @@index([store_id, deleted_at])
+  @@index([store_id, name])
   @@map("suppliers")
 }
 
@@ -235,6 +238,8 @@ model service {
   @@index([name])
   @@index([is_active])
   @@index([store_id])
+  @@index([store_id, deleted_at])
+  @@index([store_id, name])
   @@map("services")
 }
 
@@ -273,9 +278,8 @@ model sale {
   items           sale_item[]
   service_items   sale_service[]
 
-  @@index([created_at])
   @@index([user_id])
-  @@index([store_id])
+  @@index([store_id, created_at])
   @@map("sales")
 }
 
@@ -355,10 +359,9 @@ model inventory_batch {
   items         inventory_batch_item[]
   movements     inventory_movement[]
 
-  @@index([movement_type])
   @@index([supplier_id])
-  @@index([created_at])
-  @@index([store_id])
+  @@index([store_id, created_at])
+  @@index([store_id, movement_type])
   @@map("inventory_batches")
 }
 
@@ -399,10 +402,9 @@ model inventory_movement {
   batch         inventory_batch?  @relation(fields: [batch_id], references: [id])
 
   @@index([product_id])
-  @@index([movement_type])
   @@index([batch_id])
-  @@index([created_at])
-  @@index([store_id])
+  @@index([store_id, created_at])
+  @@index([store_id, movement_type])
   @@map("inventory_movements")
 }
 
