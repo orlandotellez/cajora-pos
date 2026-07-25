@@ -7,6 +7,7 @@ import { printHtml, buildTicketHtml, buildTicketProductRow, buildTicketServiceRo
 import { PAYMENT_METHODS } from "@/lib/constants";
 import { SaleTable } from "@/components/pages/sales/SaleTable";
 import styles from "./Sales.module.css";
+import { cacheGet, cacheKey, cacheSet } from "@/lib/simple-cache";
 
 export default function Sales() {
   const [sales, setSales] = useState<Sale[]>([]);
@@ -35,6 +36,15 @@ export default function Sales() {
   }, []);
 
   const fetchSales = async (p: number) => {
+    const key = cacheKey("sales", p, startDate, endDate, paymentFilter);
+    const cached = cacheGet<{ sales: Sale[]; total: number }>(key);
+    if (cached) {
+      setSales(cached.sales);
+      setTotal(cached.total);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await salesApi.list({
@@ -45,13 +55,14 @@ export default function Sales() {
       });
       setSales(res.sales);
       setTotal(res.total);
+      cacheSet(key, { sales: res.sales, total: res.total });
     } catch (err) { console.warn("Error al cargar ventas:", err); }
     finally { setLoading(false); }
   };
 
   useEffect(() => { fetchSales(page); }, [page, paymentFilter]);
 
-  function handleSearch() { setPage(1); fetchSales(1); }
+  function handleSearch() { setPage(1); }
 
   function openDetails(sale: Sale) {
     if (!sale.items || sale.items.length === 0) {

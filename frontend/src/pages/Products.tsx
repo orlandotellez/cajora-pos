@@ -52,10 +52,6 @@ export default function Products() {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isNew = typeof editing === "string";
 
-  useEffect(() => {
-    categoriesApi.list().then(setCategories).catch((err) => console.warn("Error al cargar categorías:", err));
-    suppliersApi.list().then(res => setSuppliers(res.suppliers)).catch((err) => console.warn("Error al cargar proveedores:", err));
-  }, []);
 
   useEffect(() => {
     if (!editing) return;
@@ -78,19 +74,38 @@ export default function Products() {
   useEffect(() => {
     const key = cacheKey("products", page, q, categoryId);
     const cached = cacheGet<{ products: Product[]; total: number }>(key);
-    if (cached) { setProducts(cached.products); setTotal(cached.total); }
-    setLoading(!cached);
+    if (cached) {
+      setProducts(cached.products);
+      setTotal(cached.total);
+      // Si hay caché, igual cargamos categorías y proveedores una vez
+      if (categories.length === 0) {
+        categoriesApi.list().then(setCategories).catch(() => { });
+        suppliersApi.list().then(res => setSuppliers(res.suppliers)).catch(() => { });
+      }
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
 
     if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      productsApi.list({ page, limit: LIMIT, search: q || undefined, category_id: categoryId || undefined })
-        .then((res) => {
-          setProducts(res.products);
-          setTotal(res.total);
-          cacheSet(key, { products: res.products, total: res.total });
-        })
-        .catch((err) => console.warn("Error al listar productos:", err))
-        .finally(() => setLoading(false));
+    timerRef.current = setTimeout(async () => {
+      try {
+        const [productsRes, cats, sups] = await Promise.all([
+          productsApi.list({ page, limit: LIMIT, search: q || undefined, category_id: categoryId || undefined }),
+          categories.length === 0 ? categoriesApi.list() : Promise.resolve(undefined),
+          suppliers.length === 0 ? suppliersApi.list() : Promise.resolve(undefined),
+        ]);
+
+        setProducts(productsRes.products);
+        setTotal(productsRes.total);
+        if (cats) setCategories(cats);
+        if (sups) setSuppliers(sups.suppliers);
+        cacheSet(key, { products: productsRes.products, total: productsRes.total });
+      } catch (err) {
+        console.warn("Error al cargar datos:", err);
+      } finally {
+        setLoading(false);
+      }
     }, 300);
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [page, q, categoryId]);

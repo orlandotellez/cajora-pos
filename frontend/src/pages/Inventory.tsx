@@ -39,14 +39,14 @@ export default function Inventory() {
   const [adjust, setAdjust] = useState<AdjustState>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  
+
   const [movements, setMovements] = useState<InventoryMovement[]>([]);
   const [movementsTotal, setMovementsTotal] = useState(0);
   const [movementPage, setMovementPage] = useState(1);
   const [selectedMovement, setSelectedMovement] = useState<InventoryMovement | null>(null);
   const MOVEMENT_LIMIT = 10;
 
-  
+
   const [batchModalOpen, setBatchModalOpen] = useState(false);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [batches, setBatches] = useState<BatchResponse[]>([]);
@@ -60,11 +60,6 @@ export default function Inventory() {
   const batchesTotalPages = Math.max(1, Math.ceil(batchesTotal / BATCH_LIMIT));
 
   useEffect(() => {
-    categoriesApi.list().then(setCategories).catch((err) => console.warn("Error al cargar categorías:", err));
-    suppliersApi.list().then(res => setSuppliers(res.suppliers)).catch((err) => console.warn("Error al cargar proveedores:", err));
-  }, []);
-
-  useEffect(() => {
     const key = cacheKey("inventory", page, q, categoryId, stockFilter);
     const cached = cacheGet<{ products: Product[]; total: number; lowStock: LowStockProduct[] }>(key);
 
@@ -72,13 +67,21 @@ export default function Inventory() {
       setProducts(cached.products);
       setTotal(cached.total);
       setLowStockProducts(cached.lowStock);
+      setLoading(false);
+      // Si hay caché pero faltan categorías/proveedores, cargarlos en background
+      if (categories.length === 0) {
+        categoriesApi.list().then(setCategories).catch(() => { });
+        suppliersApi.list().then(res => setSuppliers(res.suppliers)).catch(() => { });
+      }
+      return;
     }
 
     setLoading(!cached);
 
     const timer = setTimeout(async () => {
+
       try {
-        const [productRes, lowStockRes] = await Promise.all([
+        const [productRes, lowStockRes, cats, sups] = await Promise.all([
           productsApi.list({
             page,
             limit: LIMIT,
@@ -89,10 +92,14 @@ export default function Inventory() {
             out_of_stock: stockFilter === "out" || undefined,
           }),
           inventoryApi.lowStock(),
+          categories.length === 0 ? categoriesApi.list() : Promise.resolve(undefined),
+          suppliers.length === 0 ? suppliersApi.list() : Promise.resolve(undefined),
         ]);
         setProducts(productRes.products);
         setTotal(productRes.total);
         setLowStockProducts(lowStockRes.products);
+        if (cats) setCategories(cats);
+        if (sups) setSuppliers(sups.suppliers);
         cacheSet(key, { products: productRes.products, total: productRes.total, lowStock: lowStockRes.products });
       } catch (err) {
         console.warn("Error al cargar inventario:", err);
@@ -104,18 +111,27 @@ export default function Inventory() {
     return () => clearTimeout(timer);
   }, [page, q, categoryId, stockFilter, refreshKey]);
 
-  
   useEffect(() => {
+    const key = cacheKey("inventory-movements", movementPage);
+    const cached = cacheGet<{ movements: InventoryMovement[]; total: number }>(key);
+    if (cached) { setMovements(cached.movements); setMovementsTotal(cached.total); return; }
+
     inventoryApi.list({ page: movementPage, limit: MOVEMENT_LIMIT }).then((res) => {
       setMovements(res.movements);
       setMovementsTotal(res.total);
+      cacheSet(key, { movements: res.movements, total: res.total });
     }).catch((err) => console.warn("Error al cargar movimientos:", err));
   }, [movementPage, refreshKey]);
 
   useEffect(() => {
+    const key = cacheKey("inventory-batches", batchPage);
+    const cached = cacheGet<{ batches: BatchResponse[]; total: number }>(key);
+    if (cached) { setBatches(cached.batches); setBatchesTotal(cached.total); return; }
+
     inventoryApi.batchList({ page: batchPage, limit: BATCH_LIMIT }).then((res) => {
       setBatches(res.batches);
       setBatchesTotal(res.total);
+      cacheSet(key, { batches: res.batches, total: res.total });
     }).catch((err) => console.warn("Error al cargar lotes:", err));
   }, [batchPage, refreshKey]);
 
