@@ -1,16 +1,16 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, Search, X, Camera } from "lucide-react";
 import { productsApi, type CreateProductPayload } from "@/api/products";
 import { categoriesApi } from "@/api/categories";
 import { suppliersApi } from "@/api/suppliers";
 import type { Product, Category, Supplier } from "@/api";
-import { cacheGet, cacheSet, cacheClear, cacheKey } from "@/lib/simple-cache";
+import { cacheClear } from "@/lib/simple-cache";
 import { UNIT_TYPE_LABELS } from "@/lib/constants";
+import { useCrudPagination } from "@/hooks/useCrudPagination";
 import { useToast } from "@/components/common/ui/Toast";
 import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
 import { ProductTable } from "@/components/pages/products/ProductTable";
 import { BarcodeScanner } from "@/components/common/BarcodeScanner";
-import { PAGE_LIMIT as LIMIT } from "@/lib/constants";
 import styles from "./Products.module.css";
 
 
@@ -29,28 +29,52 @@ const emptyForm = {
 
 export default function Products() {
   const { toast } = useToast();
-
-  const [products, setProducts] = useState<Product[]>(() => {
-    const cached = cacheGet<Product[]>(cacheKey("products", 1, ""));
-    return cached ?? [];
-  });
+  const [categoryId, setCategoryId] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [q, setQ] = useState("");
-  const [categoryId, setCategoryId] = useState("");
-  const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Product | null | "new">(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [barcodeScannerOpen, setBarcodeScannerOpen] = useState(false);
 
-  const totalPages = Math.max(1, Math.ceil(total / LIMIT));
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isNew = typeof editing === "string";
 
+  const {
+    items: products,
+    total,
+    page,
+    q,
+    loading,
+    totalPages,
+    setSearch,
+    setPage,
+    refreshImmediate,
+  } = useCrudPagination<Product>({
+    fetcher: ({ page, limit, search, extraFilters }) =>
+      productsApi
+        .list({
+          page,
+          limit,
+          search: search || undefined,
+          category_id: extraFilters.categoryId || undefined,
+        })
+        .then((res) => ({ items: res.products, total: res.total })),
+    cacheNamespace: "products",
+    extraFilters: { categoryId },
+  });
+
+  // Cargar categorías y proveedores una vez para los dropdowns del modal.
+  // Separado del hook porque son fetches one-shot (no se re-piden con
+  // cada cambio de search/page).
+  useEffect(() => {
+    if (categories.length === 0) {
+      categoriesApi.list().then(setCategories).catch(() => { });
+    }
+    if (suppliers.length === 0) {
+      suppliersApi.list().then((res) => setSuppliers(res.suppliers)).catch(() => { });
+    }
+  }, [categories.length, suppliers.length]);
 
   useEffect(() => {
     if (!editing) return;
@@ -68,47 +92,6 @@ export default function Products() {
       low_stock_threshold: editing.low_stock_threshold,
     });
   }, [editing]);
-
-  useEffect(() => {
-    const key = cacheKey("products", page, q, categoryId);
-    const cached = cacheGet<{ products: Product[]; total: number }>(key);
-    if (cached) {
-      setProducts(cached.products);
-      setTotal(cached.total);
-      // Si hay caché, igual cargamos categorías y proveedores una vez
-      if (categories.length === 0) {
-        categoriesApi.list().then(setCategories).catch(() => { });
-        suppliersApi.list().then(res => setSuppliers(res.suppliers)).catch(() => { });
-      }
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(async () => {
-      try {
-        const [productsRes, cats, sups] = await Promise.all([
-          productsApi.list({ page, limit: LIMIT, search: q || undefined, category_id: categoryId || undefined }),
-          categories.length === 0 ? categoriesApi.list() : Promise.resolve(undefined),
-          suppliers.length === 0 ? suppliersApi.list() : Promise.resolve(undefined),
-        ]);
-
-        setProducts(productsRes.products);
-        setTotal(productsRes.total);
-        if (cats) setCategories(cats);
-        if (sups) setSuppliers(sups.suppliers);
-        cacheSet(key, { products: productsRes.products, total: productsRes.total });
-      } catch (err) {
-        console.warn("Error al cargar datos:", err);
-      } finally {
-        setLoading(false);
-      }
-    }, 300);
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, [page, q, categoryId]);
-
-  function handleSearch(value: string) { setQ(value); setPage(1); }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -139,9 +122,7 @@ export default function Products() {
       }
       setEditing(null);
       cacheClear("products");
-      const res = await productsApi.list({ page, limit: LIMIT, search: q || undefined, category_id: categoryId || undefined });
-      setProducts(res.products); setTotal(res.total);
-      cacheSet(cacheKey("products", page, q, categoryId), { products: res.products, total: res.total });
+      refreshImmediate();
       toast("Producto guardado correctamente", "success");
     } catch (err) {
       console.error("Error al guardar producto:", err);
@@ -153,9 +134,7 @@ export default function Products() {
     try {
       await productsApi.delete(id);
       cacheClear("products");
-      const res = await productsApi.list({ page, limit: LIMIT, search: q || undefined, category_id: categoryId || undefined });
-      setProducts(res.products); setTotal(res.total);
-      cacheSet(cacheKey("products", page, q, categoryId), { products: res.products, total: res.total });
+      refreshImmediate();
       toast("Producto eliminado", "success");
     } catch (err) {
       console.error("Error al eliminar producto:", err);
@@ -178,9 +157,16 @@ export default function Products() {
       <div className={styles.toolbar}>
         <div className={styles.searchWrapper}>
           <Search size={16} className={styles.searchIcon} />
-          <input value={q} onChange={(e) => handleSearch(e.target.value)} placeholder="Buscar por nombre, código o categoría" className={styles.searchInput} />
+          <input value={q} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por nombre, código o categoría" className={styles.searchInput} />
         </div>
-        <select value={categoryId} onChange={(e) => { setCategoryId(e.target.value); setPage(1); }} className={styles.filterSelect}>
+        <select
+          value={categoryId}
+          onChange={(e) => {
+            setCategoryId(e.target.value);
+            setPage(1);
+          }}
+          className={styles.filterSelect}
+        >
           <option value="">Todas las categorías</option>
           {categories.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
         </select>
