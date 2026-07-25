@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { settingsApi, type UpdateSettingsPayload } from "@/api/settings";
-import { useAuth } from "@/context/AuthContext";
+import { useAdminGuard } from "@/hooks/useAdminGuard";
 import { CURRENCIES } from "@/lib/constants";
 import type { CurrencyCode } from "@/lib/constants";
 import { setStoredCurrency } from "@/lib/format";
@@ -9,14 +8,7 @@ import { usePosStore } from "@/store/posStore";
 import styles from "./Settings.module.css";
 
 export default function Settings() {
-  const navigate = useNavigate();
-  const { user } = useAuth();
-
-  useEffect(() => {
-    if (user && user.role !== "admin") {
-      navigate("/pos", { replace: true });
-    }
-  }, [user, navigate]);
+  useAdminGuard();
 
   const posCurrency = usePosStore((s) => s.currency);
   const setCurrency = usePosStore((s) => s.setCurrency);

@@ -4,7 +4,7 @@ import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 import { productsApi, type Product } from "@/api/products";
 import { servicesApi, type Service } from "@/api/services";
 import { salesApi, type CreateSalePayload } from "@/api/sales";
-import { settingsApi } from "@/api/settings";
+import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { usePosStore, type CartItem, type ProductCartItem, type ServiceCartItem } from "@/store/posStore";
 import { money } from "@/lib/format";
 import { printTicket } from "@/lib/pos-ticket";
@@ -25,11 +25,7 @@ export default function Pos() {
   const searchWrapperRef = useRef<HTMLDivElement>(null);
   const [scan, setScan] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
-  const [services, setServices] = useState<Service[]>([]);
-  const [storeName, setStoreName] = useState("");
-  const [storeAddress, setStoreAddress] = useState("");
-  const [storePhone, setStorePhone] = useState("");
-  const [storeFooter, setStoreFooter] = useState("");
+  const { storeName, storeAddress, storePhone, storeFooter } = useStoreSettings();
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -82,17 +78,6 @@ export default function Pos() {
   const setManualAmount = usePosStore((s) => s.setManualAmount);
   const setCheckingOut = usePosStore((s) => s.setCheckingOut);
   const addServiceProduct = usePosStore((s) => s.addServiceProduct);
-
-  useEffect(() => {
-    settingsApi.get()
-      .then((res) => {
-        setStoreName(res.name);
-        setStoreAddress(res.address ?? "");
-        setStorePhone(res.phone ?? "");
-        setStoreFooter(res.ticket_footer ?? "");
-      })
-      .catch((err) => console.warn("Error al cargar config:", err));
-  }, []);
 
   // ─── Inline barcode scanner ────────────────────────────────────────────
   useEffect(() => {
