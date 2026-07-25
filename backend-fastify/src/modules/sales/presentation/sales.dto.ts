@@ -32,6 +32,7 @@ export const CreateSaleDtoSchema = z.object({
   payment_method: z.enum(["efectivo", "tarjeta", "transferencia", "credito"]),
   amount_received: z.number().positive().optional(),
   change_given: z.number().min(0).optional(),
+  user_name: z.string().min(1),
   items: z.array(CreateSaleItemDtoSchema).optional().default([]),
   service_items: z.array(CreateSaleServiceItemDtoSchema).optional().default([]),
 }).refine(

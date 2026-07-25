@@ -16,6 +16,7 @@ export function mapPrismaSaleToEntity(sale: SaleWithRelations): ISaleEntity {
     amount_received: sale.amount_received || undefined,
     change_given: sale.change_given || undefined,
     user_id: sale.user_id,
+    user_name: sale.user_name ?? "",
     created_at: sale.created_at,
     updated_at: sale.updated_at,
     items: sale.items?.map(mapPrismaSaleItemToEntity),

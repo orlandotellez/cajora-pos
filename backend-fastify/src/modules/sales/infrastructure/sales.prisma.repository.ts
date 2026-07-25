@@ -34,6 +34,7 @@ export const SaleRepository: ISaleRepository = {
           change_given: data.change_given,
           store_id: storeId,
           user_id: data.user_id,
+          user_name: data.user_name,
           items: {
             create: data.items.map((item) => ({
               product_id: item.product_id,
@@ -45,18 +46,18 @@ export const SaleRepository: ISaleRepository = {
           },
           ...(data.service_items && data.service_items.length > 0
             ? {
-                service_items: {
-                  create: data.service_items.map((si) => ({
-                    service_id: si.service_id,
-                    service_name: si.service_name,
-                    base_price: si.base_price,
-                    line_total: si.line_total,
-                    products: {
-                      create: [], // Will be populated below
-                    },
-                  })),
-                },
-              }
+              service_items: {
+                create: data.service_items.map((si) => ({
+                  service_id: si.service_id,
+                  service_name: si.service_name,
+                  base_price: si.base_price,
+                  line_total: si.line_total,
+                  products: {
+                    create: [], // Will be populated below
+                  },
+                })),
+              },
+            }
             : {}),
         },
         include: {
