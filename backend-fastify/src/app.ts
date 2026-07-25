@@ -9,7 +9,7 @@ import swaggerUi from "@fastify/swagger-ui"
 import { ZodError } from "zod"
 import { AppError } from "./core/errors/AppError"
 import { env } from "./config/env"
-import { getRedisClient } from "./config/redis"
+//import { getRedisClient } from "./config/redis"
 import { routes } from "./presentation/routes"
 
 export const buildApp = async () => {
@@ -31,7 +31,8 @@ export const buildApp = async () => {
       },
   })
 
-  getRedisClient()
+  // comentar hasta que se use
+  //getRedisClient()
 
   await app.register(helmet)
 
@@ -44,7 +45,7 @@ export const buildApp = async () => {
   await app.register(compress, { threshold: 1024 })
 
   await app.register(rateLimit, {
-    max: 100,
+    max: 300,
     timeWindow: "1 minute"
   })
 
