@@ -64,6 +64,21 @@
   padding: 0 8px;
 }
 
+.navGroup {
+  margin-bottom: 4px;
+}
+
+.navSectionLabel {
+  display: block;
+  padding: 12px 12px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sidebar-foreground);
+  opacity: 0.55;
+}
+
 .navItem {
   display: flex;
   align-items: center;
@@ -96,6 +111,27 @@
 .sidebarFooter {
   border-top: 1px solid var(--sidebar-border);
   padding: 12px;
+}
+
+.drawerThemeBtn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  width: 100%;
+}
+
+.drawerThemeBtn:hover {
+  background: var(--accent);
+  color: var(--foreground);
 }
 
 .hamburgerBtn {
@@ -200,6 +236,16 @@
   padding: 8px;
 }
 
+.drawerNav .navGroup {
+  margin-bottom: 2px;
+}
+
+.drawerNav .navSectionLabel {
+  padding: 14px 12px 6px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
 .drawerNavItem {
   display: flex;
   align-items: center;
@@ -236,26 +282,6 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-
-.drawerThemeBtn {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  border: none;
-  background: transparent;
-  color: var(--muted-foreground);
-  font-size: 14px;
-  font-family: inherit;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-}
-
-.drawerThemeBtn:hover {
-  background: var(--accent);
-  color: var(--foreground);
 }
 
 .main {
