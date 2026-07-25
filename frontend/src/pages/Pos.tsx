@@ -28,7 +28,10 @@ export default function Pos() {
   const [storeAddress, setStoreAddress] = useState("");
   const [storePhone, setStorePhone] = useState("");
   const [storeFooter, setStoreFooter] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [showResults, setShowResults] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [addingToService, setAddingToService] = useState<string | null>(null);
   const [serviceProductSearch, setServiceProductSearch] = useState("");
   const [completedSale, setCompletedSale] = useState<{
@@ -78,14 +81,6 @@ export default function Pos() {
   const addServiceProduct = usePosStore((s) => s.addServiceProduct);
 
   useEffect(() => {
-    productsApi.list({ active: true, limit: 100 })
-      .then((res) => setProducts(res.products))
-      .catch((err) => console.warn("Error al cargar productos:", err));
-
-    servicesApi.list({ active: true, limit: 100 })
-      .then((res) => setServices(res.services))
-      .catch((err) => console.warn("Error al cargar servicios:", err));
-
     settingsApi.get()
       .then((res) => {
         setStoreName(res.name);
@@ -183,7 +178,7 @@ export default function Pos() {
     scannerRef.current = null;
     try {
       scanner.stop()
-        .catch(() => {})
+        .catch(() => { })
         .finally(() => {
           try { scanner.clear(); } catch { /* ignore */ }
         });
@@ -214,34 +209,51 @@ export default function Pos() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const searchResults = useMemo(() => {
-    const term = scan.trim().toLowerCase();
-    if (!term) return [];
-    const results: SearchResult[] = [];
-
-    for (const p of products) {
-      if (!p.active) continue;
-      if (
-        (p.barcode && p.barcode.toLowerCase().includes(term)) ||
-        p.name.toLowerCase().includes(term)
-      ) {
-        results.push({ _type: "product", id: p.id, name: p.name, barcode: p.barcode, price: p.price, data: p });
-        if (results.length >= 15) break;
-      }
+  useEffect(() => {
+    const term = scan.trim();
+    if (!term) {
+      setSearchResults([]);
+      return;
     }
 
-    if (results.length < 15) {
-      for (const s of services) {
-        if (!s.is_active) continue;
-        if (s.name.toLowerCase().includes(term)) {
-          results.push({ _type: "service", id: s.id, name: s.name, barcode: undefined, price: s.base_price, data: s });
-          if (results.length >= 15) break;
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(async () => {
+      setSearchLoading(true);
+      try {
+        const [prodRes, svcRes] = await Promise.all([
+          productsApi.list({ search: term, active: true, limit: 15 }),
+          servicesApi.list({ search: term, active: true, limit: 15 }),
+        ]);
+
+        const results: SearchResult[] = [];
+
+        for (const p of prodRes.products) {
+          results.push({ _type: "product", id: p.id, name: p.name, barcode: p.barcode, price: p.price, data: p });
         }
-      }
-    }
 
-    return results;
-  }, [scan, products, services]);
+        for (const s of svcRes.services) {
+          results.push({ _type: "service", id: s.id, name: s.name, barcode: undefined, price: s.base_price, data: s });
+        }
+
+        setSearchResults(results);
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 300);
+
+    return () => { if (searchTimerRef.current) clearTimeout(searchTimerRef.current); };
+  }, [scan]);
+
+  // Cargar productos solo cuando se abre el modal de agregar a servicio
+  useEffect(() => {
+    if (addingToService && products.length === 0) {
+      productsApi.list({ active: true, limit: 100 })
+        .then((res) => setProducts(res.products))
+        .catch(() => { });
+    }
+  }, [addingToService]);
 
   function addToCart(result: SearchResult) {
     if (result._type === "product") {
