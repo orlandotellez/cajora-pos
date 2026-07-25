@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ScanBarcode } from "lucide-react";
-import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 import { productsApi, type Product } from "@/api/products";
 import { servicesApi, type Service } from "@/api/services";
 import { salesApi, type CreateSalePayload } from "@/api/sales";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
+import { usePosScanner } from "@/hooks/usePosScanner";
 import { usePosStore, type CartItem, type ProductCartItem, type ServiceCartItem } from "@/store/posStore";
 import { money } from "@/lib/format";
 import { printTicket } from "@/lib/pos-ticket";
@@ -16,8 +16,6 @@ import { PosCompletedSaleModal } from "@/components/pages/pos/PosCompletedSaleMo
 import { PosDialog } from "@/components/pages/pos/PosDialog";
 import styles from "./Pos.module.css";
 import { useAuth } from "@/context/AuthContext";
-
-const SCANNER_STORAGE_KEY = "pos-scanner-active";
 
 export default function Pos() {
   const { user } = useAuth()
@@ -50,15 +48,31 @@ export default function Pos() {
 
   const [showMobileCheckout, setShowMobileCheckout] = useState(false);
 
-  const [scannerActive, setScannerActive] = useState(() => localStorage.getItem(SCANNER_STORAGE_KEY) === "true");
-  const scannerRef = useRef<Html5Qrcode | null>(null);
-  const scannerContainerRef = useRef<HTMLDivElement>(null);
-  const scannerToggleRef = useRef<HTMLButtonElement>(null);
-  const lastScannedRef = useRef<{ barcode: string; time: number } | null>(null);
-  const scannerActiveRef = useRef(false);
-  const lastToggleRef = useRef(0);
-  const SCAN_DEBOUNCE_MS = 2000;
-  const TOGGLE_THROTTLE_MS = 500;
+  const {
+    active: scannerActive,
+    toggle: toggleScanner,
+    toggleButtonRef: scannerToggleRef,
+    elementId,
+  } = usePosScanner({
+    onScan: async (decodedText) => {
+      try {
+        const product = await productsApi.getByBarcode(decodedText);
+        const result: SearchResult = {
+          _type: "product",
+          id: product.id,
+          name: product.name,
+          barcode: product.barcode,
+          price: product.price,
+          data: product,
+        };
+        addToCart(result);
+        setScan("");
+        setShowResults(false);
+      } catch {
+        showAlert(`Producto con código "${decodedText}" no encontrado`);
+      }
+    },
+  });
 
   const showAlert = useCallback((message: string) => setDialog({ message, variant: "alert" }), []);
   const showConfirm = useCallback((message: string, onConfirm: () => void) => setDialog({ message, variant: "confirm", onConfirm }), []);
@@ -78,114 +92,6 @@ export default function Pos() {
   const setManualAmount = usePosStore((s) => s.setManualAmount);
   const setCheckingOut = usePosStore((s) => s.setCheckingOut);
   const addServiceProduct = usePosStore((s) => s.addServiceProduct);
-
-  // ─── Inline barcode scanner ────────────────────────────────────────────
-  useEffect(() => {
-    scannerActiveRef.current = scannerActive;
-
-    if (!scannerActive) {
-      stopScanner();
-      return;
-    }
-
-    const elId = "pos-barcode-scanner";
-    queueMicrotask(() => {
-      // Si el usuario ya desactivó el scanner mientras esperábamos, no iniciar
-      if (!scannerActiveRef.current) return;
-
-      const el = document.getElementById(elId);
-      if (!el) return;
-
-      // Si ya hay un scanner corriendo, no crear otro
-      if (scannerRef.current) return;
-
-      const scanner = new Html5Qrcode(elId, {
-        formatsToSupport: [
-          Html5QrcodeSupportedFormats.CODE_128,
-          Html5QrcodeSupportedFormats.CODE_39,
-          Html5QrcodeSupportedFormats.CODE_93,
-          Html5QrcodeSupportedFormats.CODABAR,
-          Html5QrcodeSupportedFormats.EAN_13,
-          Html5QrcodeSupportedFormats.EAN_8,
-          Html5QrcodeSupportedFormats.UPC_A,
-          Html5QrcodeSupportedFormats.UPC_E,
-          Html5QrcodeSupportedFormats.ITF,
-          Html5QrcodeSupportedFormats.PDF_417,
-        ],
-        verbose: false,
-      });
-      scannerRef.current = scanner;
-
-      scanner
-        .start(
-          { facingMode: "environment" },
-          { fps: 10, aspectRatio: 1.0 },
-          async (decodedText) => {
-            // Debounce: evitar escanear el mismo código repetidamente
-            const now = Date.now();
-            if (
-              lastScannedRef.current &&
-              lastScannedRef.current.barcode === decodedText &&
-              now - lastScannedRef.current.time < SCAN_DEBOUNCE_MS
-            ) {
-              return;
-            }
-            lastScannedRef.current = { barcode: decodedText, time: now };
-
-            // Scan success — look up product by barcode
-            try {
-              const product = await productsApi.getByBarcode(decodedText);
-              const result: SearchResult = {
-                _type: "product",
-                id: product.id,
-                name: product.name,
-                barcode: product.barcode,
-                price: product.price,
-                data: product,
-              };
-              addToCart(result);
-              setScan("");
-              setShowResults(false);
-            } catch {
-              showAlert(`Producto con código "${decodedText}" no encontrado`);
-            }
-          },
-          () => { /* scan error — ignore */ },
-        )
-        .catch((err) => console.warn("[PosScanner] Error:", err));
-    });
-
-    return () => {
-      stopScanner();
-    };
-  }, [scannerActive]);
-
-  function stopScanner() {
-    const scanner = scannerRef.current;
-    if (!scanner) return;
-    scannerRef.current = null;
-    try {
-      scanner.stop()
-        .catch(() => { })
-        .finally(() => {
-          try { scanner.clear(); } catch { /* ignore */ }
-        });
-    } catch {
-      // stop() lanzó error síncrono (e.g. "scanner is not running")
-    }
-  }
-
-  // Sincronizar estado del scanner con localStorage
-  useEffect(() => {
-    localStorage.setItem(SCANNER_STORAGE_KEY, String(scannerActive));
-  }, [scannerActive]);
-
-  function toggleScanner() {
-    const now = Date.now();
-    if (now - lastToggleRef.current < TOGGLE_THROTTLE_MS) return;
-    lastToggleRef.current = now;
-    setScannerActive((prev) => !prev);
-  }
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -483,8 +389,7 @@ export default function Pos() {
           >
             <div className={styles["scanner-camera-wrap"]}>
               <div
-                id="pos-barcode-scanner"
-                ref={scannerContainerRef}
+                id={elementId}
                 className={styles["scanner-viewfinder"]}
               />
               {/* Corner brackets + scan line (igual que en /products) */}

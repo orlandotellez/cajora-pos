@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, Search, X } from "lucide-react";
 import { categoriesApi, type Category, type CreateCategoryPayload, type UpdateCategoryPayload } from "@/api/categories";
-import { cacheGet, cacheSet, cacheClear, cacheKey } from "@/lib/simple-cache";
+import { cacheClear } from "@/lib/simple-cache";
+import { useCrudPagination } from "@/hooks/useCrudPagination";
 import { useToast } from "@/components/common/ui/Toast";
 import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
 import { CategoryTable } from "@/components/pages/categories/CategoryTable";
-import { PAGE_LIMIT as LIMIT } from "@/lib/constants";
 import styles from "./Categories.module.css";
 
 const emptyForm = { name: "", description: "" };
@@ -13,21 +13,29 @@ const emptyForm = { name: "", description: "" };
 export default function Categories() {
   const { toast } = useToast();
 
-  const [categories, setCategories] = useState<Category[]>(() => {
-    const cached = cacheGet<Category[]>(cacheKey("categories", 1, ""));
-    return cached ?? [];
+  const {
+    items: categories,
+    total,
+    page,
+    q,
+    loading,
+    totalPages,
+    setSearch,
+    setPage,
+    refresh,
+  } = useCrudPagination<Category>({
+    fetcher: ({ page, limit, search }) =>
+      categoriesApi
+        .listPaginated({ page, limit, search: search || undefined })
+        .then((res) => ({ items: res.categories, total: res.total })),
+    cacheNamespace: "categories",
   });
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [q, setQ] = useState("");
-  const [loading, setLoading] = useState(true);
+
   const [editing, setEditing] = useState<Category | null | "new">(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState(emptyForm);
 
-  const totalPages = Math.max(1, Math.ceil(total / LIMIT));
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isNew = typeof editing === "string";
 
   useEffect(() => {
@@ -38,37 +46,6 @@ export default function Categories() {
     }
     setForm({ name: editing.name, description: editing.description ?? "" });
   }, [editing]);
-
-  useEffect(() => {
-    const key = cacheKey("categories", page, q);
-    const cached = cacheGet<{ categories: Category[]; total: number }>(key);
-    if (cached) {
-      setCategories(cached.categories);
-      setTotal(cached.total);
-    }
-    setLoading(!cached);
-
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      categoriesApi
-        .listPaginated({ page, limit: LIMIT, search: q || undefined })
-        .then((res) => {
-          setCategories(res.categories);
-          setTotal(res.total);
-          cacheSet(key, { categories: res.categories, total: res.total });
-        })
-        .catch((err) => console.warn("Error al listar categorías:", err))
-        .finally(() => setLoading(false));
-    }, 300);
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [page, q]);
-
-  function handleSearch(value: string) {
-    setQ(value);
-    setPage(1);
-  }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -85,12 +62,11 @@ export default function Categories() {
       }
       setEditing(null);
       cacheClear("categories");
-      // También limpiamos el cache de products porque el dropdown reusa listPaginated no, pero list sí
-      const res = await categoriesApi.listPaginated({ page, limit: LIMIT, search: q || undefined });
-      setCategories(res.categories);
-      setTotal(res.total);
-      cacheSet(cacheKey("categories", page, q), { categories: res.categories, total: res.total });
-      toast(isNew ? "Categoría creada correctamente" : "Categoría actualizada correctamente", "success");
+      refresh();
+      toast(
+        isNew ? "Categoría creada correctamente" : "Categoría actualizada correctamente",
+        "success",
+      );
     } catch (err) {
       console.error("Error al guardar categoría:", err);
       toast((err as Error)?.message ?? "Error al guardar categoría", "error");
@@ -103,10 +79,7 @@ export default function Categories() {
     try {
       await categoriesApi.delete(id);
       cacheClear("categories");
-      const res = await categoriesApi.listPaginated({ page, limit: LIMIT, search: q || undefined });
-      setCategories(res.categories);
-      setTotal(res.total);
-      cacheSet(cacheKey("categories", page, q), { categories: res.categories, total: res.total });
+      refresh();
       toast("Categoría eliminada", "success");
     } catch (err) {
       console.error("Error al eliminar categoría:", err);
@@ -131,7 +104,7 @@ export default function Categories() {
           <Search size={16} className={styles.searchIcon} />
           <input
             value={q}
-            onChange={(e) => handleSearch(e.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por nombre o descripción…"
             className={styles.searchInput}
           />
@@ -181,10 +154,18 @@ export default function Categories() {
               </div>
 
               <div className={styles["form-actions"]}>
-                <button type="submit" className={`${styles.primaryBtn} ${styles["btn-fit"]}`} disabled={submitting}>
+                <button
+                  type="submit"
+                  className={`${styles.primaryBtn} ${styles["btn-fit"]}`}
+                  disabled={submitting}
+                >
                   {submitting ? "Guardando…" : "Guardar"}
                 </button>
-                <button type="button" onClick={() => setEditing(null)} className={styles.secondaryBtn}>
+                <button
+                  type="button"
+                  onClick={() => setEditing(null)}
+                  className={styles.secondaryBtn}
+                >
                   Cancelar
                 </button>
               </div>

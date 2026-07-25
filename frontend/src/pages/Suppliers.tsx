@@ -1,63 +1,68 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, Search, X } from "lucide-react";
 import { suppliersApi, type CreateSupplierPayload, type UpdateSupplierPayload } from "@/api/suppliers";
 import type { Supplier } from "@/api/suppliers";
-import { cacheGet, cacheSet, cacheClear, cacheKey } from "@/lib/simple-cache";
+import { cacheClear } from "@/lib/simple-cache";
+import { useCrudPagination } from "@/hooks/useCrudPagination";
 import { useToast } from "@/components/common/ui/Toast";
 import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
 import { SupplierTable } from "@/components/pages/suppliers/SupplierTable";
-import { PAGE_LIMIT as LIMIT } from "@/lib/constants";
 import styles from "./Suppliers.module.css";
 
-const emptyForm = { name: "", contact_name: "", email: "", phone: "", address: "", notes: "", is_active: true };
+const emptyForm = {
+  name: "",
+  contact_name: "",
+  email: "",
+  phone: "",
+  address: "",
+  notes: "",
+  is_active: true,
+};
 
 export default function Suppliers() {
   const { toast } = useToast();
 
-  const [suppliers, setSuppliers] = useState<Supplier[]>(() => {
-    const cached = cacheGet<Supplier[]>(cacheKey("suppliers", 1, ""));
-    return cached ?? [];
+  const {
+    items: suppliers,
+    total,
+    page,
+    q,
+    loading,
+    totalPages,
+    setSearch,
+    setPage,
+    refresh,
+  } = useCrudPagination<Supplier>({
+    fetcher: ({ page, limit, search }) =>
+      suppliersApi
+        .list({ page, limit, search: search || undefined })
+        .then((res) => ({ items: res.suppliers, total: res.total })),
+    cacheNamespace: "suppliers",
   });
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [q, setQ] = useState("");
-  const [loading, setLoading] = useState(true);
+
   const [editing, setEditing] = useState<Supplier | null | "new">(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState(emptyForm);
 
-  const totalPages = Math.max(1, Math.ceil(total / LIMIT));
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isNew = typeof editing === "string";
 
   useEffect(() => {
     if (!editing) return;
-    if (isNew) { setForm(emptyForm); return; }
-    setForm({ name: editing.name, contact_name: editing.contact_name ?? "", email: editing.email ?? "", phone: editing.phone ?? "", address: editing.address ?? "", notes: editing.notes ?? "", is_active: editing.is_active });
+    if (isNew) {
+      setForm(emptyForm);
+      return;
+    }
+    setForm({
+      name: editing.name,
+      contact_name: editing.contact_name ?? "",
+      email: editing.email ?? "",
+      phone: editing.phone ?? "",
+      address: editing.address ?? "",
+      notes: editing.notes ?? "",
+      is_active: editing.is_active,
+    });
   }, [editing]);
-
-  useEffect(() => {
-    const key = cacheKey("suppliers", page, q);
-    const cached = cacheGet<{ suppliers: Supplier[]; total: number }>(key);
-    if (cached) { setSuppliers(cached.suppliers); setTotal(cached.total); }
-    setLoading(!cached);
-
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      suppliersApi.list({ page, limit: LIMIT, search: q || undefined })
-        .then((res) => {
-          setSuppliers(res.suppliers);
-          setTotal(res.total);
-          cacheSet(key, { suppliers: res.suppliers, total: res.total });
-        })
-        .catch((err) => console.warn("Error al listar proveedores:", err))
-        .finally(() => setLoading(false));
-    }, 300);
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, [page, q]);
-
-  function handleSearch(value: string) { setQ(value); setPage(1); }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -79,23 +84,21 @@ export default function Suppliers() {
       }
       setEditing(null);
       cacheClear("suppliers");
-      const res = await suppliersApi.list({ page, limit: LIMIT, search: q || undefined });
-      setSuppliers(res.suppliers); setTotal(res.total);
-      cacheSet(cacheKey("suppliers", page, q), { suppliers: res.suppliers, total: res.total });
+      refresh();
       toast("Proveedor guardado correctamente", "success");
     } catch (err) {
       console.error("Error al guardar proveedor:", err);
       toast("Error al guardar proveedor", "error");
-    } finally { setSubmitting(false); }
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   async function remove(id: string) {
     try {
       await suppliersApi.delete(id);
       cacheClear("suppliers");
-      const res = await suppliersApi.list({ page, limit: LIMIT, search: q || undefined });
-      setSuppliers(res.suppliers); setTotal(res.total);
-      cacheSet(cacheKey("suppliers", page, q), { suppliers: res.suppliers, total: res.total });
+      refresh();
       toast("Proveedor eliminado", "success");
     } catch (err) {
       console.error("Error al eliminar proveedor:", err);
@@ -118,7 +121,12 @@ export default function Suppliers() {
       <div className={styles.toolbar}>
         <div className={styles.searchWrapper}>
           <Search size={16} className={styles.searchIcon} />
-          <input value={q} onChange={(e) => handleSearch(e.target.value)} placeholder="Buscar por nombre, contacto o email…" className={styles.searchInput} />
+          <input
+            value={q}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por nombre, contacto o email…"
+            className={styles.searchInput}
+          />
         </div>
       </div>
 
@@ -147,42 +155,82 @@ export default function Suppliers() {
             <form onSubmit={handleSave} className={styles.modalForm}>
               <div className={styles.field}>
                 <label className={styles.fieldLabel}>Nombre *</label>
-                <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={styles.input} required />
+                <input
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className={styles.input}
+                  required
+                />
               </div>
               <div className={styles.field}>
                 <label className={styles.fieldLabel}>Persona de contacto</label>
-                <input value={form.contact_name} onChange={(e) => setForm({ ...form, contact_name: e.target.value })} className={styles.input} />
+                <input
+                  value={form.contact_name}
+                  onChange={(e) => setForm({ ...form, contact_name: e.target.value })}
+                  className={styles.input}
+                />
               </div>
               <div className={styles["form-grid"]}>
                 <div className={styles.field}>
                   <label className={styles.fieldLabel}>Email</label>
-                  <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={styles.input} />
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    className={styles.input}
+                  />
                 </div>
                 <div className={styles.field}>
                   <label className={styles.fieldLabel}>Teléfono</label>
-                  <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={styles.input} />
+                  <input
+                    value={form.phone}
+                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                    className={styles.input}
+                  />
                 </div>
               </div>
               <div className={styles.field}>
                 <label className={styles.fieldLabel}>Dirección</label>
-                <textarea value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className={styles.textarea} rows={3} />
+                <textarea
+                  value={form.address}
+                  onChange={(e) => setForm({ ...form, address: e.target.value })}
+                  className={styles.textarea}
+                  rows={3}
+                />
               </div>
               <div className={styles.field}>
                 <label className={styles.fieldLabel}>Notas</label>
-                <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className={styles.textarea} rows={3} />
+                <textarea
+                  value={form.notes}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                  className={styles.textarea}
+                  rows={3}
+                />
               </div>
               <div className={styles.field}>
                 <label className={styles["checkbox-label"]}>
-                  <input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} />
+                  <input
+                    type="checkbox"
+                    checked={form.is_active}
+                    onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
+                  />
                   Activo
                 </label>
               </div>
 
               <div className={styles["form-actions"]}>
-                <button type="submit" className={`${styles.primaryBtn} ${styles["btn-fit"]}`} disabled={submitting}>
+                <button
+                  type="submit"
+                  className={`${styles.primaryBtn} ${styles["btn-fit"]}`}
+                  disabled={submitting}
+                >
                   {submitting ? "Guardando…" : "Guardar"}
                 </button>
-                <button type="button" onClick={() => setEditing(null)} className={styles.secondaryBtn}>
+                <button
+                  type="button"
+                  onClick={() => setEditing(null)}
+                  className={styles.secondaryBtn}
+                >
                   Cancelar
                 </button>
               </div>
@@ -197,7 +245,10 @@ export default function Suppliers() {
         message="¿Estás seguro de que querés eliminar este proveedor? Esta acción no se puede deshacer."
         confirmLabel="Sí, eliminar"
         cancelLabel="Cancelar"
-        onConfirm={() => { if (deleteTarget) remove(deleteTarget); setDeleteTarget(null); }}
+        onConfirm={() => {
+          if (deleteTarget) remove(deleteTarget);
+          setDeleteTarget(null);
+        }}
         onCancel={() => setDeleteTarget(null)}
       />
     </div>
