@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { money } from "@/lib/format";
 import { PAYMENT_METHODS } from "@/lib/constants";
@@ -31,26 +32,52 @@ interface PosPaymentPanelProps {
   onManualAmount: (v: boolean) => void;
   onCheckout: () => void;
   onClearCart: () => void;
+  mobileMode?: boolean;
 }
 
 export function PosPaymentPanel({
   totals, cartLength, discountPct, payment, received, manualAmount, checkingOut,
   onDiscountPct, onPayment, onReceived, onManualAmount, onCheckout, onClearCart,
+  mobileMode = false,
 }: PosPaymentPanelProps) {
   const currency = usePosStore((s) => s.currency);
+  const [discountEnabled, setDiscountEnabled] = useState(discountPct > 0);
+  useEffect(() => {
+    if (mobileMode && discountPct === 0) setDiscountEnabled(false);
+  }, [discountPct, mobileMode]);
+  const showDiscountRows = !mobileMode || discountEnabled;
   return (
     <>
       <div className={styles.totalsSection}>
-        <Row label="Subtotal" value={money(totals.subtotal, currency)} />
-        <div className={styles.discountRow}>
-          <label className={styles.discountLabel}>Descuento %</label>
-          <input
-            type="number" min={0} max={100} value={discountPct}
-            onChange={(e) => onDiscountPct(Number(e.target.value) || 0)}
-            className={styles.discountInput}
-          />
-        </div>
-        <Row label="− Descuento" value={money(totals.discount, currency)} />
+        {mobileMode && (
+          <label className={styles.manualAmountLabel}>
+            <input
+              type="checkbox"
+              checked={discountEnabled}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                setDiscountEnabled(checked);
+                if (!checked) onDiscountPct(0);
+              }}
+              className={styles.manualAmountCheckbox}
+            />
+            Aplicar Descuento
+          </label>
+        )}
+        {showDiscountRows && (
+          <>
+            <Row label="Subtotal" value={money(totals.subtotal, currency)} />
+            <div className={styles.discountRow}>
+              <label className={styles.discountLabel}>Descuento %</label>
+              <input
+                type="number" min={0} max={100} value={discountPct}
+                onChange={(e) => onDiscountPct(Number(e.target.value) || 0)}
+                className={styles.discountInput}
+              />
+            </div>
+            <Row label="− Descuento" value={money(totals.discount, currency)} />
+          </>
+        )}
       </div>
 
       <div className={styles.divider} />
@@ -120,7 +147,7 @@ export function PosPaymentPanel({
       >
         {checkingOut ? "Procesando venta..." : "Cobrar"}
       </button>
-      {cartLength > 0 && (
+      {!mobileMode && cartLength > 0 && (
         <button onClick={onClearCart} className={styles.clearCart}>
           <X size={12} /> Vaciar carrito
         </button>

@@ -16,12 +16,13 @@ interface PosCartTableProps {
   onServiceProductSearch: (v: string) => void;
   onAddServiceProduct: (serviceId: string, product: Product, qty: number) => void;
   showAlert: (msg: string) => void;
+  readOnly?: boolean;
 }
 
 export function PosCartTable({
   cart, products, addingToService, serviceProductSearch,
   onSetQty, onDelete, onAddingToService, onServiceProductSearch,
-  onAddServiceProduct, showAlert,
+  onAddServiceProduct, showAlert, readOnly = false,
 }: PosCartTableProps) {
   const currency = usePosStore((s) => s.currency);
 
@@ -55,7 +56,7 @@ export function PosCartTable({
           <th className={styles.thCenter}>Cantidad</th>
           <th className={styles.thRight}>Precio</th>
           <th className={styles.thRight}>Subtotal</th>
-          <th className={styles.thAction}></th>
+          {!readOnly && <th className={styles.thAction}></th>}
         </tr>
       </thead>
       <tbody className={styles.tableBody}>
@@ -69,7 +70,7 @@ export function PosCartTable({
               {x._type === "product" && (x as ProductCartItem).barcode && (
                 <div className={styles.productBarcode}>{(x as ProductCartItem).barcode}</div>
               )}
-              {x._type === "service" && (
+              {x._type === "service" && !readOnly && (
                 <ServiceProductManager
                   svc={x as ServiceCartItem}
                   products={products}
@@ -83,23 +84,29 @@ export function PosCartTable({
               )}
             </td>
             <td className={styles.tdQty}>
-              <div className={styles.qtyControls}>
-                <button onClick={() => onSetQty(x, x.quantity - 1)} className={styles.qtyBtn}>
-                  <Minus size={14} />
-                </button>
+              {readOnly ? (
                 <span className={styles.qtyValue}>{x.quantity}</span>
-                <button onClick={() => onSetQty(x, x.quantity + 1)} className={styles.qtyBtn}>
-                  <Plus size={14} />
-                </button>
-              </div>
+              ) : (
+                <div className={styles.qtyControls}>
+                  <button onClick={() => onSetQty(x, x.quantity - 1)} className={styles.qtyBtn}>
+                    <Minus size={14} />
+                  </button>
+                  <span className={styles.qtyValue}>{x.quantity}</span>
+                  <button onClick={() => onSetQty(x, x.quantity + 1)} className={styles.qtyBtn}>
+                    <Plus size={14} />
+                  </button>
+                </div>
+              )}
             </td>
             <td className={styles.tdRight}>{money(getItemPrice(x), currency)}</td>
             <td className={styles.tdRightBold}>{money(getItemSubtotal(x), currency)}</td>
-            <td className={styles.tdAction}>
-              <button onClick={() => onDelete(x.id)} className={styles.deleteBtn}>
-                <Trash2 size={14} />
-              </button>
-            </td>
+            {!readOnly && (
+              <td className={styles.tdAction}>
+                <button onClick={() => onDelete(x.id)} className={styles.deleteBtn}>
+                  <Trash2 size={14} />
+                </button>
+              </td>
+            )}
           </tr>
         ))}
       </tbody>

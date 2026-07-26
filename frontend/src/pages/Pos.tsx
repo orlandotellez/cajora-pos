@@ -225,6 +225,7 @@ export default function Pos() {
             onServiceProductSearch: setServiceProductSearch,
             onAddServiceProduct: addServiceProduct,
             showAlert,
+            readOnly: true,
           }}
           paymentProps={{
             totals,
@@ -240,6 +241,7 @@ export default function Pos() {
             onManualAmount: setManualAmount,
             onCheckout: checkout,
             onClearCart: clearCart,
+            mobileMode: true,
           }}
         />
       )}
