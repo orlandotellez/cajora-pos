@@ -15,7 +15,13 @@ import { MovementHistoryTable } from "@/components/pages/inventory/MovementHisto
 import { BatchHistoryTable } from "@/components/pages/inventory/BatchHistoryTable";
 import styles from "./Inventory.module.css";
 
-type AdjustState = { id: string; name: string; stock: number } | null;
+type AdjustState = {
+  id: string;
+  name: string;
+  stock: number;
+  unit_type?: string | null;
+  unit_quantity?: number | null;
+} | null;
 
 export default function Inventory() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -121,7 +127,13 @@ export default function Inventory() {
 
   const handleAdjust = useCallback(
     (product: Product) =>
-      setAdjust({ id: product.id, name: product.name, stock: product.stock }),
+      setAdjust({
+        id: product.id,
+        name: product.name,
+        stock: product.stock,
+        unit_type: product.unit_type,
+        unit_quantity: product.unit_quantity,
+      }),
     [setAdjust],
   );
 

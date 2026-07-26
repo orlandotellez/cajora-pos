@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 import { inventoryApi } from "@/api/inventory";
 import type { Supplier, Product } from "@/api";
 import type { CreateBatchPayload } from "@/api/inventory";
+import { UNIT_TYPE_LABELS } from "@/lib/constants";
 import styles from "../../../pages/Inventory.module.css";
 
 interface BatchMovementModalProps {
@@ -195,23 +196,31 @@ export function BatchMovementModal({ open, suppliers, products, onClose, onCreat
                         </div>
                       )}
                     </div>
-                    <input
-                      type="number" min={1} value={item.quantity || ""}
-                      onChange={(e) => updateBatchItem(item.id, { quantity: Math.max(0, Number(e.target.value)) })}
-                      placeholder="Cant."
-                      className={styles.batchFormQtyInput}
-                    />
-                    <input
-                      type="number" min={0} step={0.01}
-                      value={item.unitCost ?? ""}
-                      onChange={(e) => updateBatchItem(item.id, { unitCost: e.target.value ? Number(e.target.value) : null })}
-                      placeholder="Costo"
-                      className={styles.batchFormCostInput}
-                    />
                     <button type="button" onClick={() => removeBatchItem(item.id)} className={styles.batchFormRemove}>
                       <X size={16} />
                     </button>
                   </div>
+                  <div className={styles.batchFormQtyRow}>
+                    <input
+                      type="number" min={1} value={item.quantity || ""}
+                      onChange={(e) => updateBatchItem(item.id, { quantity: Math.max(0, Number(e.target.value)) })}
+                      placeholder="Cantidad"
+                      className={styles.batchFormQtyInput}
+                    />
+                    {item.selectedProduct?.unit_type && (
+                      <span className={styles.batchFormUnitBadge}>
+                        {UNIT_TYPE_LABELS[item.selectedProduct.unit_type] || item.selectedProduct.unit_type}
+                        {item.selectedProduct.unit_quantity ? ` × ${item.selectedProduct.unit_quantity}` : ""}
+                      </span>
+                    )}
+                  </div>
+                  <input
+                    type="number" min={0} step={0.01}
+                    value={item.unitCost ?? ""}
+                    onChange={(e) => updateBatchItem(item.id, { unitCost: e.target.value ? Number(e.target.value) : null })}
+                    placeholder="Costo unitario"
+                    className={styles.batchFormCostInput}
+                  />
                   <input
                     value={item.notes}
                     onChange={(e) => updateBatchItem(item.id, { notes: e.target.value })}

@@ -717,6 +717,61 @@
   color: var(--muted-foreground);
 }
 
+.batchFormQtyRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.batchFormQtyRow .batchFormQtyInput {
+  flex: 1;
+  width: auto;
+  text-align: left;
+}
+
+.batchFormUnitBadge {
+  font-size: 12px;
+  color: var(--muted-foreground);
+  font-weight: 500;
+  white-space: nowrap;
+  padding: 0 10px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  background: var(--muted);
+  border-radius: 4px;
+}
+
+.batchFormItem > .batchFormQtyInput,
+.batchFormItem > .batchFormCostInput {
+  flex: 1;
+  width: auto;
+  text-align: left;
+}
+
+.unitBadge {
+  font-size: 13px;
+  color: var(--muted-foreground);
+  font-weight: 500;
+  white-space: nowrap;
+  padding: 0 12px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  background: var(--muted);
+  border-radius: 6px;
+}
+
+.inputWithUnit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inputWithUnit .input {
+  flex: 1;
+}
+
 .batchSummary {
   padding: 12px;
   border: 1px solid var(--border);

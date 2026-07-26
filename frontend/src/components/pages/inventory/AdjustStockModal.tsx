@@ -1,10 +1,17 @@
 import { useState } from "react";
 import { X, ArrowDownRight, ArrowUpRight, RefreshCw } from "lucide-react";
 import { inventoryApi } from "@/api/inventory";
+import { UNIT_TYPE_LABELS } from "@/lib/constants";
 import styles from "../../../pages/Inventory.module.css";
 
 interface AdjustStockModalProps {
-  adjust: { id: string; name: string; stock: number };
+  adjust: {
+    id: string;
+    name: string;
+    stock: number;
+    unit_type?: string | null;
+    unit_quantity?: number | null;
+  };
   onClose: () => void;
   onApplied: () => void;
 }
@@ -76,11 +83,19 @@ export function AdjustStockModal({ adjust, onClose, onApplied }: AdjustStockModa
             <label className={styles.fieldLabel}>
               {type === "ajuste" ? "Nuevo stock" : "Cantidad"}
             </label>
-            <input
-              type="number" min={0} value={qty}
-              onChange={(e) => setQty(Number(e.target.value))}
-              className={styles.input} required
-            />
+            <div className={styles.inputWithUnit}>
+              <input
+                type="number" min={0} value={qty}
+                onChange={(e) => setQty(Number(e.target.value))}
+                className={styles.input} required
+              />
+              {adjust?.unit_type && (
+                <span className={styles.unitBadge}>
+                  {UNIT_TYPE_LABELS[adjust.unit_type] || adjust.unit_type}
+                  {adjust.unit_quantity ? ` × ${adjust.unit_quantity}` : ""}
+                </span>
+              )}
+            </div>
           </div>
 
           <div className={styles.field}>
