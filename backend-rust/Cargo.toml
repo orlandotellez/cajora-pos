@@ -19,7 +19,8 @@ sqlx = { version = "0.8.6", features = [
     "chrono",
     "uuid",
     "migrate",
-    "macros"
+    "macros",
+    "rust_decimal"
 ] }
 
 # Cache Redis

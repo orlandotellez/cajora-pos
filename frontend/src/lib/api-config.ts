@@ -6,6 +6,13 @@ export const BOOTSTRAP_URL =
 export const BOOTSTRAP_FETCH_TIMEOUT_MS = 2500;
 export const DEFAULT_API_URL = "http://localhost:3000/api/v1";
 
+/**
+ * URL de producción que devuelve el bootstrap remoto (config-api.json).
+ * Se usa como fallback cuando el fetch del bootstrap falla.
+ * Mantener sincronizada con el valor en config-api.json del repo.
+ */
+export const FALLBACK_PRODUCTION_URL = "https://pos-system-production-6509.up.railway.app/api/v1";
+
 // En dev (vite dev / pnpm dev) se usa el servidor local
 // En producción se usa la URL obtenida del bootstrap remoto
 // Para probar bootstrap en dev: VITE_FORCE_PRODUCTION=true pnpm tauri dev
@@ -62,8 +69,12 @@ export async function fetchAndStoreApiUrl(
     if (externalSignal?.aborted) return false;
     writeApiUrl(data.current_api_url);
     return true;
-  } catch {
-    return false;
+  } catch (err) {
+    // Si el fetch remoto falla (ej. Rust reqwest, red, TLS), usamos la URL de producción
+    // como fallback para que la app pueda arrancar sin intervención manual.
+    console.warn("[bootstrap] fetch remoto falló, usando URL de producción como fallback:", err);
+    writeApiUrl(FALLBACK_PRODUCTION_URL);
+    return true;
   } finally {
     window.clearTimeout(timeoutId);
     externalSignal?.removeEventListener("abort", onAbort);

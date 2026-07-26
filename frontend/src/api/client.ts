@@ -61,12 +61,21 @@ async function request<T>(
     headers["Content-Type"] = "application/json";
   }
 
-  const res = await crossFetch(url.toString(), {
-    method,
-    headers,
-    credentials: "include",
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
+  let res: Response;
+  try {
+    res = await crossFetch(url.toString(), {
+      method,
+      headers,
+      credentials: "include",
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+  } catch (err) {
+    // El error real desde Rust (o desde fetch del browser)
+    console.error(`[API] ${method} ${path} failed:`, err);
+    throw new ApiError(0, {
+      message: typeof err === "string" ? err : "Error al conectar con el servidor",
+    });
+  }
 
   if (res.status === 204) return undefined as T;
 

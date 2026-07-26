@@ -7,20 +7,6 @@
   ],
   "permissions": [
     "core:default",
-    "opener:default",
-    {
-      "identifier": "http:default",
-      "allow": [
-        {
-          "url": "https://*"
-        },
-        {
-          "url": "http://*"
-        },
-        {
-          "url": "http://localhost:3000/**"
-        }
-      ]
-    }
+    "opener:default"
   ]
 }
