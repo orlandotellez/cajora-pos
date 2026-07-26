@@ -108,6 +108,8 @@ export default function Inventory() {
 
   function refetchAll() {
     cacheClear("inventory");
+    cacheClear("inventory-movements");
+    cacheClear("inventory-batches");
     refreshProducts();
     refreshMovements();
     refreshBatches();

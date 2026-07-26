@@ -48,6 +48,20 @@
   pointer-events: none;
 }
 
+.spinner {
+  margin-left: 6px;
+  opacity: 0.55;
+  color: var(--muted-foreground, #6b7280);
+  animation: spin 0.9s linear infinite;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .tdLeft {
   padding: 10px 16px;
   font-size: 13px;

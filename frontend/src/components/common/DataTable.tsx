@@ -1,5 +1,5 @@
 import { type ReactNode } from "react";
-import { ChevronLeft, ChevronRight, Pencil, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Pencil, Trash2 } from "lucide-react";
 import TableSkeleton, { type SkeletonCol } from "@/components/common/TableSkeleton";
 import styles from "./DataTable.module.css";
 
@@ -69,7 +69,9 @@ export function DataTable<T extends { id: string }>({
             </tr>
           </thead>
           <tbody>
-            {data.length > 0 ? (
+            {loading ? (
+              <TableSkeleton cols={skeletonCols ?? columns.map(() => ({ width: "auto" }))} />
+            ) : data.length > 0 ? (
               data.map((item) => (
                 <tr
                   key={item.id}
@@ -112,8 +114,6 @@ export function DataTable<T extends { id: string }>({
                   )}
                 </tr>
               ))
-            ) : loading ? (
-              <TableSkeleton cols={skeletonCols ?? columns.map(() => ({ width: "auto" }))} />
             ) : (
               <tr>
                 <td colSpan={columns.length + (hasEditDelete ? 1 : 0)} className={styles.empty}>
@@ -150,6 +150,14 @@ export function DataTable<T extends { id: string }>({
           >
             <ChevronRight size={16} />
           </button>
+          {loading && (
+            <Loader2
+              size={14}
+              className={styles.spinner}
+              aria-label="Cargando"
+              role="status"
+            />
+          )}
         </div>
       )}
     </div>

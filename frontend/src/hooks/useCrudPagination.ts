@@ -105,6 +105,7 @@ export function useCrudPagination<T>(
   const [refreshTick, setRefreshTick] = useState(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const skipNextDebounceRef = useRef(false);
+  const cacheHitRef = useRef(false);
 
   // Mutable-ref de `fetcher` para evitar que el debounced useEffect se
   // re-dispare cuando el consumer re-renderiza y crea una nueva identidad
@@ -138,6 +139,7 @@ export function useCrudPagination<T>(
   //    page/q/refreshTick/extraFiltersKey cambian.
   useEffect(() => {
     if (!cacheNamespace) {
+      cacheHitRef.current = false;
       setLoading(false);
       return;
     }
@@ -146,6 +148,9 @@ export function useCrudPagination<T>(
     if (cached) {
       setItems(cached.items);
       setTotal(cached.total);
+      cacheHitRef.current = true;
+    } else {
+      cacheHitRef.current = false;
     }
     setLoading(!cached);
   }, [cacheNamespace, page, q, refreshTick, extraFiltersKey]);
@@ -178,9 +183,12 @@ export function useCrudPagination<T>(
       skipNextDebounceRef.current = false;
       return;
     }
+    if (cacheHitRef.current) {
+      return;
+    }
     if (timerRef.current) clearTimeout(timerRef.current);
+    setLoading(true);
     timerRef.current = setTimeout(() => {
-      setLoading(true);
       void runFetch();
     }, debounceMs);
     return () => {

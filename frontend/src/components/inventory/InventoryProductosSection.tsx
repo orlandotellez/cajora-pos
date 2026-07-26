@@ -125,7 +125,6 @@ export function InventoryProductosSection(props: Props) {
         totalPages={totalPages}
         onPageChange={setPage}
         onAdjust={onAdjust}
-        dimmed={loading}
       />
     </>
   );
