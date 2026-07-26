@@ -91,11 +91,6 @@ button {
   font-size: inherit;
 }
 
-/* Separar el texto de los botones spinner en inputs numéricos */
-input[type="number"] {
-  padding-right: 28px;
-}
-
 .tabular {
   font-variant-numeric: tabular-nums;
 }
