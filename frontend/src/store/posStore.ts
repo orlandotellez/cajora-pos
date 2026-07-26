@@ -17,6 +17,7 @@ export interface ServiceCartProduct {
   quantity: number;
   unit_price: number;
   affects_price: boolean;
+  stock: number;
 }
 
 export interface ServiceCartItem {
@@ -44,7 +45,10 @@ interface PosState {
   checkingOut: boolean;
   currency: CurrencyCode;
 
-  addToCart: (item: Product | { id: string; service_id: string; name: string; base_price: number; products: ServiceProduct[] }) => void;
+  addToCart: (
+    item: Product | { id: string; service_id: string; name: string; base_price: number; products: ServiceProduct[] },
+    stocks?: Map<string, number>,
+  ) => void;
   setQty: (id: string, q: number) => void;
   updateServiceProductQty: (serviceId: string, productId: string, qty: number) => void;
   removeServiceProduct: (serviceId: string, productId: string) => void;
@@ -72,7 +76,7 @@ export const usePosStore = create<PosState>()((set) => ({
   checkingOut: false,
   currency: getStoredCurrency() as CurrencyCode,
 
-  addToCart: (item) =>
+  addToCart: (item, stocks) =>
     set((s) => {
       if (isProduct(item)) {
         // Product item
@@ -105,6 +109,7 @@ export const usePosStore = create<PosState>()((set) => ({
             quantity: sp.quantity,
             unit_price: sp.product_price,
             affects_price: false,
+            stock: stocks?.get(sp.product_id) ?? 0,
           })),
         };
         return { cart: [newItem, ...s.cart] };
@@ -154,7 +159,7 @@ export const usePosStore = create<PosState>()((set) => ({
               ...(x as ServiceCartItem),
               products: [
                 ...(x as ServiceCartItem).products,
-                { product_id: product.id, product_name: product.name, quantity, unit_price: product.price, affects_price: false },
+                { product_id: product.id, product_name: product.name, quantity, unit_price: product.price, affects_price: false, stock: product.stock },
               ],
             }
           : x

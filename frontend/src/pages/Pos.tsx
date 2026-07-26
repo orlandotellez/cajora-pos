@@ -73,6 +73,7 @@ export default function Pos() {
   const setManualAmount = usePosStore((s) => s.setManualAmount);
   const setCheckingOut = usePosStore((s) => s.setCheckingOut);
   const addServiceProduct = usePosStore((s) => s.addServiceProduct);
+  const updateServiceProductQty = usePosStore((s) => s.updateServiceProductQty);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -112,7 +113,7 @@ export default function Pos() {
     }
   }, [addingToService]);
 
-  function addToCart(result: SearchResult) {
+  async function addToCart(result: SearchResult) {
     if (result._type === "product") {
       const product = result.data as Product;
       if (product.stock <= 0) {
@@ -136,31 +137,106 @@ export default function Pos() {
       usePosStore.getState().addToCart(product);
     } else {
       const service = result.data as Service;
+
+      let productsList = products;
+      if (productsList.length === 0) {
+        try {
+          const res = await productsApi.list({ active: true, limit: 100 });
+          productsList = res.products;
+          setProducts(res.products);
+        } catch {
+          showAlert("No se pudo verificar el stock de los productos del servicio");
+          return;
+        }
+      }
+
+      const existing = cart.find((x) => x._type === "service" && x.service_id === service.id);
+      const totalQty = (existing?.quantity ?? 0) + 1;
+
+      const stocks = new Map<string, number>();
+      const shortages: string[] = [];
+      for (const sp of service.products) {
+        const product = productsList.find((p) => p.id === sp.product_id);
+        if (!product) {
+          shortages.push(`"${sp.product_name}" (no se pudo verificar stock)`);
+          continue;
+        }
+        stocks.set(sp.product_id, product.stock);
+        const required = sp.quantity * totalQty;
+        if (required > product.stock) {
+          shortages.push(`"${sp.product_name}": disponible ${product.stock}, requerido ${required} (${sp.quantity} × ${totalQty})`);
+        }
+      }
+
+      if (shortages.length > 0) {
+        showAlert(`No hay stock suficiente para "${service.name}":\n\n${shortages.join("\n")}`);
+        return;
+      }
+
       usePosStore.getState().addToCart({
         id: service.id,
         service_id: service.id,
         name: service.name,
         base_price: service.base_price,
         products: service.products,
-      });
+      }, stocks);
     }
     setScan("");
     setShowResults(false);
   }
 
-  function handleSetQty(item: CartItem, newQty: number) {
+  function handleSetQty(item: CartItem, newQty: number): boolean {
     if (item._type === "product" && newQty > item.quantity) {
       const prod = item as ProductCartItem;
       if (prod.stock <= 0) {
         showAlert(`"${prod.name}" no tiene stock disponible`);
-        return;
+        return false;
       }
       if (newQty > prod.stock) {
         showAlert(`Stock insuficiente para "${prod.name}": disponible ${prod.stock}, solicitado ${newQty}`);
-        return;
+        return false;
+      }
+    } else if (item._type === "service" && newQty > item.quantity) {
+      const svc = item;
+      for (const sp of svc.products) {
+        const required = sp.quantity * newQty;
+        if (required > sp.stock) {
+          showAlert(`Stock insuficiente para "${sp.product_name}" (sub-producto de "${svc.name}"): disponible ${sp.stock}, requerido ${required} (${sp.quantity} × ${newQty})`);
+          return false;
+        }
       }
     }
     setQty(item.id, newQty);
+    return true;
+  }
+
+  function handleAddServiceProduct(serviceId: string, product: Product, qty: number): boolean {
+    const svc = cart.find((x) => x._type === "service" && x.service_id === serviceId);
+    if (svc && svc._type === "service") {
+      const required = qty * svc.quantity;
+      if (required > product.stock) {
+        showAlert(`Stock insuficiente para "${product.name}": disponible ${product.stock}, requerido ${required} (${qty} × ${svc.quantity} servicios)`);
+        return false;
+      }
+    }
+    addServiceProduct(serviceId, product, qty);
+    return true;
+  }
+
+  function handleUpdateServiceProductQty(serviceId: string, productId: string, qty: number): boolean {
+    const svc = cart.find((x) => x._type === "service" && x.service_id === serviceId);
+    if (svc && svc._type === "service") {
+      const sp = svc.products.find((p) => p.product_id === productId);
+      if (sp) {
+        const required = qty * svc.quantity;
+        if (required > sp.stock) {
+          showAlert(`Stock insuficiente para "${sp.product_name}": disponible ${sp.stock}, requerido ${required} (${qty} × ${svc.quantity} servicios)`);
+          return false;
+        }
+      }
+    }
+    updateServiceProductQty(serviceId, productId, qty);
+    return true;
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -223,7 +299,8 @@ export default function Pos() {
             onDelete: (id) => setQty(id, 0),
             onAddingToService: setAddingToService,
             onServiceProductSearch: setServiceProductSearch,
-            onAddServiceProduct: addServiceProduct,
+            onAddServiceProduct: handleAddServiceProduct,
+            onUpdateServiceProductQty: handleUpdateServiceProductQty,
             showAlert,
             readOnly: true,
           }}
@@ -270,18 +347,19 @@ export default function Pos() {
         />
 
         <div className={styles.cartArea}>
-          <PosCartTable
-            cart={cart}
-            products={products}
-            addingToService={addingToService}
-            serviceProductSearch={serviceProductSearch}
-            onSetQty={handleSetQty}
-            onDelete={(id) => setQty(id, 0)}
-            onAddingToService={setAddingToService}
-            onServiceProductSearch={setServiceProductSearch}
-            onAddServiceProduct={addServiceProduct}
-            showAlert={showAlert}
-          />
+        <PosCartTable
+          cart={cart}
+          products={products}
+          addingToService={addingToService}
+          serviceProductSearch={serviceProductSearch}
+          onSetQty={handleSetQty}
+          onDelete={(id) => setQty(id, 0)}
+          onAddingToService={setAddingToService}
+          onServiceProductSearch={setServiceProductSearch}
+          onAddServiceProduct={handleAddServiceProduct}
+          onUpdateServiceProductQty={handleUpdateServiceProductQty}
+          showAlert={showAlert}
+        />
         </div>
 
         {/* Mobile bottom bar — only visible on mobile when cart has items */}

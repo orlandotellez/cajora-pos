@@ -34,7 +34,7 @@
 .cartArea {
   flex: 1;
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: auto;
   min-height: 0;
 }
 
@@ -188,6 +188,36 @@
   text-align: center;
   font-variant-numeric: tabular-nums;
   font-size: 11px;
+}
+
+.spQtyInput {
+  width: 38px;
+  height: 20px;
+  padding: 1px 2px;
+  border: none;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  color: var(--foreground);
+  outline: none;
+  box-sizing: border-box;
+}
+
+.spQtyInput:focus {
+  border-bottom-color: var(--ring);
+}
+
+.spQtyInput::-webkit-outer-spin-button,
+.spQtyInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.spQtyInput {
+  -moz-appearance: textfield;
 }
 
 .spRemoveBtn {
@@ -349,6 +379,37 @@
   text-align: center;
   font-variant-numeric: tabular-nums;
   color: var(--foreground);
+}
+
+.qtyInput {
+  width: 100%;
+  height: 32px;
+  padding: 4px 6px;
+  border: none;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+  color: var(--foreground);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease;
+}
+
+.qtyInput:focus {
+  border-bottom-color: var(--ring);
+}
+
+.qtyInput::-webkit-outer-spin-button,
+.qtyInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.qtyInput {
+  -moz-appearance: textfield;
 }
 
 .tdRight {

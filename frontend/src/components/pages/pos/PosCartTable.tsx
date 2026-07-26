@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Minus, Plus, Trash2, X, ScanBarcode, Wrench, PackagePlus } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Trash2, X, ScanBarcode, Wrench, PackagePlus } from "lucide-react";
 import { money } from "@/lib/format";
 import { usePosStore, type CartItem, type ProductCartItem, type ServiceCartItem } from "@/store/posStore";
 import type { Product } from "@/api/products";
@@ -10,11 +10,12 @@ interface PosCartTableProps {
   products: Product[];
   addingToService: string | null;
   serviceProductSearch: string;
-  onSetQty: (item: CartItem, newQty: number) => void;
+  onSetQty: (item: CartItem, newQty: number) => boolean;
   onDelete: (id: string) => void;
   onAddingToService: (id: string | null) => void;
   onServiceProductSearch: (v: string) => void;
-  onAddServiceProduct: (serviceId: string, product: Product, qty: number) => void;
+  onAddServiceProduct: (serviceId: string, product: Product, qty: number) => boolean;
+  onUpdateServiceProductQty: (serviceId: string, productId: string, qty: number) => boolean;
   showAlert: (msg: string) => void;
   readOnly?: boolean;
 }
@@ -22,7 +23,7 @@ interface PosCartTableProps {
 export function PosCartTable({
   cart, products, addingToService, serviceProductSearch,
   onSetQty, onDelete, onAddingToService, onServiceProductSearch,
-  onAddServiceProduct, showAlert, readOnly = false,
+  onAddServiceProduct, onUpdateServiceProductQty, showAlert, readOnly = false,
 }: PosCartTableProps) {
   const currency = usePosStore((s) => s.currency);
 
@@ -79,6 +80,7 @@ export function PosCartTable({
                   onAddingToService={onAddingToService}
                   onServiceProductSearch={onServiceProductSearch}
                   onAddServiceProduct={onAddServiceProduct}
+                  onUpdateServiceProductQty={onUpdateServiceProductQty}
                   showAlert={showAlert}
                 />
               )}
@@ -87,15 +89,13 @@ export function PosCartTable({
               {readOnly ? (
                 <span className={styles.qtyValue}>{x.quantity}</span>
               ) : (
-                <div className={styles.qtyControls}>
-                  <button onClick={() => onSetQty(x, x.quantity - 1)} className={styles.qtyBtn}>
-                    <Minus size={14} />
-                  </button>
-                  <span className={styles.qtyValue}>{x.quantity}</span>
-                  <button onClick={() => onSetQty(x, x.quantity + 1)} className={styles.qtyBtn}>
-                    <Plus size={14} />
-                  </button>
-                </div>
+                <QtyInputCell
+                  value={x.quantity}
+                  min={1}
+                  onUpdate={(qty) => onSetQty(x, qty)}
+                  ariaLabel="Cantidad"
+                  className={styles.qtyInput}
+                />
               )}
             </td>
             <td className={styles.tdRight}>{money(getItemPrice(x), currency)}</td>
@@ -123,16 +123,16 @@ interface ServiceProductManagerProps {
   serviceProductSearch: string;
   onAddingToService: (id: string | null) => void;
   onServiceProductSearch: (v: string) => void;
-  onAddServiceProduct: (serviceId: string, product: Product, qty: number) => void;
+  onAddServiceProduct: (serviceId: string, product: Product, qty: number) => boolean;
+  onUpdateServiceProductQty: (serviceId: string, productId: string, qty: number) => boolean;
   showAlert: (msg: string) => void;
 }
 
 function ServiceProductManager({
   svc, products, addingToService, serviceProductSearch,
-  onAddingToService, onServiceProductSearch, onAddServiceProduct, showAlert,
+  onAddingToService, onServiceProductSearch, onAddServiceProduct, onUpdateServiceProductQty, showAlert,
 }: ServiceProductManagerProps) {
   const toggleServiceProductAffectsPrice = usePosStore((s) => s.toggleServiceProductAffectsPrice);
-  const updateServiceProductQty = usePosStore((s) => s.updateServiceProductQty);
   const removeServiceProduct = usePosStore((s) => s.removeServiceProduct);
   const currency = usePosStore((s) => s.currency);
 
@@ -150,21 +150,13 @@ function ServiceProductManager({
             >
               $
             </button>
-            <button
-              onClick={() => updateServiceProductQty(svc.service_id, sp.product_id, sp.quantity - 1)}
-              className={styles.spQtyBtn}
-              title="Quitar uno"
-            >
-              <Minus size={10} />
-            </button>
-            <span className={styles.spQty}>{sp.quantity}</span>
-            <button
-              onClick={() => updateServiceProductQty(svc.service_id, sp.product_id, sp.quantity + 1)}
-              className={styles.spQtyBtn}
-              title="Agregar uno"
-            >
-              <Plus size={10} />
-            </button>
+            <QtyInputCell
+              value={sp.quantity}
+              min={1}
+              onUpdate={(qty) => onUpdateServiceProductQty(svc.service_id, sp.product_id, qty)}
+              ariaLabel={`Cantidad de ${sp.product_name}`}
+              className={styles.spQtyInput}
+            />
             <button
               onClick={() => removeServiceProduct(svc.service_id, sp.product_id)}
               className={styles.spRemoveBtn}
@@ -205,7 +197,7 @@ function ServiceProductManager({
                         showAlert(`"${p.name}" no tiene stock disponible`);
                         return;
                       }
-                      onAddServiceProduct(svc.service_id, p, 1);
+                      if (!onAddServiceProduct(svc.service_id, p, 1)) return;
                       onServiceProductSearch("");
                       onAddingToService(null);
                     }}
@@ -242,5 +234,52 @@ function ServiceProductManager({
         )}
       </div>
     </div>
+  );
+}
+
+function QtyInputCell({
+  value,
+  min,
+  onUpdate,
+  ariaLabel,
+  className,
+}: {
+  value: number;
+  min: number;
+  onUpdate: (qty: number) => boolean | void;
+  ariaLabel: string;
+  className: string;
+}) {
+  const [draft, setDraft] = useState(String(value));
+  useEffect(() => {
+    setDraft(String(value));
+  }, [value]);
+  return (
+    <input
+      type="number"
+      min={min}
+      inputMode="numeric"
+      value={draft}
+      onFocus={(e) => e.target.select()}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={() => {
+        if (draft === "") {
+          setDraft(String(min));
+          onUpdate(min);
+          return;
+        }
+        const n = Number(draft);
+        if (!Number.isFinite(n)) {
+          setDraft(String(value));
+          return;
+        }
+        const result = onUpdate(Math.max(min, n));
+        if (result === false) {
+          setDraft(String(value));
+        }
+      }}
+      className={className}
+      aria-label={ariaLabel}
+    />
   );
 }
