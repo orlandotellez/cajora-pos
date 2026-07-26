@@ -43,22 +43,10 @@
 
 .filters {
   display: flex;
-  align-items: flex-end;
-  gap: 12px;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 16px;
   flex-wrap: wrap;
-}
-
-.filterGroup {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.filterLabel {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--muted-foreground);
 }
 
 .filterInput {
@@ -75,6 +63,10 @@
 
 .filterInput:focus {
   border-color: var(--ring);
+}
+
+.filterInputNarrow {
+  width: 138px;
 }
 
 .filterSelect {
@@ -112,6 +104,25 @@
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
+}
+
+.clearBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 36px;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.clearBtn:hover {
+  color: var(--foreground);
 }
 
 

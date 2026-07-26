@@ -195,12 +195,15 @@ export const createSaleService = (repository: ISaleRepository) => ({
     return mapSaleToResponse(sale)
   },
 
-  list: async (params?: { start_date?: string; end_date?: string; user_id?: string; payment_method?: string; page?: number; limit?: number; storeId?: string }): Promise<ISaleListResponse> => {
+  list: async (params?: { start_date?: string; end_date?: string; user_id?: string; payment_method?: string; q?: string; min_total_qty?: number; min_items_count?: number; page?: number; limit?: number; storeId?: string }): Promise<ISaleListResponse> => {
     const result = await repository.findAll({
       startDate: params?.start_date ? new Date(params.start_date) : undefined,
       endDate: params?.end_date ? new Date(params.end_date) : undefined,
       userId: params?.user_id,
       paymentMethod: params?.payment_method,
+      q: params?.q,
+      minTotalQty: params?.min_total_qty,
+      minItemsCount: params?.min_items_count,
       page: params?.page,
       limit: params?.limit,
       storeId: params?.storeId,

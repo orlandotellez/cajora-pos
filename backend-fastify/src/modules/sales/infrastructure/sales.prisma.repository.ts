@@ -21,9 +21,7 @@ type ServiceProductWithProduct = Prisma.service_productGetPayload<{
 
 export const SaleRepository: ISaleRepository = {
   async create(data: CreateSaleData, storeId: string, serviceProductsToDeduct?: { product_id: string; quantity: number }[], customServiceProducts?: Map<string, CreateSaleServiceItemProductData[]>) {
-    // Use a transaction for atomicity: create sale + deduct inventory
     const sale = await prisma.$transaction(async (tx) => {
-      // 1. Create the sale with items
       const created = await tx.sale.create({
         data: {
           subtotal: data.subtotal,
@@ -53,7 +51,7 @@ export const SaleRepository: ISaleRepository = {
                   base_price: si.base_price,
                   line_total: si.line_total,
                   products: {
-                    create: [], // Will be populated below
+                    create: [],
                   },
                 })),
               },
@@ -68,9 +66,7 @@ export const SaleRepository: ISaleRepository = {
         },
       })
 
-      // 2. Create sale_service_product records
       if (data.service_items && data.service_items.length > 0 && created.service_items) {
-        // Fetch auto-lookup products for items that don't have custom products
         const itemsWithoutCustom = data.service_items.filter((si) => !si.products || si.products.length === 0)
         let autoLookupProducts: ServiceProductWithProduct[] = []
         if (itemsWithoutCustom.length > 0) {
@@ -85,13 +81,9 @@ export const SaleRepository: ISaleRepository = {
         }
 
         for (const saleService of created.service_items) {
-          const originalItem = data.service_items.find((si) => si.service_id === saleService.service_id)
-
-          // Check if this item has custom products
           const customSps = customServiceProducts?.get(saleService.service_id)
 
           if (customSps && customSps.length > 0) {
-            // Use custom products from the request
             await tx.sale_service_product.createMany({
               data: customSps.map((sp) => ({
                 sale_service_id: saleService.id,
@@ -104,7 +96,6 @@ export const SaleRepository: ISaleRepository = {
               })),
             })
           } else {
-            // Auto-lookup from service_product table
             const sps = autoLookupProducts.filter((sp) => sp.service_id === saleService.service_id)
             if (sps.length > 0) {
               await tx.sale_service_product.createMany({
@@ -122,7 +113,6 @@ export const SaleRepository: ISaleRepository = {
         }
       }
 
-      // 3. Deduct inventory for sale items (regular products)
       for (const item of data.items) {
         await tx.product.update({
           where: { id: item.product_id },
@@ -141,7 +131,6 @@ export const SaleRepository: ISaleRepository = {
         })
       }
 
-      // 4. Deduct inventory for service products
       if (serviceProductsToDeduct) {
         for (const sp of serviceProductsToDeduct) {
           await tx.product.update({
@@ -162,7 +151,6 @@ export const SaleRepository: ISaleRepository = {
         }
       }
 
-      // 5. Re-fetch with full relations for the response
       const fullSale = await tx.sale.findUnique({
         where: { id: created.id },
         include: {
@@ -194,42 +182,140 @@ export const SaleRepository: ISaleRepository = {
   },
 
   async findAll(params) {
-    const where: SaleWhereInput = {}
-
-    if (params?.storeId) where.store_id = params.storeId
-
-    if (params?.startDate || params?.endDate) {
-      where.created_at = {
-        ...(params.startDate && { gte: params.startDate }),
-        ...(params.endDate && { lte: params.endDate }),
-      }
-    }
-    if (params?.userId) where.user_id = params.userId
-    if (params?.paymentMethod) where.payment_method = params.paymentMethod
-
     const page = params?.page || 1
     const limit = params?.limit || 50
     const skip = (page - 1) * limit
 
-    const [sales, total] = await Promise.all([
-      prisma.sale.findMany({
-        where,
+    const needsRawQuery =
+      (params?.minTotalQty !== undefined && params.minTotalQty > 0) ||
+      (params?.minItemsCount !== undefined && params.minItemsCount > 0)
+
+    const saleDetailInclude = {
+      items: true,
+      service_items: {
         include: {
-          items: true,
-          service_items: {
-            include: { products: true },
-          },
+          products: true,
         },
-        skip,
-        take: limit,
-        orderBy: { created_at: "desc" },
-      }),
-      prisma.sale.count({ where }),
-    ])
+      },
+    } as const
+
+    if (!needsRawQuery) {
+      const where: SaleWhereInput = {}
+
+      if (params?.storeId) where.store_id = params.storeId
+
+      if (params?.startDate || params?.endDate) {
+        where.created_at = {
+          ...(params.startDate && { gte: params.startDate }),
+          ...(params.endDate && { lte: params.endDate }),
+        }
+      }
+      if (params?.userId) where.user_id = params.userId
+      if (params?.paymentMethod) where.payment_method = params.paymentMethod
+      if (params?.q && params.q.trim()) {
+        where.user_name = { contains: params.q.trim(), mode: "insensitive" }
+      }
+
+      const [sales, total] = await Promise.all([
+        prisma.sale.findMany({
+          where,
+          include: saleDetailInclude,
+          skip,
+          take: limit,
+          orderBy: { created_at: "desc" },
+        }),
+        prisma.sale.count({ where }),
+      ])
+
+      return {
+        sales: sales.map(mapPrismaSaleToEntity),
+        total,
+      }
+    }
+
+    const conditions: string[] = ["s.store_id = $1::text"]
+    const sqlParams: any[] = [params.storeId]
+    let pIdx = 2
+
+    if (params?.startDate) {
+      conditions.push(`s.created_at >= $${pIdx}::timestamptz`)
+      sqlParams.push(params.startDate)
+      pIdx++
+    }
+    if (params?.endDate) {
+      conditions.push(`s.created_at <= $${pIdx}::timestamptz`)
+      sqlParams.push(params.endDate)
+      pIdx++
+    }
+    if (params?.userId) {
+      conditions.push(`s.user_id = $${pIdx}::text`)
+      sqlParams.push(params.userId)
+      pIdx++
+    }
+    if (params?.paymentMethod) {
+      conditions.push(`s.payment_method = $${pIdx}::text`)
+      sqlParams.push(params.paymentMethod)
+      pIdx++
+    }
+    if (params?.q && params.q.trim()) {
+      conditions.push(`s.user_name ILIKE $${pIdx}::text`)
+      sqlParams.push(`%${params.q.trim()}%`)
+      pIdx++
+    }
+
+    const havingConditions: string[] = []
+    if (params?.minItemsCount !== undefined && params.minItemsCount > 0) {
+      havingConditions.push(`COUNT(si.id) >= $${pIdx}::int`)
+      sqlParams.push(params.minItemsCount)
+      pIdx++
+    }
+    if (params?.minTotalQty !== undefined && params.minTotalQty > 0) {
+      havingConditions.push(`COALESCE(SUM(si.quantity), 0) >= $${pIdx}::int`)
+      sqlParams.push(params.minTotalQty)
+      pIdx++
+    }
+
+    const whereClause = `WHERE ${conditions.join(" AND ")}`
+    const havingClause = havingConditions.length > 0 ? `HAVING ${havingConditions.join(" AND ")}` : ""
+
+    const countRows = await prisma.$queryRawUnsafe<Array<{ total: number }>>(
+      `SELECT CAST(COUNT(*) AS INTEGER) AS total FROM (
+        SELECT s.id
+        FROM sales s
+        LEFT JOIN sale_items si ON s.id = si.sale_id
+        ${whereClause}
+        GROUP BY s.id
+        ${havingClause}
+      ) AS filtered`,
+      ...sqlParams,
+    )
+
+    const idRows = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+      `SELECT s.id
+       FROM sales s
+       LEFT JOIN sale_items si ON s.id = si.sale_id
+       ${whereClause}
+       GROUP BY s.id
+       ${havingClause}
+       ORDER BY s.created_at DESC
+       LIMIT $${pIdx}::int OFFSET $${pIdx + 1}::int`,
+      ...sqlParams,
+      limit,
+      skip,
+    )
+
+    const ids = idRows.map((r) => r.id)
+    const sales = ids.length > 0
+      ? await prisma.sale.findMany({
+          where: { id: { in: ids } },
+          include: saleDetailInclude,
+          orderBy: { created_at: "desc" },
+        })
+      : []
 
     return {
       sales: sales.map(mapPrismaSaleToEntity),
-      total,
+      total: Number(countRows[0]?.total ?? 0),
     }
   },
 
@@ -266,14 +352,12 @@ export const SaleRepository: ISaleRepository = {
 
     const productMap = new Map<string, { productName: string; quantity: number; revenue: number }>()
     for (const sale of sales) {
-      // Regular items
       for (const item of sale.items) {
         const existing = productMap.get(item.product_id) || { productName: item.product_name, quantity: 0, revenue: 0 }
         existing.quantity += item.quantity
         existing.revenue += Number(item.line_total)
         productMap.set(item.product_id, existing)
       }
-      // Service products
       if (sale.service_items) {
         for (const si of sale.service_items) {
           if (si.products) {

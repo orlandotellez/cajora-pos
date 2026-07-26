@@ -45,6 +45,9 @@ export const SaleQuerySchema = z.object({
   end_date: z.string().optional(),
   user_id: z.string().uuid().optional(),
   payment_method: z.enum(["efectivo", "tarjeta", "transferencia", "credito"]).optional(),
+  q: z.string().min(1).optional(),
+  min_total_qty: z.coerce.number().int().nonnegative().optional(),
+  min_items_count: z.coerce.number().int().nonnegative().optional(),
   page: z.coerce.number().int().positive().optional(),
   limit: z.coerce.number().int().positive().max(100).optional(),
 })

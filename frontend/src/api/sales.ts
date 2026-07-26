@@ -107,6 +107,9 @@ export const salesApi = {
     end_date?: string;
     user_id?: string;
     payment_method?: string;
+    q?: string;
+    min_total_qty?: number | string;
+    min_items_count?: number | string;
     page?: number;
     limit?: number;
   }) => api.get<SaleListResponse>("/sales", params as Record<string, string | number | boolean | undefined>),

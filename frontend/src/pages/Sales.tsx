@@ -1,5 +1,5 @@
-import { Fragment, useEffect, useState } from "react";
-import { Search, X, Printer } from "lucide-react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { X, Printer } from "lucide-react";
 import { salesApi, type Sale } from "@/api/sales";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { money } from "@/lib/format";
@@ -9,6 +9,26 @@ import { SaleTable } from "@/components/pages/sales/SaleTable";
 import styles from "./Sales.module.css";
 import { cacheGet, cacheKey, cacheSet } from "@/lib/simple-cache";
 
+function useDebounced<T>(value: T, ms: number): readonly [T, (v: T) => void] {
+  const [v, setV] = useState(value);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setV(value), ms);
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [value, ms]);
+
+  const flush = useCallback((newValue: T) => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    setV(newValue);
+  }, []);
+
+  return [v, flush] as const;
+}
+
 export default function Sales() {
   const [sales, setSales] = useState<Sale[]>([]);
   const [total, setTotal] = useState(0);
@@ -16,14 +36,25 @@ export default function Sales() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("");
+  const [userNameFilter, setUserNameFilter] = useState("");
+  const [minQtyFilter, setMinQtyFilter] = useState("");
+  const [minItemsFilter, setMinItemsFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Sale | null>(null);
   const { storeName, storeAddress, storePhone, storeFooter } = useStoreSettings();
 
-  const totalPages = Math.max(1, Math.ceil(total / LIMIT));
+  const [debouncedUserName, flushUserName] = useDebounced(userNameFilter, 300);
+  const [debouncedMinQty, flushMinQty] = useDebounced(minQtyFilter, 300);
+  const [debouncedMinItems, flushMinItems] = useDebounced(minItemsFilter, 300);
+
+  const trimmedUser = debouncedUserName.trim();
+  const trimmedQtyStr = debouncedMinQty.trim();
+  const trimmedItemsStr = debouncedMinItems.trim();
+  const minQtyNum = trimmedQtyStr ? Math.max(1, Math.floor(Number(trimmedQtyStr))) : 0;
+  const minItemsNum = trimmedItemsStr ? Math.max(1, Math.floor(Number(trimmedItemsStr))) : 0;
 
   const fetchSales = async (p: number) => {
-    const key = cacheKey("sales", p, startDate, endDate, paymentFilter);
+    const key = cacheKey("sales", p, startDate, endDate, paymentFilter, trimmedUser, minQtyNum, minItemsNum);
     const cached = cacheGet<{ sales: Sale[]; total: number }>(key);
     if (cached) {
       setSales(cached.sales);
@@ -39,6 +70,9 @@ export default function Sales() {
         start_date: startDate || undefined,
         end_date: endDate || undefined,
         payment_method: paymentFilter || undefined,
+        q: trimmedUser || undefined,
+        min_total_qty: minQtyNum > 0 ? minQtyNum : undefined,
+        min_items_count: minItemsNum > 0 ? minItemsNum : undefined,
       });
       setSales(res.sales);
       setTotal(res.total);
@@ -47,9 +81,31 @@ export default function Sales() {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchSales(page); }, [page, paymentFilter]);
+  useEffect(() => {
+    fetchSales(1);
+    setPage(1);
+  }, [startDate, endDate, paymentFilter, debouncedUserName, debouncedMinQty, debouncedMinItems]);
 
-  function handleSearch() { setPage(1); }
+  useEffect(() => {
+    if (page > 1) fetchSales(page);
+  }, [page]);
+
+  const hasActiveFilters = Boolean(
+    startDate || endDate || paymentFilter || userNameFilter || minQtyFilter || minItemsFilter
+  );
+
+  function clearFilters() {
+    setStartDate("");
+    setEndDate("");
+    setPaymentFilter("");
+    setUserNameFilter("");
+    setMinQtyFilter("");
+    setMinItemsFilter("");
+    flushUserName("");
+    flushMinQty("");
+    flushMinItems("");
+    setPage(1);
+  }
 
   function openDetails(sale: Sale) {
     if (!sale.items || sale.items.length === 0) {
@@ -69,26 +125,63 @@ export default function Sales() {
       </header>
 
       <div className={styles.filters}>
-        <div className={styles.filterGroup}>
-          <label className={styles.filterLabel}>Desde</label>
-          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={styles.filterInput} />
-        </div>
-        <div className={styles.filterGroup}>
-          <label className={styles.filterLabel}>Hasta</label>
-          <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={styles.filterInput} />
-        </div>
-        <div className={styles.filterGroup}>
-          <label className={styles.filterLabel}>Pago</label>
-          <select value={paymentFilter} onChange={(e) => setPaymentFilter(e.target.value)} className={styles.filterSelect}>
-            <option value="">Todos</option>
-            {PAYMENT_METHODS.map((pm) => (
-              <option key={pm.value} value={pm.value}>{pm.label}</option>
-            ))}
-          </select>
-        </div>
-        <button onClick={handleSearch} className={styles.searchBtn}>
-          <Search size={16} /> Buscar
-        </button>
+        <input
+          type="date"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+          aria-label="Fecha desde"
+          className={styles.filterInput}
+        />
+        <input
+          type="date"
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
+          aria-label="Fecha hasta"
+          className={styles.filterInput}
+        />
+        <select
+          value={paymentFilter}
+          onChange={(e) => setPaymentFilter(e.target.value)}
+          aria-label="Tipo de pago"
+          className={styles.filterSelect}
+        >
+          <option value="">Todos los pagos</option>
+          {PAYMENT_METHODS.map((pm) => (
+            <option key={pm.value} value={pm.value}>{pm.label}</option>
+          ))}
+        </select>
+        <input
+          type="text"
+          value={userNameFilter}
+          onChange={(e) => setUserNameFilter(e.target.value)}
+          placeholder="Usuario"
+          aria-label="Filtrar por usuario"
+          className={styles.filterInput}
+        />
+        <input
+          type="number"
+          min="1"
+          value={minQtyFilter}
+          onChange={(e) => setMinQtyFilter(e.target.value)}
+          placeholder="Cantidad mín."
+          aria-label="Cantidad mínima (suma de unidades en la venta)"
+          className={`${styles.filterInput} ${styles.filterInputNarrow}`}
+        />
+        <input
+          type="number"
+          min="1"
+          value={minItemsFilter}
+          onChange={(e) => setMinItemsFilter(e.target.value)}
+          placeholder="Arts. mín."
+          aria-label="Artículos mínimos (líneas distintas en la venta)"
+          className={`${styles.filterInput} ${styles.filterInputNarrow}`}
+        />
+        {hasActiveFilters && (
+          <button type="button" onClick={clearFilters} className={styles.clearBtn} title="Limpiar todos los filtros">
+            <X size={14} />
+            <span>Limpiar</span>
+          </button>
+        )}
       </div>
 
       <SaleTable
@@ -96,7 +189,7 @@ export default function Sales() {
         loading={loading}
         total={total}
         page={page}
-        totalPages={totalPages}
+        totalPages={Math.max(1, Math.ceil(total / LIMIT))}
         onPageChange={setPage}
         onView={openDetails}
         dimmed={false}
