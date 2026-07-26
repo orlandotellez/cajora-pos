@@ -286,6 +286,7 @@
 
 .main {
   min-height: 100vh;
+  box-sizing: border-box;
 }
 
 @media (min-width: 768px) {
@@ -296,7 +297,7 @@
 
 @media (max-width: 768px) {
   .main {
-    margin-top: calc(50px + env(safe-area-inset-top));
+    padding-top: calc(50px + env(safe-area-inset-top));
   }
 }
 

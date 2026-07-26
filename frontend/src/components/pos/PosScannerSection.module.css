@@ -40,6 +40,7 @@
   overflow: hidden;
   transition: max-height 0.35s ease, opacity 0.3s ease;
   background: #000;
+  border-radius: 0px 0px 25px 25px;
 }
 
 @media (max-width: 767px) {
