@@ -11,25 +11,10 @@ import { AppError } from "./core/errors/AppError"
 import { env } from "./config/env"
 //import { getRedisClient } from "./config/redis"
 import { routes } from "./presentation/routes"
+import { logger } from "./config/logger"
 
 export const buildApp = async () => {
-  const app = Fastify({
-    logger: env.NODE_ENV === 'development'
-      ? {
-        level: 'debug',
-        transport: {
-          target: 'pino-pretty',
-          options: {
-            colorize: true,
-            translateTime: 'SYS:standard',
-            ignore: 'pid,hostname',
-          },
-        },
-      }
-      : {
-        level: 'info',
-      },
-  })
+  const app = Fastify({ loggerInstance: logger })
 
   // comentar hasta que se use
   //getRedisClient()
