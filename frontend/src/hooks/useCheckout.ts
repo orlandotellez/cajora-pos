@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { salesApi, type CreateSalePayload } from "@/api/sales";
-import { printTicket } from "@/lib/pos-ticket";
+import { printersApi } from "@/api/printers";
+import { ApiError } from "@/api/client";
 import { money } from "@/lib/format";
 import { type PaymentMethod } from "@/lib/constants";
 import { usePosStore, type CartItem, type ProductCartItem, type ServiceCartItem } from "@/store/posStore";
@@ -96,24 +97,35 @@ export function useCheckout(opts: UseCheckoutOptions): UseCheckoutReturn {
   }, [clearCart, setCheckingOut]);
 
   const handlePrintTicket = useCallback(
-    (saleId: string, saleUserName: string) => {
+    async (saleId: string, saleUserName: string) => {
       if (!completedSale) return;
-      printTicket(
-        saleId,
-        saleUserName,
-        completedSale.cart,
-        completedSale.totals,
-        completedSale.payment,
-        completedSale.received,
-        storeSettings.storeName,
-        storeSettings.storeAddress,
-        storeSettings.storePhone,
-        storeSettings.storeFooter,
-        completedSale.discountPct,
-      );
-      finalizeSale();
+      try {
+        const res = await printersApi.list();
+        const defaultPrinter = res.printers.find(
+          (p) => p.is_default && p.is_active
+        );
+        if (!defaultPrinter) {
+          showAlert(
+            "No hay una impresora predeterminada configurada. Configurá una en Ajustes > Impresoras."
+          );
+          return;
+        }
+        const result = await printersApi.printReceipt(defaultPrinter.id, saleId, 1);
+        if (result.success) {
+          finalizeSale();
+        } else {
+          showAlert(
+            result.error ||
+              "No se pudo imprimir el recibo. Verificá la conexión con la impresora."
+          );
+        }
+      } catch (err) {
+        showAlert(
+          `Error al imprimir: ${(err as ApiError).message}`
+        );
+      }
     },
-    [completedSale, finalizeSale, storeSettings.storeName, storeSettings.storeAddress, storeSettings.storePhone, storeSettings.storeFooter],
+    [completedSale, finalizeSale, showAlert],
   );
 
   const checkout = useCallback(async () => {
