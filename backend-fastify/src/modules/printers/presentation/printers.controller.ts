@@ -1,7 +1,7 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { createPrintersService } from "../application/printers.service";
 import { PrinterRepository } from "../infrastructure/printers.prisma.repository";
-import { CreatePrinterDtoSchema, PrinterIdParamSchema, PrintReceiptDtoSchema, SetDefaultPrinterDtoSchema, TestPrintDtoSchema, UpdatePrinterDtoSchema } from "./printers.dto";
+import { CreatePrinterDtoSchema, PrinterIdParamSchema, PrintReceiptDtoSchema, SetDefaultPrinterDtoSchema, SendTcpDtoSchema, TestPrintDtoSchema, UpdatePrinterDtoSchema } from "./printers.dto";
 
 const printersService = createPrintersService(PrinterRepository)
 
@@ -48,15 +48,8 @@ export const printersController = {
 
     const result = await printersService.testPrint(id, request.storeId as string, body.copies)
 
-    if (!result.success) {
-      return reply.status(502).send({
-        message: "No se pudo conectar con la impresora",
-        ...result,
-      })
-    }
-
     return reply.status(200).send({
-      message: "Ticket de prueba enviado correctamente",
+      message: "Ticket de prueba generado correctamente",
       ...result,
     })
   },
@@ -66,15 +59,26 @@ export const printersController = {
 
     const result = await printersService.probePrint(id, request.storeId as string)
 
+    return reply.status(200).send({
+      message: "Probe generado. Enviá el ticket desde el dispositivo para identificar la codepage correcta.",
+      ...result,
+    })
+  },
+
+  sendTcp: async (request: FastifyRequest, reply: FastifyReply) => {
+    const body = SendTcpDtoSchema.parse(request.body)
+
+    const result = await printersService.sendTcp(body.ticket_base64, body.address, body.port)
+
     if (!result.success) {
       return reply.status(502).send({
-        message: "No se pudo conectar con la impresora",
+        message: "No se pudo conectar con la impresora desde el servidor",
         ...result,
       })
     }
 
     return reply.status(200).send({
-      message: "Probe enviado. En el ticket impreso, identificá la línea donde 'ñ á é í ó ú' se vean correctos.",
+      message: "Datos enviados a la impresora correctamente",
       ...result,
     })
   },
@@ -85,15 +89,8 @@ export const printersController = {
 
     const result = await printersService.printReceipt(id, request.storeId as string, sale_id, copies, currency)
 
-    if (!result.success) {
-      return reply.status(502).send({
-        message: "No se pudo imprimir el recibo. Verificá la conexión con la impresora.",
-        ...result,
-      })
-    }
-
     return reply.status(200).send({
-      message: "Recibo impreso correctamente",
+      message: "Ticket generado correctamente",
       ...result,
     })
   }

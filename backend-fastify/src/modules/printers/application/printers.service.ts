@@ -6,8 +6,8 @@ import type { IPrinterResponse, PrinterRole, PrinterConnType, PrinterProfile, Pr
 import type { IPrinterEntity, CreatePrinterData, UpdatePrinterData } from "../domain/printers.entities"
 import type { CreatePrinterDto, UpdatePrinterDto } from "../presentation/printers.dto"
 import { duplicateForCopies, renderTestTicket, renderCodepageProbe, renderSaleReceipt, resolveCurrencySymbol } from "../infrastructure/escpos/encoder"
-import type { SaleReceiptItem, SaleReceiptService, SaleReceiptServiceProduct } from "../infrastructure/escpos/encoder"
 import { sendBytesViaTCP } from "../infrastructure/escpos/transport.tcp"
+import type { SaleReceiptItem, SaleReceiptService, SaleReceiptServiceProduct } from "../infrastructure/escpos/encoder"
 
 const PRINTER_SELECT = {
   id: true,
@@ -281,16 +281,21 @@ export const createPrintersService = (repository: IPrinterRepository) => ({
     })
 
     const allBytes = duplicateForCopies(ticket, copies)
-
-    const result = await sendBytesViaTCP(printer.address, printer.port, allBytes)
+    const ticketBase64 = Buffer.from(allBytes).toString("base64")
 
     return {
-      success: result.success,
-      bytes_sent: result.bytes_sent,
-      duration_ms: result.duration_ms,
-      error: result.error,
-      target: { address: printer.address, port: printer.port, protocol: "TCP" },
-      ticket_bytes: ticket.length,
+      success: true,
+      ticket_base64: ticketBase64,
+      ticket_bytes: allBytes.length,
+      printer: {
+        id: printer.id,
+        name: printer.name,
+        address: printer.address,
+        port: printer.port,
+        paper_width: printer.paper_width,
+        profile: printer.profile,
+        codepage: printer.codepage,
+      },
     }
   },
 
@@ -309,17 +314,29 @@ export const createPrintersService = (repository: IPrinterRepository) => ({
     }
 
     const bytes = renderCodepageProbe()
-    const result = await sendBytesViaTCP(printer.address, printer.port, bytes)
+    const ticketBase64 = Buffer.from(bytes).toString("base64")
 
     return {
-      success: result.success,
-      bytes_sent: result.bytes_sent,
-      duration_ms: result.duration_ms,
-      error: result.error,
-      target: { address: printer.address, port: printer.port, protocol: "TCP" },
+      success: true,
+      ticket_base64: ticketBase64,
+      ticket_bytes: bytes.length,
+      printer: {
+        id: printer.id,
+        name: printer.name,
+        address: printer.address,
+        port: printer.port,
+        paper_width: printer.paper_width,
+        profile: printer.profile,
+        codepage: printer.codepage,
+      },
       indices_tested: Array.from({ length: 41 }, (_, i) => i),
       hint: "Mirá la línea donde aparezca correctamente 'ñ á é í ó ú'. Ese índice es CP850 (o similar) en tu impresora.",
     }
+  },
+
+  sendTcp: async (ticketBase64: string, address: string, port: number) => {
+    const bytes = Buffer.from(ticketBase64, "base64")
+    return await sendBytesViaTCP(address, port, bytes)
   },
 
   printReceipt: async (id: string, storeId: string, saleId: string, copies: number, currency: string = "NIO") => {
@@ -395,15 +412,21 @@ export const createPrintersService = (repository: IPrinterRepository) => ({
     )
 
     const allBytes = duplicateForCopies(ticket, copies)
-    const result = await sendBytesViaTCP(printer.address, printer.port, allBytes)
+    const ticketBase64 = Buffer.from(allBytes).toString("base64")
 
     return {
-      success: result.success,
-      bytes_sent: result.bytes_sent,
-      duration_ms: result.duration_ms,
-      error: result.error,
-      target: { address: printer.address, port: printer.port, protocol: "TCP" },
-      ticket_bytes: ticket.length,
+      success: true,
+      ticket_base64: ticketBase64,
+      ticket_bytes: allBytes.length,
+      printer: {
+        id: printer.id,
+        name: printer.name,
+        address: printer.address,
+        port: printer.port,
+        paper_width: printer.paper_width,
+        profile: printer.profile,
+        codepage: printer.codepage,
+      },
     }
   },
 })

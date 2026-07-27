@@ -39,7 +39,7 @@ class TauriResponse {
  * Detecta si la app está corriendo dentro de Tauri (desktop o Android).
  * En web plano `window.__TAURI_INTERNALS__` no existe.
  */
-function isTauriRuntime(): boolean {
+export function isTauriRuntime(): boolean {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 }
 

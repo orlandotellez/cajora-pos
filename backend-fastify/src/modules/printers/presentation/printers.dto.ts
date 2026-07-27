@@ -78,6 +78,14 @@ export const PrintReceiptDtoSchema = z.object({
 
 export type PrintReceiptDto = z.infer<typeof PrintReceiptDtoSchema>
 
+export const SendTcpDtoSchema = z.object({
+  ticket_base64: z.string().min(1, "Los datos del ticket son obligatorios"),
+  address: z.string().min(1, "La dirección IP es obligatoria"),
+  port: z.number().int().min(1).max(65535),
+})
+
+export type SendTcpDto = z.infer<typeof SendTcpDtoSchema>
+
 export const PrinterIdParamSchema = z.object({
   id: z.string().uuid("ID de impresora inválido"),
 })

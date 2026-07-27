@@ -3,6 +3,7 @@ import { salesApi, type CreateSalePayload } from "@/api/sales";
 import { printersApi } from "@/api/printers";
 import { ApiError } from "@/api/client";
 import { getStoredCurrency, money } from "@/lib/format";
+import { sendBytesToPrinter } from "@/lib/tcp-printer";
 import { type PaymentMethod } from "@/lib/constants";
 import { usePosStore, type CartItem, type ProductCartItem, type ServiceCartItem } from "@/store/posStore";
 
@@ -111,12 +112,24 @@ export function useCheckout(opts: UseCheckoutOptions): UseCheckoutReturn {
           return;
         }
         const result = await printersApi.printReceipt(defaultPrinter.id, saleId, 1, getStoredCurrency());
-        if (result.success) {
+
+        if (!result.ticket_base64 || !result.printer) {
+          showAlert("El servidor no generó el ticket correctamente");
+          return;
+        }
+
+        const tcpResult = await sendBytesToPrinter(
+          result.ticket_base64,
+          result.printer.address,
+          result.printer.port,
+        );
+
+        if (tcpResult.success) {
           finalizeSale();
         } else {
           showAlert(
-            result.error ||
-              "No se pudo imprimir el recibo. Verificá la conexión con la impresora."
+            tcpResult.error ||
+              "No se pudo enviar el recibo a la impresora. Verificá que esté encendida y conectada."
           );
         }
       } catch (err) {

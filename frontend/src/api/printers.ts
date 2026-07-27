@@ -37,6 +37,16 @@ export interface PrintJobResult {
   error?: string;
   target?: { address: string; port: number; protocol: string };
   ticket_bytes?: number;
+  ticket_base64?: string;
+  printer?: {
+    id: string;
+    name: string;
+    address: string;
+    port: number;
+    paper_width: number;
+    profile: string;
+    codepage: string;
+  };
   hint?: string;
   indices_tested?: number[];
 }
@@ -89,4 +99,7 @@ export const printersApi = {
 
   printReceipt: (id: string, saleId: string, copies: number = 1, currency: string = "NIO") =>
     api.post<PrintJobResult>(`/printers/${id}/print-receipt`, { sale_id: saleId, copies, currency }),
+
+  sendTcp: (ticketBase64: string, address: string, port: number) =>
+    api.post<PrintJobResult>("/printers/send-tcp", { ticket_base64: ticketBase64, address, port }),
 };

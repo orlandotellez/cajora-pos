@@ -5,6 +5,8 @@ import type {
   Printer,
   CreatePrinterPayload,
 } from "@/api/printers";
+import { sendBytesToPrinter } from "@/lib/tcp-printer";
+import { isTauriRuntime } from "@/lib/fetch";
 import { DataTable, type Column } from "@/components/common/DataTable";
 import { ApiError } from "@/api/client";
 import { useToast } from "@/components/common/ui/Toast";
@@ -178,10 +180,37 @@ export default function PrintersPanel() {
     setBusy(true);
     try {
       const res = await printersApi.testPrint(id, 1);
-      if (res.success) {
-        toast(`Test enviado: ${res.bytes_sent} bytes en ${res.duration_ms}ms`, "success");
+      if (!res.ticket_base64 || !res.printer) {
+        toast("El servidor no generó el ticket de prueba", "error");
+        return;
+      }
+
+      if (isTauriRuntime()) {
+        // Tauri (desktop/Android): envía TCP directo desde el dispositivo
+        const tcpResult = await sendBytesToPrinter(
+          res.ticket_base64,
+          res.printer.address,
+          res.printer.port,
+        );
+
+        if (tcpResult.success) {
+          toast(`Test exitoso: ${tcpResult.bytes_sent} bytes en ${tcpResult.duration_ms}ms`, "success");
+        } else {
+          toast(tcpResult.error || "Falló la conexión con la impresora", "error");
+        }
       } else {
-        toast(res.error || "Falló la conexión con la impresora", "error");
+        // Web: envía TCP proxeado por el backend
+        const proxyResult = await printersApi.sendTcp(
+          res.ticket_base64,
+          res.printer.address,
+          res.printer.port,
+        );
+
+        if (proxyResult.success) {
+          toast(`Test exitoso: ${proxyResult.bytes_sent} bytes en ${proxyResult.duration_ms}ms`, "success");
+        } else {
+          toast(proxyResult.error || "El servidor no pudo conectar con la impresora. Si estás en producción, usá la app nativa.", "error");
+        }
       }
     } catch (err) {
       toast(`Test falló: ${(err as ApiError).message}`, "error");

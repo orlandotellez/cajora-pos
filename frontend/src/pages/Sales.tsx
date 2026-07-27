@@ -5,6 +5,7 @@ import { printersApi } from "@/api/printers";
 import { ApiError } from "@/api/client";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { getStoredCurrency, money } from "@/lib/format";
+import { sendBytesToPrinter } from "@/lib/tcp-printer";
 import { PAGE_LIMIT as LIMIT, PAYMENT_METHODS } from "@/lib/constants";
 import { useToast } from "@/components/common/ui/Toast";
 import { SaleTable } from "@/components/pages/sales/SaleTable";
@@ -220,11 +221,23 @@ export default function Sales() {
                       return;
                     }
                     const result = await printersApi.printReceipt(defaultPrinter.id, selected.id, 1, getStoredCurrency());
-                    if (result.success) {
+
+                    if (!result.ticket_base64 || !result.printer) {
+                      toast("El servidor no generó el ticket correctamente", "error");
+                      return;
+                    }
+
+                    const tcpResult = await sendBytesToPrinter(
+                      result.ticket_base64,
+                      result.printer.address,
+                      result.printer.port,
+                    );
+
+                    if (tcpResult.success) {
                       toast("Recibo impreso correctamente", "success");
                     } else {
                       toast(
-                        result.error || "No se pudo imprimir el recibo. Verificá la conexión con la impresora.",
+                        tcpResult.error || "No se pudo enviar el recibo a la impresora. Verificá que esté encendida y conectada.",
                         "error"
                       );
                     }
