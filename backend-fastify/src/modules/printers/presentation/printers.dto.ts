@@ -8,7 +8,7 @@ const baseFields = {
   role: z.enum(["receipt", "kitchen", "both"]),
   paper_width: z.union([z.literal(58), z.literal(80)]),
   profile: z.nativeEnum(PRINTER_PROFILE).default("escpos"),
-  codepage: z.string().min(1).default("PC850"),
+  codepage: z.string().min(1).default("ISO-8859-1"),
   auto_cut: z.boolean().default(true),
   cut_type: z.enum(["full", "partial"]).nullable().optional(),
   open_cash_drawer: z.boolean().default(false),

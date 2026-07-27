@@ -279,6 +279,14 @@ export default function Pos() {
     clearCart,
   });
 
+  // Cuando se finaliza una venta (completedSale pasa a null),
+  // volver automáticamente a la pantalla de scanner/búsqueda en mobile
+  useEffect(() => {
+    if (!completedSale) {
+      setShowMobileCheckout(false);
+    }
+  }, [completedSale]);
+
   function handleFinalizeSale() {
     finalizeSale();
     setShowMobileCheckout(false);

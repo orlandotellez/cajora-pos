@@ -20,7 +20,7 @@ const DEFAULT_FORM: CreatePrinterPayload = {
   role: "receipt",
   paper_width: 80,
   profile: "escpos",
-  codepage: "CP850",
+  codepage: "ISO-8859-1",
   auto_cut: true,
   cut_type: "full",
   open_cash_drawer: false,

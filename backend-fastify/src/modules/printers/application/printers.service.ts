@@ -330,7 +330,7 @@ export const createPrintersService = (repository: IPrinterRepository) => ({
         codepage: printer.codepage,
       },
       indices_tested: Array.from({ length: 41 }, (_, i) => i),
-      hint: "Mirá la línea donde aparezca correctamente 'ñ á é í ó ú'. Ese índice es CP850 (o similar) en tu impresora.",
+      hint: "Mirá la línea donde aparezca correctamente 'ñ á é í ó ú'. Ese índice es la codepage correcta para tu impresora.",
     }
   },
 

@@ -96,7 +96,7 @@ export const PrinterRepository: IPrinterRepository = {
         port: data.port ?? null,
         paper_width: data.paper_width,
         profile: data.profile,
-        codepage: data.codepage ?? "PC850",
+        codepage: data.codepage ?? "ISO-8859-1",
         auto_cut: data.auto_cut ?? true,
         cut_type: data.cut_type ?? null,
         open_cash_drawer: data.open_cash_drawer ?? false,
