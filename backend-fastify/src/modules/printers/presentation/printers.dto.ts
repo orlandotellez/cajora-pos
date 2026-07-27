@@ -54,7 +54,13 @@ export const CreatePrinterDtoSchema = crossRules(
 
 export type CreatePrinterDto = z.infer<typeof CreatePrinterDtoSchema>
 
-export const UpdatePrinterDtoSchema = crossRules(baseObject.partial())
+export const UpdatePrinterDtoSchema = crossRules(
+  baseObject.extend({
+    connection_type: z.enum(["net", "usb", "bluetooth"]).optional(),
+    address: z.string().optional(),
+    port: z.number().int().min(1).max(65535).optional().nullable(),
+  }).partial(),
+)
 
 export type UpdatePrinterDto = z.infer<typeof UpdatePrinterDtoSchema>
 
