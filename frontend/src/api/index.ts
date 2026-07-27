@@ -8,6 +8,7 @@ export { inventoryApi } from "./inventory";
 export { suppliersApi } from "./suppliers";
 export { settingsApi } from "./settings";
 export { usersApi } from "./users";
+export { printersApi } from "./printers";
 
 export type { AuthUser, Role } from "./auth";
 export type { Product, ProductCategory, ProductSupplier, ProductListResponse } from "./products";
@@ -18,3 +19,4 @@ export type { InventoryMovement, MovementListResponse, LowStockProduct, LowStock
 export type { Supplier, SupplierListResponse, CreateSupplierPayload, UpdateSupplierPayload } from "./suppliers";
 export type { Settings } from "./settings";
 export type { UserResponse, UserListResponse, CreateUserPayload, UpdateUserPayload } from "./users";
+export type { Printer, PrintJobResult, CreatePrinterPayload, UpdatePrinterPayload, TestPrintPayload, SetDefaultRole, PrinterConnType, PrinterProfile, PrinterRole, PrinterCutType } from "./printers";

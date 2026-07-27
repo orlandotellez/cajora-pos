@@ -1,5 +1,5 @@
 .page {
-  max-width: 600px;
+  max-width: 1000px;
   margin: 0 auto;
 }
 
@@ -10,7 +10,7 @@
 }
 
 .header {
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 
 @media (max-width: 768px) {
@@ -36,10 +36,54 @@
   color: var(--muted-foreground);
 }
 
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+  padding-inline: 24px;
+  overflow-x: auto;
+}
+
+.tab {
+  appearance: none;
+  background: transparent;
+  border: none;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  white-space: nowrap;
+  transition: color 120ms ease, border-color 120ms ease;
+}
+
+.tab:hover {
+  color: var(--foreground);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -3px;
+  border-radius: 4px;
+}
+
+.tabActive {
+  color: var(--foreground);
+  border-bottom-color: var(--foreground);
+}
+
+.tabPanel {
+  padding-inline: 24px;
+}
+
 .form {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  max-width: 600px;
 }
 
 .field {
