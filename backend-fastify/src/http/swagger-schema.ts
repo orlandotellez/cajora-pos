@@ -20,17 +20,14 @@ function sanitizeSchema(node: unknown): void {
 
   const obj = node as Record<string, unknown>
 
+  // ── strict-mode: Ajv rechaza "default" sin useDefaults ──
+  delete obj.default
+
   // ── exclusiveMinimum / exclusiveMaximum booleanos → numéricos ──
   if (obj.exclusiveMinimum === true && typeof obj.minimum === "number") {
     obj.exclusiveMinimum = obj.minimum
   } else if (obj.exclusiveMinimum === true) {
     obj.exclusiveMinimum = 0
-  }
-
-  if (obj.exclusiveMaximum === true && typeof obj.maximum === "number") {
-    obj.exclusiveMaximum = obj.maximum
-  } else if (obj.exclusiveMaximum === true) {
-    obj.exclusiveMaximum = 0
   }
 
   // ── nullable sin type → inválido para Ajv ──

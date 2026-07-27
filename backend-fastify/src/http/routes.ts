@@ -9,6 +9,7 @@ import { servicesRoutes } from "@/modules/services/presentation/services.routes"
 import { settingsRoutes } from "@/modules/settings/presentation/settings.routes";
 import { usersRoutes } from "@/modules/users/presentation/users.routes";
 import { type FastifyInstance, type FastifyPluginOptions } from "fastify";
+import { printersRoutes } from "@/modules/printers/presentation/printers.router";
 
 export const routes = async (fastify: FastifyInstance, _opts: FastifyPluginOptions) => {
   fastify.register(authRoutes, { prefix: "/auth" })
@@ -20,5 +21,6 @@ export const routes = async (fastify: FastifyInstance, _opts: FastifyPluginOptio
   fastify.register(batchInventoryRoutes, { prefix: "/inventory/batches" })
   fastify.register(suppliersRoutes, { prefix: "/suppliers" })
   fastify.register(settingsRoutes, { prefix: "/settings" })
+  fastify.register(printersRoutes, { prefix: "/printers" })
   fastify.register(usersRoutes, { prefix: "/users" })
 }

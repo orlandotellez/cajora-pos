@@ -467,8 +467,9 @@ model printer {
   last_status  PRINTER_STATUS @default(unknown)
   last_seen_at DateTime?
 
-  created_at DateTime @default(now()) @db.Timestamptz
-  updated_at DateTime @updatedAt @db.Timestamptz
+  created_at DateTime  @default(now()) @db.Timestamptz
+  updated_at DateTime  @updatedAt @db.Timestamptz
+  deleted_at DateTime? @db.Timestamptz
 
   store       store                @relation(fields: [store_id], references: [id])
   assignments printer_assignment[]
