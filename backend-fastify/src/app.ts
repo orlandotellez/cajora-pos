@@ -6,8 +6,7 @@ import cookie from "@fastify/cookie"
 import rateLimit from "@fastify/rate-limit"
 import swagger from "@fastify/swagger"
 import swaggerUi from "@fastify/swagger-ui"
-import { ZodError } from "zod"
-import { AppError } from "./core/errors/AppError"
+import { errorHandler } from "./config/error-handler"
 import { env } from "./config/env"
 //import { getRedisClient } from "./config/redis"
 import { routes } from "./presentation/routes"
@@ -40,26 +39,7 @@ export const buildApp = async () => {
     await app.register(swaggerUi, swaggerUiOptions)
   }
   // ─── Global error handler ───
-  app.setErrorHandler((error, _request, reply) => {
-    if (error instanceof ZodError) {
-      const first = error.errors[0]
-      return reply.status(400).send({
-        message: first?.message ?? "Datos inválidos"
-      })
-    }
-
-    if (error instanceof AppError) {
-      return reply.status(error.statusCode).send({
-        message: error.message
-      })
-    }
-
-    // Unknown errors — log and return generic message
-    app.log.error(error)
-    return reply.status(500).send({
-      message: "Error interno del servidor"
-    })
-  })
+  app.setErrorHandler(errorHandler)
 
   app.register(routes, { prefix: '/api/v1' });
 
