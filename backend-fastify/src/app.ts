@@ -13,6 +13,7 @@ import { env } from "./config/env"
 import { routes } from "./presentation/routes"
 import { logger } from "./config/logger"
 import { corsOptions } from "./config/cors"
+import { swaggerOptions, swaggerUiOptions } from "./config/swagger"
 
 export const buildApp = async () => {
   const app = Fastify({ loggerInstance: logger })
@@ -35,55 +36,8 @@ export const buildApp = async () => {
 
   // ─── Swagger / OpenAPI ───
   if (env.NODE_ENV !== "production") {
-    await app.register(swagger, {
-      openapi: {
-        info: {
-          title: "POS System API",
-          description: "API REST para sistema de punto de venta (POS). Gestión de productos, inventario, ventas, servicios, usuarios y reportes.",
-          version: "1.0.0",
-        },
-        servers: [
-          { url: `http://localhost:${env.PORT}/api/v1`, description: "Servidor de desarrollo" },
-        ],
-        components: {
-          securitySchemes: {
-            bearerAuth: {
-              type: "http",
-              scheme: "bearer",
-              bearerFormat: "JWT",
-              description: "Token JWT de acceso (accessToken)",
-            },
-            cookieAuth: {
-              type: "apiKey",
-              in: "cookie",
-              name: "accessToken",
-              description: "Cookie httpOnly con el accessToken JWT",
-            },
-          },
-        },
-        tags: [
-          { name: "Auth", description: "Autenticación, registro, verificación de email, recuperación de contraseña" },
-          { name: "Products", description: "Gestión de productos (CRUD, búsqueda por código de barra)" },
-          { name: "Categories", description: "Categorías de productos" },
-          { name: "Services", description: "Servicios compuestos por productos" },
-          { name: "Sales", description: "Ventas con productos y servicios, reportes" },
-          { name: "Inventory", description: "Movimientos de inventario individuales" },
-          { name: "Inventory Batches", description: "Lotes de inventario (entradas/salidas/ajustes masivos)" },
-          { name: "Suppliers", description: "Proveedores" },
-          { name: "Settings", description: "Configuración del negocio" },
-          { name: "Users", description: "Gestión de usuarios del sistema" },
-          { name: "Health", description: "Health check del servidor" },
-        ],
-      },
-    })
-
-    await app.register(swaggerUi, {
-      routePrefix: "/docs",
-      uiConfig: {
-        docExpansion: "list",
-        deepLinking: true,
-      },
-    })
+    await app.register(swagger, swaggerOptions)
+    await app.register(swaggerUi, swaggerUiOptions)
   }
   // ─── Global error handler ───
   app.setErrorHandler((error, _request, reply) => {
@@ -109,7 +63,7 @@ export const buildApp = async () => {
 
   app.register(routes, { prefix: '/api/v1' });
 
-  app.get("/health", {
+  app.get("/api/v1/health", {
     schema: { tags: ["Health"] },
   }, async () => {
     return { status: "ok", timestamp: new Date().toISOString() }
