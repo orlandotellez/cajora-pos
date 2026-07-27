@@ -73,6 +73,7 @@ export type TestPrintDto = z.infer<typeof TestPrintDtoSchema>
 export const PrintReceiptDtoSchema = z.object({
   sale_id: z.string().uuid("ID de venta inválido"),
   copies: z.number().int().min(1).max(5).optional().default(1),
+  currency: z.string().optional().default("NIO"),
 })
 
 export type PrintReceiptDto = z.infer<typeof PrintReceiptDtoSchema>

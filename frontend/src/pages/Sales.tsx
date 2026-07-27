@@ -4,7 +4,7 @@ import { salesApi, type Sale } from "@/api/sales";
 import { printersApi } from "@/api/printers";
 import { ApiError } from "@/api/client";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
-import { money } from "@/lib/format";
+import { getStoredCurrency, money } from "@/lib/format";
 import { PAGE_LIMIT as LIMIT, PAYMENT_METHODS } from "@/lib/constants";
 import { useToast } from "@/components/common/ui/Toast";
 import { SaleTable } from "@/components/pages/sales/SaleTable";
@@ -219,7 +219,7 @@ export default function Sales() {
                       );
                       return;
                     }
-                    const result = await printersApi.printReceipt(defaultPrinter.id, selected.id, 1);
+                    const result = await printersApi.printReceipt(defaultPrinter.id, selected.id, 1, getStoredCurrency());
                     if (result.success) {
                       toast("Recibo impreso correctamente", "success");
                     } else {

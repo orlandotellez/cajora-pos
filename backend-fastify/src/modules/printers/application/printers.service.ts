@@ -5,7 +5,7 @@ import type { IPrinterRepository } from "../domain/printers.interface"
 import type { IPrinterResponse, PrinterRole, PrinterConnType, PrinterProfile, PrinterActualStatus, PrinterCutType } from "../domain/printers.types"
 import type { IPrinterEntity, CreatePrinterData, UpdatePrinterData } from "../domain/printers.entities"
 import type { CreatePrinterDto, UpdatePrinterDto } from "../presentation/printers.dto"
-import { duplicateForCopies, renderTestTicket, renderCodepageProbe, renderSaleReceipt } from "../infrastructure/escpos/encoder"
+import { duplicateForCopies, renderTestTicket, renderCodepageProbe, renderSaleReceipt, resolveCurrencySymbol } from "../infrastructure/escpos/encoder"
 import type { SaleReceiptItem, SaleReceiptService, SaleReceiptServiceProduct } from "../infrastructure/escpos/encoder"
 import { sendBytesViaTCP } from "../infrastructure/escpos/transport.tcp"
 
@@ -322,7 +322,7 @@ export const createPrintersService = (repository: IPrinterRepository) => ({
     }
   },
 
-  printReceipt: async (id: string, storeId: string, saleId: string, copies: number) => {
+  printReceipt: async (id: string, storeId: string, saleId: string, copies: number, currency: string = "NIO") => {
     const printer = await repository.findById(id, storeId)
     if (!printer) throw new NotFoundError("Impresora no encontrada")
 
@@ -388,6 +388,7 @@ export const createPrintersService = (repository: IPrinterRepository) => ({
         payment_method: sale.payment_method,
         amount_received: sale.amount_received ? Number(sale.amount_received) : null,
         change_given: sale.change_given ? Number(sale.change_given) : null,
+        currency_symbol: resolveCurrencySymbol(currency),
         items,
         service_items,
       }

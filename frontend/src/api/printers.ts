@@ -87,6 +87,6 @@ export const printersApi = {
 
   probe: (id: string) => api.post<PrintJobResult>(`/printers/${id}/probe`, {}),
 
-  printReceipt: (id: string, saleId: string, copies: number = 1) =>
-    api.post<PrintJobResult>(`/printers/${id}/print-receipt`, { sale_id: saleId, copies }),
+  printReceipt: (id: string, saleId: string, copies: number = 1, currency: string = "NIO") =>
+    api.post<PrintJobResult>(`/printers/${id}/print-receipt`, { sale_id: saleId, copies, currency }),
 };

@@ -81,9 +81,9 @@ export const printersController = {
 
   printReceipt: async (request: FastifyRequest, reply: FastifyReply) => {
     const { id } = PrinterIdParamSchema.parse(request.params)
-    const { sale_id, copies } = PrintReceiptDtoSchema.parse(request.body)
+    const { sale_id, copies, currency } = PrintReceiptDtoSchema.parse(request.body)
 
-    const result = await printersService.printReceipt(id, request.storeId as string, sale_id, copies)
+    const result = await printersService.printReceipt(id, request.storeId as string, sale_id, copies, currency)
 
     if (!result.success) {
       return reply.status(502).send({

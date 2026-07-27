@@ -87,6 +87,17 @@ export function selectProfileEncoders(
   return { encode, codepageCommand, resolvedProfile: safeProfile, resolvedCodepage: safeCodepage }
 }
 
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  NIO: "C$",
+  USD: "$",
+  EUR: "€",
+  MXN: "$",
+}
+
+export function resolveCurrencySymbol(currency: string): string {
+  return CURRENCY_SYMBOLS[currency] ?? "$"
+}
+
 function concat(...arrays: Uint8Array[]): Uint8Array {
   const total = arrays.reduce((sum, a) => sum + a.length, 0)
   const result = new Uint8Array(total)
@@ -267,6 +278,7 @@ export interface SaleReceiptData {
   payment_method: string
   amount_received: number | null
   change_given: number | null
+  currency_symbol: string
   items: SaleReceiptItem[]
   service_items: SaleReceiptService[]
 }
@@ -278,7 +290,8 @@ export function renderSaleReceipt(config: SaleReceiptConfig, data: SaleReceiptDa
   const sep = "=".repeat(chars)
   const dash = "-".repeat(chars)
 
-  const fmt2 = (n: number): string => n.toFixed(2)
+  const sym = data.currency_symbol || "$"
+  const fmt2 = (n: number): string => sym + n.toFixed(2)
   const priceRight = (label: string, price: string, max: number): string => {
     const space = Math.max(1, max - label.length - price.length)
     return label + " ".repeat(space) + price
@@ -295,7 +308,7 @@ export function renderSaleReceipt(config: SaleReceiptConfig, data: SaleReceiptDa
   parts.push(enc(data.store_name + "\n"))
   parts.push(CMD.BOLD_OFF)
   if (data.store_address) parts.push(enc(data.store_address + "\n"))
-  if (data.store_phone) parts.push(enc("Tel: " + data.store_phone + "\n"))
+  if (data.store_phone) parts.push(enc(data.store_phone + "\n"))
 
   const dateStr = data.created_at.toLocaleString("es-AR")
   parts.push(enc(dateStr + "\n"))
@@ -303,8 +316,9 @@ export function renderSaleReceipt(config: SaleReceiptConfig, data: SaleReceiptDa
   parts.push(enc("Atendido por: " + data.user_name + "\n"))
 
   // Separator
+  // Thin separator (dashes like the frontend)
   parts.push(CMD.ALIGN_LEFT)
-  parts.push(enc(sep + "\n"))
+  parts.push(enc(dash + "\n"))
 
   // Regular items
   for (const item of data.items) {
@@ -342,8 +356,11 @@ export function renderSaleReceipt(config: SaleReceiptConfig, data: SaleReceiptDa
     }
   }
 
+  // Thin separator
+  parts.push(CMD.ALIGN_LEFT)
+  parts.push(enc(dash + "\n"))
+
   // Totals
-  parts.push(enc(sep + "\n"))
   parts.push(enc(priceRight("Subtotal", fmt2(data.subtotal), chars) + "\n"))
 
   if (data.discount > 0) {
@@ -352,12 +369,14 @@ export function renderSaleReceipt(config: SaleReceiptConfig, data: SaleReceiptDa
     parts.push(enc(priceRight("Descuento", fmt2(data.discount), chars) + "\n"))
   }
 
-  parts.push(CMD.ALIGN_CENTER)
+  // Thick separator before TOTAL (like the frontend's double border)
   parts.push(CMD.BOLD_ON)
-  parts.push(enc("TOTAL  " + fmt2(data.total) + "\n"))
+  parts.push(enc(sep + "\n"))
+  parts.push(CMD.BOLD_OFF)
+  parts.push(CMD.BOLD_ON)
+  parts.push(enc(priceRight("TOTAL", fmt2(data.total), chars) + "\n"))
   parts.push(CMD.BOLD_OFF)
 
-  parts.push(CMD.ALIGN_LEFT)
   const payLine = `Pago (${data.payment_method})`
   const received = data.amount_received ?? data.total
   parts.push(enc(priceRight(payLine, fmt2(Number(received)), chars) + "\n"))
@@ -365,9 +384,12 @@ export function renderSaleReceipt(config: SaleReceiptConfig, data: SaleReceiptDa
     parts.push(enc(priceRight("Cambio", fmt2(data.change_given), chars) + "\n"))
   }
 
+  // Thin separator before footer (like the frontend)
+  parts.push(CMD.ALIGN_LEFT)
+  parts.push(enc(dash + "\n"))
+
   // Footer
   parts.push(CMD.ALIGN_CENTER)
-  parts.push(enc("\n"))
   parts.push(enc((data.ticket_footer || "¡Gracias por su compra!") + "\n"))
 
   parts.push(CMD.LF)

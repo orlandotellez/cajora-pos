@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 import { salesApi, type CreateSalePayload } from "@/api/sales";
 import { printersApi } from "@/api/printers";
 import { ApiError } from "@/api/client";
-import { money } from "@/lib/format";
+import { getStoredCurrency, money } from "@/lib/format";
 import { type PaymentMethod } from "@/lib/constants";
 import { usePosStore, type CartItem, type ProductCartItem, type ServiceCartItem } from "@/store/posStore";
 
@@ -110,7 +110,7 @@ export function useCheckout(opts: UseCheckoutOptions): UseCheckoutReturn {
           );
           return;
         }
-        const result = await printersApi.printReceipt(defaultPrinter.id, saleId, 1);
+        const result = await printersApi.printReceipt(defaultPrinter.id, saleId, 1, getStoredCurrency());
         if (result.success) {
           finalizeSale();
         } else {
