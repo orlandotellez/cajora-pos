@@ -1,10 +1,12 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { X, Printer } from "lucide-react";
 import { salesApi, type Sale } from "@/api/sales";
+import { printersApi } from "@/api/printers";
+import { ApiError } from "@/api/client";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { money } from "@/lib/format";
-import { printSaleTicket } from "@/lib/ticket-printer";
 import { PAGE_LIMIT as LIMIT, PAYMENT_METHODS } from "@/lib/constants";
+import { useToast } from "@/components/common/ui/Toast";
 import { SaleTable } from "@/components/pages/sales/SaleTable";
 import styles from "./Sales.module.css";
 import { cacheGet, cacheKey, cacheSet } from "@/lib/simple-cache";
@@ -41,6 +43,7 @@ export default function Sales() {
   const [minItemsFilter, setMinItemsFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Sale | null>(null);
+  const { toast } = useToast();
   const { storeName, storeAddress, storePhone, storeFooter } = useStoreSettings();
 
   const [debouncedUserName, flushUserName] = useDebounced(userNameFilter, 300);
@@ -201,7 +204,35 @@ export default function Sales() {
             <div className={styles.modalHeader}>
               <h2 className={styles.modalTitle}>Ticket de venta</h2>
               <div className={styles.modalHeaderActions}>
-                <button onClick={() => printSaleTicket(selected, storeName, selected.user_name, storeAddress, storePhone, storeFooter)} className={styles.printBtn}>
+                <button onClick={async () => {
+                  try {
+                    const res = await printersApi.list();
+                    const defaultPrinter = res.printers.find(
+                      (p) => p.is_default && p.is_active
+                    );
+                    if (!defaultPrinter) {
+                      toast(
+                        "No hay una impresora predeterminada configurada. Configurá una en Ajustes > Impresoras.",
+                        "error"
+                      );
+                      return;
+                    }
+                    const result = await printersApi.printReceipt(defaultPrinter.id, selected.id, 1);
+                    if (result.success) {
+                      toast("Recibo impreso correctamente", "success");
+                    } else {
+                      toast(
+                        result.error || "No se pudo imprimir el recibo. Verificá la conexión con la impresora.",
+                        "error"
+                      );
+                    }
+                  } catch (err) {
+                    toast(
+                      `Error al imprimir: ${(err as ApiError).message}`,
+                      "error"
+                    );
+                  }
+                }} className={styles.printBtn}>
                   <Printer size={16} /> Reimprimir
                 </button>
                 <button onClick={() => setSelected(null)} className={styles.modalClose}>
