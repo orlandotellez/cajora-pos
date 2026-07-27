@@ -6,6 +6,7 @@ import { ApiError } from "@/api/client";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { getStoredCurrency, money } from "@/lib/format";
 import { sendBytesToPrinter } from "@/lib/tcp-printer";
+import { isTauriRuntime } from "@/lib/fetch";
 import { PAGE_LIMIT as LIMIT, PAYMENT_METHODS } from "@/lib/constants";
 import { useToast } from "@/components/common/ui/Toast";
 import { SaleTable } from "@/components/pages/sales/SaleTable";
@@ -45,7 +46,14 @@ export default function Sales() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Sale | null>(null);
   const [printing, setPrinting] = useState(false);
+  const [hasPrinter, setHasPrinter] = useState(true);
   const { toast } = useToast();
+
+  useEffect(() => {
+    printersApi.list().then((res) => {
+      setHasPrinter(res.printers.some((p) => p.is_default && p.is_active && p.connection_type === "net"));
+    }).catch(() => setHasPrinter(false));
+  }, []);
   const { storeName, storeAddress, storePhone, storeFooter } = useStoreSettings();
 
   const [debouncedUserName, flushUserName] = useDebounced(userNameFilter, 300);
@@ -227,17 +235,32 @@ export default function Sales() {
                       return;
                     }
 
-                    const tcpResult = await sendBytesToPrinter(
-                      result.ticket_base64,
-                      result.printer.address,
-                      result.printer.port,
-                    );
+                    let printSuccess: boolean;
+                    let printError: string | null = null;
 
-                    if (tcpResult.success) {
+                    if (isTauriRuntime()) {
+                      const tcpResult = await sendBytesToPrinter(
+                        result.ticket_base64,
+                        result.printer.address,
+                        result.printer.port,
+                      );
+                      printSuccess = tcpResult.success;
+                      printError = tcpResult.error;
+                    } else {
+                      const proxyResult = await printersApi.sendTcp(
+                        result.ticket_base64,
+                        result.printer.address,
+                        result.printer.port,
+                      );
+                      printSuccess = proxyResult.success;
+                      printError = proxyResult.error ?? null;
+                    }
+
+                    if (printSuccess) {
                       toast("Recibo impreso correctamente", "success");
                     } else {
                       toast(
-                        tcpResult.error || "No se pudo enviar el recibo a la impresora. Verificá que esté encendida y conectada.",
+                        printError || "No se pudo enviar el recibo a la impresora. Verificá que esté encendida y conectada.",
                         "error"
                       );
                     }
@@ -249,8 +272,9 @@ export default function Sales() {
                   } finally {
                     setPrinting(false);
                   }
-                }} className={styles.printBtn} disabled={printing}>
-                  <Printer size={16} /> Reimprimir
+                }} className={styles.printBtn} disabled={printing || !hasPrinter}
+                  title={!hasPrinter ? "No hay impresora predeterminada configurada. Andá a Ajustes > Impresoras." : undefined}>
+                  <Printer size={16} /> {!hasPrinter ? "Sin impresora" : "Reimprimir"}
                 </button>
                 <button onClick={() => setSelected(null)} className={styles.modalClose}>
                   <X size={18} />

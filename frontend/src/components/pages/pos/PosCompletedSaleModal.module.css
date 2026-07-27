@@ -153,6 +153,7 @@
 }
 
 .printBtn {
+  display: flex;
   flex: 1;
   height: 44px;
   border: none;
@@ -163,10 +164,18 @@
   font-weight: 500;
   cursor: pointer;
   transition: opacity 0.15s;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
 }
 
 .printBtn:hover {
   opacity: 0.85;
+}
+
+.printBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .closeBtn {
@@ -220,5 +229,7 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }

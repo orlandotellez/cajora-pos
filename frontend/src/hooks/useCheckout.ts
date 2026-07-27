@@ -4,6 +4,7 @@ import { printersApi } from "@/api/printers";
 import { ApiError } from "@/api/client";
 import { getStoredCurrency, money } from "@/lib/format";
 import { sendBytesToPrinter } from "@/lib/tcp-printer";
+import { isTauriRuntime } from "@/lib/fetch";
 import { type PaymentMethod } from "@/lib/constants";
 import { usePosStore, type CartItem, type ProductCartItem, type ServiceCartItem } from "@/store/posStore";
 
@@ -118,17 +119,32 @@ export function useCheckout(opts: UseCheckoutOptions): UseCheckoutReturn {
           return;
         }
 
-        const tcpResult = await sendBytesToPrinter(
-          result.ticket_base64,
-          result.printer.address,
-          result.printer.port,
-        );
+        let success: boolean;
+        let error: string | null = null;
 
-        if (tcpResult.success) {
+        if (isTauriRuntime()) {
+          const tcpResult = await sendBytesToPrinter(
+            result.ticket_base64,
+            result.printer.address,
+            result.printer.port,
+          );
+          success = tcpResult.success;
+          error = tcpResult.error;
+        } else {
+          const proxyResult = await printersApi.sendTcp(
+            result.ticket_base64,
+            result.printer.address,
+            result.printer.port,
+          );
+          success = proxyResult.success;
+          error = proxyResult.error ?? null;
+        }
+
+        if (success) {
           finalizeSale();
         } else {
           showAlert(
-            tcpResult.error ||
+            error ||
               "No se pudo enviar el recibo a la impresora. Verificá que esté encendida y conectada."
           );
         }

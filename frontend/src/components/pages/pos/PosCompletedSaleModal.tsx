@@ -1,6 +1,7 @@
-import React, { useState } from "react";
-import { CheckCircle, Loader2 } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { CheckCircle, Loader2, Printer } from "lucide-react";
 import { money } from "@/lib/format";
+import { printersApi } from "@/api/printers";
 import { usePosStore, type CartItem, type ProductCartItem, type ServiceCartItem } from "@/store/posStore";
 import styles from "./PosCompletedSaleModal.module.css";
 
@@ -34,7 +35,15 @@ export function PosCompletedSaleModal({
   onClose,
 }: PosCompletedSaleModalProps) {
   const [printing, setPrinting] = useState(false);
+  const [hasPrinter, setHasPrinter] = useState(true);
   const currency = usePosStore((s) => s.currency);
+
+  useEffect(() => {
+    printersApi.list().then((res) => {
+      const hasDefault = res.printers.some((p) => p.is_default && p.is_active && p.connection_type === "net");
+      setHasPrinter(hasDefault);
+    }).catch(() => setHasPrinter(false));
+  }, []);
 
   async function handlePrint() {
     setPrinting(true);
@@ -157,9 +166,11 @@ export function PosCompletedSaleModal({
             onClick={handlePrint}
             className={styles.printBtn}
             autoFocus
-            disabled={printing}
+            disabled={printing || !hasPrinter}
+            title={!hasPrinter ? "No hay impresora predeterminada configurada. Andá a Ajustes > Impresoras." : undefined}
           >
-            {printing ? "Imprimiendo…" : "Imprimir"}
+            {!hasPrinter ? <Printer size={16} /> : null}
+            {printing ? "Imprimiendo…" : !hasPrinter ? "Sin impresora" : "Imprimir"}
           </button>
           <button
             onClick={onClose}
