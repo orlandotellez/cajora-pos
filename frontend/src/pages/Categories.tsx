@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Plus, Search, X } from "lucide-react";
 import { categoriesApi, type Category, type CreateCategoryPayload, type UpdateCategoryPayload } from "@/api/categories";
 import { cacheClear } from "@/lib/simple-cache";
 import { useCrudPagination } from "@/hooks/useCrudPagination";
@@ -7,6 +6,9 @@ import { useToast } from "@/components/common/ui/Toast";
 import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
 import { CategoryTable } from "@/components/pages/categories/CategoryTable";
 import styles from "./Categories.module.css";
+import { Header } from "@/components/pages/categories/Header";
+import { Filter } from "@/components/pages/categories/Filter";
+import { EditCategoryModal } from "@/components/pages/categories/EditCategoryModal";
 
 const emptyForm = { name: "", description: "" };
 
@@ -89,27 +91,9 @@ export default function Categories() {
 
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <div>
-          <h1 className={styles.h1}>Categorías</h1>
-          <p className={styles.subtitle}>{total} categorías registradas</p>
-        </div>
-        <button onClick={() => setEditing("new")} className={styles.primaryBtn}>
-          <Plus size={16} /> Nueva categoría
-        </button>
-      </header>
+      <Header total={total} setEditing={() => setEditing("new")} />
 
-      <div className={styles.toolbar}>
-        <div className={styles.searchWrapper}>
-          <Search size={16} className={styles.searchIcon} />
-          <input
-            value={q}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por nombre o descripción…"
-            className={styles.searchInput}
-          />
-        </div>
-      </div>
+      <Filter q={q} setSearch={(e) => setSearch(e.target.value)} />
 
       <CategoryTable
         categories={categories}
@@ -123,56 +107,17 @@ export default function Categories() {
         dimmed={false}
       />
 
-      {editing && (
-        <div className={styles.overlay} onClick={() => setEditing(null)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>{isNew ? "Nueva categoría" : "Editar categoría"}</h2>
-              <button onClick={() => setEditing(null)} className={styles.modalClose}>
-                <X size={18} />
-              </button>
-            </div>
+      {editing &&
+        <EditCategoryModal
+          isNew={isNew}
+          setEditing={() => setEditing(null)}
+          form={form}
+          setForm={setForm}
+          submitting={submitting}
+          handleSave={handleSave}
 
-            <form onSubmit={handleSave} className={styles.modalForm}>
-              <div className={styles.field}>
-                <label className={styles.fieldLabel}>Nombre *</label>
-                <input
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className={styles.input}
-                  required
-                />
-              </div>
-              <div className={styles.field}>
-                <label className={styles.fieldLabel}>Descripción</label>
-                <textarea
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  className={styles.textarea}
-                  rows={3}
-                />
-              </div>
-
-              <div className={styles["form-actions"]}>
-                <button
-                  type="submit"
-                  className={`${styles.primaryBtn} ${styles["btn-fit"]}`}
-                  disabled={submitting}
-                >
-                  {submitting ? "Guardando…" : "Guardar"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEditing(null)}
-                  className={styles.secondaryBtn}
-                >
-                  Cancelar
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+        />
+      }
 
       <ConfirmDialog
         open={deleteTarget !== null}
