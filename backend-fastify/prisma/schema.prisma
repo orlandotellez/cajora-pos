@@ -1,10 +1,10 @@
 generator client {
-    provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 enum ROLE {
@@ -27,10 +27,10 @@ enum UNIT_TYPE {
 }
 
 model store {
-  id         String   @id @default(uuid())
-  name       String
-  address    String?
-  phone      String?
+  id      String  @id @default(uuid())
+  name    String
+  address String?
+  phone   String?
 
   created_at DateTime @default(now()) @db.Timestamptz
   updated_at DateTime @updatedAt @db.Timestamptz
@@ -44,24 +44,25 @@ model store {
   inventory_movements inventory_movement[]
   inventory_batches   inventory_batch[]
   settings            settings?
+  printers            printer[]
 
   @@index([name])
   @@map("stores")
 }
 
 model user {
-  id             String    @id @default(uuid())
+  id             String  @id @default(uuid())
   name           String
   email          String
-  email_verified Boolean   @default(false)
+  email_verified Boolean @default(false)
   phone          String?
   image          String?
-  role           ROLE      @default(cajero)
+  role           ROLE    @default(cajero)
   store_id       String
 
-  created_at     DateTime  @default(now()) @db.Timestamptz
-  updated_at     DateTime  @updatedAt @db.Timestamptz
-  deleted_at     DateTime? @db.Timestamptz
+  created_at DateTime  @default(now()) @db.Timestamptz
+  updated_at DateTime  @updatedAt @db.Timestamptz
+  deleted_at DateTime? @db.Timestamptz
 
   store               store                @relation(fields: [store_id], references: [id])
   sessions            session[]
@@ -79,71 +80,71 @@ model user {
 }
 
 model session {
-  id          String   @id @default(uuid())
-  expires_at  DateTime @db.Timestamptz
-  token       String
-  ip_address  String?
-  user_agent  String?
-  user_id     String
+  id         String   @id @default(uuid())
+  expires_at DateTime @db.Timestamptz
+  token      String
+  ip_address String?
+  user_agent String?
+  user_id    String
 
-  created_at  DateTime @default(now()) @db.Timestamptz
-  updated_at  DateTime @updatedAt @db.Timestamptz
+  created_at DateTime @default(now()) @db.Timestamptz
+  updated_at DateTime @updatedAt @db.Timestamptz
 
-  user        user @relation(fields: [user_id], references: [id])
+  user user @relation(fields: [user_id], references: [id])
 
   @@index([user_id])
   @@map("session")
 }
 
 model account {
-  id                        String    @id @default(uuid())
-  account_id                String
-  provider_id               String
-  user_id                   String?
+  id          String  @id @default(uuid())
+  account_id  String
+  provider_id String
+  user_id     String?
 
-  access_token              String?
-  refresh_token             String?
-  id_token                  String?
+  access_token  String?
+  refresh_token String?
+  id_token      String?
 
-  access_token_expires_at   DateTime? @db.Timestamptz
-  refresh_token_expires_at  DateTime? @db.Timestamptz
+  access_token_expires_at  DateTime? @db.Timestamptz
+  refresh_token_expires_at DateTime? @db.Timestamptz
 
-  scope                     String?
-  password                  String?
+  scope    String?
+  password String?
 
-  created_at                DateTime  @default(now()) @db.Timestamptz
-  updated_at                DateTime  @updatedAt @db.Timestamptz
+  created_at DateTime @default(now()) @db.Timestamptz
+  updated_at DateTime @updatedAt @db.Timestamptz
 
-  user                      user? @relation(fields: [user_id], references: [id])
+  user user? @relation(fields: [user_id], references: [id])
 
   @@index([user_id])
   @@map("account")
 }
 
 model verification {
-  id          String   @id @default(uuid())
-  identifier  String
-  value       String
-  expires_at  DateTime @db.Timestamptz
+  id         String   @id @default(uuid())
+  identifier String
+  value      String
+  expires_at DateTime @db.Timestamptz
 
-  created_at  DateTime @default(now()) @db.Timestamptz
-  updated_at  DateTime @updatedAt @db.Timestamptz
+  created_at DateTime @default(now()) @db.Timestamptz
+  updated_at DateTime @updatedAt @db.Timestamptz
 
   @@map("verification")
 }
 
 model category {
-  id          String    @id @default(uuid())
+  id          String  @id @default(uuid())
   name        String
   description String?
   store_id    String
 
-  created_at  DateTime  @default(now()) @db.Timestamptz
-  updated_at  DateTime  @updatedAt @db.Timestamptz
-  deleted_at  DateTime? @db.Timestamptz
+  created_at DateTime  @default(now()) @db.Timestamptz
+  updated_at DateTime  @updatedAt @db.Timestamptz
+  deleted_at DateTime? @db.Timestamptz
 
-  store       store     @relation(fields: [store_id], references: [id])
-  products    product[]
+  store    store     @relation(fields: [store_id], references: [id])
+  products product[]
 
   @@unique([store_id, name])
   @@index([name])
@@ -153,23 +154,23 @@ model category {
 }
 
 model supplier {
-  id           String    @id @default(uuid())
+  id           String  @id @default(uuid())
   name         String
-  contact_name String?   @map("contact_name")
+  contact_name String? @map("contact_name")
   email        String?
   phone        String?
   address      String?
   notes        String?
-  is_active    Boolean   @default(true) @map("is_active")
+  is_active    Boolean @default(true) @map("is_active")
   store_id     String
 
-  created_at   DateTime  @default(now()) @db.Timestamptz
-  updated_at   DateTime  @updatedAt @db.Timestamptz
-  deleted_at   DateTime? @db.Timestamptz
+  created_at DateTime  @default(now()) @db.Timestamptz
+  updated_at DateTime  @updatedAt @db.Timestamptz
+  deleted_at DateTime? @db.Timestamptz
 
-  store               store               @relation(fields: [store_id], references: [id])
-  products            product[]
-  inventory_batches   inventory_batch[]
+  store             store             @relation(fields: [store_id], references: [id])
+  products          product[]
+  inventory_batches inventory_batch[]
 
   @@index([name])
   @@index([is_active])
@@ -180,31 +181,31 @@ model supplier {
 }
 
 model product {
-  id                  String    @id @default(uuid())
+  id                  String     @id @default(uuid())
   barcode             String?
   name                String
   unit_type           UNIT_TYPE?
   unit_quantity       Int?
   category_id         String?
   supplier_id         String?
-  price               Decimal   @db.Decimal(10, 2)
-  cost                Decimal   @default(0) @db.Decimal(10, 2)
-  stock               Int       @default(0)
-  low_stock_threshold Int       @default(5)
-  active              Boolean   @default(true)
+  price               Decimal    @db.Decimal(10, 2)
+  cost                Decimal    @default(0) @db.Decimal(10, 2)
+  stock               Int        @default(0)
+  low_stock_threshold Int        @default(5)
+  active              Boolean    @default(true)
   store_id            String
 
-  created_at          DateTime  @default(now()) @db.Timestamptz
-  updated_at          DateTime  @updatedAt @db.Timestamptz
-  deleted_at          DateTime? @db.Timestamptz
+  created_at DateTime  @default(now()) @db.Timestamptz
+  updated_at DateTime  @updatedAt @db.Timestamptz
+  deleted_at DateTime? @db.Timestamptz
 
-  store               store                   @relation(fields: [store_id], references: [id])
-  category            category?               @relation(fields: [category_id], references: [id])
-  supplier            supplier?               @relation(fields: [supplier_id], references: [id])
-  sale_items          sale_item[]
-  inventory_movements inventory_movement[]
+  store                 store                  @relation(fields: [store_id], references: [id])
+  category              category?              @relation(fields: [category_id], references: [id])
+  supplier              supplier?              @relation(fields: [supplier_id], references: [id])
+  sale_items            sale_item[]
+  inventory_movements   inventory_movement[]
   inventory_batch_items inventory_batch_item[]
-  service_products    service_product[]
+  service_products      service_product[]
   sale_service_products sale_service_product[]
 
   @@index([barcode])
@@ -219,20 +220,20 @@ model product {
 }
 
 model service {
-  id          String    @id @default(uuid())
+  id          String  @id @default(uuid())
   name        String
   description String?
-  base_price  Decimal   @db.Decimal(10, 2)
-  is_active   Boolean   @default(true) @map("is_active")
+  base_price  Decimal @db.Decimal(10, 2)
+  is_active   Boolean @default(true) @map("is_active")
   store_id    String
 
-  created_at  DateTime  @default(now()) @db.Timestamptz
-  updated_at  DateTime  @updatedAt @db.Timestamptz
-  deleted_at  DateTime? @db.Timestamptz
+  created_at DateTime  @default(now()) @db.Timestamptz
+  updated_at DateTime  @updatedAt @db.Timestamptz
+  deleted_at DateTime? @db.Timestamptz
 
-  store             store              @relation(fields: [store_id], references: [id])
-  service_products  service_product[]
-  sale_services     sale_service[]
+  store            store             @relation(fields: [store_id], references: [id])
+  service_products service_product[]
+  sale_services    sale_service[]
 
   @@index([name])
   @@index([is_active])
@@ -243,10 +244,10 @@ model service {
 }
 
 model service_product {
-  id          String  @id @default(uuid())
-  service_id  String
-  product_id  String
-  quantity    Int     @default(1)
+  id         String @id @default(uuid())
+  service_id String
+  product_id String
+  quantity   Int    @default(1)
 
   service service @relation(fields: [service_id], references: [id], onDelete: Cascade)
   product product @relation(fields: [product_id], references: [id])
@@ -257,25 +258,26 @@ model service_product {
 }
 
 model sale {
-  id              String    @id @default(uuid())
-  subtotal        Decimal   @db.Decimal(10, 2)
-  discount        Decimal   @default(0) @db.Decimal(10, 2)
-  total           Decimal   @db.Decimal(10, 2)
-  payment_method  String    // "efectivo" | "tarjeta" | "transferencia"
-  amount_received Decimal?  @db.Decimal(10, 2)
-  change_given    Decimal?  @db.Decimal(10, 2)
+  id              String   @id @default(uuid())
+  subtotal        Decimal  @db.Decimal(10, 2)
+  discount        Decimal  @default(0) @db.Decimal(10, 2)
+  total           Decimal  @db.Decimal(10, 2)
+  payment_method  String // "efectivo" | "tarjeta" | "transferencia"
+  amount_received Decimal? @db.Decimal(10, 2)
+  change_given    Decimal? @db.Decimal(10, 2)
 
-  user_id         String
-  user_name       String?
-  store_id        String
+  user_id   String
+  user_name String?
+  store_id  String
 
-  created_at      DateTime  @default(now()) @db.Timestamptz
-  updated_at      DateTime  @updatedAt @db.Timestamptz
+  created_at DateTime @default(now()) @db.Timestamptz
+  updated_at DateTime @updatedAt @db.Timestamptz
 
-  store           store       @relation(fields: [store_id], references: [id])
-  user            user        @relation(fields: [user_id], references: [id])
-  items           sale_item[]
-  service_items   sale_service[]
+  store         store          @relation(fields: [store_id], references: [id])
+  user          user           @relation(fields: [user_id], references: [id])
+  items         sale_item[]
+  service_items sale_service[]
+  print_jobs    print_job[]
 
   @@index([user_id])
   @@index([store_id, created_at])
@@ -283,18 +285,18 @@ model sale {
 }
 
 model sale_service {
-  id           String   @id @default(uuid())
+  id           String  @id @default(uuid())
   sale_id      String
   service_id   String
   service_name String
-  base_price   Decimal   @db.Decimal(10, 2)
-  line_total   Decimal   @db.Decimal(10, 2)
+  base_price   Decimal @db.Decimal(10, 2)
+  line_total   Decimal @db.Decimal(10, 2)
 
-  created_at   DateTime @default(now()) @db.Timestamptz
+  created_at DateTime @default(now()) @db.Timestamptz
 
-  sale         sale     @relation(fields: [sale_id], references: [id])
-  service      service  @relation(fields: [service_id], references: [id])
-  products     sale_service_product[]
+  sale     sale                   @relation(fields: [sale_id], references: [id])
+  service  service                @relation(fields: [service_id], references: [id])
+  products sale_service_product[]
 
   @@index([sale_id])
   @@index([service_id])
@@ -302,16 +304,16 @@ model sale_service {
 }
 
 model sale_service_product {
-  id           String   @id @default(uuid())
+  id              String  @id @default(uuid())
   sale_service_id String
-  product_id   String
-  product_name String
-  quantity     Int
-  unit_price   Decimal   @db.Decimal(10, 2)
-  line_total   Decimal   @db.Decimal(10, 2)
-  affects_price Boolean  @default(false)
+  product_id      String
+  product_name    String
+  quantity        Int
+  unit_price      Decimal @db.Decimal(10, 2)
+  line_total      Decimal @db.Decimal(10, 2)
+  affects_price   Boolean @default(false)
 
-  created_at   DateTime @default(now()) @db.Timestamptz
+  created_at DateTime @default(now()) @db.Timestamptz
 
   sale_service sale_service @relation(fields: [sale_service_id], references: [id], onDelete: Cascade)
   product      product      @relation(fields: [product_id], references: [id])
@@ -322,19 +324,19 @@ model sale_service_product {
 }
 
 model sale_item {
-  id           String   @id @default(uuid())
+  id           String  @id @default(uuid())
   sale_id      String
   product_id   String
   product_name String
   quantity     Int
-  unit_price   Decimal   @db.Decimal(10, 2)
-  line_total   Decimal   @db.Decimal(10, 2)
+  unit_price   Decimal @db.Decimal(10, 2)
+  line_total   Decimal @db.Decimal(10, 2)
 
-  created_at   DateTime @default(now()) @db.Timestamptz
-  updated_at   DateTime @updatedAt @db.Timestamptz
+  created_at DateTime @default(now()) @db.Timestamptz
+  updated_at DateTime @updatedAt @db.Timestamptz
 
-  sale         sale     @relation(fields: [sale_id], references: [id])
-  product      product  @relation(fields: [product_id], references: [id])
+  sale    sale    @relation(fields: [sale_id], references: [id])
+  product product @relation(fields: [product_id], references: [id])
 
   @@index([sale_id])
   @@index([product_id])
@@ -342,20 +344,20 @@ model sale_item {
 }
 
 model inventory_batch {
-  id            String   @id @default(uuid())
-  movement_type String   // "entrada" | "salida" | "ajuste"
+  id            String  @id @default(uuid())
+  movement_type String // "entrada" | "salida" | "ajuste"
   supplier_id   String?
   notes         String?
   user_id       String
   store_id      String
 
-  created_at    DateTime @default(now()) @db.Timestamptz
+  created_at DateTime @default(now()) @db.Timestamptz
 
-  store         store                           @relation(fields: [store_id], references: [id])
-  supplier      supplier?                       @relation(fields: [supplier_id], references: [id])
-  user          user                            @relation(fields: [user_id], references: [id])
-  items         inventory_batch_item[]
-  movements     inventory_movement[]
+  store     store                  @relation(fields: [store_id], references: [id])
+  supplier  supplier?              @relation(fields: [supplier_id], references: [id])
+  user      user                   @relation(fields: [user_id], references: [id])
+  items     inventory_batch_item[]
+  movements inventory_movement[]
 
   @@index([supplier_id])
   @@index([store_id, created_at])
@@ -364,17 +366,17 @@ model inventory_batch {
 }
 
 model inventory_batch_item {
-  id              String   @id @default(uuid())
-  batch_id        String
-  product_id      String
-  quantity        Int
-  unit_cost       Decimal? @db.Decimal(10, 2)
-  notes           String?
+  id         String   @id @default(uuid())
+  batch_id   String
+  product_id String
+  quantity   Int
+  unit_cost  Decimal? @db.Decimal(10, 2)
+  notes      String?
 
-  created_at      DateTime @default(now()) @db.Timestamptz
+  created_at DateTime @default(now()) @db.Timestamptz
 
-  batch           inventory_batch @relation(fields: [batch_id], references: [id], onDelete: Cascade)
-  product         product         @relation(fields: [product_id], references: [id])
+  batch   inventory_batch @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+  product product         @relation(fields: [product_id], references: [id])
 
   @@index([batch_id])
   @@index([product_id])
@@ -382,22 +384,22 @@ model inventory_batch_item {
 }
 
 model inventory_movement {
-  id            String   @id @default(uuid())
+  id            String  @id @default(uuid())
   product_id    String
-  movement_type String   // "entrada" | "salida" | "ajuste" | "venta"
+  movement_type String // "entrada" | "salida" | "ajuste" | "venta"
   quantity      Int
   note          String?
   batch_id      String?
 
-  user_id       String
-  store_id      String
+  user_id  String
+  store_id String
 
-  created_at    DateTime @default(now()) @db.Timestamptz
+  created_at DateTime @default(now()) @db.Timestamptz
 
-  store         store             @relation(fields: [store_id], references: [id])
-  product       product           @relation(fields: [product_id], references: [id])
-  user          user              @relation(fields: [user_id], references: [id])
-  batch         inventory_batch?  @relation(fields: [batch_id], references: [id])
+  store   store            @relation(fields: [store_id], references: [id])
+  product product          @relation(fields: [product_id], references: [id])
+  user    user             @relation(fields: [user_id], references: [id])
+  batch   inventory_batch? @relation(fields: [batch_id], references: [id])
 
   @@index([product_id])
   @@index([batch_id])
@@ -407,18 +409,111 @@ model inventory_movement {
 }
 
 model settings {
-  id                  Int      @id @default(autoincrement())
-  name                String   @default("Mi Negocio")
+  id                  Int     @id @default(autoincrement())
+  name                String  @default("Mi Negocio")
   address             String?
   phone               String?
-  low_stock_threshold Int      @default(5)
+  low_stock_threshold Int     @default(5)
   ticket_footer       String?
-  store_id            String   @unique
+  store_id            String  @unique
 
-  updated_at          DateTime @updatedAt @db.Timestamptz
+  updated_at DateTime @updatedAt @db.Timestamptz
 
-  store               store    @relation(fields: [store_id], references: [id])
+  store store @relation(fields: [store_id], references: [id])
 
   @@index([store_id])
   @@map("settings")
+}
+
+enum PRINTER_CONN_TYPE {
+  net
+  usb
+  bluetooth
+}
+
+enum PRINTER_PROFILE {
+  escpos
+  star_line
+}
+
+enum PRINTER_STATUS {
+  unknown
+  online
+  offline
+  error
+  out_of_paper
+}
+
+model printer {
+  id              String            @id @default(uuid())
+  store_id        String
+  name            String
+  connection_type PRINTER_CONN_TYPE
+
+  address     String
+  port        Int?
+  paper_width Int // 58 o 80
+  profile     PRINTER_PROFILE @default(escpos)
+
+  codepage         String  @default("PC850")
+  auto_cut         Boolean @default(true)
+  cut_type         String? // "full" | "partial"
+  open_cash_drawer Boolean @default(false)
+  default_copies   Int     @default(1)
+
+  role         String // "receipt" | "kitchen" | "both"
+  is_default   Boolean        @default(false)
+  is_active    Boolean        @default(true)
+  last_status  PRINTER_STATUS @default(unknown)
+  last_seen_at DateTime?
+
+  created_at DateTime @default(now()) @db.Timestamptz
+  updated_at DateTime @updatedAt @db.Timestamptz
+
+  store       store                @relation(fields: [store_id], references: [id])
+  assignments printer_assignment[]
+  jobs        print_job[]
+
+  @@unique([store_id, name])
+  @@index([store_id, is_active])
+  @@index([store_id, is_default])
+  @@map("printers")
+}
+
+model printer_assignment {
+  id          String  @id @default(uuid())
+  printer_id  String
+  category_id String?
+  role        String
+
+  priority Int @default(0)
+
+  printer printer @relation(fields: [printer_id], references: [id], onDelete: Cascade)
+
+  @@unique([printer_id, category_id])
+  @@index([printer_id])
+  @@index([category_id])
+  @@map("printer_assignments")
+}
+
+model print_job {
+  id           String    @id @default(uuid())
+  printer_id   String
+  sale_id      String?
+  payload      Bytes
+  status       String // pending | sent | success | failed
+  attempts     Int       @default(0)
+  max_attempts Int       @default(3)
+  error_msg    String?
+  enqueued_at  DateTime  @default(now()) @db.Timestamptz
+  sent_at      DateTime?
+  finished_at  DateTime?
+
+  printer printer @relation(fields: [printer_id], references: [id], onDelete: Cascade)
+  sale    sale?   @relation(fields: [sale_id], references: [id])
+
+  @@index([printer_id, status])
+  @@index([status, enqueued_at])
+  @@index([sale_id])
+  @@map("print_jobs")
 }
