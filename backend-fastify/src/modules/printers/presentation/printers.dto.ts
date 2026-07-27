@@ -70,6 +70,13 @@ export const TestPrintDtoSchema = z.object({
 
 export type TestPrintDto = z.infer<typeof TestPrintDtoSchema>
 
+export const PrintReceiptDtoSchema = z.object({
+  sale_id: z.string().uuid("ID de venta inválido"),
+  copies: z.number().int().min(1).max(5).optional().default(1),
+})
+
+export type PrintReceiptDto = z.infer<typeof PrintReceiptDtoSchema>
+
 export const PrinterIdParamSchema = z.object({
   id: z.string().uuid("ID de impresora inválido"),
 })

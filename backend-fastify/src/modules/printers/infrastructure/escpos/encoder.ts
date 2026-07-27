@@ -223,3 +223,159 @@ export function duplicateForCopies(bytes: Uint8Array, copies: number): Uint8Arra
   }
   return result
 }
+
+export interface SaleReceiptConfig {
+  paper_width: 58 | 80
+  profile: string
+  codepage: string
+  open_cash_drawer: boolean
+  cut_type: "full" | "partial" | null
+}
+
+export interface SaleReceiptItem {
+  product_name: string
+  quantity: number
+  line_total: number
+}
+
+export interface SaleReceiptServiceProduct {
+  product_name: string
+  quantity: number
+  unit_price: number
+  line_total: number
+  affects_price: boolean
+}
+
+export interface SaleReceiptService {
+  service_name: string
+  base_price: number
+  line_total: number
+  products: SaleReceiptServiceProduct[]
+}
+
+export interface SaleReceiptData {
+  store_name: string
+  store_address: string | null
+  store_phone: string | null
+  ticket_footer: string | null
+  sale_id: string
+  user_name: string
+  created_at: Date
+  subtotal: number
+  discount: number
+  total: number
+  payment_method: string
+  amount_received: number | null
+  change_given: number | null
+  items: SaleReceiptItem[]
+  service_items: SaleReceiptService[]
+}
+
+export function renderSaleReceipt(config: SaleReceiptConfig, data: SaleReceiptData): Uint8Array {
+  const encoders = selectProfileEncoders(config.profile, config.codepage)
+  const enc = encoders.encode
+  const chars = config.paper_width === 80 ? 42 : 32
+  const sep = "=".repeat(chars)
+  const dash = "-".repeat(chars)
+
+  const fmt2 = (n: number): string => n.toFixed(2)
+  const priceRight = (label: string, price: string, max: number): string => {
+    const space = Math.max(1, max - label.length - price.length)
+    return label + " ".repeat(space) + price
+  }
+
+  const parts: Uint8Array[] = []
+
+  parts.push(CMD.INIT)
+  if (encoders.codepageCommand) parts.push(encoders.codepageCommand)
+
+  // Store header
+  parts.push(CMD.ALIGN_CENTER)
+  parts.push(CMD.BOLD_ON)
+  parts.push(enc(data.store_name + "\n"))
+  parts.push(CMD.BOLD_OFF)
+  if (data.store_address) parts.push(enc(data.store_address + "\n"))
+  if (data.store_phone) parts.push(enc("Tel: " + data.store_phone + "\n"))
+
+  const dateStr = data.created_at.toLocaleString("es-AR")
+  parts.push(enc(dateStr + "\n"))
+  parts.push(enc("Ticket: " + data.sale_id.slice(0, 8) + "\n"))
+  parts.push(enc("Atendido por: " + data.user_name + "\n"))
+
+  // Separator
+  parts.push(CMD.ALIGN_LEFT)
+  parts.push(enc(sep + "\n"))
+
+  // Regular items
+  for (const item of data.items) {
+    const line = `${item.quantity}× ${item.product_name}`
+    const price = fmt2(item.line_total)
+    const maxNameLen = chars - price.length - 2
+    const truncated = line.length > maxNameLen ? line.slice(0, maxNameLen) + ".." : line
+    parts.push(enc(truncated + " ".repeat(Math.max(1, chars - truncated.length - price.length)) + price + "\n"))
+  }
+
+  // Service items
+  if (data.service_items && data.service_items.length > 0) {
+    for (const svc of data.service_items) {
+      parts.push(enc(svc.service_name + "\n"))
+
+      const included = svc.products.filter((p) => !p.affects_price && p.quantity > 0)
+      const additives = svc.products.filter((p) => p.affects_price && p.quantity > 0)
+
+      if (included.length > 0) {
+        const names = included.map((p) => `${p.product_name} ×${p.quantity}`).join(", ")
+        parts.push(enc("  Incluye: " + names + "\n"))
+      }
+
+      for (const p of additives) {
+        const addLine = "  + " + p.product_name + " ×" + p.quantity
+        const price = fmt2(p.line_total)
+        parts.push(enc(priceRight(addLine, price, chars) + "\n"))
+      }
+
+      if (additives.length > 0) {
+        parts.push(enc(priceRight("  Total servicio", fmt2(svc.line_total), chars) + "\n"))
+      }
+
+      parts.push(enc(dash + "\n"))
+    }
+  }
+
+  // Totals
+  parts.push(enc(sep + "\n"))
+  parts.push(enc(priceRight("Subtotal", fmt2(data.subtotal), chars) + "\n"))
+
+  if (data.discount > 0) {
+    parts.push(enc(priceRight("Descuento", "-" + fmt2(data.discount), chars) + "\n"))
+  } else {
+    parts.push(enc(priceRight("Descuento", fmt2(data.discount), chars) + "\n"))
+  }
+
+  parts.push(CMD.ALIGN_CENTER)
+  parts.push(CMD.BOLD_ON)
+  parts.push(enc("TOTAL  " + fmt2(data.total) + "\n"))
+  parts.push(CMD.BOLD_OFF)
+
+  parts.push(CMD.ALIGN_LEFT)
+  const payLine = `Pago (${data.payment_method})`
+  const received = data.amount_received ?? data.total
+  parts.push(enc(priceRight(payLine, fmt2(Number(received)), chars) + "\n"))
+  if (data.change_given && data.change_given > 0) {
+    parts.push(enc(priceRight("Cambio", fmt2(data.change_given), chars) + "\n"))
+  }
+
+  // Footer
+  parts.push(CMD.ALIGN_CENTER)
+  parts.push(enc("\n"))
+  parts.push(enc((data.ticket_footer || "¡Gracias por su compra!") + "\n"))
+
+  parts.push(CMD.LF)
+  parts.push(CMD.LF)
+
+  if (config.open_cash_drawer) parts.push(CMD.OPEN_DRAWER)
+  if (config.cut_type === "full") parts.push(CMD.CUT_FULL)
+  else if (config.cut_type === "partial") parts.push(CMD.CUT_PARTIAL)
+
+  return concat(...parts)
+}

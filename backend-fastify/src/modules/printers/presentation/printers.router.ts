@@ -8,6 +8,7 @@ import {
   UpdatePrinterDtoSchema,
   SetDefaultPrinterDtoSchema,
   TestPrintDtoSchema,
+  PrintReceiptDtoSchema,
   PrinterIdParamSchema,
 } from "./printers.dto"
 
@@ -40,6 +41,15 @@ export const printersRoutes = async (fastify: FastifyInstance, _opts: FastifyPlu
     },
     preHandler: [authGuard, storeGuard],
   }, printersController.probePrint)
+
+  fastify.post("/:id/print-receipt", {
+    schema: {
+      tags: TAGS,
+      params: toJsonSchema(PrinterIdParamSchema),
+      body: toJsonSchema(PrintReceiptDtoSchema),
+    },
+    preHandler: [authGuard, storeGuard],
+  }, printersController.printReceipt)
 
   fastify.post("/:id/set-default", {
     schema: {

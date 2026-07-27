@@ -1,7 +1,7 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { createPrintersService } from "../application/printers.service";
 import { PrinterRepository } from "../infrastructure/printers.prisma.repository";
-import { CreatePrinterDtoSchema, PrinterIdParamSchema, SetDefaultPrinterDtoSchema, TestPrintDtoSchema, UpdatePrinterDtoSchema } from "./printers.dto";
+import { CreatePrinterDtoSchema, PrinterIdParamSchema, PrintReceiptDtoSchema, SetDefaultPrinterDtoSchema, TestPrintDtoSchema, UpdatePrinterDtoSchema } from "./printers.dto";
 
 const printersService = createPrintersService(PrinterRepository)
 
@@ -75,6 +75,25 @@ export const printersController = {
 
     return reply.status(200).send({
       message: "Probe enviado. En el ticket impreso, identificá la línea donde 'ñ á é í ó ú' se vean correctos.",
+      ...result,
+    })
+  },
+
+  printReceipt: async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = PrinterIdParamSchema.parse(request.params)
+    const { sale_id, copies } = PrintReceiptDtoSchema.parse(request.body)
+
+    const result = await printersService.printReceipt(id, request.storeId as string, sale_id, copies)
+
+    if (!result.success) {
+      return reply.status(502).send({
+        message: "No se pudo imprimir el recibo. Verificá la conexión con la impresora.",
+        ...result,
+      })
+    }
+
+    return reply.status(200).send({
+      message: "Recibo impreso correctamente",
       ...result,
     })
   }

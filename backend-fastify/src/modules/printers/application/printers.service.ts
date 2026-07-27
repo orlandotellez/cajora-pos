@@ -5,7 +5,8 @@ import type { IPrinterRepository } from "../domain/printers.interface"
 import type { IPrinterResponse, PrinterRole, PrinterConnType, PrinterProfile, PrinterActualStatus, PrinterCutType } from "../domain/printers.types"
 import type { IPrinterEntity, CreatePrinterData, UpdatePrinterData } from "../domain/printers.entities"
 import type { CreatePrinterDto, UpdatePrinterDto } from "../presentation/printers.dto"
-import { duplicateForCopies, renderTestTicket, renderCodepageProbe } from "../infrastructure/escpos/encoder"
+import { duplicateForCopies, renderTestTicket, renderCodepageProbe, renderSaleReceipt } from "../infrastructure/escpos/encoder"
+import type { SaleReceiptItem, SaleReceiptService, SaleReceiptServiceProduct } from "../infrastructure/escpos/encoder"
 import { sendBytesViaTCP } from "../infrastructure/escpos/transport.tcp"
 
 const PRINTER_SELECT = {
@@ -318,6 +319,90 @@ export const createPrintersService = (repository: IPrinterRepository) => ({
       target: { address: printer.address, port: printer.port, protocol: "TCP" },
       indices_tested: Array.from({ length: 41 }, (_, i) => i),
       hint: "Mirá la línea donde aparezca correctamente 'ñ á é í ó ú'. Ese índice es CP850 (o similar) en tu impresora.",
+    }
+  },
+
+  printReceipt: async (id: string, storeId: string, saleId: string, copies: number) => {
+    const printer = await repository.findById(id, storeId)
+    if (!printer) throw new NotFoundError("Impresora no encontrada")
+
+    if (printer.connection_type !== "net") {
+      throw new BadRequestError(
+        `Por ahora solo se soporta conexión por red (TCP). La impresora es de tipo '${printer.connection_type}'.`
+      )
+    }
+
+    if (!printer.address || !printer.port) {
+      throw new BadRequestError("La impresora no tiene IP o puerto configurado")
+    }
+
+    const sale = await prisma.sale.findUnique({
+      where: { id: saleId, store_id: storeId },
+      include: {
+        items: true,
+        service_items: { include: { products: true } },
+      },
+    })
+    if (!sale) throw new NotFoundError("Venta no encontrada")
+
+    const settings = await prisma.settings.findUnique({ where: { store_id: storeId } })
+
+    const items: SaleReceiptItem[] = (sale.items || []).map((i) => ({
+      product_name: i.product_name,
+      quantity: i.quantity,
+      line_total: Number(i.line_total),
+    }))
+
+    const service_items: SaleReceiptService[] = (sale.service_items || []).map((si) => ({
+      service_name: si.service_name,
+      base_price: Number(si.base_price),
+      line_total: Number(si.line_total),
+      products: (si.products || []).map((sp) => ({
+        product_name: sp.product_name,
+        quantity: sp.quantity,
+        unit_price: Number(sp.unit_price),
+        line_total: Number(sp.line_total),
+        affects_price: sp.affects_price,
+      })),
+    }))
+
+    const ticket = renderSaleReceipt(
+      {
+        paper_width: printer.paper_width === 58 ? 58 : 80,
+        profile: printer.profile,
+        codepage: printer.codepage,
+        open_cash_drawer: printer.open_cash_drawer,
+        cut_type: printer.cut_type as "full" | "partial" | null,
+      },
+      {
+        store_name: settings?.name ?? "Mi Negocio",
+        store_address: settings?.address ?? null,
+        store_phone: settings?.phone ?? null,
+        ticket_footer: settings?.ticket_footer ?? null,
+        sale_id: sale.id,
+        user_name: sale.user_name ?? "",
+        created_at: sale.created_at,
+        subtotal: Number(sale.subtotal),
+        discount: Number(sale.discount),
+        total: Number(sale.total),
+        payment_method: sale.payment_method,
+        amount_received: sale.amount_received ? Number(sale.amount_received) : null,
+        change_given: sale.change_given ? Number(sale.change_given) : null,
+        items,
+        service_items,
+      }
+    )
+
+    const allBytes = duplicateForCopies(ticket, copies)
+    const result = await sendBytesViaTCP(printer.address, printer.port, allBytes)
+
+    return {
+      success: result.success,
+      bytes_sent: result.bytes_sent,
+      duration_ms: result.duration_ms,
+      error: result.error,
+      target: { address: printer.address, port: printer.port, protocol: "TCP" },
+      ticket_bytes: ticket.length,
     }
   },
 })
