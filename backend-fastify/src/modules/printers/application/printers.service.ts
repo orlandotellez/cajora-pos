@@ -5,6 +5,8 @@ import type { IPrinterRepository } from "../domain/printers.interface"
 import type { IPrinterResponse, PrinterRole, PrinterConnType, PrinterProfile, PrinterActualStatus, PrinterCutType } from "../domain/printers.types"
 import type { IPrinterEntity, CreatePrinterData, UpdatePrinterData } from "../domain/printers.entities"
 import type { CreatePrinterDto, UpdatePrinterDto } from "../presentation/printers.dto"
+import { duplicateForCopies, renderTestTicket, renderCodepageProbe } from "../infrastructure/escpos/encoder"
+import { sendBytesViaTCP } from "../infrastructure/escpos/transport.tcp"
 
 const PRINTER_SELECT = {
   id: true,
@@ -251,5 +253,71 @@ export const createPrintersService = (repository: IPrinterRepository) => ({
     })
 
     return mapEntityToResponse(mapRecordToEntity(row))
+  },
+
+  testPrint: async (id: string, storeId: string, copies: number) => {
+    const printer = await repository.findById(id, storeId)
+    if (!printer) throw new NotFoundError("Impresora no encontrada")
+
+    if (printer.connection_type !== "net") {
+      throw new BadRequestError(
+        `Por ahora solo se soporta conexión por red (TCP). La impresora es de tipo '${printer.connection_type}'. USB/Bluetooth entran en Fase 6 con Tauri.`
+      )
+    }
+
+    if (!printer.address || !printer.port) {
+      throw new BadRequestError("La impresora no tiene IP o puerto configurado")
+    }
+
+    const ticket = renderTestTicket({
+      paper_width: (printer.paper_width === 58 ? 58 : 80),
+      profile: printer.profile,
+      codepage: printer.codepage,
+      open_cash_drawer: printer.open_cash_drawer,
+      cut_type: printer.cut_type,
+      copies,
+      store_name: "POS System",
+    })
+
+    const allBytes = duplicateForCopies(ticket, copies)
+
+    const result = await sendBytesViaTCP(printer.address, printer.port, allBytes)
+
+    return {
+      success: result.success,
+      bytes_sent: result.bytes_sent,
+      duration_ms: result.duration_ms,
+      error: result.error,
+      target: { address: printer.address, port: printer.port, protocol: "TCP" },
+      ticket_bytes: ticket.length,
+    }
+  },
+
+  probePrint: async (id: string, storeId: string) => {
+    const printer = await repository.findById(id, storeId)
+    if (!printer) throw new NotFoundError("Impresora no encontrada")
+
+    if (printer.connection_type !== "net") {
+      throw new BadRequestError(
+        `Por ahora solo se soporta conexión por red (TCP). La impresora es de tipo '${printer.connection_type}'.`
+      )
+    }
+
+    if (!printer.address || !printer.port) {
+      throw new BadRequestError("La impresora no tiene IP o puerto configurado")
+    }
+
+    const bytes = renderCodepageProbe()
+    const result = await sendBytesViaTCP(printer.address, printer.port, bytes)
+
+    return {
+      success: result.success,
+      bytes_sent: result.bytes_sent,
+      duration_ms: result.duration_ms,
+      error: result.error,
+      target: { address: printer.address, port: printer.port, protocol: "TCP" },
+      indices_tested: Array.from({ length: 41 }, (_, i) => i),
+      hint: "Mirá la línea donde aparezca correctamente 'ñ á é í ó ú'. Ese índice es CP850 (o similar) en tu impresora.",
+    }
   },
 })

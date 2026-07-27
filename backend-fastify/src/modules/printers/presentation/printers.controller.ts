@@ -45,10 +45,37 @@ export const printersController = {
   testPrint: async (request: FastifyRequest, reply: FastifyReply) => {
     const { id } = PrinterIdParamSchema.parse(request.params)
     const body = TestPrintDtoSchema.parse(request.body ?? {})
-    return reply.status(202).send({
-      message: "Impresión de prueba encolada (hardware pendiente — Fase 3)",
-      printer_id: id,
-      copies: body.copies,
+
+    const result = await printersService.testPrint(id, request.storeId as string, body.copies)
+
+    if (!result.success) {
+      return reply.status(502).send({
+        message: "No se pudo conectar con la impresora",
+        ...result,
+      })
+    }
+
+    return reply.status(200).send({
+      message: "Ticket de prueba enviado correctamente",
+      ...result,
     })
   },
+
+  probePrint: async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = PrinterIdParamSchema.parse(request.params)
+
+    const result = await printersService.probePrint(id, request.storeId as string)
+
+    if (!result.success) {
+      return reply.status(502).send({
+        message: "No se pudo conectar con la impresora",
+        ...result,
+      })
+    }
+
+    return reply.status(200).send({
+      message: "Probe enviado. En el ticket impreso, identificá la línea donde 'ñ á é í ó ú' se vean correctos.",
+      ...result,
+    })
+  }
 }

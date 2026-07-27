@@ -33,6 +33,14 @@ export const printersRoutes = async (fastify: FastifyInstance, _opts: FastifyPlu
     preHandler: [authGuard, storeGuard],
   }, printersController.testPrint)
 
+  fastify.post("/:id/probe", {
+    schema: {
+      tags: TAGS,
+      params: toJsonSchema(PrinterIdParamSchema),
+    },
+    preHandler: [authGuard, storeGuard],
+  }, printersController.probePrint)
+
   fastify.post("/:id/set-default", {
     schema: {
       tags: TAGS,
