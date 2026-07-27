@@ -1,5 +1,5 @@
-import React from "react";
-import { CheckCircle } from "lucide-react";
+import React, { useState } from "react";
+import { CheckCircle, Loader2 } from "lucide-react";
 import { money } from "@/lib/format";
 import { usePosStore, type CartItem, type ProductCartItem, type ServiceCartItem } from "@/store/posStore";
 import styles from "./PosCompletedSaleModal.module.css";
@@ -20,7 +20,7 @@ interface PosCompletedSaleModalProps {
   storeAddress: string;
   storePhone: string;
   storeFooter: string;
-  onPrint: (saleId: string, userName: string) => void;
+  onPrint: (saleId: string, userName: string) => void | Promise<void>;
   onClose: () => void;
 }
 
@@ -33,7 +33,19 @@ export function PosCompletedSaleModal({
   onPrint,
   onClose,
 }: PosCompletedSaleModalProps) {
+  const [printing, setPrinting] = useState(false);
   const currency = usePosStore((s) => s.currency);
+
+  async function handlePrint() {
+    setPrinting(true);
+    try {
+      await onPrint(completedSale.saleId, completedSale.userName);
+    } catch {
+      // error handling is done inside onPrint
+    } finally {
+      setPrinting(false);
+    }
+  }
   return (
     <div className={styles.overlay} onClick={() => { }}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
@@ -142,19 +154,30 @@ export function PosCompletedSaleModal({
 
         <div className={styles.actions}>
           <button
-            onClick={() => onPrint(completedSale.saleId, completedSale.userName)}
+            onClick={handlePrint}
             className={styles.printBtn}
             autoFocus
+            disabled={printing}
           >
-            Imprimir
+            {printing ? "Imprimiendo…" : "Imprimir"}
           </button>
           <button
             onClick={onClose}
             className={styles.closeBtn}
+            disabled={printing}
           >
             Cerrar
           </button>
         </div>
+
+        {printing && (
+          <div className={styles.printingOverlay}>
+            <div className={styles.printingBox}>
+              <Loader2 size={36} className={styles.spinner} />
+              <span className={styles.printingText}>Imprimiendo…</span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

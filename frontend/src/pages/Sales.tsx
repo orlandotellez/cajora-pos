@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
-import { X, Printer } from "lucide-react";
+import { X, Printer, Loader2 } from "lucide-react";
 import { salesApi, type Sale } from "@/api/sales";
 import { printersApi } from "@/api/printers";
 import { ApiError } from "@/api/client";
@@ -43,6 +43,7 @@ export default function Sales() {
   const [minItemsFilter, setMinItemsFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Sale | null>(null);
+  const [printing, setPrinting] = useState(false);
   const { toast } = useToast();
   const { storeName, storeAddress, storePhone, storeFooter } = useStoreSettings();
 
@@ -205,6 +206,7 @@ export default function Sales() {
               <h2 className={styles.modalTitle}>Ticket de venta</h2>
               <div className={styles.modalHeaderActions}>
                 <button onClick={async () => {
+                  setPrinting(true);
                   try {
                     const res = await printersApi.list();
                     const defaultPrinter = res.printers.find(
@@ -231,8 +233,10 @@ export default function Sales() {
                       `Error al imprimir: ${(err as ApiError).message}`,
                       "error"
                     );
+                  } finally {
+                    setPrinting(false);
                   }
-                }} className={styles.printBtn}>
+                }} className={styles.printBtn} disabled={printing}>
                   <Printer size={16} /> Reimprimir
                 </button>
                 <button onClick={() => setSelected(null)} className={styles.modalClose}>
@@ -303,6 +307,15 @@ export default function Sales() {
               </div>
               <div className={styles.ticketFooter}>{storeFooter}</div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {printing && (
+        <div className={styles.printingOverlay}>
+          <div className={styles.printingBox}>
+            <Loader2 size={36} className={styles.spinner} />
+            <span className={styles.printingText}>Imprimiendo…</span>
           </div>
         </div>
       )}

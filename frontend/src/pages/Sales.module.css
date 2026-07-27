@@ -328,3 +328,39 @@
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
+
+.printingOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.printingBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 32px 44px;
+  background: var(--background);
+  border-radius: 14px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
+}
+
+.printingText {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+  color: var(--muted-foreground);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

@@ -48,7 +48,7 @@ export interface UseCheckoutOptions {
 export interface UseCheckoutReturn {
   completedSale: CompletedSale | null;
   checkout: () => Promise<void>;
-  handlePrintTicket: (saleId: string, saleUserName: string) => void;
+  handlePrintTicket: (saleId: string, saleUserName: string) => Promise<void>;
   finalizeSale: () => void;
 }
 

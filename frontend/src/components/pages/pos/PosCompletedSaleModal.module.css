@@ -10,6 +10,7 @@
 }
 
 .modal {
+  position: relative;
   background: var(--background);
   border-radius: 12px;
   max-width: 480px;
@@ -183,4 +184,41 @@
 
 .closeBtn:hover {
   background: var(--accent);
+}
+
+.printingOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  z-index: 10;
+}
+
+.printingBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 28px 40px;
+  background: var(--background);
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+}
+
+.printingText {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+  color: var(--muted-foreground);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
