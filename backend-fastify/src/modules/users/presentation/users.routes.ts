@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyPluginOptions } from "fastify"
 import { usersController } from "./users.controller"
 import { authGuard, adminGuard } from "@/core/guard/auth.guard"
 import { storeGuard } from "@/core/guard/store.guard"
-import { toJsonSchema } from "@/presentation/swagger-schema"
+import { toJsonSchema } from "@/http/swagger-schema"
 import { CreateUserDtoSchema, UpdateUserDtoSchema, UserQuerySchema } from "./users.dto"
 
 const TAGS = ["Users"]

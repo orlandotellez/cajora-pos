@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyPluginOptions } from "fastify"
 import { settingsController } from "./settings.controller"
 import { authGuard } from "@/core/guard/auth.guard"
 import { storeGuard } from "@/core/guard/store.guard"
-import { toJsonSchema } from "@/presentation/swagger-schema"
+import { toJsonSchema } from "@/http/swagger-schema"
 import { UpdateSettingsDtoSchema } from "./settings.dto"
 
 const TAGS = ["Settings"]

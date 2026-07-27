@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyPluginOptions } from "fastify"
 import { salesController } from "./sales.controller"
 import { authGuard } from "@/core/guard/auth.guard"
 import { storeGuard } from "@/core/guard/store.guard"
-import { toJsonSchema } from "@/presentation/swagger-schema"
+import { toJsonSchema } from "@/http/swagger-schema"
 import { CreateSaleDtoSchema, SaleQuerySchema, ReportQuerySchema, RevenueTrendQuerySchema } from "./sales.dto"
 
 const TAGS = ["Sales"]

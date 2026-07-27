@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyPluginOptions } from "fastify"
 import { authController } from "./auth.controller"
 import { authGuard, adminGuard } from "@/core/guard/auth.guard"
-import { toJsonSchema } from "@/presentation/swagger-schema"
+import { toJsonSchema } from "@/http/swagger-schema"
 import {
   LoginPayloadDtoSchema,
   RegisterPayloadDtoSchema,

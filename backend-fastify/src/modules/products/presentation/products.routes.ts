@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyPluginOptions } from "fastify"
 import { productsController } from "./products.controller"
 import { authGuard } from "@/core/guard/auth.guard"
 import { storeGuard } from "@/core/guard/store.guard"
-import { toJsonSchema } from "@/presentation/swagger-schema"
+import { toJsonSchema } from "@/http/swagger-schema"
 import { CreateProductDtoSchema, UpdateProductDtoSchema, ProductQuerySchema } from "./products.dto"
 
 const TAGS = ["Products"]

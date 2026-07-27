@@ -9,10 +9,10 @@ import swaggerUi from "@fastify/swagger-ui"
 import { errorHandler } from "./config/error-handler"
 import { env } from "./config/env"
 //import { getRedisClient } from "./config/redis"
-import { routes } from "./presentation/routes"
 import { logger } from "./config/logger"
 import { corsOptions } from "./config/cors"
 import { swaggerOptions, swaggerUiOptions } from "./config/swagger"
+import { routes } from "./http/routes"
 
 export const buildApp = async () => {
   const app = Fastify({ loggerInstance: logger })
