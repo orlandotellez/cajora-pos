@@ -4,6 +4,12 @@
   margin-bottom: 16px;
 }
 
+@media(max-width: 768px) {
+  .toolbar {
+    padding: 0px 24px 10px 24px;
+  }
+}
+
 .searchWrapper {
   position: relative;
   flex: 1;
