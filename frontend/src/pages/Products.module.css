@@ -8,11 +8,3 @@
     padding: 40px 40px;
   }
 }
-
-@media(max-width: 768px) {
-
-  .toolbar {
-    padding: 0px 24px 10px 24px;
-  }
-
-}

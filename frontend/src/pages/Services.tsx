@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Plus, Search } from "lucide-react";
 import { servicesApi, type CreateServicePayload } from "@/api/services";
 import { productsApi } from "@/api/products";
 import type { Service, Product } from "@/api";
@@ -8,8 +7,10 @@ import { useCrudPagination } from "@/hooks/useCrudPagination";
 import { useToast } from "@/components/common/ui/Toast";
 import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
 import { ServiceTable } from "@/components/pages/services/ServiceTable";
-import { ServiceFormModal } from "@/components/services/ServiceFormModal";
 import styles from "./Services.module.css";
+import { ServiceFormModal } from "@/components/pages/services/ServiceFormModal";
+import { Header } from "@/components/pages/services/Header";
+import { Filter } from "@/components/pages/services/Filter";
 
 export default function Services() {
   const { toast } = useToast();
@@ -73,27 +74,9 @@ export default function Services() {
 
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <div>
-          <h1 className={styles.h1}>Servicios</h1>
-          <p className={styles.subtitle}>{total} servicios en catálogo</p>
-        </div>
-        <button onClick={() => setEditing("new")} className={styles.primaryBtn}>
-          <Plus size={16} /> Nuevo
-        </button>
-      </header>
+      <Header total={total.toString()} setEditing={() => setEditing("new")} />
 
-      <div className={styles.toolbar}>
-        <div className={styles.searchWrapper}>
-          <Search size={16} className={styles.searchIcon} />
-          <input
-            value={q}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por nombre..."
-            className={styles.searchInput}
-          />
-        </div>
-      </div>
+      <Filter q={q} setSearch={setSearch} />
 
       <ServiceTable
         services={services}

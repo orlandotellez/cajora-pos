@@ -2,21 +2,13 @@ import { useEffect, useState } from "react";
 import { X, Package, Plus } from "lucide-react";
 import { money } from "@/lib/format";
 import type { Service, Product } from "@/api";
-import type { CreateServicePayload, UpdateServicePayload } from "@/api/services";
+import type { CreateServicePayload } from "@/api/services";
 import styles from "./ServiceFormModal.module.css";
 
 interface Props {
-  /** Service being edited, "new" para creación, null = modal oculto. */
   editing: Service | "new" | null;
-  /** Catálogo de productos disponibles para asociar al servicio. */
   products: Product[];
-  /** Cierra el modal (botón X, click en overlay, o tras save). */
   onClose: () => void;
-  /**
-   * Llamado al hacer submit válido. Devuelve una promesa que el modal espera
-   * para mostrar el spinner; si rechaza, el modal muestra el error y mantiene
-   * el estado submit.
-   */
   onSave: (
     payload: CreateServicePayload,
     isNew: boolean,
