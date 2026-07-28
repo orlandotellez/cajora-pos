@@ -1,7 +1,7 @@
 import { ChevronLeft, ChevronRight, ArrowDownRight, ArrowUpRight, RefreshCw, Eye } from "lucide-react";
 import type { InventoryMovement } from "@/api/inventory";
 import { MOVEMENT_TYPES } from "@/lib/constants";
-import styles from "../../../pages/Inventory.module.css";
+import styles from "../../../pages/inventory/Inventory.module.css";
 
 interface MovementHistoryTableProps {
   movements: InventoryMovement[];

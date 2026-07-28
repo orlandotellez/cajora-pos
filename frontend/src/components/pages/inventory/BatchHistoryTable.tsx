@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import type { BatchResponse } from "@/api/inventory";
-import styles from "../../../pages/Inventory.module.css";
+import styles from "../../../pages/inventory/Inventory.module.css";
 
 interface BatchHistoryTableProps {
   batches: BatchResponse[];

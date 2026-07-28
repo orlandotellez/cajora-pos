@@ -1,6 +1,6 @@
 import { X, ArrowDownRight, ArrowUpRight, RefreshCw } from "lucide-react";
 import type { BatchResponse } from "@/api/inventory";
-import styles from "../../../pages/Inventory.module.css";
+import styles from "../../../pages/inventory/Inventory.module.css";
 
 interface BatchDetailModalProps {
   batch: BatchResponse;

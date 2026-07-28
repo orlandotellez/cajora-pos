@@ -3,7 +3,7 @@ import { X } from "lucide-react";
 import { money } from "@/lib/format";
 import { PAYMENT_METHODS } from "@/lib/constants";
 import { usePosStore } from "@/store/posStore";
-import styles from "../../../pages/Pos.module.css";
+import styles from "../../../pages/pos/Pos.module.css";
 
 
 

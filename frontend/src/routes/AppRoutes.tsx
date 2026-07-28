@@ -1,17 +1,17 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import App from "@/App";
-import Auth from "@/pages/Auth";
-import Pos from "@/pages/Pos";
-import Products from "@/pages/Products";
-import Services from "@/pages/Services";
-import Suppliers from "@/pages/Suppliers";
-import Inventory from "@/pages/Inventory";
-import Sales from "@/pages/Sales";
-import Reports from "@/pages/Reports";
-import Settings from "@/pages/Settings";
-import Users from "@/pages/Users";
-import Categories from "@/pages/Categories";
-import { NotFound } from "@/pages/NotFound";
+import Auth from "@/pages/auth/Auth";
+import Pos from "@/pages/pos/Pos";
+import Products from "@/pages/products/Products";
+import Services from "@/pages/services/Services";
+import Suppliers from "@/pages/suppliers/Suppliers";
+import Categories from "@/pages/categories/Categories";
+import Inventory from "@/pages/inventory/Inventory";
+import Sales from "@/pages/sales/Sales";
+import Reports from "@/pages/reports/Reports";
+import { NotFound } from "@/pages/not-found/NotFound";
+import Settings from "@/pages/settings/Settings";
+import Users from "@/pages/users/Users";
 
 export function AppRoutes() {
   return (

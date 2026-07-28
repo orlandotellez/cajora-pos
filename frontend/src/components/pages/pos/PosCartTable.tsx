@@ -3,7 +3,7 @@ import { Trash2, X, ScanBarcode, Wrench, PackagePlus } from "lucide-react";
 import { money } from "@/lib/format";
 import { usePosStore, type CartItem, type ProductCartItem, type ServiceCartItem } from "@/store/posStore";
 import type { Product } from "@/api/products";
-import styles from "../../../pages/Pos.module.css";
+import styles from "../../../pages/pos/Pos.module.css";
 
 interface PosCartTableProps {
   cart: CartItem[];

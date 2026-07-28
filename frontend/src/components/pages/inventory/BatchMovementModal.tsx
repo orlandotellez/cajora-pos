@@ -4,7 +4,7 @@ import { inventoryApi } from "@/api/inventory";
 import type { Supplier, Product } from "@/api";
 import type { CreateBatchPayload } from "@/api/inventory";
 import { UNIT_TYPE_LABELS } from "@/lib/constants";
-import styles from "../../../pages/Inventory.module.css";
+import styles from "../../../pages/inventory/Inventory.module.css";
 
 interface BatchMovementModalProps {
   open: boolean;
@@ -76,7 +76,7 @@ export function BatchMovementModal({ open, suppliers, products, onClose, onCreat
     e.preventDefault();
     const validItems = batchItems.filter(i => i.selectedProduct && i.quantity > 0);
     if (validItems.length === 0) {
-      return; 
+      return;
     }
     setSubmitting(true);
     try {
