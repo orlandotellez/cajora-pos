@@ -89,20 +89,79 @@
   border-color: var(--ring);
 }
 
-.textarea {
+.barcodeWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.barcodeInput {
   width: 100%;
-  padding: 8px 12px;
+  height: 40px;
+  padding: 8px 40px 8px 12px;
   border: 1px solid var(--input);
   border-radius: 6px;
   background: var(--background);
   color: var(--foreground);
   font-size: 14px;
   outline: none;
-  resize: vertical;
+  font-family: monospace;
+}
+
+.barcodeInput:focus {
+  border-color: var(--ring);
+}
+
+.barcodeInput::placeholder {
+  color: var(--muted-foreground);
   font-family: inherit;
 }
 
-.textarea:focus {
+.barcodeScanBtn {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.barcodeScanBtn:hover {
+  background: var(--accent, #f3f4f6);
+  color: var(--foreground);
+}
+
+.barcodeScanBtn:active {
+  transform: translateY(-50%) scale(0.92);
+}
+
+.select {
+  width: 100%;
+  height: 40px;
+  padding: 8px 36px 8px 12px;
+  border: 1px solid var(--input);
+  border-radius: 6px;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 14px;
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+}
+
+.select:focus {
   border-color: var(--ring);
 }
 
@@ -120,7 +179,14 @@
   height: 40px;
 }
 
-.form-actions {
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.formActions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
@@ -128,7 +194,7 @@
   border-top: 1px solid var(--border);
 }
 
-.btn-fit {
+.btnFit {
   flex: none;
 }
 
