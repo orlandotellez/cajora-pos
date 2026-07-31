@@ -2,10 +2,10 @@ import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
-import { LoginForm } from "@/components/auth/LoginForm";
-import { RegisterForm } from "@/components/auth/RegisterForm";
 import { ShoppingCart, Package, BarChart3, Shield, Sun, Moon } from "lucide-react";
 import styles from "./Auth.module.css";
+import { LoginForm } from "@/components/pages/auth/LoginForm";
+import { RegisterForm } from "@/components/pages/auth/RegisterForm";
 
 type AuthMode = "login" | "register";
 
