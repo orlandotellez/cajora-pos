@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Search, X } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { usersApi, type CreateUserPayload, type UpdateUserPayload } from "@/api/users";
 import type { UserResponse } from "@/api";
 import { useAuth } from "@/context/AuthContext";
@@ -9,6 +9,7 @@ import { useToast } from "@/components/common/ui/Toast";
 import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
 import { UserTable } from "@/components/pages/users/UserTable";
 import styles from "./Users.module.css";
+import { EditUserModal } from "@/components/pages/users/EditUserModal";
 
 const emptyForm = { name: "", email: "", password: "", role: "cajero" as string, phone: "" };
 
@@ -121,56 +122,16 @@ export default function Users() {
         dimmed={false}
       />
 
-      {editing && (
-        <div className={styles.overlay} onClick={() => setEditing(null)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>{isNew ? "Nuevo usuario" : "Editar usuario"}</h2>
-              <button onClick={() => setEditing(null)} className={styles.modalClose}>
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSave} className={styles.modalForm}>
-              <div className={styles.field}>
-                <label className={styles.fieldLabel}>Nombre *</label>
-                <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={styles.input} required />
-              </div>
-              <div className={styles.field}>
-                <label className={styles.fieldLabel}>Email *</label>
-                <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={styles.input} required />
-              </div>
-              <div className={styles.field}>
-                <label className={styles.fieldLabel}>
-                  Contraseña {isNew && <span className={styles["required-star"]}>*</span>}
-                  {!isNew && <span className={styles["password-hint"]}>(dejar vacío para mantener)</span>}
-                </label>
-                <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className={styles.input} required={isNew} minLength={isNew ? 8 : undefined} />
-              </div>
-              <div className={styles.field}>
-                <label className={styles.fieldLabel}>Rol</label>
-                <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} className={styles.select}>
-                  <option value="cajero">Cajero</option>
-                  <option value="admin">Administrador</option>
-                </select>
-              </div>
-              <div className={styles.field}>
-                <label className={styles.fieldLabel}>Teléfono</label>
-                <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={styles.input} />
-              </div>
-
-              <div className={styles["form-actions"]}>
-                <button type="submit" className={`${styles.primaryBtn} ${styles["btn-fit"]}`} disabled={submitting}>
-                  {submitting ? "Guardando…" : "Guardar"}
-                </button>
-                <button type="button" onClick={() => setEditing(null)} className={styles.secondaryBtn}>
-                  Cancelar
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {editing &&
+        <EditUserModal
+          isNew={isNew}
+          setEditing={() => setEditing(null)}
+          handleSave={handleSave}
+          form={form}
+          setForm={setForm}
+          submitting={submitting}
+        />
+      }
 
       <ConfirmDialog
         open={deleteTarget !== null}
@@ -181,6 +142,6 @@ export default function Users() {
         onConfirm={() => { if (deleteTarget) remove(deleteTarget); setDeleteTarget(null); }}
         onCancel={() => setDeleteTarget(null)}
       />
-    </div>
+    </div >
   );
 }
