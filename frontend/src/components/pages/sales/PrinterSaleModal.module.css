@@ -1,0 +1,200 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 16px;
+}
+
+.modal {
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modalTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.modalHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.printBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.printBtn:hover {
+  background: var(--accent);
+}
+
+.modalClose {
+  padding: 6px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+  color: var(--muted-foreground);
+}
+
+.modalClose:hover {
+  color: var(--foreground);
+}
+
+.ticket {
+  padding: 24px;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 14px;
+  max-width: 400px;
+  margin: 16px auto;
+}
+
+.ticketHeader {
+  text-align: center;
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: var(--foreground);
+}
+
+.ticketAddress {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted-foreground);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+.ticketMeta {
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted-foreground);
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+
+.ticketDivider {
+  border-top: 1px dashed var(--border);
+  margin: 8px 0;
+}
+
+.ticketTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ticketTable td {
+  padding: 2px 0;
+  vertical-align: top;
+}
+
+.ticketTdLeft {
+  text-align: left;
+  color: var(--foreground);
+}
+
+.ticketTdRight {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+}
+
+.ticketTdSub {
+  padding: 1px 4px 1px 12px;
+  font-size: 10px;
+  color: var(--muted-foreground);
+  vertical-align: top;
+}
+
+.ticketTdRightSub {
+  padding: 1px 0 1px 4px;
+  text-align: right;
+  font-size: 10px;
+  color: var(--muted-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+.ticketTdTotalLine {
+  padding: 4px 4px 4px 8px;
+  font-size: 10px;
+  border-top: 1px dashed var(--border);
+  font-weight: 500;
+}
+
+.ticketTdRightTotalLine {
+  padding: 4px 0 4px 4px;
+  text-align: right;
+  font-size: 10px;
+  border-top: 1px dashed var(--border);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.ticketRows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ticketRow {
+  display: flex;
+  justify-content: space-between;
+  color: var(--foreground);
+}
+
+.ticketRowTotal {
+  font-size: 14px;
+  font-weight: 700;
+  padding-top: 8px;
+  margin-top: 8px;
+  border-top: 2px solid var(--foreground);
+}
+
+.ticketFooter {
+  text-align: center;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  margin-top: 12px;
+}

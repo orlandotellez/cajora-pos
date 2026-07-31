@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { CheckCircle, Loader2, Printer } from "lucide-react";
+import { CheckCircle, Printer } from "lucide-react";
 import { money } from "@/lib/format";
 import { printersApi } from "@/api/printers";
 import { usePosStore, type CartItem, type ProductCartItem, type ServiceCartItem } from "@/store/posStore";
 import styles from "./PosCompletedSaleModal.module.css";
+import { PrinterLoad } from "@/components/common/PrinterLoad";
 
 interface CompletedSaleData {
   saleId: string;
@@ -181,14 +182,7 @@ export function PosCompletedSaleModal({
           </button>
         </div>
 
-        {printing && (
-          <div className={styles.printingOverlay}>
-            <div className={styles.printingBox}>
-              <Loader2 size={36} className={styles.spinner} />
-              <span className={styles.printingText}>Imprimiendo…</span>
-            </div>
-          </div>
-        )}
+        {printing && <PrinterLoad />}
       </div>
     </div>
   );
