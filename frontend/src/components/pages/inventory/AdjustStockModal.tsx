@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { X, ArrowDownRight, ArrowUpRight, RefreshCw } from "lucide-react";
+import { X } from "lucide-react";
 import { inventoryApi } from "@/api/inventory";
 import { UNIT_TYPE_LABELS } from "@/lib/constants";
-import styles from "../../../pages/inventory/Inventory.module.css";
+import styles from "./AdjustStockModal.module.css";
 
 interface AdjustStockModalProps {
   adjust: {

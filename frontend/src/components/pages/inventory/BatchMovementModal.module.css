@@ -1,0 +1,382 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  justify-content: flex-end;
+  z-index: 50;
+}
+
+.modal {
+  width: 100%;
+  max-width: 448px;
+  background: var(--background);
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  animation: slideIn 0.2s ease;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 24px 0;
+}
+
+.modalTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.modalClose {
+  padding: 4px;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+  color: var(--muted-foreground);
+}
+
+.modalClose:hover {
+  color: var(--foreground);
+}
+
+.modalForm {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+.select {
+  width: 100%;
+  height: 40px;
+  padding: 8px 36px 8px 12px;
+  border: 1px solid var(--input);
+  border-radius: 6px;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 14px;
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+}
+
+.select:focus {
+  border-color: var(--ring);
+}
+
+.formTextarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--input);
+  border-radius: 6px;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.formTextarea:focus {
+  border-color: var(--ring);
+}
+
+.batchFormItems {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.batchFormItem {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.batchFormItemRow {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.batchFormSearchWrap {
+  position: relative;
+  flex: 1;
+}
+
+.batchFormSearchInput {
+  width: 100%;
+  height: 32px;
+  padding: 4px 8px;
+  border: 1px solid var(--input);
+  border-radius: 4px;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 13px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.batchFormSearchInput:focus {
+  border-color: var(--ring);
+}
+
+.batchDropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  margin-top: 2px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--background);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.batchDropdownItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--foreground);
+  cursor: pointer;
+  text-align: left;
+}
+
+.batchDropdownItem:hover {
+  background: var(--accent);
+}
+
+.batchDropdownStock {
+  font-size: 12px;
+  color: var(--muted-foreground);
+  flex-shrink: 0;
+}
+
+.batchDropdownEmpty {
+  padding: 12px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted-foreground);
+}
+
+.batchFormQtyInput {
+  width: 72px;
+  height: 32px;
+  padding: 4px 8px;
+  border: 1px solid var(--input);
+  border-radius: 4px;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 13px;
+  outline: none;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.batchFormQtyInput:focus {
+  border-color: var(--ring);
+}
+
+.batchFormCostInput {
+  width: 80px;
+  height: 32px;
+  padding: 4px 8px;
+  border: 1px solid var(--input);
+  border-radius: 4px;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 13px;
+  outline: none;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.batchFormCostInput:focus {
+  border-color: var(--ring);
+}
+
+.batchFormRemove {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: none;
+  color: var(--destructive);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.batchFormRemove:hover {
+  background: color-mix(in oklch, var(--destructive) 10%, transparent);
+}
+
+.batchFormNotesInput {
+  width: 100%;
+  height: 28px;
+  padding: 2px 8px;
+  border: 1px solid var(--input);
+  border-radius: 4px;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 12px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.batchFormNotesInput:focus {
+  border-color: var(--ring);
+}
+
+.batchFormNotesInput::placeholder {
+  color: var(--muted-foreground);
+}
+
+.batchFormQtyRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.batchFormQtyRow .batchFormQtyInput {
+  flex: 1;
+  width: auto;
+  text-align: left;
+}
+
+.batchFormUnitBadge {
+  font-size: 12px;
+  color: var(--muted-foreground);
+  font-weight: 500;
+  white-space: nowrap;
+  padding: 0 10px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  background: var(--muted);
+  border-radius: 4px;
+}
+
+.batchFormItem > .batchFormQtyInput,
+.batchFormItem > .batchFormCostInput {
+  flex: 1;
+  width: auto;
+  text-align: left;
+}
+
+.batchSummary {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--muted);
+}
+
+.batchSummaryTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--foreground);
+  margin-bottom: 8px;
+}
+
+.batchSummaryGrid {
+  display: flex;
+  gap: 24px;
+}
+
+.batchSummaryItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.batchSummaryLabel {
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+.batchSummaryValue {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+.outlineBtn {
+  padding: 4px 12px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--foreground);
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.outlineBtn:hover {
+  background: var(--accent);
+}
+
+.primaryBtn {
+  width: 100%;
+  height: 40px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: var(--foreground);
+  color: var(--background);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.primaryBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

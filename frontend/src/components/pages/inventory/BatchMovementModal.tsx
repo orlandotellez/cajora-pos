@@ -4,7 +4,7 @@ import { inventoryApi } from "@/api/inventory";
 import type { Supplier, Product } from "@/api";
 import type { CreateBatchPayload } from "@/api/inventory";
 import { UNIT_TYPE_LABELS } from "@/lib/constants";
-import styles from "../../../pages/inventory/Inventory.module.css";
+import styles from "./BatchMovementModal.module.css";
 
 interface BatchMovementModalProps {
   open: boolean;

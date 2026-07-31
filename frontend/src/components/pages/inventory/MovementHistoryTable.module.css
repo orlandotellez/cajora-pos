@@ -1,0 +1,183 @@
+.tableCard {
+  border: 1px solid var(--border);
+  background: var(--card);
+  overflow: hidden;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table {
+  width: 100%;
+  font-size: 14px;
+  border-collapse: collapse;
+}
+
+.table th {
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted-foreground);
+  font-weight: 600;
+  background: var(--muted);
+}
+
+.thLeft {
+  padding: 12px 16px;
+  text-align: left;
+}
+
+.thRight {
+  padding: 12px 16px;
+  text-align: right;
+}
+
+.thAction {
+  width: 96px;
+  padding: 12px 12px;
+  text-align: right;
+}
+
+.tdProduct {
+  padding: 12px 16px;
+}
+
+.tdLeft {
+  padding: 12px 16px;
+  text-align: left;
+  color: var(--foreground);
+}
+
+.tdRight {
+  padding: 12px 16px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+}
+
+.tdRightMuted {
+  padding: 12px 16px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted-foreground);
+}
+
+.tdActions {
+  padding: 12px 12px;
+  text-align: right;
+  width: 48px;
+}
+
+.eyeIcon {
+  color: var(--muted-foreground);
+  display: block;
+  margin-left: auto;
+}
+
+.movementRow {
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+}
+
+.movementRow:last-child {
+  border-bottom: none;
+}
+
+.movementRow:hover {
+  background: var(--accent);
+}
+
+.movementBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.movement_entrada {
+  background: color-mix(in oklch, var(--success) 12%, transparent);
+  color: var(--success);
+}
+
+.movement_salida {
+  background: color-mix(in oklch, var(--destructive) 12%, transparent);
+  color: var(--destructive);
+}
+
+.movement_ajuste {
+  background: color-mix(in oklch, var(--warning) 12%, transparent);
+  color: var(--warning);
+}
+
+.movement_venta {
+  background: color-mix(in oklch, var(--destructive) 12%, transparent);
+  color: var(--destructive);
+}
+
+.movementQty {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.movementNote {
+  color: var(--muted-foreground);
+  font-size: 13px;
+  display: block;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.empty {
+  padding: 40px 16px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--muted-foreground);
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+}
+
+.pageBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.pageBtn:hover:not(:disabled) {
+  background: var(--accent);
+}
+
+.pageBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.pageActive {
+  background: var(--foreground);
+  color: var(--background);
+  border-color: var(--foreground);
+}

@@ -1,42 +1,31 @@
 import { Search, AlertTriangle } from "lucide-react";
 import type { Product, Category } from "@/api";
 import type { LowStockProduct } from "@/api/inventory";
-import { InventoryTable } from "@/components/pages/inventory/InventoryTable";
+import { InventoryTable } from "./InventoryTable";
 import styles from "./InventoryProductosSection.module.css";
 
 type StockFilter = "" | "low" | "out";
 
 interface Props {
-  // Resultados del useCrudPagination<Product> de Inventory.tsx
   products: Product[];
   total: number;
   page: number;
   totalPages: number;
   loading: boolean;
-  /** Query actual del search. */
   q: string;
   setSearch: (value: string) => void;
   setPage: (value: number) => void;
 
-  // Filtros de categoría + stock
   categories: Category[];
   categoryId: string;
   setCategoryId: (value: string) => void;
   stockFilter: StockFilter;
   setStockFilter: (value: StockFilter) => void;
 
-  // Alert + opening adjust modal
   lowStockProducts: LowStockProduct[];
   onAdjust: (product: Product) => void;
 }
 
-/**
- * Sección de productos de la pantalla Inventario.
- *
- * Encapsula el banner de stock bajo + toolbar (buscador + filtro de categoría +
- * botones "stock bajo" / "sin stock") + tabla. El parent (Inventory.tsx) sigue
- * owning el header de página y las otras 2 secciones (movimientos / batches).
- */
 export function InventoryProductosSection(props: Props) {
   const {
     products,

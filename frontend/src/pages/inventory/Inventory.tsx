@@ -6,7 +6,6 @@ import { suppliersApi } from "@/api/suppliers";
 import type { Supplier } from "@/api";
 import { cacheClear } from "@/lib/simple-cache";
 import { useCrudPagination } from "@/hooks/useCrudPagination";
-import { InventoryProductosSection } from "@/components/inventory/InventoryProductosSection";
 import { AdjustStockModal } from "@/components/pages/inventory/AdjustStockModal";
 import { MovementDetailModal } from "@/components/pages/inventory/MovementDetailModal";
 import { BatchMovementModal } from "@/components/pages/inventory/BatchMovementModal";
@@ -15,6 +14,7 @@ import { MovementHistoryTable } from "@/components/pages/inventory/MovementHisto
 import { BatchHistoryTable } from "@/components/pages/inventory/BatchHistoryTable";
 import styles from "./Inventory.module.css";
 import { Header } from "@/components/pages/inventory/Header";
+import { InventoryProductosSection } from "@/components/pages/inventory/InventoryProductosSection";
 
 type AdjustState = {
   id: string;
