@@ -1,7 +1,7 @@
 import { PAYMENT_METHODS } from "@/lib/constants";
 import { money } from "@/lib/format";
 import type { SaleReport } from "@/api";
-import styles from "./Reports.module.css";
+import styles from "./CashCloseCard.module.css";
 
 interface CashCloseCardProps {
   report: SaleReport | null;

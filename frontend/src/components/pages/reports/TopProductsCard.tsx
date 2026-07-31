@@ -1,6 +1,6 @@
 import { money } from "@/lib/format";
 import type { SaleReport } from "@/api";
-import styles from "./Reports.module.css";
+import styles from "./TopProductsCard.module.css";
 
 interface TopProductsCardProps {
   report: SaleReport | null;

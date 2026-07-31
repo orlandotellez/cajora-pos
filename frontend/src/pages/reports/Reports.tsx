@@ -1,17 +1,15 @@
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { salesApi, type Sale, type SaleReport } from "@/api/sales";
-import { money } from "@/lib/format";
 import { cacheGet, cacheSet, cacheKey } from "@/lib/simple-cache";
-import TableSkeleton from "@/components/common/TableSkeleton";
+import { Header, type Range } from "@/components/pages/reports/Header";
 import { ReportStats } from "@/components/pages/reports/ReportStats";
 import { CashCloseCard } from "@/components/pages/reports/CashCloseCard";
 import { TopProductsCard } from "@/components/pages/reports/TopProductsCard";
 import { ChartsSection } from "@/components/pages/reports/ChartsSection";
+import { RecentSalesTable } from "@/components/pages/reports/RecentSalesTable";
+import { ReportsSkeleton } from "@/components/pages/reports/ReportsSkeleton";
 import { PAGE_LIMIT as SALES_LIMIT } from "@/lib/constants";
 import styles from "./Reports.module.css";
-
-type Range = "today" | "week" | "month";
 
 function rangeStart(r: Range) {
   const d = new Date();
@@ -26,12 +24,6 @@ function rangeEnd(r: Range) {
   if (r === "today") { d.setHours(23, 59, 59, 999); return d; }
   return d;
 }
-
-const SKELETON_COLS = [
-  { width: "50%" },
-  { width: "30%" },
-  { width: "20%", align: "right" as const },
-];
 
 export default function Reports() {
   const [range, setRange] = useState<Range>("today");
@@ -79,59 +71,14 @@ export default function Reports() {
   if (loading && !hasData) {
     return (
       <div className={styles.page}>
-        <header className={styles.header}>
-          <div>
-            <h1 className={styles.h1}>Reportes</h1>
-            <p className={styles.subtitle}>Resumen de ventas y productos</p>
-          </div>
-          <div className={`${styles.select} ${styles.skeletonBar} ${styles["skeleton-header"]}`} />
-        </header>
-        <div className={styles.statsGrid}>
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className={styles.statCard}>
-              <div className={`${styles.skeletonBar} ${styles["skeleton-stat-up"]}`} />
-              <div className={`${styles.skeletonBar} ${styles["skeleton-stat-down"]}`} />
-            </div>
-          ))}
-        </div>
-        <div className={styles.twoCol}>
-          <div className={styles.card}>
-            <div className={`${styles.skeletonBar} ${styles["skeleton-card-title"]}`} />
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className={`${styles.skeletonBar} ${styles["skeleton-card-line"]}`} />
-            ))}
-          </div>
-          <div className={styles.card}>
-            <div className={styles.skeletonBar} style={{ width: "50%", height: 16, marginBottom: 16 }} />
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className={styles.skeletonBar} style={{ width: `${50 + i * 8}%`, height: 14, marginBottom: 8 }} />
-            ))}
-          </div>
-        </div>
-        <div className={styles.recentCard}>
-          <div className={`${styles.skeletonBar} ${styles["skeleton-recent-title"]}`} />
-          <div className={styles.tableWrapper}><table className={styles.table}>
-            <thead><tr><th>Fecha</th><th>Método</th><th>Total</th></tr></thead>
-            <tbody><TableSkeleton cols={SKELETON_COLS} rows={5} /></tbody>
-          </table></div>
-        </div>
+        <ReportsSkeleton range={range} onRangeChange={setRange} />
       </div>
     );
   }
 
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <div>
-          <h1 className={styles.h1}>Reportes</h1>
-          <p className={styles.subtitle}>Resumen de ventas y productos</p>
-        </div>
-        <select value={range} onChange={(e) => setRange(e.target.value as Range)} className={styles.select}>
-          <option value="today">Hoy</option>
-          <option value="week">Últimos 7 días</option>
-          <option value="month">Últimos 30 días</option>
-        </select>
-      </header>
+      <Header range={range} onRangeChange={setRange} />
 
       <ReportStats report={report} />
 
@@ -145,47 +92,13 @@ export default function Reports() {
         <TopProductsCard report={report} />
       </div>
 
-      <section className={styles.recentCard}>
-        <h2 className={styles.recentTitle}>Últimas ventas</h2>
-        <div className={styles.tableWrapper}><table className={styles.table}>
-          <thead>
-            <tr>
-              <th className={styles.thLeft}>Fecha</th>
-              <th className={styles.thLeft}>Método</th>
-              <th className={styles.thRight}>Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sales.length > 0 ? (
-              sales.map((s) => (
-                <tr key={s.id} className={`${styles.tr} ${loading ? styles.trDim : ""}`}>
-                  <td className={styles.tdDate}>{new Date(s.created_at).toLocaleString("es-MX")}</td>
-                  <td className={styles.tdMethod}>{s.payment_method}</td>
-                  <td className={styles.tdRight}>{money(s.total)}</td>
-                </tr>
-              ))
-            ) : loading ? (
-              <TableSkeleton cols={SKELETON_COLS} rows={5} />
-            ) : (
-              <tr><td colSpan={3} className={styles.empty}>Sin ventas</td></tr>
-            )}
-          </tbody>
-        </table></div>
-
-        {salesTotalPages > 1 && (
-          <div className={styles.pagination}>
-            <button onClick={() => setSalesPage((p) => Math.max(1, p - 1))} disabled={salesPage <= 1} className={styles.pageBtn}>
-              <ChevronLeft size={16} />
-            </button>
-            {Array.from({ length: salesTotalPages }, (_, i) => i + 1).map((n) => (
-              <button key={n} onClick={() => setSalesPage(n)} className={`${styles.pageBtn} ${n === salesPage ? styles.pageActive : ""}`}>{n}</button>
-            ))}
-            <button onClick={() => setSalesPage((p) => Math.min(salesTotalPages, p + 1))} disabled={salesPage >= salesTotalPages} className={styles.pageBtn}>
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        )}
-      </section>
+      <RecentSalesTable
+        sales={sales}
+        loading={loading}
+        page={salesPage}
+        totalPages={salesTotalPages}
+        onPageChange={setSalesPage}
+      />
     </div>
   );
 }

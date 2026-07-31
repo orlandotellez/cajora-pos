@@ -1,0 +1,41 @@
+.close-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.close-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 16px;
+}
+
+.close-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.close-card-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  padding: 4px 0;
+}
+
+.close-card-label {
+  color: var(--muted-foreground);
+}
+
+.close-card-divider {
+  border-top: 1px solid var(--border);
+  margin: 4px 0;
+}
+
+.close-card-total-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  font-weight: 700;
+}
