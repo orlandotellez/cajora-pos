@@ -1,13 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, Search, X } from "lucide-react";
 import { usersApi, type CreateUserPayload, type UpdateUserPayload } from "@/api/users";
 import type { UserResponse } from "@/api";
 import { useAuth } from "@/context/AuthContext";
 import { useAdminGuard } from "@/hooks/useAdminGuard";
+import { useCrudPagination } from "@/hooks/useCrudPagination";
 import { useToast } from "@/components/common/ui/Toast";
 import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
 import { UserTable } from "@/components/pages/users/UserTable";
-import { PAGE_LIMIT as LIMIT } from "@/lib/constants";
 import styles from "./Users.module.css";
 
 const emptyForm = { name: "", email: "", password: "", role: "cajero" as string, phone: "" };
@@ -17,18 +17,28 @@ export default function Users() {
   useAdminGuard();
   const { toast } = useToast();
 
-  const [users, setUsers] = useState<UserResponse[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [q, setQ] = useState("");
-  const [loading, setLoading] = useState(true);
+  const {
+    items: users,
+    total,
+    page,
+    q,
+    loading,
+    totalPages,
+    setSearch,
+    setPage,
+    refreshImmediate,
+  } = useCrudPagination<UserResponse>({
+    fetcher: ({ page, limit, search }) =>
+      usersApi
+        .list({ page, limit, search: search || undefined })
+        .then((res) => ({ items: res.users, total: res.total })),
+  });
+
   const [editing, setEditing] = useState<UserResponse | null | "new">(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState(emptyForm);
 
-  const totalPages = Math.max(1, Math.ceil(total / LIMIT));
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isNew = typeof editing === "string";
 
   useEffect(() => {
@@ -36,20 +46,6 @@ export default function Users() {
     if (isNew) { setForm(emptyForm); return; }
     setForm({ name: editing.name, email: editing.email, password: "", role: editing.role, phone: editing.phone ?? "" });
   }, [editing, isNew]);
-
-  useEffect(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      setLoading(true);
-      usersApi.list({ page, limit: LIMIT, search: q || undefined })
-        .then((res) => { setUsers(res.users); setTotal(res.total); })
-        .catch((err) => console.warn("Error al listar usuarios:", err))
-        .finally(() => setLoading(false));
-    }, 300);
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, [page, q]);
-
-  function handleSearch(value: string) { setQ(value); setPage(1); }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -74,8 +70,7 @@ export default function Users() {
         await usersApi.update(editing.id, payload);
       }
       setEditing(null);
-      const res = await usersApi.list({ page, limit: LIMIT, search: q || undefined });
-      setUsers(res.users); setTotal(res.total);
+      refreshImmediate();
       toast("Usuario guardado correctamente", "success");
     } catch (err) {
       console.error("Error al guardar usuario:", err);
@@ -86,8 +81,7 @@ export default function Users() {
   async function remove(id: string) {
     try {
       await usersApi.delete(id);
-      const res = await usersApi.list({ page, limit: LIMIT, search: q || undefined });
-      setUsers(res.users); setTotal(res.total);
+      refreshImmediate();
       toast("Usuario eliminado", "success");
     } catch (err) {
       console.error("Error al eliminar usuario:", err);
@@ -110,7 +104,7 @@ export default function Users() {
       <div className={styles.toolbar}>
         <div className={styles.searchWrapper}>
           <Search size={16} className={styles.searchIcon} />
-          <input value={q} onChange={(e) => handleSearch(e.target.value)} placeholder="Buscar por nombre o email…" className={styles.searchInput} />
+          <input value={q} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por nombre o email…" className={styles.searchInput} />
         </div>
       </div>
 
