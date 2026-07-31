@@ -14,6 +14,7 @@ import { BatchDetailModal } from "@/components/pages/inventory/BatchDetailModal"
 import { MovementHistoryTable } from "@/components/pages/inventory/MovementHistoryTable";
 import { BatchHistoryTable } from "@/components/pages/inventory/BatchHistoryTable";
 import styles from "./Inventory.module.css";
+import { Header } from "@/components/pages/inventory/Header";
 
 type AdjustState = {
   id: string;
@@ -143,17 +144,7 @@ export default function Inventory() {
 
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <div className={styles.headerRow}>
-          <div>
-            <h1 className={styles.h1}>Inventario</h1>
-            <p className={styles.subtitle}>Control de stock en tiempo real</p>
-          </div>
-          <button onClick={() => setBatchModalOpen(true)} className={styles.primaryBtnSmall}>
-            Nuevo movimiento agrupado
-          </button>
-        </div>
-      </header>
+      <Header setBatchModalOpen={() => setBatchModalOpen(true)} />
 
       <InventoryProductosSection
         products={products}
