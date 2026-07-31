@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { salesApi, type Sale } from "@/api/sales";
 import { printersApi } from "@/api/printers";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { PAGE_LIMIT as LIMIT } from "@/lib/constants";
 import { SaleTable } from "@/components/pages/sales/SaleTable";
 import styles from "./Sales.module.css";
@@ -10,26 +11,6 @@ import { Header } from "@/components/pages/sales/Header";
 import { Filter } from "@/components/pages/sales/Filter";
 import { PrinterSaleModal } from "@/components/pages/sales/PrinterSaleModal";
 import { PrinterLoad } from "@/components/common/PrinterLoad";
-
-function useDebounced<T>(value: T, ms: number): readonly [T, (v: T) => void] {
-  const [v, setV] = useState(value);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => setV(value), ms);
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [value, ms]);
-
-  const flush = useCallback((newValue: T) => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    setV(newValue);
-  }, []);
-
-  return [v, flush] as const;
-}
 
 export default function Sales() {
   const [sales, setSales] = useState<Sale[]>([]);
@@ -53,9 +34,9 @@ export default function Sales() {
   }, []);
   const { storeName, storeAddress, storePhone, storeFooter } = useStoreSettings();
 
-  const [debouncedUserName, flushUserName] = useDebounced(userNameFilter, 300);
-  const [debouncedMinQty, flushMinQty] = useDebounced(minQtyFilter, 300);
-  const [debouncedMinItems, flushMinItems] = useDebounced(minItemsFilter, 300);
+  const [debouncedUserName, flushUserName] = useDebouncedValue(userNameFilter, 300);
+  const [debouncedMinQty, flushMinQty] = useDebouncedValue(minQtyFilter, 300);
+  const [debouncedMinItems, flushMinItems] = useDebouncedValue(minItemsFilter, 300);
 
   const trimmedUser = debouncedUserName.trim();
   const trimmedQtyStr = debouncedMinQty.trim();
