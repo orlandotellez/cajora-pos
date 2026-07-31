@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Plus, Search } from "lucide-react";
 import { usersApi, type CreateUserPayload, type UpdateUserPayload } from "@/api/users";
 import type { UserResponse } from "@/api";
 import { useAuth } from "@/context/AuthContext";
@@ -8,8 +7,10 @@ import { useCrudPagination } from "@/hooks/useCrudPagination";
 import { useToast } from "@/components/common/ui/Toast";
 import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
 import { UserTable } from "@/components/pages/users/UserTable";
-import styles from "./Users.module.css";
 import { EditUserModal } from "@/components/pages/users/EditUserModal";
+import { Header } from "@/components/pages/users/Header";
+import { Filter } from "@/components/pages/users/Filter";
+import styles from "./Users.module.css";
 
 const emptyForm = { name: "", email: "", password: "", role: "cajero" as string, phone: "" };
 
@@ -92,22 +93,9 @@ export default function Users() {
 
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <div>
-          <h1 className={styles.h1}>Usuarios</h1>
-          <p className={styles.subtitle}>{total} usuario(s) en el sistema</p>
-        </div>
-        <button onClick={() => setEditing("new")} className={styles.primaryBtn}>
-          <Plus size={16} /> Nuevo
-        </button>
-      </header>
+      <Header total={total} onNew={() => setEditing("new")} />
 
-      <div className={styles.toolbar}>
-        <div className={styles.searchWrapper}>
-          <Search size={16} className={styles.searchIcon} />
-          <input value={q} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por nombre o email…" className={styles.searchInput} />
-        </div>
-      </div>
+      <Filter q={q} setSearch={setSearch} />
 
       <UserTable
         users={users}
@@ -142,6 +130,6 @@ export default function Users() {
         onConfirm={() => { if (deleteTarget) remove(deleteTarget); setDeleteTarget(null); }}
         onCancel={() => setDeleteTarget(null)}
       />
-    </div >
+    </div>
   );
 }
