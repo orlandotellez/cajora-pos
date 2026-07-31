@@ -6,8 +6,6 @@ import { usePosScanner } from "@/hooks/usePosScanner";
 import { useDialog } from "@/hooks/useDialog";
 import { useCheckout } from "@/hooks/useCheckout";
 import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
-import { PosScannerSection } from "@/components/pos/PosScannerSection";
-import { PosMobileCheckout } from "@/components/pos/PosMobileCheckout";
 import { usePosStore, type CartItem, type ProductCartItem, type ServiceCartItem } from "@/store/posStore";
 import { money } from "@/lib/format";
 import { PosSearchBar, type SearchResult } from "@/components/pages/pos/PosSearchBar";
@@ -17,6 +15,8 @@ import { PosCompletedSaleModal } from "@/components/pages/pos/PosCompletedSaleMo
 import { PosDialog } from "@/components/pages/pos/PosDialog";
 import styles from "./Pos.module.css";
 import { useAuth } from "@/context/AuthContext";
+import { PosMobileCheckout } from "@/components/pages/pos/PosMobileCheckout";
+import { PosScannerSection } from "@/components/pages/pos/PosScannerSection";
 
 export default function Pos() {
   const { user } = useAuth()
@@ -355,19 +355,19 @@ export default function Pos() {
         />
 
         <div className={styles.cartArea}>
-        <PosCartTable
-          cart={cart}
-          products={products}
-          addingToService={addingToService}
-          serviceProductSearch={serviceProductSearch}
-          onSetQty={handleSetQty}
-          onDelete={(id) => setQty(id, 0)}
-          onAddingToService={setAddingToService}
-          onServiceProductSearch={setServiceProductSearch}
-          onAddServiceProduct={handleAddServiceProduct}
-          onUpdateServiceProductQty={handleUpdateServiceProductQty}
-          showAlert={showAlert}
-        />
+          <PosCartTable
+            cart={cart}
+            products={products}
+            addingToService={addingToService}
+            serviceProductSearch={serviceProductSearch}
+            onSetQty={handleSetQty}
+            onDelete={(id) => setQty(id, 0)}
+            onAddingToService={setAddingToService}
+            onServiceProductSearch={setServiceProductSearch}
+            onAddServiceProduct={handleAddServiceProduct}
+            onUpdateServiceProductQty={handleUpdateServiceProductQty}
+            showAlert={showAlert}
+          />
         </div>
 
         {/* Mobile bottom bar — only visible on mobile when cart has items */}

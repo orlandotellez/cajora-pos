@@ -3,23 +3,12 @@ import type { RefObject } from "react";
 import styles from "./PosScannerSection.module.css";
 
 interface Props {
-  /** Estado actual del scanner (true = activo + viewfinder visible). */
   active: boolean;
-  /** Toggle on/off del scanner. */
   onToggle: () => void;
-  /** ID del elemento DOM donde se monta el viewfinder (provisto por usePosScanner). */
   elementId: string;
-  /** Ref al botón toggle (para focus u otros). */
   toggleRef: RefObject<HTMLButtonElement | null>;
 }
 
-/**
- * Sección del scanner de código de barras del POS.
- *
- * Renderiza el botón toggle + viewfinder (con brackets decorativos y
- * scan-line). Las clases `.scanner-container-active` / `-inactive`
- * aplican la transición de max-height/opacity sin estilos inline.
- */
 export function PosScannerSection({ active, onToggle, toggleRef, elementId }: Props) {
   return (
     <div className={styles["scanner-section"]}>
