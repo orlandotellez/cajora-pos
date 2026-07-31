@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Plus, Search, X } from "lucide-react";
 import { suppliersApi, type CreateSupplierPayload, type UpdateSupplierPayload } from "@/api/suppliers";
 import type { Supplier } from "@/api/suppliers";
 import { cacheClear } from "@/lib/simple-cache";
@@ -7,6 +6,9 @@ import { useCrudPagination } from "@/hooks/useCrudPagination";
 import { useToast } from "@/components/common/ui/Toast";
 import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
 import { SupplierTable } from "@/components/pages/suppliers/SupplierTable";
+import { Header } from "@/components/pages/suppliers/Header";
+import { Filter } from "@/components/pages/suppliers/Filter";
+import { EditSupplierModal } from "@/components/pages/suppliers/EditSupplierModal";
 import styles from "./Suppliers.module.css";
 
 const emptyForm = {
@@ -108,27 +110,9 @@ export default function Suppliers() {
 
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <div>
-          <h1 className={styles.h1}>Proveedores</h1>
-          <p className={styles.subtitle}>{total} proveedores registrados</p>
-        </div>
-        <button onClick={() => setEditing("new")} className={styles.primaryBtn}>
-          <Plus size={16} /> Nuevo proveedor
-        </button>
-      </header>
+      <Header total={total} onNew={() => setEditing("new")} />
 
-      <div className={styles.toolbar}>
-        <div className={styles.searchWrapper}>
-          <Search size={16} className={styles.searchIcon} />
-          <input
-            value={q}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por nombre, contacto o email…"
-            className={styles.searchInput}
-          />
-        </div>
-      </div>
+      <Filter q={q} setSearch={setSearch} />
 
       <SupplierTable
         suppliers={suppliers}
@@ -143,100 +127,14 @@ export default function Suppliers() {
       />
 
       {editing && (
-        <div className={styles.overlay} onClick={() => setEditing(null)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>{isNew ? "Nuevo proveedor" : "Editar proveedor"}</h2>
-              <button onClick={() => setEditing(null)} className={styles.modalClose}>
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSave} className={styles.modalForm}>
-              <div className={styles.field}>
-                <label className={styles.fieldLabel}>Nombre *</label>
-                <input
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className={styles.input}
-                  required
-                />
-              </div>
-              <div className={styles.field}>
-                <label className={styles.fieldLabel}>Persona de contacto</label>
-                <input
-                  value={form.contact_name}
-                  onChange={(e) => setForm({ ...form, contact_name: e.target.value })}
-                  className={styles.input}
-                />
-              </div>
-              <div className={styles["form-grid"]}>
-                <div className={styles.field}>
-                  <label className={styles.fieldLabel}>Email</label>
-                  <input
-                    type="email"
-                    value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    className={styles.input}
-                  />
-                </div>
-                <div className={styles.field}>
-                  <label className={styles.fieldLabel}>Teléfono</label>
-                  <input
-                    value={form.phone}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    className={styles.input}
-                  />
-                </div>
-              </div>
-              <div className={styles.field}>
-                <label className={styles.fieldLabel}>Dirección</label>
-                <textarea
-                  value={form.address}
-                  onChange={(e) => setForm({ ...form, address: e.target.value })}
-                  className={styles.textarea}
-                  rows={3}
-                />
-              </div>
-              <div className={styles.field}>
-                <label className={styles.fieldLabel}>Notas</label>
-                <textarea
-                  value={form.notes}
-                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                  className={styles.textarea}
-                  rows={3}
-                />
-              </div>
-              <div className={styles.field}>
-                <label className={styles["checkbox-label"]}>
-                  <input
-                    type="checkbox"
-                    checked={form.is_active}
-                    onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
-                  />
-                  Activo
-                </label>
-              </div>
-
-              <div className={styles["form-actions"]}>
-                <button
-                  type="submit"
-                  className={`${styles.primaryBtn} ${styles["btn-fit"]}`}
-                  disabled={submitting}
-                >
-                  {submitting ? "Guardando…" : "Guardar"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEditing(null)}
-                  className={styles.secondaryBtn}
-                >
-                  Cancelar
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <EditSupplierModal
+          isNew={isNew}
+          setEditing={() => setEditing(null)}
+          handleSave={handleSave}
+          form={form}
+          setForm={setForm}
+          submitting={submitting}
+        />
       )}
 
       <ConfirmDialog
