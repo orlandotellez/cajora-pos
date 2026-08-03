@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "production:mode": "VITE_FORCE_PRODUCTION=true pnpm tauri dev",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint .",
