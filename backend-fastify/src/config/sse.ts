@@ -29,8 +29,6 @@ const REDIS_CHANNEL = "pos:sse:v1"
 
 function publishToRedis(storeId: string, event: string, data: unknown): void {
   const client = getRedisClient()
-  // Solo publicar si Redis está conectado: evita acumular comandos en cola
-  // offline cuando Redis está caído.
   if (!client || client.status !== "ready") return
   client
     .publish(REDIS_CHANNEL, JSON.stringify({ storeId, event, data }))
@@ -107,15 +105,36 @@ export function ensureRedisSubscriber(): void {
     redisSubscriber = null
     console.error("Redis SSE subscriber unavailable:", err)
   }
-}
-
-export const closeSseRedis = async (): Promise<void> => {
+}export const closeSseRedis = async (): Promise<void> => {
   if (redisSubscriber) {
     await redisSubscriber.quit().catch(() => {
       redisSubscriber?.disconnect()
     })
     redisSubscriber = null
   }
+}
+
+/**
+ * Fuerza el cierre de TODAS las conexiones SSE activas (todas las tiendas).
+ *
+ * Se llama en el shutdown graceful ANTES de `app.close()`: Fastify/Node espera
+ * a que los sockets abiertos terminen, y una conexión SSE (hijacked) es un
+ * socket que nunca termina sola — sin esto, Ctrl+C cuelga hasta que tsx haga
+ * force-kill a los 5s. `destroy()` dispara el handler `close` del request,
+ * que limpia el heartbeat y desuscribe.
+ */
+export function closeAllSseConnections(): void {
+  for (const [, set] of clients) {
+    for (const res of set) {
+      try {
+        res.destroy()
+      } catch {
+        // socket ya cerrado: ignorar
+      }
+    }
+    set.clear()
+  }
+  clients.clear()
 }
 
 // Conectar el suscriptor apenas arranca la app (best effort).

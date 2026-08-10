@@ -56,10 +56,16 @@ export const getRedisClient = () => {
 }
 
 export const closeRedis = async () => {
-  if (redisClient) {
+  if (!redisClient) return
+  try {
     await redisClient.quit()
-    console.log("Redis disconnected")
+  } catch {
+    // Si quit() falla (p. ej. Redis en estado raro), forzar el cierre del
+    // socket para que el shutdown no se cuelgue.
+    redisClient.disconnect()
   }
+  redisClient = null
+  console.log("Redis disconnected")
 }
 
 export const redis = getRedisClient()
