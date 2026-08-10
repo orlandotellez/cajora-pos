@@ -10,7 +10,9 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "migrate:deploy": "prisma migrate deploy",
-    "seed": "tsx src/scripts/seed.ts"
+    "seed": "tsx src/scripts/seed.ts",
+    "load-test:k6": "k6 run load-test/k6-load-test.js",
+    "load-test:sse": "node load-test/sse-flood.mjs"
   },
   "dependencies": {
     "@fastify/compress": "^8.0.0",
