@@ -8,17 +8,15 @@ import swagger from "@fastify/swagger"
 import swaggerUi from "@fastify/swagger-ui"
 import { errorHandler } from "./config/error-handler"
 import { env } from "./config/env"
-//import { getRedisClient } from "./config/redis"
+import "./config/redis"
 import { logger } from "./config/logger"
 import { corsOptions } from "./config/cors"
 import { swaggerOptions, swaggerUiOptions } from "./config/swagger"
 import { routes } from "./http/routes"
+import { getUserIdFromBearerToken, getUserIdFromCookies } from "./core/utils/auth.utils"
 
 export const buildApp = async () => {
-  const app = Fastify({ loggerInstance: logger })
-
-  // comentar hasta que se use
-  //getRedisClient()
+  const app = Fastify({ loggerInstance: logger, trustProxy: true })
 
   await app.register(helmet)
 
@@ -26,12 +24,21 @@ export const buildApp = async () => {
 
   await app.register(compress, { threshold: 1024 })
 
+  await app.register(cookie)
+
   await app.register(rateLimit, {
     max: 300,
-    timeWindow: "1 minute"
+    timeWindow: "1 minute",
+    keyGenerator: (request) => {
+      try {
+        const fromCookies = getUserIdFromCookies(request)
+        const fromBearer = getUserIdFromBearerToken(request)
+        const { userId } = fromCookies.userId ? fromCookies : fromBearer
+        if (userId) return userId
+      } catch { }
+      return request.ip
+    },
   })
-
-  await app.register(cookie)
 
   // ─── Swagger / OpenAPI ───
   if (env.NODE_ENV !== "production") {
