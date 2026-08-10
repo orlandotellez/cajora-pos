@@ -1,0 +1,44 @@
+.badge {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--muted-foreground);
+  background: color-mix(in oklch, var(--card) 86%, transparent);
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  /* Informativo: nunca intercepta clicks sobre la tabla. */
+  pointer-events: none;
+  animation: badgeIn 0.18s ease;
+}
+
+.spinner {
+  animation: badgeSpin 0.8s linear infinite;
+  color: var(--primary, #3b82f6);
+}
+
+@keyframes badgeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes badgeSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}

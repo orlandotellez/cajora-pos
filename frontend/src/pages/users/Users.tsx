@@ -25,6 +25,7 @@ export default function Users() {
     page,
     q,
     loading,
+    refreshing,
     totalPages,
     setSearch,
     setPage,
@@ -34,7 +35,7 @@ export default function Users() {
       usersApi
         .list({ page, limit, search: search || undefined })
         .then((res) => ({ items: res.users, total: res.total })),
-    pollMs: 60_000,
+    pollMs: 10_000,
     realtimeEvents: ["user.created", "user.updated", "user.deleted"],
   });
 
@@ -110,6 +111,7 @@ export default function Users() {
         onEdit={(u) => setEditing(u)}
         onDelete={(u) => setDeleteTarget(u.id)}
         dimmed={false}
+        refreshing={refreshing}
       />
 
       {editing &&

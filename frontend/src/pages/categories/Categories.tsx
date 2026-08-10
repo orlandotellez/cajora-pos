@@ -21,6 +21,7 @@ export default function Categories() {
     page,
     q,
     loading,
+    refreshing,
     totalPages,
     setSearch,
     setPage,
@@ -31,7 +32,7 @@ export default function Categories() {
         .listPaginated({ page, limit, search: search || undefined })
         .then((res) => ({ items: res.categories, total: res.total })),
     cacheNamespace: "categories",
-    pollMs: 60_000,
+    pollMs: 10_000,
     realtimeEvents: ["category.created", "category.updated", "category.deleted"],
   });
 
@@ -107,6 +108,7 @@ export default function Categories() {
         onEdit={(c) => setEditing(c)}
         onDelete={(c) => setDeleteTarget(c.id)}
         dimmed={false}
+        refreshing={refreshing}
       />
 
       {editing &&

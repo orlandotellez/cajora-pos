@@ -12,9 +12,10 @@ interface InventoryTableProps {
   onPageChange: (page: number) => void;
   onAdjust: (product: Product) => void;
   dimmed?: boolean;
+  refreshing?: boolean;
 }
 
-export function InventoryTable({ products, loading, total, page, totalPages, onPageChange, onAdjust, dimmed }: InventoryTableProps) {
+export function InventoryTable({ products, loading, total, page, totalPages, onPageChange, onAdjust, dimmed, refreshing }: InventoryTableProps) {
   const columns: Column<Product>[] = useMemo(() => [
     {
       key: "name",
@@ -74,6 +75,7 @@ export function InventoryTable({ products, loading, total, page, totalPages, onP
       ]}
       onRowClick={onAdjust}
       dimmed={dimmed}
+      refreshing={refreshing}
     />
   );
 }

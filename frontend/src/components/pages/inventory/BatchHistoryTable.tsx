@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import type { BatchResponse } from "@/api/inventory";
+import { RefreshBadge } from "@/components/common/RefreshBadge";
 import styles from "./BatchHistoryTable.module.css";
 
 interface BatchHistoryTableProps {
@@ -8,11 +9,13 @@ interface BatchHistoryTableProps {
   totalPages: number;
   onPageChange: (page: number) => void;
   onSelect: (batch: BatchResponse) => void;
+  refreshing?: boolean;
 }
 
-export function BatchHistoryTable({ batches, page, totalPages, onPageChange, onSelect }: BatchHistoryTableProps) {
+export function BatchHistoryTable({ batches, page, totalPages, onPageChange, onSelect, refreshing }: BatchHistoryTableProps) {
   return (
     <div className={styles.tableCard}>
+      <RefreshBadge refreshing={refreshing} />
       <div className={styles.tableWrapper}>
         <table className={styles.table}>
           <thead>

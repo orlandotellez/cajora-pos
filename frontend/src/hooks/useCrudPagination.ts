@@ -58,6 +58,7 @@ export interface UseCrudPaginationReturn<T> {
   page: number;
   q: string;
   loading: boolean;
+  refreshing: boolean;
   totalPages: number;
   /** Cambia el search term y resetea a la página 1. */
   setSearch: (value: string) => void;
@@ -120,6 +121,7 @@ export function useCrudPagination<T>(
   const [page, setPage] = useState(1);
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [refreshTick, setRefreshTick] = useState(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const skipNextDebounceRef = useRef(false);
@@ -208,14 +210,12 @@ export function useCrudPagination<T>(
       skipNextDebounceRef.current = false;
       return;
     }
-    if (cacheHitRef.current) {
-      return;
-    }
+    const fromCache = cacheHitRef.current;
     if (timerRef.current) clearTimeout(timerRef.current);
-    setLoading(true);
+    if (!fromCache) setLoading(true);
     timerRef.current = setTimeout(() => {
       void runFetch();
-    }, debounceMs);
+    }, fromCache ? 0 : debounceMs);
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
@@ -239,9 +239,12 @@ export function useCrudPagination<T>(
       // No hacer polling si hay un fetch en curso o la pestaña no es visible.
       if (inFlight || document.hidden) return;
       inFlight = true;
-      // Bypass del cache: el poll siempre lee del server.
+      const token = ++refreshTokenRef.current;
       if (cacheNamespace) cacheClear(cacheNamespace);
-      void runFetch().finally(() => { inFlight = false; });
+      void runFetch().finally(() => {
+        inFlight = false;
+        if (token === refreshTokenRef.current) setRefreshing(false);
+      });
     };
 
     const intervalId = window.setInterval(tick, pollMs);
@@ -272,6 +275,8 @@ export function useCrudPagination<T>(
     runFetchRef.current = runFetch;
   }, [runFetch]);
 
+  const refreshTokenRef = useRef(0);
+
   useEffect(() => {
     if (!realtimeEventsKey) return;
     const events = realtimeEventsKey.split(",");
@@ -282,9 +287,14 @@ export function useCrudPagination<T>(
       if (!events.includes(event)) return;
       if (inFlight) return; // no apilar refrescos si ya hay uno en vuelo
       inFlight = true;
+      const token = ++refreshTokenRef.current;
       // Bypass del cache: el evento significa que los datos del server cambiaron.
       if (cacheNamespace) cacheClear(cacheNamespace);
-      void runFetchRef.current().finally(() => { inFlight = false; });
+      setRefreshing(true);
+      void runFetchRef.current().finally(() => {
+        inFlight = false;
+        if (token === refreshTokenRef.current) setRefreshing(false);
+      });
     };
 
     return subscribeRealtime(handler);
@@ -316,6 +326,7 @@ export function useCrudPagination<T>(
     page,
     q,
     loading,
+    refreshing,
     totalPages,
     setSearch,
     setPage,

@@ -34,15 +34,44 @@ import { getAuthToken } from "@/api/client";
 type Handler = (event: string, data: unknown) => void;
 
 function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => {
+      wakeUp = null;
+      resolve();
+    }, ms);
+    wakeUp = () => {
+      clearTimeout(timer);
+      wakeUp = null;
+      resolve();
+    };
+  });
 }
 
 const RECONNECT_DELAY_MS = 3_000;
 const MAX_CONSECUTIVE_ERRORS = 5;
 const COOLDOWN_MS = 60_000;
+const STALE_AFTER_MS = 40_000;
+const STALE_CHECK_MS = 5_000;
 
 const handlers = new Set<Handler>();
 let started = false;
+
+// Estado de la conexión actual (para abortarla desde fuera: watchdog/resume/online).
+let controller: AbortController | null = null;
+let wakeUp: (() => void) | null = null;
+let lastMessageAt = 0;
+
+/** Aborta la conexión actual (si la hay) y despierta el bucle para reconectar ya. */
+function reconnectNow(reason: string): void {
+  console.info(`[SSE] reconectando (${reason})`);
+  if (controller) {
+    controller.abort();
+    controller = null;
+  }
+  const wake = wakeUp;
+  wakeUp = null;
+  wake?.();
+}
 
 function startConnection(): void {
   const base = readApiUrl().replace(/\/+$/, "");
@@ -50,8 +79,26 @@ function startConnection(): void {
   let consecutiveErrors = 0;
 
   async function connect(): Promise<void> {
-    for (;;) {
+    for (; ;) {
       let deliveredEvent = false;
+      const ctrl = new AbortController();
+      controller = ctrl;
+      const connectedAt = Date.now();
+
+      const watchdog = setInterval(() => {
+        if (ctrl.signal.aborted) {
+          clearInterval(watchdog);
+          return;
+        }
+        const lastSeen = Math.max(lastMessageAt, connectedAt);
+        if (Date.now() - lastSeen > STALE_AFTER_MS) {
+          console.warn("[SSE] sin datos por 40s+: socket muerto (Android), reconectando");
+          clearInterval(watchdog);
+          consecutiveErrors = 0; // no es falla del backend: es la red móvil
+          ctrl.abort();
+        }
+      }, STALE_CHECK_MS);
+
       try {
         const token = getAuthToken();
         const res = await globalThis.fetch(url, {
@@ -61,24 +108,23 @@ function startConnection(): void {
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           credentials: "include",
+          signal: ctrl.signal,
         });
 
         if (!res.ok || !res.body) {
           throw new Error(`SSE HTTP ${res.status}`);
         }
         console.info("[SSE] conectado a /events");
-        // NOTA: no reseteamos consecutiveErrors aquí. Si el server cierra el
-        // stream al instante (endpoint no funcional), los cierres limpios sin
-        // eventos se cuentan como error y se frena el bucle; solo el flujo de
-        // eventos reales (abajo) lo resetea.
+        lastMessageAt = Date.now();
 
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let buffer = "";
 
-        for (;;) {
+        for (; ;) {
           const { done, value } = await reader.read();
           if (done) break;
+          lastMessageAt = Date.now();
           buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, "\n");
 
           // Parsear frames SSE separados por línea en blanco.
@@ -112,9 +158,15 @@ function startConnection(): void {
         // El server cerró el stream (p. ej. restart): reconectar tras un respiro.
         // Si se cerró sin entregar ni un evento, el endpoint no es funcional:
         // contar como error para no reconectar infinitamente.
+        clearInterval(watchdog);
+        if (ctrl.signal.aborted) continue; // abort intencional: reconectar ya
         if (!deliveredEvent) consecutiveErrors += 1;
         await sleep(RECONNECT_DELAY_MS);
       } catch (err) {
+        clearInterval(watchdog);
+        if (ctrl.signal.aborted) {
+          continue;
+        }
         consecutiveErrors += 1;
         console.warn(
           `[SSE] error de conexión (${consecutiveErrors}/${MAX_CONSECUTIVE_ERRORS}):`,
@@ -134,6 +186,13 @@ function startConnection(): void {
   }
 
   void connect();
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "visible") return;
+    reconnectNow("app en primer plano");
+  });
+
+  window.addEventListener("online", () => reconnectNow("red recuperada"));
 }
 
 /**

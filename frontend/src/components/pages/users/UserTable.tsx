@@ -15,9 +15,10 @@ interface UserTableProps {
   onEdit: (user: UserResponse) => void;
   onDelete: (user: UserResponse) => void;
   dimmed?: boolean;
+  refreshing?: boolean;
 }
 
-export function UserTable({ users, currentUserId, loading, total, page, totalPages, onPageChange, onEdit, onDelete, dimmed }: UserTableProps) {
+export function UserTable({ users, currentUserId, loading, total, page, totalPages, onPageChange, onEdit, onDelete, dimmed, refreshing }: UserTableProps) {
   const columns: Column<UserResponse>[] = useMemo(() => [
     {
       key: "name", label: "Nombre", render: (u) => (
@@ -54,6 +55,7 @@ export function UserTable({ users, currentUserId, loading, total, page, totalPag
       emptyMessage="Sin usuarios"
       skeletonCols={[{ width: "35%" }, { width: "35%" }, { width: "15%" }, { width: "10%", align: "right" }, { width: "80px" }]}
       dimmed={dimmed}
+      refreshing={refreshing}
     />
   );
 }

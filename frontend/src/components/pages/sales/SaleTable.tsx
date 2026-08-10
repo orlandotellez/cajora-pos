@@ -12,9 +12,10 @@ interface SaleTableProps {
   onPageChange: (page: number) => void;
   onView: (sale: Sale) => void;
   dimmed?: boolean;
+  refreshing?: boolean;
 }
 
-export function SaleTable({ sales, loading, total, page, totalPages, onPageChange, onView, dimmed }: SaleTableProps) {
+export function SaleTable({ sales, loading, total, page, totalPages, onPageChange, onView, dimmed, refreshing }: SaleTableProps) {
   const columns: Column<Sale>[] = [
     {
       key: "date",
@@ -72,6 +73,7 @@ export function SaleTable({ sales, loading, total, page, totalPages, onPageChang
       emptyMessage="Sin ventas"
       skeletonCols={[{ width: "35%" }, { width: "15%", align: "right" }, { width: "20%", align: "right" }, { width: "20%" }, { width: "10%" }]}
       dimmed={dimmed}
+      refreshing={refreshing}
     />
   );
 }

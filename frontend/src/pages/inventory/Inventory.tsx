@@ -44,12 +44,11 @@ export default function Inventory() {
     totalPages,
     setSearch,
     setPage,
+    refreshing: refreshingProducts,
     refreshImmediate: refreshProducts,
   } = useCrudPagination<Product>({
     cacheNamespace: "inventory",
-    pollMs: 30_000,
-    // La sección de productos con stock reacciona a todo lo que cambia stock:
-    // edición de producto, movimientos, lotes y ventas de otros terminales.
+    pollMs: 5_000,
     realtimeEvents: [
       "product.created",
       "product.updated",
@@ -87,10 +86,11 @@ export default function Inventory() {
     page: movementPage,
     totalPages: movementsTotalPages,
     setPage: setMovementPage,
+    refreshing: refreshingMovements,
     refreshImmediate: refreshMovements,
   } = useCrudPagination<InventoryMovement>({
     cacheNamespace: "inventory-movements",
-    pollMs: 60_000,
+    pollMs: 10_000,
     // Un ajuste manual, una venta o un lote generan movimientos de inventario.
     realtimeEvents: ["inventory.movement.created", "inventory.batch.created", "sale.created"],
     limit: 10,
@@ -107,10 +107,11 @@ export default function Inventory() {
     page: batchPage,
     totalPages: batchesTotalPages,
     setPage: setBatchPage,
+    refreshing: refreshingBatches,
     refreshImmediate: refreshBatches,
   } = useCrudPagination<BatchResponse>({
     cacheNamespace: "inventory-batches",
-    pollMs: 60_000,
+    pollMs: 10_000,
     realtimeEvents: ["inventory.batch.created"],
     limit: 10,
     debounceMs: 0,
@@ -178,6 +179,7 @@ export default function Inventory() {
         setStockFilter={setStockFilter}
         lowStockProducts={lowStockProducts}
         onAdjust={handleAdjust}
+        refreshing={refreshingProducts}
       />
 
       <section className={styles.movementSection}>
@@ -188,6 +190,7 @@ export default function Inventory() {
           totalPages={movementsTotalPages}
           onPageChange={setMovementPage}
           onSelect={setSelectedMovement}
+          refreshing={refreshingMovements}
         />
       </section>
 
@@ -199,6 +202,7 @@ export default function Inventory() {
           totalPages={batchesTotalPages}
           onPageChange={setBatchPage}
           onSelect={openBatchDetail}
+          refreshing={refreshingBatches}
         />
       </section>
 

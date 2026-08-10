@@ -21,6 +21,7 @@ export default function Services() {
     page,
     q,
     loading,
+    refreshing,
     totalPages,
     setSearch,
     setPage,
@@ -31,7 +32,7 @@ export default function Services() {
         .list({ page, limit, search: search || undefined })
         .then((res) => ({ items: res.services, total: res.total })),
     cacheNamespace: "services",
-    pollMs: 60_000,
+    pollMs: 10_000,
     realtimeEvents: ["service.created", "service.updated", "service.deleted"],
   });
 
@@ -90,6 +91,7 @@ export default function Services() {
         onEdit={(s) => setEditing(s)}
         onDelete={(s) => setDeleteTarget(s.id)}
         dimmed={false}
+        refreshing={refreshing}
       />
 
       <ServiceFormModal

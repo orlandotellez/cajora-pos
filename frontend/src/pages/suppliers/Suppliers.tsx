@@ -30,6 +30,7 @@ export default function Suppliers() {
     page,
     q,
     loading,
+    refreshing,
     totalPages,
     setSearch,
     setPage,
@@ -40,7 +41,7 @@ export default function Suppliers() {
         .list({ page, limit, search: search || undefined })
         .then((res) => ({ items: res.suppliers, total: res.total })),
     cacheNamespace: "suppliers",
-    pollMs: 60_000,
+    pollMs: 10_000,
     realtimeEvents: ["supplier.created", "supplier.updated", "supplier.deleted"],
   });
 
@@ -126,6 +127,7 @@ export default function Suppliers() {
         onEdit={(s) => setEditing(s)}
         onDelete={(s) => setDeleteTarget(s.id)}
         dimmed={false}
+        refreshing={refreshing}
       />
 
       {editing && (

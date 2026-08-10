@@ -46,6 +46,7 @@ export default function Products() {
     page,
     q,
     loading,
+    refreshing,
     totalPages,
     setSearch,
     setPage,
@@ -61,10 +62,7 @@ export default function Products() {
         })
         .then((res) => ({ items: res.products, total: res.total })),
     cacheNamespace: "products",
-    pollMs: 60_000,
-    // La tabla muestra stock y los nombres de categoría/proveedor: reacciona a
-    // todo lo que cambia esos datos — edición/creación de producto, ventas,
-    // ajustes de stock, lotes, y renombres de categoría/proveedor.
+    pollMs: 5_000,
     realtimeEvents: [
       "product.created",
       "product.updated",
@@ -181,6 +179,7 @@ export default function Products() {
         onEdit={(p) => setEditing(p)}
         onDelete={(p) => setDeleteTarget(p.id)}
         dimmed={false}
+        refreshing={refreshing}
       />
 
       {editing &&

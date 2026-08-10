@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight, ArrowDownRight, ArrowUpRight, RefreshCw, Eye } from "lucide-react";
 import type { InventoryMovement } from "@/api/inventory";
 import { MOVEMENT_TYPES } from "@/lib/constants";
+import { RefreshBadge } from "@/components/common/RefreshBadge";
 import styles from "./MovementHistoryTable.module.css";
 
 interface MovementHistoryTableProps {
@@ -9,11 +10,13 @@ interface MovementHistoryTableProps {
   totalPages: number;
   onPageChange: (page: number) => void;
   onSelect: (movement: InventoryMovement) => void;
+  refreshing?: boolean;
 }
 
-export function MovementHistoryTable({ movements, page, totalPages, onPageChange, onSelect }: MovementHistoryTableProps) {
+export function MovementHistoryTable({ movements, page, totalPages, onPageChange, onSelect, refreshing }: MovementHistoryTableProps) {
   return (
     <div className={styles.tableCard}>
+      <RefreshBadge refreshing={refreshing} />
       <div className={styles.tableWrapper}>
         <table className={styles.table}>
           <thead>

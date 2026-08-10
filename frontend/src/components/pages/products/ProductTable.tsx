@@ -15,6 +15,7 @@ interface ProductTableProps {
   onEdit: (product: Product) => void;
   onDelete: (product: Product) => void;
   dimmed?: boolean;
+  refreshing?: boolean;
 }
 
 export function ProductTable({
@@ -27,6 +28,7 @@ export function ProductTable({
   onEdit,
   onDelete,
   dimmed,
+  refreshing,
 }: ProductTableProps) {
   const columns: Column<Product>[] = useMemo(
     () => [
@@ -48,16 +50,6 @@ export function ProductTable({
             </div>
           </div>
         ),
-      },
-      {
-        key: "barcode",
-        label: "Código",
-        render: (p) => <span className={styles["product-barcode"]}>{p.barcode ?? "—"}</span>,
-      },
-      {
-        key: "supplier",
-        label: "Proveedor",
-        render: (p) => <>{p.supplier?.name ?? "—"}</>,
       },
       {
         key: "price",
@@ -103,14 +95,13 @@ export function ProductTable({
       onDelete={onDelete}
       emptyMessage="Sin productos"
       skeletonCols={[
-        { width: "35%" },
-        { width: "15%" },
-        { width: "20%" },
-        { width: "15%", align: "right" },
-        { width: "15%", align: "right" },
+        { width: "55%" },
+        { width: "20%", align: "right" },
+        { width: "20%", align: "right" },
         { width: "80px" },
       ]}
       dimmed={dimmed}
+      refreshing={refreshing}
     />
   );
 }

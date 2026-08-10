@@ -2,6 +2,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { money } from "@/lib/format";
 import type { Sale } from "@/api/sales";
 import TableSkeleton from "@/components/common/TableSkeleton";
+import { RefreshBadge } from "@/components/common/RefreshBadge";
 import styles from "./RecentSalesTable.module.css";
 
 const SKELETON_COLS = [
@@ -13,14 +14,16 @@ const SKELETON_COLS = [
 interface RecentSalesTableProps {
   sales: Sale[];
   loading: boolean;
+  refreshing?: boolean;
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
 }
 
-export function RecentSalesTable({ sales, loading, page, totalPages, onPageChange }: RecentSalesTableProps) {
+export function RecentSalesTable({ sales, loading, refreshing, page, totalPages, onPageChange }: RecentSalesTableProps) {
   return (
     <section className={styles.recentCard}>
+      <RefreshBadge refreshing={refreshing} />
       <h2 className={styles.recentTitle}>Últimas ventas</h2>
       <div className={styles.tableWrapper}>
         <table className={styles.table}>

@@ -2,6 +2,8 @@
   border: 1px solid var(--border);
   background: var(--card);
   overflow: hidden;
+  /* Ancla para el RefreshBadge (píldora "Actualizando…") absoluto. */
+  position: relative;
 }
 
 .tableWrapper {

@@ -13,6 +13,7 @@ interface CategoryTableProps {
   onEdit: (category: Category) => void;
   onDelete: (category: Category) => void;
   dimmed?: boolean;
+  refreshing?: boolean;
 }
 
 export function CategoryTable({
@@ -25,6 +26,7 @@ export function CategoryTable({
   onEdit,
   onDelete,
   dimmed,
+  refreshing,
 }: CategoryTableProps) {
   const columns: Column<Category>[] = useMemo(
     () => [
@@ -66,6 +68,7 @@ export function CategoryTable({
       emptyMessage="Sin categorías"
       skeletonCols={[{ width: "30%" }, { width: "50%" }, { width: "80px" }]}
       dimmed={dimmed}
+      refreshing={refreshing}
     />
   );
 }

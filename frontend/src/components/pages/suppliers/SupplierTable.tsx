@@ -13,9 +13,10 @@ interface SupplierTableProps {
   onEdit: (supplier: Supplier) => void;
   onDelete: (supplier: Supplier) => void;
   dimmed?: boolean;
+  refreshing?: boolean;
 }
 
-export function SupplierTable({ suppliers, loading, total, page, totalPages, onPageChange, onEdit, onDelete, dimmed }: SupplierTableProps) {
+export function SupplierTable({ suppliers, loading, total, page, totalPages, onPageChange, onEdit, onDelete, dimmed, refreshing }: SupplierTableProps) {
   const columns: Column<Supplier>[] = useMemo(() => [
     { key: "name", label: "Nombre", render: (s) => <span className={styles["supplier-name"]}>{s.name}</span> },
     { key: "contact", label: "Contacto", render: (s) => <>{s.contact_name ?? "—"}</> },
@@ -45,6 +46,7 @@ export function SupplierTable({ suppliers, loading, total, page, totalPages, onP
       emptyMessage="Sin proveedores"
       skeletonCols={[{ width: "30%" }, { width: "20%" }, { width: "15%" }, { width: "20%" }, { width: "10%" }, { width: "80px" }]}
       dimmed={dimmed}
+      refreshing={refreshing}
     />
   );
 }

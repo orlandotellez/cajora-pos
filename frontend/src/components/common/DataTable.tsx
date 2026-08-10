@@ -1,6 +1,7 @@
 import { type ReactNode } from "react";
 import { ChevronLeft, ChevronRight, Loader2, Pencil, Trash2 } from "lucide-react";
 import TableSkeleton, { type SkeletonCol } from "@/components/common/TableSkeleton";
+import { RefreshBadge } from "@/components/common/RefreshBadge";
 import styles from "./DataTable.module.css";
 
 export interface Column<T> {
@@ -26,6 +27,7 @@ interface DataTableProps<T> {
   skeletonCols?: SkeletonCol[];
   rowClassName?: (item: T) => string | undefined;
   dimmed?: boolean;
+  refreshing?: boolean;
 }
 
 export function DataTable<T extends { id: string }>({
@@ -43,11 +45,13 @@ export function DataTable<T extends { id: string }>({
   skeletonCols,
   rowClassName,
   dimmed,
+  refreshing,
 }: DataTableProps<T>) {
   const hasEditDelete = onEdit || onDelete;
 
   return (
     <div className={styles.tableCard}>
+      <RefreshBadge refreshing={refreshing} />
       <div className={styles.tableWrapper}>
         <table className={styles.table}>
           <thead>

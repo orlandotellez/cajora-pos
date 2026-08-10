@@ -3,6 +3,8 @@
   border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
+  /* Ancla para el RefreshBadge (píldora "Actualizando…") absoluto. */
+  position: relative;
 }
 
 @media (max-width: 768px) {

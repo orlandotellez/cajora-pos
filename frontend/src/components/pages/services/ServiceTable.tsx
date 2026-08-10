@@ -14,6 +14,7 @@ interface ServiceTableProps {
   onEdit: (service: Service) => void;
   onDelete: (service: Service) => void;
   dimmed?: boolean;
+  refreshing?: boolean;
 }
 
 export function ServiceTable({
@@ -26,6 +27,7 @@ export function ServiceTable({
   onEdit,
   onDelete,
   dimmed,
+  refreshing,
 }: ServiceTableProps) {
   const columns: Column<Service>[] = useMemo(
     () => [
@@ -100,6 +102,7 @@ export function ServiceTable({
         { width: "80px" },
       ]}
       dimmed={dimmed}
+      refreshing={refreshing}
     />
   );
 }

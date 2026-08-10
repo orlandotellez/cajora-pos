@@ -24,6 +24,7 @@ interface Props {
 
   lowStockProducts: LowStockProduct[];
   onAdjust: (product: Product) => void;
+  refreshing?: boolean;
 }
 
 export function InventoryProductosSection(props: Props) {
@@ -43,6 +44,7 @@ export function InventoryProductosSection(props: Props) {
     setStockFilter,
     lowStockProducts,
     onAdjust,
+    refreshing,
   } = props;
 
   function toggleStockFilter(target: Exclude<StockFilter, "">) {
@@ -114,6 +116,7 @@ export function InventoryProductosSection(props: Props) {
         totalPages={totalPages}
         onPageChange={setPage}
         onAdjust={onAdjust}
+        refreshing={refreshing}
       />
     </>
   );

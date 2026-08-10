@@ -37,6 +37,7 @@ export default function Reports() {
     return cached?.sales ?? [];
   });
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [salesPage, setSalesPage] = useState(1);
   const [salesTotal, setSalesTotal] = useState(0);
 
@@ -96,7 +97,9 @@ export default function Reports() {
     return subscribeRealtime((event) => {
       if (event !== "sale.created") return;
       cacheClear("reports");
-      void loadDataRef.current(rangeRef.current, salesPageRef.current, true);
+      setRefreshing(true);
+      void loadDataRef.current(rangeRef.current, salesPageRef.current, true)
+        .finally(() => setRefreshing(false));
     });
   }, []);
 
@@ -109,7 +112,7 @@ export default function Reports() {
       void loadDataRef.current(range, salesPage, true).finally(() => { inFlight = false; });
     };
 
-    const intervalId = window.setInterval(tick, 60_000);
+    const intervalId = window.setInterval(tick, 10_000);
     const onVisibilityChange = () => { if (!document.hidden) tick(); };
     document.addEventListener("visibilitychange", onVisibilityChange);
 
@@ -150,6 +153,7 @@ export default function Reports() {
       <RecentSalesTable
         sales={sales}
         loading={loading}
+        refreshing={refreshing}
         page={salesPage}
         totalPages={salesTotalPages}
         onPageChange={setSalesPage}
