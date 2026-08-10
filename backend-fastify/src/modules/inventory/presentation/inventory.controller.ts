@@ -4,6 +4,7 @@ import { InventoryRepository } from "../infrastructure/inventory.prisma.reposito
 import { ProductRepository } from "../../products/infrastructure/products.prisma.repository"
 import { CreateMovementDtoSchema, MovementQuerySchema } from "./inventory.dto"
 import { UnauthorizedError } from "@/core/errors/AppError"
+import { sseBroadcast } from "@/config/sse"
 
 const inventoryService = createInventoryService(InventoryRepository, ProductRepository)
 
@@ -14,6 +15,7 @@ export const inventoryController = {
 
     const data = CreateMovementDtoSchema.parse(request.body)
     const result = await inventoryService.create({ ...data, user_id: userId, store_id: request.storeId })
+    sseBroadcast(request.storeId!, "inventory.movement.created", { id: result.id })
     return reply.status(201).send(result)
   },
 

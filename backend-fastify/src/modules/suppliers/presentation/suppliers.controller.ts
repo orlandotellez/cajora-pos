@@ -3,6 +3,7 @@ import { createSupplierService } from "../application/suppliers.service"
 import { SupplierRepository } from "../infrastructure/suppliers.prisma.repository"
 import type { UpdateSupplierData } from "../domain/suppliers.entities"
 import { CreateSupplierDtoSchema, UpdateSupplierDtoSchema, SupplierQuerySchema } from "./suppliers.dto"
+import { sseBroadcast } from "@/config/sse"
 
 const supplierService = createSupplierService(SupplierRepository)
 
@@ -22,6 +23,7 @@ export const suppliersController = {
   create: async (request: FastifyRequest, reply: FastifyReply) => {
     const data = CreateSupplierDtoSchema.parse(request.body)
     const result = await supplierService.create(data, request.storeId)
+    sseBroadcast(request.storeId!, "supplier.created", { id: result.id })
     return reply.status(201).send(result)
   },
 
@@ -29,12 +31,14 @@ export const suppliersController = {
     const { id } = request.params as { id: string }
     const data = UpdateSupplierDtoSchema.parse(request.body)
     const result = await supplierService.update(id, data as UpdateSupplierData, request.storeId)
+    sseBroadcast(request.storeId!, "supplier.updated", { id })
     return reply.status(200).send(result)
   },
 
   delete: async (request: FastifyRequest, reply: FastifyReply) => {
     const { id } = request.params as { id: string }
     await supplierService.delete(id, request.storeId)
+    sseBroadcast(request.storeId!, "supplier.deleted", { id })
     return reply.status(200).send({ message: "Supplier deleted successfully" })
   },
 }

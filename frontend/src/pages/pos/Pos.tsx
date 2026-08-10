@@ -7,6 +7,7 @@ import { useDialog } from "@/hooks/useDialog";
 import { useCheckout } from "@/hooks/useCheckout";
 import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 import { usePosStore, type CartItem, type ProductCartItem, type ServiceCartItem } from "@/store/posStore";
+import { subscribeRealtime } from "@/lib/realtime";
 import { money } from "@/lib/format";
 import { PosSearchBar, type SearchResult } from "@/components/pages/pos/PosSearchBar";
 import { PosCartTable } from "@/components/pages/pos/PosCartTable";
@@ -29,6 +30,8 @@ export default function Pos() {
   const [addingToService, setAddingToService] = useState<string | null>(null);
   const [serviceProductSearch, setServiceProductSearch] = useState("");
   const [showMobileCheckout, setShowMobileCheckout] = useState(false);
+  // Bump para re-ejecutar la búsqueda visible cuando llega un evento SSE de stock.
+  const [searchRefreshKey, setSearchRefreshKey] = useState(0);
 
   const { dialog, showAlert, showConfirm, closeDialog } = useDialog();
 
@@ -87,6 +90,7 @@ export default function Pos() {
 
   const { results: searchResults, loading: searchLoading } = useDebouncedSearch<SearchResult>({
     query: scan,
+    refreshKey: searchRefreshKey,
     fetcher: async (term) => {
       const [prodRes, svcRes] = await Promise.all([
         productsApi.list({ search: term, active: true, limit: 15 }),
@@ -112,6 +116,96 @@ export default function Pos() {
         .catch(() => { });
     }
   }, [addingToService]);
+
+  // Tiempo real: cuando otro terminal vende, ajusta stock o edita/elimina un
+  // producto, refrescar el stock del carrito y los resultados visibles.
+  // Comparte la ÚNICA conexión SSE del sistema (`subscribeRealtime`).
+  // Ref mutable para que el handler siempre vea el `showAlert` más reciente
+  // (mismo patrón que `fetchSalesRef` en Sales.tsx).
+  const showAlertRef = useRef(showAlert);
+  useEffect(() => { showAlertRef.current = showAlert; }, [showAlert]);
+
+  useEffect(() => {
+    return subscribeRealtime((event, rawData) => {
+      if (
+        event !== "sale.created" &&
+        event !== "product.updated" &&
+        event !== "product.deleted" &&
+        event !== "inventory.movement.created" &&
+        event !== "inventory.batch.created"
+      ) {
+        return;
+      }
+
+      // Refrescar resultados visibles: el stock mostrado cambió.
+      setSearchRefreshKey((k) => k + 1);
+
+      const cart = usePosStore.getState().cart;
+      const cartProductIds = new Set<string>();
+      for (const item of cart) {
+        if (item._type === "product") cartProductIds.add(item.id);
+        else for (const sp of item.products) cartProductIds.add(sp.product_id);
+      }
+      if (cartProductIds.size === 0) return;
+
+      const payload = rawData as { id?: string; product_ids?: string[] };
+      let idsToRefresh: string[] = [];
+
+      if (event === "sale.created" && Array.isArray(payload.product_ids)) {
+        // Solo los vendidos que están en el carrito de este cajero.
+        idsToRefresh = payload.product_ids.filter((id) => cartProductIds.has(id));
+      } else if (
+        (event === "product.updated" || event === "product.deleted") &&
+        payload.id && cartProductIds.has(payload.id)
+      ) {
+        idsToRefresh = [payload.id];
+      } else {
+        // inventory.* — el id del evento es del movimiento/lote, no del producto:
+        // refrescar todos los productos del carrito (es barato: carritos chicos).
+        idsToRefresh = [...cartProductIds];
+      }
+      if (idsToRefresh.length === 0) return;
+
+      void (async () => {
+        // allSettled ya captura los rechazos: un producto eliminado/sin acceso
+        // simplemente no aporta stock (el server valida al cobrar de todos modos).
+        const stocks: Record<string, number> = {};
+        const settled = await Promise.allSettled(
+          idsToRefresh.map((id) => productsApi.getById(id)),
+        );
+        settled.forEach((r, i) => {
+          if (r.status === "fulfilled") stocks[idsToRefresh[i]] = r.value.stock;
+        });
+        if (Object.keys(stocks).length > 0) {
+          usePosStore.getState().syncStocks(stocks);
+        }
+
+        // Si el cajero tenía en el carrito un producto que acaban de eliminar,
+        // avisarle y quitarlo (no se puede cobrar). Cubre items regulares y
+        // sub-productos dentro de servicios.
+        if (event === "product.deleted" && payload.id) {
+          const state = usePosStore.getState();
+          const asProduct = state.cart.find(
+            (item) => item._type === "product" && item.id === payload.id,
+          ) as ProductCartItem | undefined;
+          if (asProduct) {
+            state.setQty(payload.id, 0);
+            showAlertRef.current(`"${asProduct.name}" fue eliminado del catálogo y se quitó del carrito`);
+            return;
+          }
+          const inService = state.cart.flatMap((item) =>
+            item._type === "service"
+              ? item.products.filter((sp) => sp.product_id === payload.id).map((sp) => ({ svc: item, sp }))
+              : []
+          )[0];
+          if (inService) {
+            state.removeServiceProduct(inService.svc.service_id, payload.id);
+            showAlertRef.current(`"${inService.sp.product_name}" (de "${inService.svc.name}") fue eliminado del catálogo y se quitó del carrito`);
+          }
+        }
+      })();
+    });
+  }, []);
 
   async function addToCart(result: SearchResult) {
     if (result._type === "product") {

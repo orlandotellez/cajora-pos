@@ -5,7 +5,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  /* Alto a propósito: se renderiza vía portal en <body> y debe quedar por
+     encima del sidebar (10), drawer (40), hamburger (25) y otros modales. */
+  z-index: 1000;
 }
 
 .dialog {

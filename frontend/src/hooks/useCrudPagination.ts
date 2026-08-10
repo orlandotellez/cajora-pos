@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { cacheClear, cacheGet, cacheSet, cacheKey } from "@/lib/simple-cache";
+import { subscribeRealtime } from "@/lib/realtime";
 import { PAGE_LIMIT } from "@/lib/constants";
 
 export interface UseCrudPaginationOptions<T> {
@@ -31,6 +32,13 @@ export interface UseCrudPaginationOptions<T> {
    * instante.
    */
   pollMs?: number;
+  /**
+   * Nombres de eventos SSE que refrescan esta tabla al instante (p. ej.
+   * `["product.updated"]`). Comparte la ÚNICA conexión SSE del sistema
+   * (`subscribeRealtime`); al llegar un evento de la lista se hace
+   * cacheClear + re-fetch silencioso (igual que un poll, pero instantáneo).
+   */
+  realtimeEvents?: string[];
   /**
    * Filtros extra (e.g. `categoryId`, `stockFilter`). Se serializan en la
    * cache key (para que cada combinación de filtros tenga su propia entry)
@@ -104,6 +112,7 @@ export function useCrudPagination<T>(
     debounceMs = 300,
     extraFilters,
     pollMs,
+    realtimeEvents,
   } = opts;
 
   const [items, setItems] = useState<T[]>(initialData);
@@ -245,6 +254,41 @@ export function useCrudPagination<T>(
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [pollMs, runFetch, cacheNamespace]);
+
+  // 5) Tiempo real opcional (`realtimeEvents`) — ver doc en el interface.
+  //    Escucha los eventos SSE de la tienda y refresca la tabla al instante
+  //    cuando llega uno que le interesa. Comparte la conexión única del
+  //    sistema; el refcount del cliente cierra la conexión cuando ninguna
+  //    tabla la necesita.
+  //
+  // `realtimeEventsKey` es una key estable (serializada) para que el effect no
+  // se re-ejecute por la identidad del array en cada render — mismo patrón que
+  // `extraFiltersKey`. `runFetchRef` evita resuscribir al cambiar de página o
+  // search (mismo patrón que `fetchSalesRef` en Sales.tsx).
+  const realtimeEventsKey = useMemo(() => realtimeEvents?.join(",") ?? "", [realtimeEvents]);
+
+  const runFetchRef = useRef(runFetch);
+  useEffect(() => {
+    runFetchRef.current = runFetch;
+  }, [runFetch]);
+
+  useEffect(() => {
+    if (!realtimeEventsKey) return;
+    const events = realtimeEventsKey.split(",");
+
+    let inFlight = false;
+
+    const handler = (event: string) => {
+      if (!events.includes(event)) return;
+      if (inFlight) return; // no apilar refrescos si ya hay uno en vuelo
+      inFlight = true;
+      // Bypass del cache: el evento significa que los datos del server cambiaron.
+      if (cacheNamespace) cacheClear(cacheNamespace);
+      void runFetchRef.current().finally(() => { inFlight = false; });
+    };
+
+    return subscribeRealtime(handler);
+  }, [realtimeEventsKey, cacheNamespace]);
 
   const setSearch = useCallback((value: string) => {
     setQ(value);

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { salesApi, type Sale, type SaleReport } from "@/api/sales";
 import { cacheClear, cacheGet, cacheSet, cacheKey } from "@/lib/simple-cache";
+import { subscribeRealtime } from "@/lib/realtime";
 import { Header, type Range } from "@/components/pages/reports/Header";
 import { ReportStats } from "@/components/pages/reports/ReportStats";
 import { CashCloseCard } from "@/components/pages/reports/CashCloseCard";
@@ -83,6 +84,21 @@ export default function Reports() {
   // instante al volver a ser visible.
   const loadDataRef = useRef(loadData);
   useEffect(() => { loadDataRef.current = loadData; }, [loadData]);
+
+  // Tiempo real: si otro cajero registra una venta, refrescar el reporte al
+  // instante (el polling de 60s queda como respaldo si el SSE falla).
+  const rangeRef = useRef(range);
+  const salesPageRef = useRef(salesPage);
+  useEffect(() => { rangeRef.current = range; }, [range]);
+  useEffect(() => { salesPageRef.current = salesPage; }, [salesPage]);
+
+  useEffect(() => {
+    return subscribeRealtime((event) => {
+      if (event !== "sale.created") return;
+      cacheClear("reports");
+      void loadDataRef.current(rangeRef.current, salesPageRef.current, true);
+    });
+  }, []);
 
   useEffect(() => {
     let inFlight = false;

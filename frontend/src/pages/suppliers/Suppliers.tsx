@@ -41,6 +41,7 @@ export default function Suppliers() {
         .then((res) => ({ items: res.suppliers, total: res.total })),
     cacheNamespace: "suppliers",
     pollMs: 60_000,
+    realtimeEvents: ["supplier.created", "supplier.updated", "supplier.deleted"],
   });
 
   const [editing, setEditing] = useState<Supplier | null | "new">(null);

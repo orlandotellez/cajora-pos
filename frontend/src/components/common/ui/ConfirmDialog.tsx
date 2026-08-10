@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import styles from "./ConfirmDialog.module.css";
 
 interface Props {
@@ -39,7 +40,12 @@ export function ConfirmDialog({
 
   if (!open) return null;
 
-  return (
+  // Portal al body: si el dialog se renderiza dentro de un contenedor con
+  // `transform` (p. ej. el drawer del AppShell en mobile), el `position: fixed`
+  // del overlay se anclaría a ese contenedor en vez de a la pantalla — el modal
+  // quedaría "atrapado" en el sidebar. Con el portal, el overlay SIEMPRE cubre
+  // toda la app y queda por encima de todo.
+  return createPortal(
     <div className={styles.overlay} onClick={onCancel}>
       <div className={styles.dialog} onClick={(e) => e.stopPropagation()}>
         <h2 className={styles.title}>{title}</h2>
@@ -57,6 +63,7 @@ export function ConfirmDialog({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

@@ -62,6 +62,21 @@ export default function Products() {
         .then((res) => ({ items: res.products, total: res.total })),
     cacheNamespace: "products",
     pollMs: 60_000,
+    // La tabla muestra stock y los nombres de categoría/proveedor: reacciona a
+    // todo lo que cambia esos datos — edición/creación de producto, ventas,
+    // ajustes de stock, lotes, y renombres de categoría/proveedor.
+    realtimeEvents: [
+      "product.created",
+      "product.updated",
+      "product.deleted",
+      "sale.created",
+      "inventory.movement.created",
+      "inventory.batch.created",
+      "category.updated",
+      "category.deleted",
+      "supplier.updated",
+      "supplier.deleted",
+    ],
     extraFilters: { categoryId },
   });
 

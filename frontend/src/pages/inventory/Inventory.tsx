@@ -48,6 +48,16 @@ export default function Inventory() {
   } = useCrudPagination<Product>({
     cacheNamespace: "inventory",
     pollMs: 30_000,
+    // La sección de productos con stock reacciona a todo lo que cambia stock:
+    // edición de producto, movimientos, lotes y ventas de otros terminales.
+    realtimeEvents: [
+      "product.created",
+      "product.updated",
+      "product.deleted",
+      "inventory.movement.created",
+      "inventory.batch.created",
+      "sale.created",
+    ],
     extraFilters: { categoryId, stockFilter },
     fetcher: async ({ page, limit, search, extraFilters }) => {
       const [productRes, lowStockRes, cats, sups] = await Promise.all([
@@ -81,6 +91,8 @@ export default function Inventory() {
   } = useCrudPagination<InventoryMovement>({
     cacheNamespace: "inventory-movements",
     pollMs: 60_000,
+    // Un ajuste manual, una venta o un lote generan movimientos de inventario.
+    realtimeEvents: ["inventory.movement.created", "inventory.batch.created", "sale.created"],
     limit: 10,
     debounceMs: 0,
     fetcher: async ({ page, limit }) => {
@@ -99,6 +111,7 @@ export default function Inventory() {
   } = useCrudPagination<BatchResponse>({
     cacheNamespace: "inventory-batches",
     pollMs: 60_000,
+    realtimeEvents: ["inventory.batch.created"],
     limit: 10,
     debounceMs: 0,
     fetcher: async ({ page, limit }) => {

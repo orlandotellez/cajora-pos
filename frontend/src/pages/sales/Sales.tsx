@@ -7,7 +7,7 @@ import { PAGE_LIMIT as LIMIT } from "@/lib/constants";
 import { SaleTable } from "@/components/pages/sales/SaleTable";
 import styles from "./Sales.module.css";
 import { cacheClear, cacheGet, cacheKey, cacheSet } from "@/lib/simple-cache";
-import { openSalesEvents } from "@/lib/sales-events";
+import { subscribeRealtime } from "@/lib/realtime";
 import { Header } from "@/components/pages/sales/Header";
 import { Filter } from "@/components/pages/sales/Filter";
 import { PrinterSaleModal } from "@/components/pages/sales/PrinterSaleModal";
@@ -92,11 +92,11 @@ export default function Sales() {
   useEffect(() => { pageRef.current = page; }, [page]);
 
   useEffect(() => {
-    const close = openSalesEvents(() => {
+    return subscribeRealtime((event) => {
+      if (event !== "sale.created") return;
       cacheClear("sales");
       void fetchSalesRef.current(pageRef.current, true);
     });
-    return close;
   }, []);
 
   // Refresco manual (botón): trae datos nuevos del server, ignorando el cache.

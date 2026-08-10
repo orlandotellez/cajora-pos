@@ -35,6 +35,7 @@ export default function Users() {
         .list({ page, limit, search: search || undefined })
         .then((res) => ({ items: res.users, total: res.total })),
     pollMs: 60_000,
+    realtimeEvents: ["user.created", "user.updated", "user.deleted"],
   });
 
   const [editing, setEditing] = useState<UserResponse | null | "new">(null);

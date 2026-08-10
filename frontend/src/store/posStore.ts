@@ -54,6 +54,13 @@ interface PosState {
   removeServiceProduct: (serviceId: string, productId: string) => void;
   addServiceProduct: (serviceId: string, product: Product, quantity?: number) => void;
   toggleServiceProductAffectsPrice: (serviceId: string, productId: string) => void;
+  /**
+   * Actualiza el stock de los productos del carrito (items regulares y
+   * sub-productos de servicios) con valores frescos del server. Lo usa el POS
+   * cuando llega un evento SSE de stock (`sale.created`, `product.updated`, ...)
+   * para que el cajero nunca vea stock viejo.
+   */
+  syncStocks: (stocks: Record<string, number>) => void;
   clearCart: () => void;
   setDiscountPct: (pct: number) => void;
   setPayment: (method: string) => void;
@@ -178,6 +185,22 @@ export const usePosStore = create<PosState>()((set) => ({
             }
           : x
       ),
+    })),
+
+  syncStocks: (stocks) =>
+    set((s) => ({
+      cart: s.cart.map((x) => {
+        if (x._type === "product") {
+          const stock = stocks[x.id];
+          return stock === undefined ? x : { ...(x as ProductCartItem), stock };
+        }
+        const svc = x as ServiceCartItem;
+        const products = svc.products.map((sp) => {
+          const stock = stocks[sp.product_id];
+          return stock === undefined ? sp : { ...sp, stock };
+        });
+        return { ...svc, products };
+      }),
     })),
 
   clearCart: () => set({ cart: [], discountPct: 0, received: "", manualAmount: false, payment: "efectivo" }),

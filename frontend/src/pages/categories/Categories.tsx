@@ -32,6 +32,7 @@ export default function Categories() {
         .then((res) => ({ items: res.categories, total: res.total })),
     cacheNamespace: "categories",
     pollMs: 60_000,
+    realtimeEvents: ["category.created", "category.updated", "category.deleted"],
   });
 
   const [editing, setEditing] = useState<Category | null | "new">(null);

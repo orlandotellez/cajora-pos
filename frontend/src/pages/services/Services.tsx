@@ -32,6 +32,7 @@ export default function Services() {
         .then((res) => ({ items: res.services, total: res.total })),
     cacheNamespace: "services",
     pollMs: 60_000,
+    realtimeEvents: ["service.created", "service.updated", "service.deleted"],
   });
 
   const [products, setProducts] = useState<Product[]>([]);

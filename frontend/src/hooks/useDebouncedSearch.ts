@@ -7,6 +7,12 @@ export interface UseDebouncedSearchOptions<T> {
   fetcher: (term: string) => Promise<T[]>;
   /** Debounce en ms. Default = 300ms (alineado al codebase). */
   delay?: number;
+  /**
+   * Si cambia, re-ejecuta la búsqueda con el término actual (sin tocar el
+   * input). Lo usa el POS para refrescar los resultados visibles cuando llega
+   * un evento SSE de stock (otro cajero vendió → el stock mostrado cambia).
+   */
+  refreshKey?: number;
 }
 
 export interface UseDebouncedSearchReturn<T> {
@@ -50,7 +56,7 @@ export interface UseDebouncedSearchReturn<T> {
 export function useDebouncedSearch<T>(
   opts: UseDebouncedSearchOptions<T>,
 ): UseDebouncedSearchReturn<T> {
-  const { query, fetcher, delay = 300 } = opts;
+  const { query, fetcher, delay = 300, refreshKey = 0 } = opts;
 
   const [results, setResults] = useState<T[]>([]);
   const [loading, setLoading] = useState(false);
@@ -90,7 +96,7 @@ export function useDebouncedSearch<T>(
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [query, delay]);
+  }, [query, delay, refreshKey]);
 
   return { results, loading };
 }

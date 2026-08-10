@@ -1,3 +1,4 @@
+import { eventsRoutes } from "@/modules/events/presentation/events.routes";
 import { authRoutes } from "@/modules/auth/presentation/auth.routes";
 import { productsRoutes } from "@/modules/products/presentation/products.routes";
 import { categoriesRoutes } from "@/modules/categories/presentation/categories.routes";
@@ -12,6 +13,9 @@ import { type FastifyInstance, type FastifyPluginOptions } from "fastify";
 import { printersRoutes } from "@/modules/printers/presentation/printers.router";
 
 export const routes = async (fastify: FastifyInstance, _opts: FastifyPluginOptions) => {
+  // Endpoint SSE genérico: `GET /api/v1/events` (sin prefix para que la ruta
+  // quede exactamente `/events`, como la usa el frontend).
+  fastify.register(eventsRoutes, { prefix: "" })
   fastify.register(authRoutes, { prefix: "/auth" })
   fastify.register(productsRoutes, { prefix: "/products" })
   fastify.register(categoriesRoutes, { prefix: "/categories" })

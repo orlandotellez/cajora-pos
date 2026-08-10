@@ -4,6 +4,7 @@ import { BatchInventoryRepository } from "../infrastructure/batch-inventory.pris
 import { ProductRepository } from "../../products/infrastructure/products.prisma.repository"
 import { CreateBatchDtoSchema, BatchQuerySchema } from "./batch-inventory.dto"
 import { UnauthorizedError } from "@/core/errors/AppError"
+import { sseBroadcast } from "@/config/sse"
 
 const batchInventoryService = createBatchInventoryService(BatchInventoryRepository, ProductRepository)
 
@@ -14,6 +15,7 @@ export const batchInventoryController = {
 
     const data = CreateBatchDtoSchema.parse(request.body)
     const result = await batchInventoryService.create({ ...data, user_id: userId, store_id: request.storeId })
+    sseBroadcast(request.storeId!, "inventory.batch.created", { id: result.id })
     return reply.status(201).send(result)
   },
 

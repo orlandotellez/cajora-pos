@@ -3,45 +3,13 @@ import { createSaleService } from "../application/sales.service"
 import { SaleRepository } from "../infrastructure/sales.prisma.repository"
 import { CreateSaleDtoSchema, SaleQuerySchema, ReportQuerySchema, RevenueTrendQuerySchema } from "./sales.dto"
 import { UnauthorizedError } from "@/core/errors/AppError"
-import { sseBroadcast, sseSubscribe, sseUnsubscribe } from "@/config/sse"
-import { isOriginAllowed } from "@/config/cors"
+import { handleSseConnection, sseBroadcast } from "@/config/sse"
 
 const saleService = createSaleService(SaleRepository)
 
 export const salesController = {
   events: async (request: FastifyRequest, reply: FastifyReply) => {
-    const storeId = request.storeId!
-    const origin = request.headers.origin
-    const raw = reply.raw
-
-    reply.hijack()
-    raw.setHeader("Content-Type", "text/event-stream")
-    raw.setHeader("Cache-Control", "no-cache")
-    raw.setHeader("Connection", "keep-alive")
-    raw.setHeader("X-Accel-Buffering", "no")
-    if (origin && isOriginAllowed(origin)) {
-      raw.setHeader("Access-Control-Allow-Origin", origin)
-      raw.setHeader("Access-Control-Allow-Credentials", "true")
-      raw.setHeader("Vary", "Origin")
-    }
-    raw.on("error", () => { })
-    raw.flushHeaders()
-    raw.write(": connected\n\n")
-
-    sseSubscribe(storeId, raw)
-
-    const heartbeat = setInterval(() => {
-      if (raw.destroyed || raw.writableEnded) {
-        clearInterval(heartbeat)
-        return
-      }
-      raw.write(": ping\n\n")
-    }, 25_000)
-
-    request.raw.on("close", () => {
-      clearInterval(heartbeat)
-      sseUnsubscribe(storeId, raw)
-    })
+    handleSseConnection(request, reply)
   },
 
   create: async (request: FastifyRequest, reply: FastifyReply) => {
@@ -52,11 +20,16 @@ export const salesController = {
     const data = CreateSaleDtoSchema.parse(request.body)
     const result = await saleService.create({ ...data, user_id: userId }, storeId!)
 
+    const soldProductIds = [
+      ...(result.items ?? []).map((i) => i.product_id),
+      ...(result.service_items ?? []).flatMap((si) => si.products?.map((sp) => sp.product_id) ?? []),
+    ]
     sseBroadcast(storeId!, "sale.created", {
       id: result.id,
       total: result.total,
       user_name: result.user_name,
       created_at: result.created_at,
+      product_ids: Array.from(new Set(soldProductIds)),
     })
 
     return reply.status(201).send(result)

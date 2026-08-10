@@ -75,17 +75,23 @@ export function UserMenu() {
             </div>
           </div>
 
-          <div className={styles.divider} />
-
-          <Link
-            to="/settings"
-            className={styles.menuItem}
-            role="menuitem"
-            onClick={() => setOpen(false)}
-          >
-            <Settings className={styles.menuItemIcon} />
-            Ajustes
-          </Link>
+          {/* Ajustes es admin-only (igual que el grupo ADMINISTRACIÓN del sidebar).
+              El divider va DENTRO del condicional para que un cajero no vea dos
+              líneas divisorias consecutivas. */}
+          {user?.role === "admin" && (
+            <>
+              <div className={styles.divider} />
+              <Link
+                to="/settings"
+                className={styles.menuItem}
+                role="menuitem"
+                onClick={() => setOpen(false)}
+              >
+                <Settings className={styles.menuItemIcon} />
+                Ajustes
+              </Link>
+            </>
+          )}
 
           <div className={styles.divider} />
 
