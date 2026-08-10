@@ -1,6 +1,7 @@
 import { buildApp } from "./app"
 import { env } from "./config/env"
 import { closeRedis } from "./config/redis"
+import { closeSseRedis } from "./config/sse"
 import { prisma } from "./config/prisma"
 
 const startServer = async () => {
@@ -15,6 +16,7 @@ const startServer = async () => {
       console.log(`Received ${signal}, shutting down gracefully...`)
       await app.close()
       await prisma.$disconnect()
+      await closeSseRedis()
       await closeRedis()
       process.exit(0)
     }
