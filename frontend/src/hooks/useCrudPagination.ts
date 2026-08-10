@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { cacheClear, cacheGet, cacheSet, cacheKey } from "@/lib/simple-cache";
-import { subscribeRealtime } from "@/lib/realtime";
+import { isRealtimeConnected, subscribeRealtime, subscribeRealtimeStatus } from "@/lib/realtime";
 import { PAGE_LIMIT } from "@/lib/constants";
 
 export interface UseCrudPaginationOptions<T> {
@@ -123,6 +123,12 @@ export function useCrudPagination<T>(
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshTick, setRefreshTick] = useState(0);
+
+  // Salud de la conexión SSE compartida (ver `lib/realtime.ts`). El polling
+  // adaptativo la usa para pausar/reanudar los ticks.
+  const [realtimeConnected, setRealtimeConnected] = useState(() => isRealtimeConnected());
+
+  useEffect(() => subscribeRealtimeStatus(setRealtimeConnected), []);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const skipNextDebounceRef = useRef(false);
   const cacheHitRef = useRef(false);
@@ -151,6 +157,12 @@ export function useCrudPagination<T>(
   useEffect(() => {
     extraFiltersRef.current = extraFilters;
   }, [extraFilters]);
+
+  // `realtimeEventsKey` es una key estable (serializada) para que el effect de
+  // tiempo real no se re-ejecute por la identidad del array en cada render —
+  // mismo patrón que `extraFiltersKey`. Se define antes del effect de polling
+  // porque el polling adaptativo la usa para saber si el SSE cubre esta tabla.
+  const realtimeEventsKey = useMemo(() => realtimeEvents?.join(",") ?? "", [realtimeEvents]);
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
@@ -226,18 +238,23 @@ export function useCrudPagination<T>(
     if (page > totalPages) setPage(1);
   }, [page, totalPages]);
 
-  // 4) Polling silencioso opcional (`pollMs`) — ver doc en el interface.
+  // 4) Polling adaptativo (`pollMs`) — ver doc en el interface.
   //    Refresca la vista en background para que los cambios hechos por otros
   //    usuarios (edición, ventas, ajustes de stock) lleguen a todos los
-  //    terminales abiertos.
+  //    terminales abiertos. PERO se pausa mientras el SSE esté conectado y
+  //    cubra esta tabla (`realtimeEvents` no vacío): el SSE ya entrega los
+  //    cambios al instante, así que el poll sería consultas redundantes
+  //    (el ~95% del tráfico). El poll se reanuda automáticamente cuando el
+  //    SSE cae o cuando la tabla no tiene eventos en tiempo real.
   useEffect(() => {
     if (!pollMs) return;
 
     let inFlight = false;
 
     const tick = () => {
-      // No hacer polling si hay un fetch en curso o la pestaña no es visible.
-      if (inFlight || document.hidden) return;
+      // No hacer polling si: hay un fetch en curso, la pestaña no es visible,
+      // o el SSE está conectado y cubre esta tabla.
+      if (inFlight || document.hidden || (realtimeConnected && realtimeEventsKey)) return;
       inFlight = true;
       const token = ++refreshTokenRef.current;
       if (cacheNamespace) cacheClear(cacheNamespace);
@@ -256,7 +273,7 @@ export function useCrudPagination<T>(
       window.clearInterval(intervalId);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [pollMs, runFetch, cacheNamespace]);
+  }, [pollMs, runFetch, cacheNamespace, realtimeConnected, realtimeEventsKey]);
 
   // 5) Tiempo real opcional (`realtimeEvents`) — ver doc en el interface.
   //    Escucha los eventos SSE de la tienda y refresca la tabla al instante
@@ -264,12 +281,8 @@ export function useCrudPagination<T>(
   //    sistema; el refcount del cliente cierra la conexión cuando ninguna
   //    tabla la necesita.
   //
-  // `realtimeEventsKey` es una key estable (serializada) para que el effect no
-  // se re-ejecute por la identidad del array en cada render — mismo patrón que
-  // `extraFiltersKey`. `runFetchRef` evita resuscribir al cambiar de página o
-  // search (mismo patrón que `fetchSalesRef` en Sales.tsx).
-  const realtimeEventsKey = useMemo(() => realtimeEvents?.join(",") ?? "", [realtimeEvents]);
-
+  // `runFetchRef` evita resuscribir al cambiar de página o search (mismo
+  // patrón que `fetchSalesRef` en Sales.tsx).
   const runFetchRef = useRef(runFetch);
   useEffect(() => {
     runFetchRef.current = runFetch;

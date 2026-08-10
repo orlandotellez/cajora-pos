@@ -33,6 +33,8 @@ import { getAuthToken } from "@/api/client";
  */
 type Handler = (event: string, data: unknown) => void;
 
+type StatusHandler = (connected: boolean) => void;
+
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => {
     const timer = setTimeout(() => {
@@ -60,6 +62,50 @@ let started = false;
 let controller: AbortController | null = null;
 let wakeUp: (() => void) | null = null;
 let lastMessageAt = 0;
+
+// Salud de la conexión SSE: `true` mientras el stream esté abierto y
+// entregando datos (heartbeats incluidos). Los hooks la usan para el polling
+// adaptativo: si el SSE está conectado, el poll se pausa; si cae, se reanuda.
+let connected = false;
+const statusHandlers = new Set<StatusHandler>();
+
+function setConnected(value: boolean): void {
+  if (connected === value) return;
+  connected = value;
+  for (const handler of statusHandlers) {
+    try {
+      handler(value);
+    } catch {
+      // un handler que falla no debe romper el resto
+    }
+  }
+}
+
+/** ¿Está el SSE conectado y entregando eventos en este momento? */
+export function isRealtimeConnected(): boolean {
+  return connected;
+}
+
+/**
+ * Suscribe un handler a los cambios de salud de la conexión SSE
+ * (`true` = conectado, `false` = caído/reconectando). Al suscribirse,
+ * el handler recibe inmediatamente el estado actual.
+ *
+ * A diferencia de `subscribeRealtime`, esto NO abre la conexión: es un
+ * observador pasivo (útil para hooks con polling que solo quieren saber
+ * cuándo pausar/reanudar).
+ */
+export function subscribeRealtimeStatus(handler: StatusHandler): () => void {
+  statusHandlers.add(handler);
+  try {
+    handler(connected);
+  } catch {
+    // ignorar fallo del handler inicial
+  }
+  return () => {
+    statusHandlers.delete(handler);
+  };
+}
 
 /** Aborta la conexión actual (si la hay) y despierta el bucle para reconectar ya. */
 function reconnectNow(reason: string): void {
@@ -116,6 +162,7 @@ function startConnection(): void {
         }
         console.info("[SSE] conectado a /events");
         lastMessageAt = Date.now();
+        setConnected(true);
 
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
@@ -123,7 +170,10 @@ function startConnection(): void {
 
         for (; ;) {
           const { done, value } = await reader.read();
-          if (done) break;
+          if (done) {
+            setConnected(false);
+            break;
+          }
           lastMessageAt = Date.now();
           buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, "\n");
 
@@ -164,6 +214,7 @@ function startConnection(): void {
         await sleep(RECONNECT_DELAY_MS);
       } catch (err) {
         clearInterval(watchdog);
+        setConnected(false);
         if (ctrl.signal.aborted) {
           continue;
         }
