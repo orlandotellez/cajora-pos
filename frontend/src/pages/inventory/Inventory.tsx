@@ -47,6 +47,7 @@ export default function Inventory() {
     refreshImmediate: refreshProducts,
   } = useCrudPagination<Product>({
     cacheNamespace: "inventory",
+    pollMs: 30_000,
     extraFilters: { categoryId, stockFilter },
     fetcher: async ({ page, limit, search, extraFilters }) => {
       const [productRes, lowStockRes, cats, sups] = await Promise.all([
@@ -79,6 +80,7 @@ export default function Inventory() {
     refreshImmediate: refreshMovements,
   } = useCrudPagination<InventoryMovement>({
     cacheNamespace: "inventory-movements",
+    pollMs: 60_000,
     limit: 10,
     debounceMs: 0,
     fetcher: async ({ page, limit }) => {
@@ -96,6 +98,7 @@ export default function Inventory() {
     refreshImmediate: refreshBatches,
   } = useCrudPagination<BatchResponse>({
     cacheNamespace: "inventory-batches",
+    pollMs: 60_000,
     limit: 10,
     debounceMs: 0,
     fetcher: async ({ page, limit }) => {

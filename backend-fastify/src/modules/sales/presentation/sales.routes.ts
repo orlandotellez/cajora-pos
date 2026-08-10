@@ -8,6 +8,11 @@ import { CreateSaleDtoSchema, SaleQuerySchema, ReportQuerySchema, RevenueTrendQu
 const TAGS = ["Sales"]
 
 export const salesRoutes = async (fastify: FastifyInstance, _opts: FastifyPluginOptions) => {
+  fastify.get("/events", {
+    schema: { tags: TAGS, description: "SSE: notifica sale.created en tiempo real" },
+    preHandler: [authGuard, storeGuard],
+  }, salesController.events)
+
   fastify.get("/report", {
     schema: { tags: TAGS, querystring: toJsonSchema(ReportQuerySchema) },
     preHandler: [authGuard, storeGuard],

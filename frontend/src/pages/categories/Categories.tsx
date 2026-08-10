@@ -31,6 +31,7 @@ export default function Categories() {
         .listPaginated({ page, limit, search: search || undefined })
         .then((res) => ({ items: res.categories, total: res.total })),
     cacheNamespace: "categories",
+    pollMs: 60_000,
   });
 
   const [editing, setEditing] = useState<Category | null | "new">(null);

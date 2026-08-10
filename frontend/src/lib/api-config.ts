@@ -4,7 +4,7 @@ export const API_URL_STORAGE_KEY = "POS_API_URL";
 export const BOOTSTRAP_URL =
   "https://pub-17156739f1d5412cb62a579bb0ccbc35.r2.dev/config-api.json";
 export const BOOTSTRAP_FETCH_TIMEOUT_MS = 2500;
-export const DEFAULT_API_URL = "http://localhost:3000/api/v1";
+export const DEFAULT_API_URL = "http://192.168.0.10:3000/api/v1";
 
 /**
  * URL de producción que devuelve el bootstrap remoto (config-api.json).

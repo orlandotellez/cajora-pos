@@ -28,7 +28,7 @@ function extractErrorMessage(data: unknown): string | null {
   return null;
 }
 
-function getAuthToken(): string | null {
+export function getAuthToken(): string | null {
   try {
     return localStorage.getItem("auth-token");
   } catch {

@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { salesApi, type Sale, type SaleReport } from "@/api/sales";
-import { cacheGet, cacheSet, cacheKey } from "@/lib/simple-cache";
+import { cacheClear, cacheGet, cacheSet, cacheKey } from "@/lib/simple-cache";
 import { Header, type Range } from "@/components/pages/reports/Header";
 import { ReportStats } from "@/components/pages/reports/ReportStats";
 import { CashCloseCard } from "@/components/pages/reports/CashCloseCard";
@@ -41,27 +41,66 @@ export default function Reports() {
 
   const salesTotalPages = Math.max(1, Math.ceil(salesTotal / SALES_LIMIT));
 
-  useEffect(() => {
-    const start = rangeStart(range).toISOString();
-    const end = rangeEnd(range).toISOString();
-    const key = cacheKey("reports", range, String(salesPage));
+  // Contador de secuencia: descarta respuestas obsoletas (mismo guard que el hook).
+  const loadSeqRef = useRef(0);
+
+  const loadData = useCallback(async (r: Range, sp: number, silent = false) => {
+    const start = rangeStart(r).toISOString();
+    const end = rangeEnd(r).toISOString();
+    const key = cacheKey("reports", r, String(sp));
+    const seq = ++loadSeqRef.current;
     const cached = cacheGet<{ report: SaleReport; sales: Sale[]; total: number }>(key);
 
-    if (cached) { setReport(cached.report); setSales(cached.sales); setSalesTotal(cached.total); }
-    setLoading(!cached);
+    if (cached) {
+      if (seq !== loadSeqRef.current) return; // respuesta obsoleta
+      setReport(cached.report); setSales(cached.sales); setSalesTotal(cached.total);
+    }
+    if (!silent) setLoading(!cached);
 
-    Promise.all([
-      salesApi.report({ start_date: start, end_date: end }),
-      salesApi.list({ start_date: start, end_date: end, page: salesPage, limit: SALES_LIMIT }),
-    ])
-      .then(([r, list]) => {
-        setReport(r);
-        setSales(list.sales);
-        setSalesTotal(list.total);
-        cacheSet(key, { report: r, sales: list.sales, total: list.total });
-      })
-      .catch((err) => console.error("Error al cargar reportes:", err))
-      .finally(() => setLoading(false));
+    try {
+      const [rep, list] = await Promise.all([
+        salesApi.report({ start_date: start, end_date: end }),
+        salesApi.list({ start_date: start, end_date: end, page: sp, limit: SALES_LIMIT }),
+      ]);
+      if (seq !== loadSeqRef.current) return; // respuesta obsoleta
+      setReport(rep);
+      setSales(list.sales);
+      setSalesTotal(list.total);
+      cacheSet(key, { report: rep, sales: list.sales, total: list.total });
+    } catch (err) {
+      console.error("Error al cargar reportes:", err);
+    } finally {
+      if (!silent && seq === loadSeqRef.current) setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadData(range, salesPage);
+  }, [range, salesPage, loadData]);
+
+  // Polling silencioso: mantiene el reporte fresco cuando otro usuario registra
+  // ventas. Bypass del cache, se pausa con la pestaña oculta y refresca al
+  // instante al volver a ser visible.
+  const loadDataRef = useRef(loadData);
+  useEffect(() => { loadDataRef.current = loadData; }, [loadData]);
+
+  useEffect(() => {
+    let inFlight = false;
+    const tick = () => {
+      if (inFlight || document.hidden) return;
+      inFlight = true;
+      cacheClear("reports");
+      void loadDataRef.current(range, salesPage, true).finally(() => { inFlight = false; });
+    };
+
+    const intervalId = window.setInterval(tick, 60_000);
+    const onVisibilityChange = () => { if (!document.hidden) tick(); };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
   }, [range, salesPage]);
 
   useEffect(() => { setSalesPage(1); }, [range]);

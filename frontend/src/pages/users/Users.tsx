@@ -34,6 +34,7 @@ export default function Users() {
       usersApi
         .list({ page, limit, search: search || undefined })
         .then((res) => ({ items: res.users, total: res.total })),
+    pollMs: 60_000,
   });
 
   const [editing, setEditing] = useState<UserResponse | null | "new">(null);

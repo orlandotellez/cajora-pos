@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { cacheGet, cacheSet, cacheKey } from "@/lib/simple-cache";
+import { cacheClear, cacheGet, cacheSet, cacheKey } from "@/lib/simple-cache";
 import { PAGE_LIMIT } from "@/lib/constants";
 
 export interface UseCrudPaginationOptions<T> {
@@ -23,6 +23,14 @@ export interface UseCrudPaginationOptions<T> {
   limit?: number;
   /** Debounce del search. Default = 300ms (alineado al codebase). */
   debounceMs?: number;
+  /**
+   * Polling silencioso en ms. Si se define, la tabla se refresca en background
+   * cada `pollMs` para reflejar cambios hechos por OTROS usuarios (multi-caja).
+   * El poll SIEMPRE lee del server (bypass del cache), no muestra loading y se
+   * pausa cuando la pestaña no es visible; al volver a ser visible refresca al
+   * instante.
+   */
+  pollMs?: number;
   /**
    * Filtros extra (e.g. `categoryId`, `stockFilter`). Se serializan en la
    * cache key (para que cada combinación de filtros tenga su propia entry)
@@ -95,6 +103,7 @@ export function useCrudPagination<T>(
     limit = PAGE_LIMIT,
     debounceMs = 300,
     extraFilters,
+    pollMs,
   } = opts;
 
   const [items, setItems] = useState<T[]>(initialData);
@@ -155,7 +164,13 @@ export function useCrudPagination<T>(
     setLoading(!cached);
   }, [cacheNamespace, page, q, refreshTick, extraFiltersKey]);
 
+  // Contador de secuencia: descarta respuestas obsoletas. Si un poll silencioso
+  // quedó en vuelo y el usuario cambió de página/filtros, su resultado no debe
+  // pisar los datos más nuevos (ni apagar el loading de un fetch posterior).
+  const requestSeqRef = useRef(0);
+
   const runFetch = useCallback(async () => {
+    const seq = ++requestSeqRef.current;
     try {
       const result = await fetcherRef.current({
         page,
@@ -163,6 +178,7 @@ export function useCrudPagination<T>(
         search: q,
         extraFilters: extraFiltersRef.current || {},
       });
+      if (seq !== requestSeqRef.current) return; // respuesta obsoleta
       setItems(result.items);
       setTotal(result.total);
       if (cacheNamespace) {
@@ -174,7 +190,7 @@ export function useCrudPagination<T>(
     } catch (err) {
       console.warn("Error al listar:", err);
     } finally {
-      setLoading(false);
+      if (seq === requestSeqRef.current) setLoading(false);
     }
   }, [page, q, extraFiltersKey, cacheNamespace, limit]);
 
@@ -200,6 +216,35 @@ export function useCrudPagination<T>(
   useEffect(() => {
     if (page > totalPages) setPage(1);
   }, [page, totalPages]);
+
+  // 4) Polling silencioso opcional (`pollMs`) — ver doc en el interface.
+  //    Refresca la vista en background para que los cambios hechos por otros
+  //    usuarios (edición, ventas, ajustes de stock) lleguen a todos los
+  //    terminales abiertos.
+  useEffect(() => {
+    if (!pollMs) return;
+
+    let inFlight = false;
+
+    const tick = () => {
+      // No hacer polling si hay un fetch en curso o la pestaña no es visible.
+      if (inFlight || document.hidden) return;
+      inFlight = true;
+      // Bypass del cache: el poll siempre lee del server.
+      if (cacheNamespace) cacheClear(cacheNamespace);
+      void runFetch().finally(() => { inFlight = false; });
+    };
+
+    const intervalId = window.setInterval(tick, pollMs);
+    // Al volver a la pestaña, refrescar al instante en vez de esperar el tick.
+    const onVisibilityChange = () => { if (!document.hidden) tick(); };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [pollMs, runFetch, cacheNamespace]);
 
   const setSearch = useCallback((value: string) => {
     setQ(value);

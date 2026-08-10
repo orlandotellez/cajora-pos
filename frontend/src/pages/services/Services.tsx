@@ -31,6 +31,7 @@ export default function Services() {
         .list({ page, limit, search: search || undefined })
         .then((res) => ({ items: res.services, total: res.total })),
     cacheNamespace: "services",
+    pollMs: 60_000,
   });
 
   const [products, setProducts] = useState<Product[]>([]);

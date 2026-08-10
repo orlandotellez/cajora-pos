@@ -27,6 +27,7 @@ dist-ssr
 *.apk
 *.apk.idsig
 *.keystore
+*.tsbuildinfo
 
 .env
 .env.production

@@ -61,6 +61,7 @@ export default function Products() {
         })
         .then((res) => ({ items: res.products, total: res.total })),
     cacheNamespace: "products",
+    pollMs: 60_000,
     extraFilters: { categoryId },
   });
 

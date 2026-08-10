@@ -40,6 +40,7 @@ export default function Suppliers() {
         .list({ page, limit, search: search || undefined })
         .then((res) => ({ items: res.suppliers, total: res.total })),
     cacheNamespace: "suppliers",
+    pollMs: 60_000,
   });
 
   const [editing, setEditing] = useState<Supplier | null | "new">(null);
