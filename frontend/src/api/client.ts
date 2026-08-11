@@ -81,12 +81,21 @@ async function request<T>(
   if (!res.ok) {
     const code = extractErrorCode(data) ?? (res.status === 403 ? "FORBIDDEN" : "UNKNOWN");
 
-    // 403 con code STORE_CONTEXT_REQUIRED (store.guard): el JWT no tiene storeId.
-    // Se fuerza un re-login limpio. Cualquier OTRO 403 (p.ej. FORBIDDEN de
-    // adminGuard) propaga el ApiError sin logout — el usuario ve "Acceso denegado".
     if (res.status === 403 && code === STORE_CONTEXT_REQUIRED) {
-      clearAuthSession();
-      return undefined as T;
+      const currentUser = (() => {
+        try {
+          return JSON.parse(localStorage.getItem("auth-user") ?? "null") as
+            | { role?: string }
+            | null
+        } catch {
+          return null
+        }
+      })()
+      if (currentUser?.role !== "super_admin") {
+        clearAuthSession()
+        return undefined as T
+      }
+      throw new ApiError(res.status, code, resolveErrorMessage(res.status, data, code))
     }
 
     throw new ApiError(res.status, code, resolveErrorMessage(res.status, data, code));

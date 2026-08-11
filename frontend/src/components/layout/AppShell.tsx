@@ -130,6 +130,10 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const closeDrawer = () => setMobileMenuOpen(false);
 
+  if (isSuperAdmin && pathname !== "/super-admin") {
+    return null;
+  }
+
   const renderNav = (navItemClass: string, iconClass: string) =>
     visibleGroups.map((group) => (
       <div key={group.label} className={styles.navGroup}>
