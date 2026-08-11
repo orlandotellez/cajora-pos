@@ -136,7 +136,7 @@ export default function Products() {
 
   return (
     <div className={styles.page}>
-      <Header total={total} setEditing={openCreate} />
+      <Header total={total} setEditing={openCreate} loading={loading} />
 
       <Filter
         q={q}

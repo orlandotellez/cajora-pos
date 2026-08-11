@@ -113,7 +113,7 @@ export default function Suppliers() {
 
   return (
     <div className={styles.page}>
-      <Header total={total} onNew={() => setEditing("new")} />
+      <Header total={total} onNew={() => setEditing("new")} loading={loading} />
 
       <Filter q={q} setSearch={setSearch} />
 

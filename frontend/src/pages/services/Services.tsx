@@ -82,7 +82,7 @@ export default function Services() {
 
   return (
     <div className={styles.page}>
-      <Header total={total.toString()} setEditing={() => setEditing("new")} />
+      <Header total={total} setEditing={() => setEditing("new")} loading={loading} />
 
       <Filter q={q} setSearch={setSearch} />
 

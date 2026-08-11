@@ -106,7 +106,7 @@ export default function Sales() {
 
   return (
     <div className={styles.page}>
-      <Header total={total} refreshing={refreshing} onRefresh={handleRefresh} />
+      <Header total={total} refreshing={refreshing} onRefresh={handleRefresh} loading={loading} />
 
       <Filter
         startDate={startDate}

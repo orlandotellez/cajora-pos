@@ -5,15 +5,22 @@ interface HeaderProps {
   total: number
   refreshing?: boolean
   onRefresh?: () => void
+  loading?: boolean
 }
 
-export const Header = ({ total, refreshing = false, onRefresh }: HeaderProps) => {
+export const Header = ({ total, refreshing = false, onRefresh, loading = false }: HeaderProps) => {
   return (
     <>
       <header className={styles.header}>
         <div>
           <h1 className={styles.h1}>Ventas</h1>
-          <p className={styles.subtitle}>{total} venta(s) registradas</p>
+          <p className={styles.subtitle}>
+            {loading && total === 0 ? (
+              <span className={styles.skeleton} aria-hidden="true" />
+            ) : (
+              `${total} venta(s) registradas`
+            )}
+          </p>
         </div>
         {onRefresh && (
           <button

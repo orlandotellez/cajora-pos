@@ -29,6 +29,26 @@
   color: var(--muted-foreground);
 }
 
+.skeleton {
+  display: inline-block;
+  width: 3.5em;
+  height: 1em;
+  border-radius: 4px;
+  background: var(--border);
+  vertical-align: middle;
+  animation: skeletonPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes skeletonPulse {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
 .refreshBtn {
   display: inline-flex;
   align-items: center;

@@ -94,7 +94,7 @@ export default function Categories() {
 
   return (
     <div className={styles.page}>
-      <Header total={total} setEditing={() => setEditing("new")} />
+      <Header total={total} setEditing={() => setEditing("new")} loading={loading} />
 
       <Filter q={q} setSearch={(e) => setSearch(e.target.value)} />
 
