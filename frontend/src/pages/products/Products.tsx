@@ -140,7 +140,7 @@ export default function Products() {
       toast("Producto guardado correctamente", "success");
     } catch (err) {
       console.error("Error al guardar producto:", err);
-      toast("Error al guardar producto", "error");
+      toast((err as Error)?.message || "Error al guardar producto", "error");
     } finally { setSubmitting(false); }
   }
 
@@ -152,7 +152,7 @@ export default function Products() {
       toast("Producto eliminado", "success");
     } catch (err) {
       console.error("Error al eliminar producto:", err);
-      toast("Error al eliminar producto", "error");
+      toast((err as Error)?.message || "Error al eliminar producto", "error");
     }
   }
 

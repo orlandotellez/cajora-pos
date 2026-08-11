@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { X } from "lucide-react";
 import { inventoryApi } from "@/api/inventory";
+import { useToast } from "@/components/common/ui/Toast";
 import type { Supplier, Product } from "@/api";
 import type { CreateBatchPayload } from "@/api/inventory";
 import { UNIT_TYPE_LABELS } from "@/lib/constants";
@@ -25,6 +26,7 @@ type BatchFormItem = {
 };
 
 export function BatchMovementModal({ open, suppliers, products, onClose, onCreated }: BatchMovementModalProps) {
+  const { toast } = useToast();
   const [batchType, setBatchType] = useState<"entrada" | "salida" | "ajuste">("entrada");
   const [batchSupplierId, setBatchSupplierId] = useState("");
   const [batchNotes, setBatchNotes] = useState("");
@@ -97,6 +99,7 @@ export function BatchMovementModal({ open, suppliers, products, onClose, onCreat
       onClose();
     } catch (err) {
       console.error("Error al registrar movimiento agrupado", err);
+      toast((err as Error)?.message || "Error al registrar movimiento agrupado", "error");
     } finally {
       setSubmitting(false);
     }

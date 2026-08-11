@@ -52,15 +52,20 @@ export default function Services() {
     isNew: boolean,
     editingService: Service | null,
   ) {
-    if (isNew) {
-      await servicesApi.create(payload);
-    } else if (editingService) {
-      await servicesApi.update(editingService.id, payload);
+    try {
+      if (isNew) {
+        await servicesApi.create(payload);
+      } else if (editingService) {
+        await servicesApi.update(editingService.id, payload);
+      }
+      setEditing(null);
+      cacheClear("services");
+      refresh();
+      toast("Servicio guardado correctamente", "success");
+    } catch (err) {
+      console.error("Error al guardar servicio:", err);
+      toast((err as Error)?.message || "Error al guardar servicio", "error");
     }
-    setEditing(null);
-    cacheClear("services");
-    refresh();
-    toast("Servicio guardado correctamente", "success");
   }
 
   async function remove(id: string) {
@@ -71,7 +76,7 @@ export default function Services() {
       toast("Servicio eliminado", "success");
     } catch (err) {
       console.error("Error al eliminar servicio:", err);
-      toast("Error al eliminar servicio", "error");
+      toast((err as Error)?.message || "Error al eliminar servicio", "error");
     }
   }
 

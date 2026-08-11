@@ -79,7 +79,7 @@ export default function Users() {
       toast("Usuario guardado correctamente", "success");
     } catch (err) {
       console.error("Error al guardar usuario:", err);
-      toast("Error al guardar usuario", "error");
+      toast((err as Error)?.message || "Error al guardar usuario", "error");
     } finally { setSubmitting(false); }
   }
 
@@ -90,7 +90,7 @@ export default function Users() {
       toast("Usuario eliminado", "success");
     } catch (err) {
       console.error("Error al eliminar usuario:", err);
-      toast("Error al eliminar usuario", "error");
+      toast((err as Error)?.message || "Error al eliminar usuario", "error");
     }
   }
 

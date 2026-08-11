@@ -93,7 +93,7 @@ export default function Suppliers() {
       toast("Proveedor guardado correctamente", "success");
     } catch (err) {
       console.error("Error al guardar proveedor:", err);
-      toast("Error al guardar proveedor", "error");
+      toast((err as Error)?.message || "Error al guardar proveedor", "error");
     } finally {
       setSubmitting(false);
     }
@@ -107,7 +107,7 @@ export default function Suppliers() {
       toast("Proveedor eliminado", "success");
     } catch (err) {
       console.error("Error al eliminar proveedor:", err);
-      toast("Error al eliminar proveedor", "error");
+      toast((err as Error)?.message || "Error al eliminar proveedor", "error");
     }
   }
 

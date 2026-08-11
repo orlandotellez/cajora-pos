@@ -6,6 +6,7 @@ import { suppliersApi } from "@/api/suppliers";
 import type { Supplier } from "@/api";
 import { cacheClear } from "@/lib/simple-cache";
 import { useCrudPagination } from "@/hooks/useCrudPagination";
+import { useToast } from "@/components/common/ui/Toast";
 import { AdjustStockModal } from "@/components/pages/inventory/AdjustStockModal";
 import { MovementDetailModal } from "@/components/pages/inventory/MovementDetailModal";
 import { BatchMovementModal } from "@/components/pages/inventory/BatchMovementModal";
@@ -25,6 +26,7 @@ type AdjustState = {
 } | null;
 
 export default function Inventory() {
+  const { toast } = useToast();
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryId, setCategoryId] = useState("");
   const [stockFilter, setStockFilter] = useState<"" | "low" | "out">("");
@@ -127,6 +129,7 @@ export default function Inventory() {
       setBatchDetail(detail);
     } catch (err) {
       console.error("Error al cargar detalle", err);
+      toast((err as Error)?.message || "Error al cargar el detalle del lote", "error");
     }
   }
 

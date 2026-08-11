@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { inventoryApi } from "@/api/inventory";
+import { useToast } from "@/components/common/ui/Toast";
 import { UNIT_TYPE_LABELS } from "@/lib/constants";
 import styles from "./AdjustStockModal.module.css";
 
@@ -17,6 +18,7 @@ interface AdjustStockModalProps {
 }
 
 export function AdjustStockModal({ adjust, onClose, onApplied }: AdjustStockModalProps) {
+  const { toast } = useToast();
   const [type, setType] = useState<"entrada" | "salida" | "ajuste">("entrada");
   const [qty, setQty] = useState(0);
   const [note, setNote] = useState("");
@@ -37,6 +39,7 @@ export function AdjustStockModal({ adjust, onClose, onApplied }: AdjustStockModa
       onClose();
     } catch (err) {
       console.error("Error al ajustar inventario", err);
+      toast((err as Error)?.message || "Error al ajustar inventario", "error");
     } finally {
       setSubmitting(false);
     }
