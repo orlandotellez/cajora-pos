@@ -1,31 +1,17 @@
 import { readApiUrl } from "@/lib/api-config";
 import { crossFetch } from "@/lib/fetch";
+import { extractErrorCode, resolveErrorMessage } from "./error-messages";
 
 export class ApiError extends Error {
   status: number;
-  data: unknown;
+  code: string;
 
-  constructor(status: number, data: unknown) {
-    const message = extractErrorMessage(data) ?? `HTTP ${status}`;
+  constructor(status: number, code: string, message: string) {
     super(message);
     this.name = "ApiError";
     this.status = status;
-    this.data = data;
+    this.code = code;
   }
-}
-
-function extractErrorMessage(data: unknown): string | null {
-  if (typeof data === "object" && data !== null) {
-    // Object with message field
-    if ("message" in data && typeof (data as Record<string, unknown>).message === "string") {
-      return (data as Record<string, unknown>).message as string;
-    }
-    // Array of Zod errors — grab first message
-    if (Array.isArray(data) && data.length > 0 && "message" in data[0]) {
-      return String(data[0].message);
-    }
-  }
-  return null;
 }
 
 export function getAuthToken(): string | null {
@@ -34,6 +20,17 @@ export function getAuthToken(): string | null {
   } catch {
     return null;
   }
+}
+
+// 403 con este code (store.guard) = JWT sin storeId → se fuerza re-login limpio.
+const STORE_CONTEXT_REQUIRED = "STORE_CONTEXT_REQUIRED";
+
+function clearAuthSession() {
+  localStorage.removeItem("auth-token");
+  localStorage.removeItem("auth-refresh-token");
+  localStorage.removeItem("auth-user");
+  localStorage.removeItem("auth-store");
+  window.location.href = "/auth";
 }
 
 async function request<T>(
@@ -70,30 +67,29 @@ async function request<T>(
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
   } catch (err) {
-    // El error real desde Rust (o desde fetch del browser)
+    // El detalle real (Rust `http_request` o fetch del browser) solo va al log —
+    // NUNCA al usuario (puede traer IPs, URLs, ECONNREFUSED, etc.).
     console.error(`[API] ${method} ${path} failed:`, err);
-    throw new ApiError(0, {
-      message: typeof err === "string" ? err : "Error al conectar con el servidor",
-    });
+    throw new ApiError(0, "NETWORK_ERROR", resolveErrorMessage(0, null));
   }
 
   if (res.status === 204) return undefined as T;
 
-  const data = await res.json();
+  // Body no-JSON (páginas de error de proxies, etc.) no debe crashear.
+  const data = await res.json().catch(() => null);
 
   if (!res.ok) {
-    // Si el backend dice "Store context required" (403), el JWT no tiene storeId.
-    // Forzamos re-login limpio.
-    if (res.status === 403) {
-      localStorage.removeItem("auth-token");
-      localStorage.removeItem("auth-refresh-token");
-      localStorage.removeItem("auth-user");
-      localStorage.removeItem("auth-store");
-      window.location.href = "/auth";
+    const code = extractErrorCode(data) ?? (res.status === 403 ? "FORBIDDEN" : "UNKNOWN");
+
+    // 403 con code STORE_CONTEXT_REQUIRED (store.guard): el JWT no tiene storeId.
+    // Se fuerza un re-login limpio. Cualquier OTRO 403 (p.ej. FORBIDDEN de
+    // adminGuard) propaga el ApiError sin logout — el usuario ve "Acceso denegado".
+    if (res.status === 403 && code === STORE_CONTEXT_REQUIRED) {
+      clearAuthSession();
       return undefined as T;
     }
 
-    throw new ApiError(res.status, data);
+    throw new ApiError(res.status, code, resolveErrorMessage(res.status, data, code));
   }
 
   return data as T;
