@@ -18,6 +18,17 @@ import styles from "./Inventory.module.css";
 import { Header } from "@/components/pages/inventory/Header";
 import { InventoryProductosSection } from "@/components/pages/inventory/InventoryProductosSection";
 
+type InventoryTab = "inventory" | "movements" | "batches";
+
+const TAB_ORDER: InventoryTab[] = ["inventory", "movements", "batches"];
+const TAB_LABELS: Record<InventoryTab, string> = {
+  inventory: "Inventario",
+  movements: "Movimientos",
+  batches: "Movimientos agrupados",
+};
+const TAB_ID = (t: InventoryTab) => `inventory-tab-${t}`;
+const PANEL_ID = (t: InventoryTab) => `inventory-panel-${t}`;
+
 type AdjustState = {
   id: string;
   name: string;
@@ -28,6 +39,7 @@ type AdjustState = {
 
 export default function Inventory() {
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState<InventoryTab>("inventory");
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryId, setCategoryId] = useState("");
   const [stockFilter, setStockFilter] = useState<"" | "low" | "out">("");
@@ -89,6 +101,7 @@ export default function Inventory() {
     total: movementsTotal,
     page: movementPage,
     totalPages: movementsTotalPages,
+    loading: movementsLoading,
     setPage: setMovementPage,
     refreshing: refreshingMovements,
     refreshImmediate: refreshMovements,
@@ -110,6 +123,7 @@ export default function Inventory() {
     total: batchesTotal,
     page: batchPage,
     totalPages: batchesTotalPages,
+    loading: batchesLoading,
     setPage: setBatchPage,
     refreshing: refreshingBatches,
     refreshImmediate: refreshBatches,
@@ -166,53 +180,109 @@ export default function Inventory() {
     refetchAll();
   }
 
+  function onTabsKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft" && e.key !== "Home" && e.key !== "End") {
+      return;
+    }
+    e.preventDefault();
+    const current = TAB_ORDER.indexOf(activeTab);
+    let next = current;
+    if (e.key === "ArrowRight") next = (current + 1) % TAB_ORDER.length;
+    else if (e.key === "ArrowLeft") next = (current - 1 + TAB_ORDER.length) % TAB_ORDER.length;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = TAB_ORDER.length - 1;
+
+    const tab = TAB_ORDER[next];
+    setActiveTab(tab);
+    requestAnimationFrame(() => {
+      document.getElementById(TAB_ID(tab))?.focus();
+    });
+  }
+
   return (
     <div className={styles.page}>
       <Header setBatchModalOpen={() => setBatchModalOpen(true)} />
 
-      <InventoryProductosSection
-        products={products}
-        total={total}
-        page={page}
-        totalPages={totalPages}
-        loading={loading}
-        q={q}
-        setSearch={setSearch}
-        setPage={setPage}
-        categories={categories}
-        categoryId={categoryId}
-        setCategoryId={setCategoryId}
-        stockFilter={stockFilter}
-        setStockFilter={setStockFilter}
-        lowStockProducts={lowStockProducts}
-        onEdit={handleEdit}
-        onAdjust={handleAdjust}
-        refreshing={refreshingProducts}
-      />
+      <div
+        className={styles.tabs}
+        role="tablist"
+        aria-label="Secciones de inventario"
+        onKeyDown={onTabsKeyDown}
+      >
+        {TAB_ORDER.map((tab) => (
+          <button
+            key={tab}
+            id={TAB_ID(tab)}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab}
+            aria-controls={PANEL_ID(tab)}
+            tabIndex={activeTab === tab ? 0 : -1}
+            className={`${styles.tab}${activeTab === tab ? ` ${styles.tabActive}` : ""}`}
+            onClick={() => setActiveTab(tab)}
+          >
+            {TAB_LABELS[tab]}
+          </button>
+        ))}
+      </div>
 
-      <section className={styles.movementSection}>
-        <h2 className={styles.movementSectionTitle}>Historial de movimientos</h2>
-        <MovementHistoryTable
-          movements={movements}
-          page={movementPage}
-          totalPages={movementsTotalPages}
-          onPageChange={setMovementPage}
-          onSelect={setSelectedMovement}
-          refreshing={refreshingMovements}
-        />
-      </section>
+      <div
+        id={PANEL_ID(activeTab)}
+        role="tabpanel"
+        aria-labelledby={TAB_ID(activeTab)}
+      >
+        {activeTab === "inventory" && (
+          <InventoryProductosSection
+            products={products}
+            total={total}
+            page={page}
+            totalPages={totalPages}
+            loading={loading}
+            q={q}
+            setSearch={setSearch}
+            setPage={setPage}
+            categories={categories}
+            categoryId={categoryId}
+            setCategoryId={setCategoryId}
+            stockFilter={stockFilter}
+            setStockFilter={setStockFilter}
+            lowStockProducts={lowStockProducts}
+            onEdit={handleEdit}
+            onAdjust={handleAdjust}
+            refreshing={refreshingProducts}
+          />
+        )}
 
-      <section className={styles.movementSection}>
-        <h2 className={styles.movementSectionTitle}>Historial de movimientos agrupados</h2>
-        <BatchHistoryTable
-          batches={batches}
-          page={batchPage}
-          totalPages={batchesTotalPages}
-          onPageChange={setBatchPage}
-          onSelect={openBatchDetail}
-          refreshing={refreshingBatches}
-        />
-      </section>
+        {activeTab === "movements" && (
+          <section className={styles.movementSection}>
+            <h2 className={styles.movementSectionTitle}>Historial de movimientos</h2>
+            <MovementHistoryTable
+              movements={movements}
+              page={movementPage}
+              totalPages={movementsTotalPages}
+              loading={movementsLoading}
+              onPageChange={setMovementPage}
+              onSelect={setSelectedMovement}
+              refreshing={refreshingMovements}
+            />
+          </section>
+        )}
+
+        {activeTab === "batches" && (
+          <section className={styles.movementSection}>
+            <h2 className={styles.movementSectionTitle}>Historial de movimientos agrupados</h2>
+            <BatchHistoryTable
+              batches={batches}
+              page={batchPage}
+              totalPages={batchesTotalPages}
+              loading={batchesLoading}
+              onPageChange={setBatchPage}
+              onSelect={openBatchDetail}
+              refreshing={refreshingBatches}
+            />
+          </section>
+        )}
+      </div>
 
       {adjust && (
         <AdjustStockModal

@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Eye } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Eye } from "lucide-react";
 import type { BatchResponse } from "@/api/inventory";
 import { RefreshBadge } from "@/components/common/RefreshBadge";
 import styles from "./BatchHistoryTable.module.css";
@@ -7,12 +7,13 @@ interface BatchHistoryTableProps {
   batches: BatchResponse[];
   page: number;
   totalPages: number;
+  loading?: boolean;
   onPageChange: (page: number) => void;
   onSelect: (batch: BatchResponse) => void;
   refreshing?: boolean;
 }
 
-export function BatchHistoryTable({ batches, page, totalPages, onPageChange, onSelect, refreshing }: BatchHistoryTableProps) {
+export function BatchHistoryTable({ batches, page, totalPages, loading = false, onPageChange, onSelect, refreshing }: BatchHistoryTableProps) {
   return (
     <div className={styles.tableCard}>
       <RefreshBadge refreshing={refreshing} />
@@ -82,6 +83,14 @@ export function BatchHistoryTable({ batches, page, totalPages, onPageChange, onS
           >
             <ChevronRight size={16} />
           </button>
+          {loading && (
+            <Loader2
+              size={14}
+              className={styles.spinner}
+              aria-label="Cargando"
+              role="status"
+            />
+          )}
         </div>
       )}
     </div>

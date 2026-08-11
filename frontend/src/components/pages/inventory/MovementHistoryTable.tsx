@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, ArrowDownRight, ArrowUpRight, RefreshCw, Eye } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, ArrowDownRight, ArrowUpRight, RefreshCw, Eye } from "lucide-react";
 import type { InventoryMovement } from "@/api/inventory";
 import { MOVEMENT_TYPES } from "@/lib/constants";
 import { RefreshBadge } from "@/components/common/RefreshBadge";
@@ -8,12 +8,13 @@ interface MovementHistoryTableProps {
   movements: InventoryMovement[];
   page: number;
   totalPages: number;
+  loading?: boolean;
   onPageChange: (page: number) => void;
   onSelect: (movement: InventoryMovement) => void;
   refreshing?: boolean;
 }
 
-export function MovementHistoryTable({ movements, page, totalPages, onPageChange, onSelect, refreshing }: MovementHistoryTableProps) {
+export function MovementHistoryTable({ movements, page, totalPages, loading = false, onPageChange, onSelect, refreshing }: MovementHistoryTableProps) {
   return (
     <div className={styles.tableCard}>
       <RefreshBadge refreshing={refreshing} />
@@ -24,7 +25,6 @@ export function MovementHistoryTable({ movements, page, totalPages, onPageChange
               <th className={styles.thLeft}>Producto</th>
               <th className={styles.thLeft}>Tipo</th>
               <th className={styles.thRight}>Cantidad</th>
-              <th className={styles.thLeft}>Nota</th>
               <th className={styles.thRight}>Fecha</th>
               <th className={styles.thAction}></th>
             </tr>
@@ -50,9 +50,6 @@ export function MovementHistoryTable({ movements, page, totalPages, onPageChange
                   <td className={`${styles.tdRight} ${styles.movementQty}`}>
                     {m.movement_type === "entrada" || m.movement_type === "venta" ? "+" : m.movement_type === "salida" ? "−" : ""}
                     {m.quantity}
-                  </td>
-                  <td className={styles.tdLeft}>
-                    <span className={styles.movementNote}>{m.note ?? "—"}</span>
                   </td>
                   <td className={styles.tdRightMuted}>
                     {new Date(m.created_at).toLocaleString("es-MX", {
@@ -96,6 +93,14 @@ export function MovementHistoryTable({ movements, page, totalPages, onPageChange
           >
             <ChevronRight size={16} />
           </button>
+          {loading && (
+            <Loader2
+              size={14}
+              className={styles.spinner}
+              aria-label="Cargando"
+              role="status"
+            />
+          )}
         </div>
       )}
     </div>

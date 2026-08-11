@@ -132,23 +132,21 @@
 }
 
 .pageBtn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 32px;
-  height: 32px;
-  padding: 0 8px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--background);
-  color: var(--foreground);
-  font-size: 13px;
-  font-family: inherit;
+  background: none;
+  border: 1px solid transparent;
   cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--muted-foreground, #6b7280);
+  transition: all 0.15s;
+  min-width: 32px;
+  text-align: center;
 }
 
 .pageBtn:hover:not(:disabled) {
-  background: var(--accent);
+  background: var(--accent, #f3f4f6);
+  border-color: var(--border, #e5e7eb);
 }
 
 .pageBtn:disabled {
@@ -157,7 +155,21 @@
 }
 
 .pageActive {
-  background: var(--foreground);
-  color: var(--background);
-  border-color: var(--foreground);
+  background: var(--primary, #3b82f6) !important;
+  color: #000 !important;
+  border-color: var(--primary, #3b82f6) !important;
+}
+
+.spinner {
+  margin-left: 6px;
+  opacity: 0.55;
+  color: var(--muted-foreground, #6b7280);
+  animation: spin 0.9s linear infinite;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
