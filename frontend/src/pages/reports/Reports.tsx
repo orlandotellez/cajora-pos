@@ -1,74 +1,72 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { salesApi, type Sale, type SaleReport } from "@/api/sales";
+import { salesApi, type SaleReport } from "@/api/sales";
 import { cacheClear, cacheGet, cacheSet, cacheKey } from "@/lib/simple-cache";
 import { subscribeRealtime } from "@/lib/realtime";
-import { Header, type Range } from "@/components/pages/reports/Header";
+import { rangeStart, rangeEnd, rangeLabel, type Range } from "@/lib/date-range";
+import { Header } from "@/components/pages/reports/Header";
 import { ReportStats } from "@/components/pages/reports/ReportStats";
 import { CashCloseCard } from "@/components/pages/reports/CashCloseCard";
 import { TopProductsCard } from "@/components/pages/reports/TopProductsCard";
 import { ChartsSection } from "@/components/pages/reports/ChartsSection";
-import { RecentSalesTable } from "@/components/pages/reports/RecentSalesTable";
 import { ReportsSkeleton } from "@/components/pages/reports/ReportsSkeleton";
-import { PAGE_LIMIT as SALES_LIMIT } from "@/lib/constants";
 import styles from "./Reports.module.css";
 
-function rangeStart(r: Range) {
-  const d = new Date();
-  if (r === "today") { d.setHours(0, 0, 0, 0); return d; }
-  if (r === "week") { d.setDate(d.getDate() - 7); return d; }
-  d.setDate(d.getDate() - 30);
-  return d;
+// Periodo inmediatamente anterior de igual duración (para la comparativa).
+function prevRange(r: Range) {
+  const start = rangeStart(r);
+  const end = rangeEnd(r);
+  const span = end.getTime() - start.getTime();
+  return {
+    start: new Date(start.getTime() - span),
+    end: new Date(end.getTime() - span),
+  };
 }
 
-function rangeEnd(r: Range) {
-  const d = new Date();
-  if (r === "today") { d.setHours(23, 59, 59, 999); return d; }
-  return d;
-}
+const POLL_INTERVAL_MS = 60_000;
 
 export default function Reports() {
   const [range, setRange] = useState<Range>("today");
   const [report, setReport] = useState<SaleReport | null>(() => {
-    const cached = cacheGet<{ report: SaleReport; sales: Sale[] }>(cacheKey("reports", "today"));
+    const cached = cacheGet<{ report: SaleReport; prevReport: SaleReport | null }>(
+      cacheKey("reports", "today"),
+    );
     return cached?.report ?? null;
   });
-  const [sales, setSales] = useState<Sale[]>(() => {
-    const cached = cacheGet<{ report: SaleReport; sales: Sale[] }>(cacheKey("reports", "today"));
-    return cached?.sales ?? [];
+  const [prevReport, setPrevReport] = useState<SaleReport | null>(() => {
+    const cached = cacheGet<{ report: SaleReport; prevReport: SaleReport | null }>(
+      cacheKey("reports", "today"),
+    );
+    return cached?.prevReport ?? null;
   });
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [salesPage, setSalesPage] = useState(1);
-  const [salesTotal, setSalesTotal] = useState(0);
-
-  const salesTotalPages = Math.max(1, Math.ceil(salesTotal / SALES_LIMIT));
 
   // Contador de secuencia: descarta respuestas obsoletas (mismo guard que el hook).
   const loadSeqRef = useRef(0);
 
-  const loadData = useCallback(async (r: Range, sp: number, silent = false) => {
+  const loadData = useCallback(async (r: Range, silent = false) => {
     const start = rangeStart(r).toISOString();
     const end = rangeEnd(r).toISOString();
-    const key = cacheKey("reports", r, String(sp));
+    const prev = prevRange(r);
+    const key = cacheKey("reports", r);
     const seq = ++loadSeqRef.current;
-    const cached = cacheGet<{ report: SaleReport; sales: Sale[]; total: number }>(key);
+    const cached = cacheGet<{ report: SaleReport; prevReport: SaleReport | null }>(key);
 
     if (cached) {
       if (seq !== loadSeqRef.current) return; // respuesta obsoleta
-      setReport(cached.report); setSales(cached.sales); setSalesTotal(cached.total);
+      setReport(cached.report);
+      setPrevReport(cached.prevReport);
     }
     if (!silent) setLoading(!cached);
 
     try {
-      const [rep, list] = await Promise.all([
+      const [rep, prevRep] = await Promise.all([
         salesApi.report({ start_date: start, end_date: end }),
-        salesApi.list({ start_date: start, end_date: end, page: sp, limit: SALES_LIMIT }),
+        salesApi.report({ start_date: prev.start.toISOString(), end_date: prev.end.toISOString() }),
       ]);
       if (seq !== loadSeqRef.current) return; // respuesta obsoleta
       setReport(rep);
-      setSales(list.sales);
-      setSalesTotal(list.total);
-      cacheSet(key, { report: rep, sales: list.sales, total: list.total });
+      setPrevReport(prevRep);
+      cacheSet(key, { report: rep, prevReport: prevRep });
     } catch (err) {
       console.error("Error al cargar reportes:", err);
     } finally {
@@ -77,29 +75,20 @@ export default function Reports() {
   }, []);
 
   useEffect(() => {
-    void loadData(range, salesPage);
-  }, [range, salesPage, loadData]);
+    void loadData(range);
+  }, [range, loadData]);
 
-  // Polling silencioso: mantiene el reporte fresco cuando otro usuario registra
-  // ventas. Bypass del cache, se pausa con la pestaña oculta y refresca al
-  // instante al volver a ser visible.
   const loadDataRef = useRef(loadData);
   useEffect(() => { loadDataRef.current = loadData; }, [loadData]);
 
-  // Tiempo real: si otro cajero registra una venta, refrescar el reporte al
-  // instante (el polling de 60s queda como respaldo si el SSE falla).
   const rangeRef = useRef(range);
-  const salesPageRef = useRef(salesPage);
   useEffect(() => { rangeRef.current = range; }, [range]);
-  useEffect(() => { salesPageRef.current = salesPage; }, [salesPage]);
 
   useEffect(() => {
     return subscribeRealtime((event) => {
       if (event !== "sale.created") return;
       cacheClear("reports");
-      setRefreshing(true);
-      void loadDataRef.current(rangeRef.current, salesPageRef.current, true)
-        .finally(() => setRefreshing(false));
+      void loadDataRef.current(rangeRef.current, true);
     });
   }, []);
 
@@ -109,10 +98,10 @@ export default function Reports() {
       if (inFlight || document.hidden) return;
       inFlight = true;
       cacheClear("reports");
-      void loadDataRef.current(range, salesPage, true).finally(() => { inFlight = false; });
+      void loadDataRef.current(range, true).finally(() => { inFlight = false; });
     };
 
-    const intervalId = window.setInterval(tick, 10_000);
+    const intervalId = window.setInterval(tick, POLL_INTERVAL_MS);
     const onVisibilityChange = () => { if (!document.hidden) tick(); };
     document.addEventListener("visibilitychange", onVisibilityChange);
 
@@ -120,9 +109,7 @@ export default function Reports() {
       window.clearInterval(intervalId);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [range, salesPage]);
-
-  useEffect(() => { setSalesPage(1); }, [range]);
+  }, [range]);
 
   const hasData = report !== null;
 
@@ -138,26 +125,14 @@ export default function Reports() {
     <div className={styles.page}>
       <Header range={range} onRangeChange={setRange} />
 
-      <ReportStats report={report} />
+      <ReportStats report={report} prevReport={prevReport} />
 
-      <ChartsSection report={report} />
+      <ChartsSection report={report} range={range} />
 
       <div className={styles.twoCol}>
-        <CashCloseCard
-          report={report}
-          rangeLabel={range === "today" ? "hoy" : range === "week" ? "7 días" : "30 días"}
-        />
+        <CashCloseCard report={report} rangeLabel={rangeLabel(range)} />
         <TopProductsCard report={report} />
       </div>
-
-      <RecentSalesTable
-        sales={sales}
-        loading={loading}
-        refreshing={refreshing}
-        page={salesPage}
-        totalPages={salesTotalPages}
-        onPageChange={setSalesPage}
-      />
     </div>
   );
 }

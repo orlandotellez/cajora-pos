@@ -20,7 +20,7 @@
 
 .statCard {
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 5px;
   background: var(--card);
   padding: 16px;
 }
@@ -48,38 +48,6 @@
   border-radius: 8px;
   background: var(--card);
   padding: 20px;
-}
-
-.recentCard {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--card);
-  overflow: hidden;
-}
-
-@media (max-width: 768px) {
-  .recentCard {
-    margin-inline: 24px;
-  }
-}
-
-.tableWrapper {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.table {
-  width: 100%;
-  font-size: 14px;
-  border-collapse: collapse;
-}
-
-.table th {
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--muted-foreground);
-  font-weight: 500;
 }
 
 .skeletonBar {
@@ -111,12 +79,6 @@
   width: 100%;
   height: 14px;
   margin-bottom: 8px;
-}
-
-.skeleton-recent-title {
-  width: 30%;
-  height: 16px;
-  margin-bottom: 16px;
 }
 
 @keyframes pulse {

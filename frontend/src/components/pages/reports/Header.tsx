@@ -1,6 +1,7 @@
+import type { Range } from "@/lib/date-range";
 import styles from "./Header.module.css";
 
-export type Range = "today" | "week" | "month";
+export type { Range };
 
 interface HeaderProps {
   range: Range;
@@ -24,8 +25,10 @@ export function Header({ range, onRangeChange, loading = false }: HeaderProps) {
           className={styles.select}
         >
           <option value="today">Hoy</option>
-          <option value="week">Últimos 7 días</option>
-          <option value="month">Últimos 30 días</option>
+          <option value="7d">Últimos 7 días</option>
+          <option value="30d">Últimos 30 días</option>
+          <option value="4w">Últimas 4 semanas</option>
+          <option value="1y">Último año</option>
         </select>
       )}
     </header>

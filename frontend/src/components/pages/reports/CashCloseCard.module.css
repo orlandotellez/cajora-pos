@@ -1,7 +1,7 @@
 .close-card {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 5px;
   padding: 20px;
 }
 
@@ -9,6 +9,42 @@
   font-size: 14px;
   font-weight: 600;
   margin: 0 0 16px;
+}
+
+.close-card-donut {
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.close-card-total-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.close-card-total-center-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted-foreground);
+}
+
+.close-card-total-center-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+.close-card-empty {
+  padding: 32px 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted-foreground);
 }
 
 .close-card-body {
@@ -25,7 +61,17 @@
 }
 
 .close-card-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   color: var(--muted-foreground);
+}
+
+.close-card-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  display: inline-block;
 }
 
 .close-card-divider {

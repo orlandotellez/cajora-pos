@@ -14,7 +14,7 @@
 .stats-card {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 5px;
   padding: 16px 20px;
 }
 
@@ -29,4 +29,22 @@
 .stats-value {
   font-size: 22px;
   font-weight: 700;
+}
+
+.stats-delta {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.stats-delta-up {
+  color: var(--success, #22c55e);
+}
+
+.stats-delta-down {
+  color: var(--destructive, #ef4444);
+}
+
+.stats-delta-neutral {
+  color: var(--muted-foreground);
 }

@@ -1,12 +1,5 @@
-import TableSkeleton from "@/components/common/TableSkeleton";
 import { Header, type Range } from "./Header";
 import styles from "./ReportsSkeleton.module.css";
-
-const SKELETON_COLS = [
-  { width: "50%" },
-  { width: "30%" },
-  { width: "20%", align: "right" as const },
-];
 
 interface ReportsSkeletonProps {
   range: Range;
@@ -42,23 +35,6 @@ export function ReportsSkeleton({ range, onRangeChange }: ReportsSkeletonProps) 
         </div>
       </div>
 
-      <div className={styles.recentCard}>
-        <div className={`${styles.skeletonBar} ${styles["skeleton-recent-title"]}`} />
-        <div className={styles.tableWrapper}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Método</th>
-                <th>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              <TableSkeleton cols={SKELETON_COLS} rows={5} />
-            </tbody>
-          </table>
-        </div>
-      </div>
     </>
   );
 }

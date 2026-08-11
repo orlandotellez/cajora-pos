@@ -1,22 +1,17 @@
-.select {
-  height: 40px;
-  padding: 8px 36px 8px 12px;
-  border: 1px solid var(--input);
-  border-radius: 6px;
-  background: var(--background);
-  color: var(--foreground);
-  font-size: 14px;
-  outline: none;
-  min-width: 160px;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 16px;
+.chartsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-inline: 24px;
 }
 
-.select:focus {
-  border-color: var(--ring);
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--foreground);
+  margin: 0;
 }
 
 .cardTitle {
@@ -40,7 +35,7 @@
 
 .chartCard {
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 5px;
   background: var(--card);
   padding: 20px;
 }
@@ -55,6 +50,108 @@
 
 .chartHeader .cardTitle {
   margin-bottom: 0;
+}
+
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.segmentedBtn {
+  appearance: none;
+  background: transparent;
+  border: none;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.segmentedBtn:hover {
+  color: var(--foreground);
+}
+
+.segmentedActive {
+  background: var(--foreground);
+  color: var(--background);
+}
+
+.chartTooltip {
+  background: #1f2937;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 10px 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chartTooltipTitle {
+  font-weight: 600;
+  color: #f9fafb;
+  margin-bottom: 2px;
+}
+
+.chartTooltipRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: #9ca3af;
+}
+
+.chartTooltipRow strong {
+  color: #f9fafb;
+  font-variant-numeric: tabular-nums;
+}
+
+.categoryLegend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.categoryLegendRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.categoryLegendName {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--foreground);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.categoryLegendDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.categoryLegendValue {
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+  font-weight: 500;
+  flex-shrink: 0;
 }
 
 .chartEmpty {
