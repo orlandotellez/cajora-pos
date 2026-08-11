@@ -1,7 +1,17 @@
 import { NotFoundError, BadRequestError } from "@/core/errors/AppError"
 import { prisma } from "@/config/prisma"
 import type { ISaleRepository } from "../domain/sales.interface"
-import type { ISaleResponse, ISaleListResponse, ISaleReport, IRevenueTrendItem, IRevenueTrendQuery } from "../domain/sales.types"
+import type {
+  ISaleResponse,
+  ISaleListResponse,
+  ISaleReport,
+  IRevenueTrendItem,
+  IRevenueTrendQuery,
+  IRevenueByHourItem,
+  IRevenueByHourQuery,
+  IRevenueByCategoryItem,
+  IRevenueByCategoryQuery,
+} from "../domain/sales.types"
 import type { CreateSaleData, ISaleEntity, ISaleItemEntity, ISaleServiceEntity, ISaleServiceProductEntity } from "../domain/sales.entities"
 
 /** Extended sale entity that includes nested item/service relations */
@@ -243,6 +253,24 @@ export const createSaleService = (repository: ISaleRepository) => ({
       startDate: new Date(params.start_date),
       endDate: new Date(params.end_date),
       groupBy: params.group_by,
+      storeId: params.store_id,
+    })
+    return items
+  },
+
+  getRevenueByHour: async (params: IRevenueByHourQuery): Promise<IRevenueByHourItem[]> => {
+    const items = await repository.getRevenueByHour({
+      startDate: new Date(params.start_date),
+      endDate: new Date(params.end_date),
+      storeId: params.store_id,
+    })
+    return items
+  },
+
+  getRevenueByCategory: async (params: IRevenueByCategoryQuery): Promise<IRevenueByCategoryItem[]> => {
+    const items = await repository.getRevenueByCategory({
+      startDate: new Date(params.start_date),
+      endDate: new Date(params.end_date),
       storeId: params.store_id,
     })
     return items

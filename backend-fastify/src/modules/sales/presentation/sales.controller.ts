@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify"
 import { createSaleService } from "../application/sales.service"
 import { SaleRepository } from "../infrastructure/sales.prisma.repository"
-import { CreateSaleDtoSchema, SaleQuerySchema, ReportQuerySchema, RevenueTrendQuerySchema } from "./sales.dto"
+import { CreateSaleDtoSchema, SaleQuerySchema, ReportQuerySchema, RevenueTrendQuerySchema, RevenueByHourQuerySchema, RevenueByCategoryQuerySchema } from "./sales.dto"
 import { UnauthorizedError } from "@/core/errors/AppError"
 import { handleSseConnection, sseBroadcast } from "@/config/sse"
 
@@ -60,6 +60,20 @@ export const salesController = {
     const storeId = request.storeId
     const query = RevenueTrendQuerySchema.parse(request.query)
     const result = await saleService.getRevenueTrend({ ...query, store_id: storeId! })
+    return reply.status(200).send(result)
+  },
+
+  revenueByHour: async (request: FastifyRequest, reply: FastifyReply) => {
+    const storeId = request.storeId
+    const query = RevenueByHourQuerySchema.parse(request.query)
+    const result = await saleService.getRevenueByHour({ ...query, store_id: storeId! })
+    return reply.status(200).send(result)
+  },
+
+  revenueByCategory: async (request: FastifyRequest, reply: FastifyReply) => {
+    const storeId = request.storeId
+    const query = RevenueByCategoryQuerySchema.parse(request.query)
+    const result = await saleService.getRevenueByCategory({ ...query, store_id: storeId! })
     return reply.status(200).send(result)
   },
 }

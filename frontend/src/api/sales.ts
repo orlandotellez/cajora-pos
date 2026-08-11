@@ -64,6 +64,18 @@ export interface RevenueTrendItem {
   revenue: number;
 }
 
+export interface RevenueByHourItem {
+  hour: number;
+  revenue: number;
+  sales: number;
+}
+
+export interface RevenueByCategoryItem {
+  category_name: string;
+  revenue: number;
+  quantity: number;
+}
+
 export interface CreateSaleItemPayload {
   product_id: string;
   product_name: string;
@@ -125,4 +137,10 @@ export const salesApi = {
 
   revenueTrend: (params: { start_date: string; end_date: string; group_by: "day" | "week" | "month" }) =>
     api.get<RevenueTrendItem[]>("/sales/revenue-trend", params as Record<string, string | number | boolean | undefined>),
+
+  revenueByHour: (params: { start_date: string; end_date: string }) =>
+    api.get<RevenueByHourItem[]>("/sales/revenue-by-hour", params as Record<string, string | number | boolean | undefined>),
+
+  revenueByCategory: (params: { start_date: string; end_date: string }) =>
+    api.get<RevenueByCategoryItem[]>("/sales/revenue-by-category", params as Record<string, string | number | boolean | undefined>),
 };

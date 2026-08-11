@@ -3,7 +3,7 @@ import { salesController } from "./sales.controller"
 import { authGuard } from "@/core/guard/auth.guard"
 import { storeGuard } from "@/core/guard/store.guard"
 import { toJsonSchema } from "@/http/swagger-schema"
-import { CreateSaleDtoSchema, SaleQuerySchema, ReportQuerySchema, RevenueTrendQuerySchema } from "./sales.dto"
+import { CreateSaleDtoSchema, SaleQuerySchema, ReportQuerySchema, RevenueTrendQuerySchema, RevenueByHourQuerySchema, RevenueByCategoryQuerySchema } from "./sales.dto"
 
 const TAGS = ["Sales"]
 
@@ -22,6 +22,16 @@ export const salesRoutes = async (fastify: FastifyInstance, _opts: FastifyPlugin
     schema: { tags: TAGS, querystring: toJsonSchema(RevenueTrendQuerySchema) },
     preHandler: [authGuard, storeGuard],
   }, salesController.revenueTrend)
+
+  fastify.get("/revenue-by-hour", {
+    schema: { tags: TAGS, querystring: toJsonSchema(RevenueByHourQuerySchema) },
+    preHandler: [authGuard, storeGuard],
+  }, salesController.revenueByHour)
+
+  fastify.get("/revenue-by-category", {
+    schema: { tags: TAGS, querystring: toJsonSchema(RevenueByCategoryQuerySchema) },
+    preHandler: [authGuard, storeGuard],
+  }, salesController.revenueByCategory)
 
   fastify.get("/:id", {
     schema: { tags: TAGS },

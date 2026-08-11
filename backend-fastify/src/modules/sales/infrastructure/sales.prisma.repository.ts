@@ -408,4 +408,62 @@ export const SaleRepository: ISaleRepository = {
       revenue: Number(r.revenue),
     }))
   },
+
+  async getRevenueByHour(params) {
+    const rows = await prisma.$queryRawUnsafe<Array<{ hour: number; revenue: number; sales: number }>>(
+      `SELECT EXTRACT(HOUR FROM created_at AT TIME ZONE 'UTC')::int as hour,
+              CAST(SUM(total) AS DECIMAL(10,2)) as revenue,
+              COUNT(*)::int as sales
+       FROM sales
+       WHERE store_id = $1::text
+         AND created_at >= $2::timestamptz AND created_at <= $3::timestamptz
+       GROUP BY hour
+       ORDER BY hour ASC`,
+      params.storeId,
+      params.startDate,
+      params.endDate,
+    )
+
+    return rows.map((r) => ({
+      hour: Number(r.hour),
+      revenue: Number(r.revenue),
+      sales: Number(r.sales),
+    }))
+  },
+
+  async getRevenueByCategory(params) {
+    const rows = await prisma.$queryRawUnsafe<Array<{ category_name: string | null; revenue: number; quantity: number }>>(
+      `SELECT COALESCE(c.name, 'Sin categoría') as category_name,
+              CAST(SUM(x.line_total) AS DECIMAL(10,2)) as revenue,
+              CAST(SUM(x.quantity) AS INTEGER) as quantity
+       FROM (
+         SELECT si.product_id, si.line_total, si.quantity
+         FROM sales s
+         JOIN sale_items si ON s.id = si.sale_id
+         WHERE s.store_id = $1::text AND s.created_at >= $2::timestamptz AND s.created_at <= $3::timestamptz
+         UNION ALL
+         SELECT ssp.product_id, ssp.line_total, ssp.quantity
+         FROM sales s
+         JOIN sale_services ss ON s.id = ss.sale_id
+         JOIN sale_service_products ssp ON ssp.sale_service_id = ss.id
+         WHERE s.store_id = $4::text AND s.created_at >= $5::timestamptz AND s.created_at <= $6::timestamptz
+       ) x
+       LEFT JOIN products p ON p.id = x.product_id
+       LEFT JOIN categories c ON c.id = p.category_id
+       GROUP BY c.name
+       ORDER BY revenue DESC`,
+      params.storeId,
+      params.startDate,
+      params.endDate,
+      params.storeId,
+      params.startDate,
+      params.endDate,
+    )
+
+    return rows.map((r) => ({
+      category_name: r.category_name ?? "Sin categoría",
+      revenue: Number(r.revenue),
+      quantity: Number(r.quantity),
+    }))
+  },
 }

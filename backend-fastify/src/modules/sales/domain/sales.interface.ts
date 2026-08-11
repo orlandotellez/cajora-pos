@@ -1,4 +1,5 @@
 import type { ISaleEntity, ISaleItemEntity, CreateSaleData, CreateSaleServiceItemProductData } from "./sales.entities"
+import type { IRevenueByHourItem, IRevenueByCategoryItem } from "./sales.types"
 
 export interface ISaleRepository {
   create(data: CreateSaleData, storeId: string, serviceProductsToDeduct?: { product_id: string; quantity: number }[], customServiceProducts?: Map<string, CreateSaleServiceItemProductData[]>): Promise<ISaleEntity>
@@ -14,4 +15,8 @@ export interface ISaleRepository {
   }>
 
   getRevenueTrend(params: { startDate: Date; endDate: Date; groupBy: "day" | "week" | "month"; storeId: string }): Promise<{ date: string; revenue: number }[]>
+
+  getRevenueByHour(params: { startDate: Date; endDate: Date; storeId: string }): Promise<IRevenueByHourItem[]>
+
+  getRevenueByCategory(params: { startDate: Date; endDate: Date; storeId: string }): Promise<IRevenueByCategoryItem[]>
 }

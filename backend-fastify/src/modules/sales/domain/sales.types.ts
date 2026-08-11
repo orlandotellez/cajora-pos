@@ -79,3 +79,27 @@ export interface IRevenueTrendQuery {
   group_by: GroupBy
   store_id: string
 }
+
+export interface IRevenueByHourItem {
+  hour: number
+  revenue: number
+  sales: number
+}
+
+export interface IRevenueByHourQuery {
+  start_date: string
+  end_date: string
+  store_id: string
+}
+
+export interface IRevenueByCategoryItem {
+  category_name: string
+  revenue: number
+  quantity: number
+}
+
+export interface IRevenueByCategoryQuery {
+  start_date: string
+  end_date: string
+  store_id: string
+}
