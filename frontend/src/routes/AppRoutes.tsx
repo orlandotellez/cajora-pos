@@ -1,17 +1,20 @@
+import { lazy } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import App from "@/App";
 import Auth from "@/pages/auth/Auth";
 import Pos from "@/pages/pos/Pos";
 import Products from "@/pages/products/Products";
-import Services from "@/pages/services/Services";
-import Suppliers from "@/pages/suppliers/Suppliers";
-import Categories from "@/pages/categories/Categories";
 import Inventory from "@/pages/inventory/Inventory";
 import Sales from "@/pages/sales/Sales";
-import Reports from "@/pages/reports/Reports";
 import { NotFound } from "@/pages/not-found/NotFound";
-import Settings from "@/pages/settings/Settings";
-import Users from "@/pages/users/Users";
+
+// Reports arrastra recharts, así que dividirlo saca esa librería del bundle inicial.
+const Reports = lazy(() => import("@/pages/reports/Reports"));
+const Settings = lazy(() => import("@/pages/settings/Settings"));
+const Users = lazy(() => import("@/pages/users/Users"));
+const Services = lazy(() => import("@/pages/services/Services"));
+const Suppliers = lazy(() => import("@/pages/suppliers/Suppliers"));
+const Categories = lazy(() => import("@/pages/categories/Categories"));
 
 export function AppRoutes() {
   return (
