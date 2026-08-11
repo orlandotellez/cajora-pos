@@ -15,6 +15,6 @@ export const storeGuard = async (
   _reply: FastifyReply
 ) => {
   if (!request.storeId) {
-    throw new ForbiddenError("Store context required. Please login again.")
+    throw new ForbiddenError("Store context required. Please login again.", "STORE_CONTEXT_REQUIRED")
   }
 }

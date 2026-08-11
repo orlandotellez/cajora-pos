@@ -2,6 +2,7 @@ import type { FastifyReply, FastifyRequest } from "fastify"
 import { createUserService } from "../application/users.service"
 import { UserRepository } from "../infrastructure/users.prisma.repository"
 import { CreateUserDtoSchema, UpdateUserDtoSchema, UserQuerySchema } from "./users.dto"
+import { BadRequestError } from "@/core/errors/AppError"
 import { sseBroadcast } from "@/config/sse"
 
 const userService = createUserService(UserRepository)
@@ -39,7 +40,7 @@ export const usersController = {
     const currentUserId = request.userId
 
     if (id === currentUserId) {
-      return reply.status(400).send({ message: "You cannot delete your own account" })
+      throw new BadRequestError("You cannot delete your own account")
     }
 
     await userService.delete(id)

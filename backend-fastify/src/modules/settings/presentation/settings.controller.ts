@@ -3,6 +3,7 @@ import { createSettingsService } from "../application/settings.service"
 import { SettingsRepository } from "../infrastructure/settings.prisma.repository"
 import type { UpdateSettingsData } from "../domain/settings.entities"
 import { UpdateSettingsDtoSchema } from "./settings.dto"
+import { ForbiddenError } from "@/core/errors/AppError"
 
 const settingsService = createSettingsService(SettingsRepository)
 
@@ -24,7 +25,7 @@ export const settingsController = {
     const data = UpdateSettingsDtoSchema.parse(request.body)
     const storeId = request.storeId
     if (!storeId) {
-      return reply.status(400).send({ message: "Store context required" })
+      throw new ForbiddenError("Store context required", "STORE_CONTEXT_REQUIRED")
     }
     const result = await settingsService.update(data as UpdateSettingsData, storeId)
     return reply.status(200).send(result)

@@ -3,7 +3,7 @@ import { createProductService } from "../application/products.service"
 import { ProductRepository } from "../infrastructure/products.prisma.repository"
 import type { UpdateProductData } from "../domain/products.entities"
 import { CreateProductDtoSchema, UpdateProductDtoSchema, ProductQuerySchema } from "./products.dto"
-import { BadRequestError } from "@/core/errors/AppError"
+import { BadRequestError, NotFoundError } from "@/core/errors/AppError"
 import { sseBroadcast } from "@/config/sse"
 
 const productService = createProductService(ProductRepository)
@@ -34,7 +34,7 @@ export const productsController = {
     const { barcode } = request.params as { barcode: string }
     const result = await productService.getByBarcode(barcode, request.storeId)
     if (!result) {
-      return reply.status(404).send({ message: "Product not found" })
+      throw new NotFoundError("Product not found")
     }
     return reply.status(200).send(result)
   },
