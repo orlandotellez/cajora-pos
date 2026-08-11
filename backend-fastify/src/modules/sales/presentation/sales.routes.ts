@@ -8,9 +8,11 @@ import { CreateSaleDtoSchema, SaleQuerySchema, ReportQuerySchema, RevenueTrendQu
 const TAGS = ["Sales"]
 
 export const salesRoutes = async (fastify: FastifyInstance, _opts: FastifyPluginOptions) => {
+  // Solo auth: el super admin (sin tienda) también puede conectar; el hub SSE
+  // no lo suscribe a ningún canal de tienda.
   fastify.get("/events", {
     schema: { tags: TAGS, description: "SSE: notifica sale.created en tiempo real" },
-    preHandler: [authGuard, storeGuard],
+    preHandler: [authGuard],
   }, salesController.events)
 
   fastify.get("/report", {

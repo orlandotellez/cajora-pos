@@ -151,7 +151,9 @@ ensureRedisSubscriber()
  * bloquea la respuesta silenciosamente.
  */
 export function handleSseConnection(request: FastifyRequest, reply: FastifyReply): void {
-  const storeId = request.storeId!
+  // null para super admin: sin tienda → no se suscribe a ningún canal de
+  // tienda (la conexión queda abierta con heartbeat, sin recibir eventos).
+  const storeId = request.storeId ?? null
   const origin = request.headers.origin
   const raw = reply.raw
 
@@ -169,7 +171,7 @@ export function handleSseConnection(request: FastifyRequest, reply: FastifyReply
   raw.flushHeaders()
   raw.write(": connected\n\n")
 
-  sseSubscribe(storeId, raw)
+  if (storeId) sseSubscribe(storeId, raw)
 
   const heartbeat = setInterval(() => {
     if (raw.destroyed || raw.writableEnded) {
@@ -181,6 +183,6 @@ export function handleSseConnection(request: FastifyRequest, reply: FastifyReply
 
   request.raw.on("close", () => {
     clearInterval(heartbeat)
-    sseUnsubscribe(storeId, raw)
+    if (storeId) sseUnsubscribe(storeId, raw)
   })
 }
