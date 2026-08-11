@@ -15,7 +15,7 @@ export const CreateProductDtoSchema = z.object({
 })
 
 export const UpdateProductDtoSchema = z.object({
-  barcode: z.string().optional(),
+  barcode: z.string().optional().nullable(),
   name: z.string().min(1).optional(),
   unit_type: z.enum(["unidad", "paquete", "caja", "bolsa", "botella", "lata", "sobre", "barra", "rollo", "galon", "ristra"]).optional().nullable(),
   unit_quantity: z.number().int().positive().optional().nullable(),

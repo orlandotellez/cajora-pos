@@ -47,10 +47,10 @@ export interface DeleteResponse {
 
 
 export interface CreateProductPayload {
-  barcode?: string;
+  barcode?: string | null;
   name: string;
-  unit_type?: string;
-  unit_quantity?: number;
+  unit_type?: string | null;
+  unit_quantity?: number | null;
   category_id?: string | null;
   supplier_id?: string | null;
   price: number;
