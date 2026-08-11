@@ -72,8 +72,8 @@ export const printersController = {
 
     if (!result.success) {
       return reply.status(502).send({
+        success: false,
         message: "No se pudo conectar con la impresora desde el servidor",
-        ...result,
       })
     }
 

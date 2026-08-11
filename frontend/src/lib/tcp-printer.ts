@@ -27,18 +27,11 @@ export async function sendBytesToPrinter(
     });
     return result;
   } catch (err) {
-    console.warn("[tcp-printer] Error:", err);
-    const message =
-      err instanceof Error
-        ? err.message
-        : typeof err === "string"
-          ? err
-          : "Error al enviar a la impresora";
     return {
       success: false,
       bytes_sent: 0,
       duration_ms: 0,
-      error: message,
+      error: "Error al enviar a la impresora",
     };
   }
 }

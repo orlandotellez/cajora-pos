@@ -137,7 +137,6 @@ export function useCheckout(opts: UseCheckoutOptions): UseCheckoutReturn {
             result.printer.port,
           );
           success = proxyResult.success;
-          error = proxyResult.error ?? null;
         }
 
         if (success) {

@@ -2,7 +2,7 @@ import { useToast } from "@/components/common/ui/Toast";
 import styles from "./PrinterSaleModal.module.css"
 import { isTauriRuntime } from "@/lib/fetch";
 import { sendBytesToPrinter } from "@/lib/tcp-printer";
-import { ApiError, printersApi, Sale } from "@/api";
+import { ApiError, printersApi, type Sale } from "@/api";
 import { Printer, X } from "lucide-react";
 import { getStoredCurrency, money } from "@/lib/format";
 import { Fragment } from "react/jsx-runtime";
@@ -77,7 +77,6 @@ export const PrinterSaleModal = ({
                       result.printer.port,
                     );
                     printSuccess = proxyResult.success;
-                    printError = proxyResult.error ?? null;
                   }
 
                   if (printSuccess) {

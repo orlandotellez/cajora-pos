@@ -1,4 +1,5 @@
 import { createConnection } from "net"
+import { logger } from "@/config/logger"
 
 export interface TcpPrintResult {
   success: boolean
@@ -7,6 +8,7 @@ export interface TcpPrintResult {
   error?: string
 }
 
+// Envía bytes a una impresora por TCP.
 export function sendBytesViaTCP(
   host: string,
   port: number,
@@ -28,11 +30,15 @@ export function sendBytesViaTCP(
     socket.once("connect", () => {
       socket.write(Buffer.from(bytes), (writeErr) => {
         if (writeErr) {
+          logger.error(
+            { err: writeErr, host, port },
+            "No se pudo escribir en la impresora",
+          )
           finish({
             success: false,
             bytes_sent: 0,
             duration_ms: Date.now() - startTime,
-            error: `Write error: ${writeErr.message}`,
+            error: "No se pudo escribir en la impresora",
           })
           return
         }
@@ -47,20 +53,28 @@ export function sendBytesViaTCP(
     })
 
     socket.once("error", (err) => {
+      logger.error(
+        { err, host, port },
+        "No se pudo conectar con la impresora",
+      )
       finish({
         success: false,
         bytes_sent: 0,
         duration_ms: Date.now() - startTime,
-        error: `Connection error: ${err.message}`,
+        error: "No se pudo conectar con la impresora",
       })
     })
 
     socket.once("timeout", () => {
+      logger.warn(
+        { host, port, timeoutMs },
+        "Tiempo de espera agotado al conectar con la impresora",
+      )
       finish({
         success: false,
         bytes_sent: 0,
         duration_ms: Date.now() - startTime,
-        error: `Timeout después de ${timeoutMs}ms`,
+        error: "Tiempo de espera agotado",
       })
     })
   })

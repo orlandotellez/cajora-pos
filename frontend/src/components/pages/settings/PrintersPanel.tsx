@@ -199,18 +199,15 @@ export default function PrintersPanel() {
           toast(tcpResult.error || "Falló la conexión con la impresora", "error");
         }
       } else {
-        // Web: envía TCP proxeado por el backend
+        // Web: envía TCP proxeado por el backend. Si la conexión falla el backend
+        // responde !ok (502) y client.ts lanza ApiError → cae al catch de abajo.
         const proxyResult = await printersApi.sendTcp(
           res.ticket_base64,
           res.printer.address,
           res.printer.port,
         );
 
-        if (proxyResult.success) {
-          toast(`Test exitoso: ${proxyResult.bytes_sent} bytes en ${proxyResult.duration_ms}ms`, "success");
-        } else {
-          toast(proxyResult.error || "El servidor no pudo conectar con la impresora. Si estás en producción, usá la app nativa.", "error");
-        }
+        toast(`Test exitoso: ${proxyResult.bytes_sent} bytes en ${proxyResult.duration_ms}ms`, "success");
       }
     } catch (err) {
       toast(`Test falló: ${(err as ApiError).message}`, "error");
@@ -323,7 +320,7 @@ export default function PrintersPanel() {
         total={printers.length}
         page={1}
         totalPages={1}
-        onPageChange={() => {}}
+        onPageChange={() => { }}
         onRowClick={openEdit}
         onEdit={openEdit}
         onDelete={(p) => setDeletingId(p.id)}
@@ -450,15 +447,6 @@ export default function PrintersPanel() {
                     <option value="ISO-8859-1">ISO-8859-1</option>
                   </select>
                 </Field>
-                <Field label="Corte automático">
-                  <select
-                    value={form.auto_cut ? "true" : "false"}
-                    onChange={(e) => setForm({ ...form, auto_cut: e.target.value === "true" })}
-                  >
-                    <option value="true">Activado</option>
-                    <option value="false">Desactivado</option>
-                  </select>
-                </Field>
                 {form.auto_cut && (
                   <Field label="Tipo de corte">
                     <select
@@ -475,17 +463,6 @@ export default function PrintersPanel() {
                     </select>
                   </Field>
                 )}
-                <Field label="Apertura de cajón">
-                  <select
-                    value={form.open_cash_drawer ? "true" : "false"}
-                    onChange={(e) =>
-                      setForm({ ...form, open_cash_drawer: e.target.value === "true" })
-                    }
-                  >
-                    <option value="true">Sí</option>
-                    <option value="false">No</option>
-                  </select>
-                </Field>
                 <Field label="Copias por defecto">
                   <input
                     type="number"
