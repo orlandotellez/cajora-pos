@@ -93,6 +93,7 @@ export const SupplierRepository: ISupplierRepository = {
     const supplier = await prisma.supplier.create({
       data: {
         ...(storeId && { store_id: storeId }),
+        name: data.name,
         contact_name: data.contact_name,
         email: data.email,
         phone: data.phone,
