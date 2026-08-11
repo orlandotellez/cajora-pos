@@ -6,6 +6,12 @@
   flex-wrap: wrap;
 }
 
+@media (max-width: 768px) {
+  .filters {
+    padding: 0px 24px 10px 24px;
+  }
+}
+
 .filterInput {
   height: 36px;
   padding: 6px 10px;
