@@ -10,12 +10,13 @@ interface InventoryTableProps {
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  onEdit: (product: Product) => void;
   onAdjust: (product: Product) => void;
   dimmed?: boolean;
   refreshing?: boolean;
 }
 
-export function InventoryTable({ products, loading, total, page, totalPages, onPageChange, onAdjust, dimmed, refreshing }: InventoryTableProps) {
+export function InventoryTable({ products, loading, total, page, totalPages, onPageChange, onEdit, onAdjust, dimmed, refreshing }: InventoryTableProps) {
   const columns: Column<Product>[] = useMemo(() => [
     {
       key: "name",
@@ -47,15 +48,23 @@ export function InventoryTable({ products, loading, total, page, totalPages, onP
       label: "",
       align: "right",
       render: (p) => (
-        <button
-          onClick={(e) => { e.stopPropagation(); onAdjust(p); }}
-          className={styles["inventory-btn"]}
-        >
-          Ajustar
-        </button>
+        <div className={styles["inventory-actions"]}>
+          <button
+            onClick={(e) => { e.stopPropagation(); onEdit(p); }}
+            className={`${styles["inventory-btn"]} ${styles["inventory-btnPrimary"]}`}
+          >
+            Editar
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onAdjust(p); }}
+            className={styles["inventory-btn"]}
+          >
+            Ajustar
+          </button>
+        </div>
       ),
     },
-  ], [onAdjust]);
+  ], [onEdit, onAdjust]);
 
   return (
     <DataTable
@@ -73,7 +82,6 @@ export function InventoryTable({ products, loading, total, page, totalPages, onP
         { width: "20%", align: "right" },
         { width: "100px", align: "center" },
       ]}
-      onRowClick={onAdjust}
       dimmed={dimmed}
       refreshing={refreshing}
     />

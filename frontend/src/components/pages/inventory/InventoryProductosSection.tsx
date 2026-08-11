@@ -23,6 +23,7 @@ interface Props {
   setStockFilter: (value: StockFilter) => void;
 
   lowStockProducts: LowStockProduct[];
+  onEdit: (product: Product) => void;
   onAdjust: (product: Product) => void;
   refreshing?: boolean;
 }
@@ -43,6 +44,7 @@ export function InventoryProductosSection(props: Props) {
     stockFilter,
     setStockFilter,
     lowStockProducts,
+    onEdit,
     onAdjust,
     refreshing,
   } = props;
@@ -115,6 +117,7 @@ export function InventoryProductosSection(props: Props) {
         page={page}
         totalPages={totalPages}
         onPageChange={setPage}
+        onEdit={onEdit}
         onAdjust={onAdjust}
         refreshing={refreshing}
       />

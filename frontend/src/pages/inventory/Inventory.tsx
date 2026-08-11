@@ -11,6 +11,7 @@ import { AdjustStockModal } from "@/components/pages/inventory/AdjustStockModal"
 import { MovementDetailModal } from "@/components/pages/inventory/MovementDetailModal";
 import { BatchMovementModal } from "@/components/pages/inventory/BatchMovementModal";
 import { BatchDetailModal } from "@/components/pages/inventory/BatchDetailModal";
+import { EditInventoryModal } from "@/components/pages/inventory/EditInventoryModal";
 import { MovementHistoryTable } from "@/components/pages/inventory/MovementHistoryTable";
 import { BatchHistoryTable } from "@/components/pages/inventory/BatchHistoryTable";
 import styles from "./Inventory.module.css";
@@ -33,6 +34,7 @@ export default function Inventory() {
   const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [adjust, setAdjust] = useState<AdjustState>(null);
+  const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [selectedMovement, setSelectedMovement] = useState<InventoryMovement | null>(null);
   const [batchModalOpen, setBatchModalOpen] = useState(false);
   const [batchDetail, setBatchDetail] = useState<BatchResponse | null>(null);
@@ -158,6 +160,8 @@ export default function Inventory() {
     [setAdjust],
   );
 
+  const handleEdit = useCallback((product: Product) => setEditProduct(product), []);
+
   function handleBatchCreated() {
     refetchAll();
   }
@@ -181,6 +185,7 @@ export default function Inventory() {
         stockFilter={stockFilter}
         setStockFilter={setStockFilter}
         lowStockProducts={lowStockProducts}
+        onEdit={handleEdit}
         onAdjust={handleAdjust}
         refreshing={refreshingProducts}
       />
@@ -214,6 +219,16 @@ export default function Inventory() {
           adjust={adjust}
           onClose={() => setAdjust(null)}
           onApplied={handleAdjustApplied}
+        />
+      )}
+
+      {editProduct && (
+        <EditInventoryModal
+          product={editProduct}
+          categories={categories}
+          suppliers={suppliers}
+          onClose={() => setEditProduct(null)}
+          onSaved={refetchAll}
         />
       )}
 

@@ -48,7 +48,7 @@ export function AdjustStockModal({ adjust, onClose, onApplied }: AdjustStockModa
   function handleTypeChange(value: string) {
     const t = value as "entrada" | "salida" | "ajuste";
     setType(t);
-    if (t === "ajuste" && adjust) {
+    if (t === "ajuste") {
       setQty(adjust.stock);
     } else {
       setQty(0);
