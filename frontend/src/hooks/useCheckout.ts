@@ -232,7 +232,9 @@ export function useCheckout(opts: UseCheckoutOptions): UseCheckoutReturn {
       });
     } catch (err) {
       console.error("Error al crear venta:", err);
-      showAlert("Error al procesar la venta. Intenta de nuevo.");
+      showAlert(
+        (err as ApiError)?.message || "Error al procesar la venta. Intenta de nuevo.",
+      );
       setCheckingOut(false);
     }
   }, [
