@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import {
   DEFAULT_API_URL,
   fetchBootstrap,
@@ -6,8 +6,7 @@ import {
   readApiUrl,
   writeApiUrl,
 } from "@/lib/api-config";
-import { isAndroidRuntime } from "@/lib/fetch";
-import { UpdatePrompt } from "@/components/common/ui/UpdatePrompt";
+import { UpdateProvider, type UpdateInfo } from "@/context/UpdateContext";
 
 type State =
   | { kind: "loading" }
@@ -18,11 +17,6 @@ type State =
     prevInputValue: string;
     prevError: string | null;
   };
-
-interface UpdateInfo {
-  appVersion: string;
-  apkUrl: string;
-}
 
 const spinnerStyle: React.CSSProperties = {
   width: 32,
@@ -276,22 +270,13 @@ export function AppBootstrap({ children }: { children: ReactNode }) {
     return () => controller.abort();
   }, [isRetrieving]);
 
-  // El prompt de actualización solo aplica al APK de Android.
-  // onClose se estabiliza para no re-ejecutar el check del UpdatePrompt.
-  const closeUpdatePrompt = useCallback(() => setUpdateInfo(null), []);
-
+  // El prompt de actualización vive en <UpdateProvider>, que se entera del
+  // updateInfo y se encarga del auto-prompt y del botón "Actualizar app".
   if (state.kind === "ready") {
     return (
-      <>
+      <UpdateProvider updateInfo={updateInfo}>
         {children}
-        {isAndroidRuntime() && updateInfo !== null && (
-          <UpdatePrompt
-            appVersion={updateInfo.appVersion}
-            apkUrl={updateInfo.apkUrl}
-            onClose={closeUpdatePrompt}
-          />
-        )}
-      </>
+      </UpdateProvider>
     );
   }
   if (state.kind === "loading") return <SplashScreen />;

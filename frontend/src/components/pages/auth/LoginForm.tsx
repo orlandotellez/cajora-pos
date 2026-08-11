@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { Store, Building2, Eye, EyeOff } from "lucide-react";
+import { Building2, Eye, EyeOff } from "lucide-react";
 import styles from "./LoginForm.module.css";
+import { useTheme } from "@/context/ThemeContext";
+import logoDark from "@/assets/logo_dark.svg";
+import logoLight from "@/assets/logo_light.svg";
 
 interface Props {
   onRegisterClick: () => void;
@@ -9,6 +12,7 @@ interface Props {
 
 export function LoginForm({ onRegisterClick }: Props) {
   const { login } = useAuth();
+  const { theme } = useTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -32,7 +36,11 @@ export function LoginForm({ onRegisterClick }: Props) {
   return (
     <div className={styles.formCard}>
       <div className={styles.formIcon}>
-        <Store size={28} />
+        <img
+          src={theme === "dark" ? logoLight : logoDark}
+          alt="Logo"
+          className={styles.logoImg}
+        />
       </div>
       <h2 className={styles.formTitle}>Iniciar sesión</h2>
       <p className={styles.formSubtitle}>Ingresá tus credenciales para acceder</p>

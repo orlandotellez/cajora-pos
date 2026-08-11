@@ -2,16 +2,20 @@ import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
+import { useAppVersion } from "@/hooks/useAppVersion";
 import { ShoppingCart, Package, BarChart3, Shield, Sun, Moon } from "lucide-react";
 import styles from "./Auth.module.css";
 import { LoginForm } from "@/components/pages/auth/LoginForm";
 import { RegisterForm } from "@/components/pages/auth/RegisterForm";
+import logoDark from "@/assets/logo_dark.svg";
+import logoLight from "@/assets/logo_light.svg";
 
 type AuthMode = "login" | "register";
 
 export default function Auth() {
   const { user, loading } = useAuth();
   const { theme, toggle } = useTheme();
+  const appVersion = useAppVersion();
   const [mode, setMode] = useState<AuthMode>("login");
 
   if (!loading && user) {
@@ -23,7 +27,6 @@ export default function Auth() {
       <button onClick={toggle} className={styles.themeToggle}>
         {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
       </button>
-
       <div className={styles.brand}>
         <div className={styles.brandInner}>
           <h1 className={styles.brandTitle}>Caja</h1>
@@ -57,6 +60,10 @@ export default function Auth() {
           <RegisterForm onBackClick={() => setMode("login")} />
         )}
       </div>
+
+      {appVersion !== null && (
+        <span className={styles.versionTag}>v{appVersion}</span>
+      )}
     </div>
   );
 }

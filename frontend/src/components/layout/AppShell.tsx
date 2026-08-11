@@ -15,9 +15,11 @@ import {
   X,
   Moon,
   Sun,
+  Download,
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
+import { useUpdate } from "@/context/UpdateContext";
 import { useAppVersion } from "@/hooks/useAppVersion";
 import { UserMenu } from "./UserMenu";
 import logoDark from "@/assets/logo_dark.svg";
@@ -71,6 +73,7 @@ const navGroups: NavGroup[] = [
 export function AppShell({ children }: { children: ReactNode }) {
   const { theme, toggle } = useTheme();
   const { user } = useAuth();
+  const { hasUpdate, openUpdatePrompt } = useUpdate();
   const appVersion = useAppVersion();
   const location = useLocation();
   const pathname = location.pathname;
@@ -139,11 +142,14 @@ export function AppShell({ children }: { children: ReactNode }) {
               alt="Logo"
               className={styles.logoImg}
             />
-            <span className={styles.logoText}>Sistema POS</span>
+            <div className={styles.logoInfo}>
+              <span className={styles.logoText}>Sistema POS</span>
+              {appVersion !== null && (
+                <span className={styles.logoVersion}>v{appVersion}</span>
+              )}
+            </div>
+
           </div>
-          {appVersion !== null && (
-            <span className={styles.logoVersion}>v{appVersion}</span>
-          )}
           <div className={styles.logoRole}>
             {user?.role === "admin" ? "Administrador" : "Cajero"}
           </div>
@@ -152,6 +158,12 @@ export function AppShell({ children }: { children: ReactNode }) {
           {renderNav(styles.navItem, styles.navIcon)}
         </nav>
         <div className={styles.sidebarFooter}>
+          {hasUpdate && (
+            <button onClick={openUpdatePrompt} className={styles.updateBtn}>
+              <Download size={16} />
+              Actualizar app
+            </button>
+          )}
           <button onClick={toggle} className={styles.drawerThemeBtn}>
             {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
             {theme === "dark" ? "Modo claro" : "Modo oscuro"}
@@ -186,12 +198,15 @@ export function AppShell({ children }: { children: ReactNode }) {
                 alt="Logo"
                 className={styles.logoImg}
               />
-              <span className={styles.logoText}>Sistema POS</span>
+              <div className={styles.logoInfo}>
+                <span className={styles.logoText}>Sistema POS</span>
+                {appVersion !== null && (
+                  <span className={styles.logoVersion}>v{appVersion}</span>
+                )}
+              </div>
             </div>
-            {appVersion !== null && (
-              <span className={styles.logoVersion}>v{appVersion}</span>
-            )}
           </div>
+
           <button
             className={styles.drawerCloseBtn}
             onClick={closeDrawer}
@@ -210,6 +225,12 @@ export function AppShell({ children }: { children: ReactNode }) {
         </nav>
 
         <div className={styles.drawerFooter}>
+          {hasUpdate && (
+            <button onClick={openUpdatePrompt} className={styles.updateBtn}>
+              <Download size={16} />
+              Actualizar app
+            </button>
+          )}
           <button onClick={toggle} className={styles.drawerThemeBtn}>
             {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
             {theme === "dark" ? "Modo claro" : "Modo oscuro"}

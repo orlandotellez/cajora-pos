@@ -47,6 +47,12 @@
   display: block;
 }
 
+.logoInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
 .logoText {
   font-size: 15px;
   font-weight: 600;
@@ -59,10 +65,7 @@
   font-weight: 500;
   letter-spacing: 0.02em;
   color: var(--muted-foreground);
-  background: var(--accent);
-  border: 1px solid var(--border);
   border-radius: 999px;
-  padding: 1px 8px;
   line-height: 1.4;
   align-self: flex-start;
   margin-top: -2px;
@@ -125,6 +128,9 @@
 .sidebarFooter {
   border-top: 1px solid var(--sidebar-border);
   padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .drawerThemeBtn {
@@ -146,6 +152,30 @@
 .drawerThemeBtn:hover {
   background: var(--accent);
   color: var(--foreground);
+}
+
+/* Botón "Actualizar app": aparece en el footer del sidebar cuando hay una
+   versión más reciente disponible. Destaca sobre el botón de tema. */
+.updateBtn {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: none;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: filter 0.15s;
+  width: 100%;
+}
+
+.updateBtn:hover {
+  filter: brightness(1.1);
 }
 
 .hamburgerBtn {

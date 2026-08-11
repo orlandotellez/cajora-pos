@@ -43,9 +43,10 @@ interface Props {
   appVersion: string;
   apkUrl: string;
   onClose: () => void;
+  manual?: boolean;
 }
 
-export function UpdatePrompt({ appVersion, apkUrl, onClose }: Props) {
+export function UpdatePrompt({ appVersion, apkUrl, onClose, manual = false }: Props) {
   const [phase, setPhase] = useState<Phase>({ kind: "checking" });
 
   // Al montar: comparar versión local vs remota. Si no hay update real,
@@ -62,8 +63,7 @@ export function UpdatePrompt({ appVersion, apkUrl, onClose }: Props) {
           onClose();
           return;
         }
-        // ¿El usuario ya ignoró esta versión? No preguntar de nuevo.
-        if (readIgnoredVersion() === appVersion) {
+        if (!manual && readIgnoredVersion() === appVersion) {
           onClose();
           return;
         }
@@ -80,7 +80,7 @@ export function UpdatePrompt({ appVersion, apkUrl, onClose }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [appVersion, onClose]);
+  }, [appVersion, manual, onClose]);
 
   async function handleDownload() {
     setPhase({ kind: "downloading" });
