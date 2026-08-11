@@ -8,6 +8,7 @@ export { inventoryApi } from "./inventory";
 export { suppliersApi } from "./suppliers";
 export { settingsApi } from "./settings";
 export { usersApi } from "./users";
+export { superAdminApi } from "./super-admin";
 export { printersApi } from "./printers";
 
 export type { AuthUser, Role } from "./auth";
@@ -19,4 +20,5 @@ export type { InventoryMovement, MovementListResponse, LowStockProduct, LowStock
 export type { Supplier, SupplierListResponse, CreateSupplierPayload, UpdateSupplierPayload } from "./suppliers";
 export type { Settings } from "./settings";
 export type { UserResponse, UserListResponse, CreateUserPayload, UpdateUserPayload } from "./users";
+export type { SuperAdminStats, SuperAdminStoreRow, SuperAdminStoreUser } from "./super-admin";
 export type { Printer, PrintJobResult, CreatePrinterPayload, UpdatePrinterPayload, TestPrintPayload, SetDefaultRole, PrinterConnType, PrinterProfile, PrinterRole, PrinterCutType } from "./printers";

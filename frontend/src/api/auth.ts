@@ -1,6 +1,6 @@
 import { api } from "./client";
 
-export type Role = "admin" | "cajero";
+export type Role = "admin" | "cajero" | "super_admin";
 
 export interface Store {
   id: string;
@@ -17,7 +17,7 @@ export interface AuthUser {
   role: Role;
   phone?: string;
   image?: string;
-  store_id: string;
+  store_id?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -25,7 +25,8 @@ export interface AuthUser {
 export interface AuthResponse {
   message: string;
   user: AuthUser;
-  store: Store;
+  // null para super admin (no pertenece a ninguna tienda)
+  store: Store | null;
   accessToken: string;
   refreshToken: string;
 }
@@ -37,7 +38,8 @@ export interface MessageResponse {
 export interface RefreshResponse {
   message: string;
   user: AuthUser;
-  store: Store;
+  // null para super admin (no pertenece a ninguna tienda)
+  store: Store | null;
   accessToken: string;
   refreshToken: string;
 }

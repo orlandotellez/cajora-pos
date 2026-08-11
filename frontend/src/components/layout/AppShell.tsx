@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { type ReactNode, useState, useEffect, useCallback } from "react";
 import {
   ScanBarcode,
@@ -11,6 +11,7 @@ import {
   Receipt,
   Truck,
   Tag,
+  Globe,
   Menu,
   X,
   Moon,
@@ -35,6 +36,7 @@ interface NavItem {
 interface NavGroup {
   label: string;
   adminOnly?: boolean;
+  superAdminOnly?: boolean;
   items: NavItem[];
 }
 
@@ -68,6 +70,11 @@ const navGroups: NavGroup[] = [
       { to: "/users", label: "Usuarios", icon: Users },
     ],
   },
+  {
+    label: "SUPER ADMIN",
+    superAdminOnly: true,
+    items: [{ to: "/super-admin", label: "Panel Global", icon: Globe }],
+  },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -75,15 +82,28 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const { hasUpdate, openUpdatePrompt } = useUpdate();
   const appVersion = useAppVersion();
+  const navigate = useNavigate();
   const location = useLocation();
   const pathname = location.pathname;
   const isAdmin = user?.role === "admin";
+  const isSuperAdmin = user?.role === "super_admin";
+  const roleLabel =
+    user?.role === "super_admin" ? "Super Admin" : user?.role === "admin" ? "Administrador" : "Cajero";
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const visibleGroups = navGroups.filter(
-    (g) => !g.adminOnly || isAdmin,
-  );
+  const visibleGroups = navGroups.filter((g) => {
+    // Super admin: solo el panel global. No opera ninguna tienda.
+    if (isSuperAdmin) return !!g.superAdminOnly;
+    return (!g.adminOnly || isAdmin) && !g.superAdminOnly;
+  });
+
+  // Super admin: cualquier ruta distinta al panel global → panel global.
+  useEffect(() => {
+    if (isSuperAdmin && pathname !== "/super-admin") {
+      navigate("/super-admin", { replace: true });
+    }
+  }, [isSuperAdmin, pathname, navigate]);
 
   // Close drawer on Escape
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -150,9 +170,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
 
           </div>
-          <div className={styles.logoRole}>
-            {user?.role === "admin" ? "Administrador" : "Cajero"}
-          </div>
+          <div className={styles.logoRole}>{roleLabel}</div>
         </div>
         <nav className={styles.nav}>
           {renderNav(styles.navItem, styles.navIcon)}
@@ -216,9 +234,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </button>
         </div>
 
-        <div className={styles.drawerRole}>
-          {user?.role === "admin" ? "Administrador" : "Cajero"}
-        </div>
+        <div className={styles.drawerRole}>{roleLabel}</div>
 
         <nav className={styles.drawerNav}>
           {renderNav(styles.drawerNavItem, styles.drawerNavIcon)}

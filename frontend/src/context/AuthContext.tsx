@@ -100,7 +100,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setStore(res.store);
       localStorage.setItem("auth-token", res.accessToken);
       localStorage.setItem("auth-refresh-token", res.refreshToken);
-      navigate("/pos");
+      // El super admin va directo al panel global (no tiene tienda).
+      navigate(res.user.role === "super_admin" ? "/super-admin" : "/pos");
     } finally {
       setLoading(false);
     }
