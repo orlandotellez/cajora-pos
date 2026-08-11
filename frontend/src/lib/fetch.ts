@@ -43,6 +43,16 @@ export function isTauriRuntime(): boolean {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 }
 
+/**
+ * Detecta si corre en el WebView de Android (Tauri mobile).
+ * El user agent del WebView Android de Tauri incluye "Android";
+ * en desktop Linux/Windows no. Se usa para no ofrecer el APK
+ * en plataformas que no lo necesitan.
+ */
+export function isAndroidRuntime(): boolean {
+  return isTauriRuntime() && /Android/i.test(navigator.userAgent);
+}
+
 // crossFetch — fetch unificado para todas las plataformas
 //
 // Tauri (desktop, Android): usa `invoke("http_request")` que va directo a Rust,

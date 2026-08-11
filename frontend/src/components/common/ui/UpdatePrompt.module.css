@@ -1,0 +1,89 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Mismo alto que ConfirmDialog: por encima de sidebar (10), drawer (40),
+     hamburger (25) y otros modales. */
+  z-index: 1000;
+}
+
+.dialog {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+.title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 8px;
+  color: var(--foreground);
+}
+
+.message {
+  font-size: 14px;
+  color: var(--muted-foreground);
+  margin: 0 0 20px;
+  line-height: 1.5;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.cancelBtn,
+.confirmBtn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.cancelBtn {
+  background: var(--background);
+  border: 1px solid var(--border);
+  color: var(--foreground);
+}
+
+.cancelBtn:hover {
+  background: var(--accent);
+}
+
+.confirmBtn {
+  background: var(--foreground);
+  border: 1px solid var(--foreground);
+  color: var(--background);
+}
+
+.confirmBtn:hover {
+  opacity: 0.85;
+}
+
+.spinner {
+  width: 28px;
+  height: 28px;
+  margin: 12px auto 4px;
+  border: 3px solid var(--border);
+  border-top-color: var(--foreground);
+  border-radius: 50%;
+  animation: update-spin 0.8s linear infinite;
+}
+
+@keyframes update-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -1,11 +1,13 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
 import {
   DEFAULT_API_URL,
-  fetchAndStoreApiUrl,
+  fetchBootstrap,
   isValidApiUrl,
   readApiUrl,
   writeApiUrl,
 } from "@/lib/api-config";
+import { isAndroidRuntime } from "@/lib/fetch";
+import { UpdatePrompt } from "@/components/common/ui/UpdatePrompt";
 
 type State =
   | { kind: "loading" }
@@ -16,6 +18,11 @@ type State =
     prevInputValue: string;
     prevError: string | null;
   };
+
+interface UpdateInfo {
+  appVersion: string;
+  apkUrl: string;
+}
 
 const spinnerStyle: React.CSSProperties = {
   width: 32,
@@ -194,15 +201,20 @@ function ManualConfigForm({
 
 export function AppBootstrap({ children }: { children: ReactNode }) {
   const [state, setState] = useState<State>({ kind: "loading" });
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
     async function init() {
-      const ok = await fetchAndStoreApiUrl();
+      const result = await fetchBootstrap();
       if (cancelled) return;
 
-      if (ok) {
+      if (result !== null) {
+        writeApiUrl(result.apiUrl);
+        if (result.appVersion && result.apkUrl) {
+          setUpdateInfo({ appVersion: result.appVersion, apkUrl: result.apkUrl });
+        }
         setState({ kind: "ready" });
         return;
       }
@@ -234,10 +246,16 @@ export function AppBootstrap({ children }: { children: ReactNode }) {
     const controller = new AbortController();
 
     async function retry() {
-      const ok = await fetchAndStoreApiUrl(controller.signal);
+      const result = await fetchBootstrap(controller.signal);
       if (controller.signal.aborted) return;
 
-      if (ok || readApiUrl() !== DEFAULT_API_URL) {
+      if (result !== null || readApiUrl() !== DEFAULT_API_URL) {
+        if (result !== null) {
+          writeApiUrl(result.apiUrl);
+          if (result.appVersion && result.apkUrl) {
+            setUpdateInfo({ appVersion: result.appVersion, apkUrl: result.apkUrl });
+          }
+        }
         setState({ kind: "ready" });
         return;
       }
@@ -258,7 +276,24 @@ export function AppBootstrap({ children }: { children: ReactNode }) {
     return () => controller.abort();
   }, [isRetrieving]);
 
-  if (state.kind === "ready") return <>{children}</>;
+  // El prompt de actualización solo aplica al APK de Android.
+  // onClose se estabiliza para no re-ejecutar el check del UpdatePrompt.
+  const closeUpdatePrompt = useCallback(() => setUpdateInfo(null), []);
+
+  if (state.kind === "ready") {
+    return (
+      <>
+        {children}
+        {isAndroidRuntime() && updateInfo !== null && (
+          <UpdatePrompt
+            appVersion={updateInfo.appVersion}
+            apkUrl={updateInfo.apkUrl}
+            onClose={closeUpdatePrompt}
+          />
+        )}
+      </>
+    );
+  }
   if (state.kind === "loading") return <SplashScreen />;
 
   if (state.kind === "retrieving") {
