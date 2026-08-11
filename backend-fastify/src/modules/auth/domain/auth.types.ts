@@ -42,7 +42,7 @@ export interface IUserResponse {
   role: Role
   phone?: string
   image?: string
-  store_id: string
+  store_id: string | null
   created_at: Date
   updated_at: Date
 }
@@ -50,7 +50,8 @@ export interface IUserResponse {
 export interface IAuthResponse {
   message: string
   user: IUserResponse
-  store: IStoreResponse
+  // null para super admin (no pertenece a ninguna tienda)
+  store: IStoreResponse | null
   accessToken: string
   refreshToken: string
 }
@@ -58,7 +59,8 @@ export interface IAuthResponse {
 export interface IRefreshResponse {
   message: string
   user: IUserResponse
-  store: IStoreResponse
+  // null para super admin (no pertenece a ninguna tienda)
+  store: IStoreResponse | null
   accessToken: string
   refreshToken: string
 }

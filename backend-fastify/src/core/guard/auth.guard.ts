@@ -39,3 +39,19 @@ export const adminGuard = async (
     throw new ForbiddenError("Admin access required")
   }
 }
+
+/**
+ * superAdminGuard middleware
+ *
+ * Restringe rutas globales (cross-tenant) al rol super_admin.
+ * Debe correr DESPUÉS de authGuard. NO usa storeGuard: estas
+ * rutas agregan datos de TODAS las tiendas.
+ */
+export const superAdminGuard = async (
+  request: FastifyRequest,
+  _reply: FastifyReply
+) => {
+  if (request.userRole !== "super_admin") {
+    throw new ForbiddenError("Super admin access required")
+  }
+}

@@ -9,6 +9,7 @@ import { suppliersRoutes } from "@/modules/suppliers/presentation/suppliers.rout
 import { servicesRoutes } from "@/modules/services/presentation/services.routes";
 import { settingsRoutes } from "@/modules/settings/presentation/settings.routes";
 import { usersRoutes } from "@/modules/users/presentation/users.routes";
+import { superAdminRoutes } from "@/modules/super-admin/presentation/super-admin.routes";
 import { type FastifyInstance, type FastifyPluginOptions } from "fastify";
 import { printersRoutes } from "@/modules/printers/presentation/printers.router";
 
@@ -27,4 +28,5 @@ export const routes = async (fastify: FastifyInstance, _opts: FastifyPluginOptio
   fastify.register(settingsRoutes, { prefix: "/settings" })
   fastify.register(printersRoutes, { prefix: "/printers" })
   fastify.register(usersRoutes, { prefix: "/users" })
+  fastify.register(superAdminRoutes, { prefix: "/super-admin" })
 }

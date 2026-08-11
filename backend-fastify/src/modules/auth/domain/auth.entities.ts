@@ -8,7 +8,7 @@ export interface IUserEntity {
   phone?: string
   image?: string
   role: Role
-  store_id: string
+  store_id: string | null
   created_at: Date
   updated_at: Date
   deleted_at?: Date

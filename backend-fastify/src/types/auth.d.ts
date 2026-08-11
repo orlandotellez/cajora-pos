@@ -1,6 +1,6 @@
 import type { account, session, user, verification } from "@prisma/client"
 
-export type Role = "admin" | "cajero"
+export type Role = "admin" | "cajero" | "super_admin"
 
 export interface User extends user {
   id: string

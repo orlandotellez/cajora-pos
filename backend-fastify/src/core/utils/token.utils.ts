@@ -8,11 +8,11 @@ interface TokenPayload {
   userId: string
   email: string
   role: Role
-  storeId: string
-  storeName: string
+  storeId: string | null
+  storeName: string | null
 }
 
-export const generateTokens = (userId: string, email: string, role: Role, storeId: string, storeName: string) => {
+export const generateTokens = (userId: string, email: string, role: Role, storeId: string | null, storeName: string | null) => {
   const accessTokenOptions: SignOptions = {
     expiresIn: 900  // 15 minutos en segundos
   }

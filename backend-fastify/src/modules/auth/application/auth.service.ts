@@ -56,7 +56,9 @@ function mapStoreToResponse(store: { id: string; name: string; address?: string 
   }
 }
 
-async function getStoreInfo(storeId: string): Promise<IStoreResponse> {
+async function getStoreInfo(storeId: string | null): Promise<IStoreResponse | null> {
+  // Super admin: no pertenece a ninguna tienda.
+  if (!storeId) return null
   const store = await prisma.store.findUnique({ where: { id: storeId } })
   if (!store) throw new NotFoundError("Store not found")
   return mapStoreToResponse(store)
@@ -100,6 +102,7 @@ export const createAuthService = (repository: IAuthRepository) => ({
     console.log(`Verification code for ${email}: ${verificationCode}`)
 
     const store = await getStoreInfo(storeId)
+    if (!store) throw new NotFoundError("Store not found")
     const { accessToken, refreshToken } = generateTokens(user.id, user.email, user.role as Role, store.id, store.name)
 
     await repository.session.create({
@@ -241,7 +244,13 @@ export const createAuthService = (repository: IAuthRepository) => ({
     }
 
     const store = await getStoreInfo(user.store_id)
-    const { accessToken, refreshToken } = generateTokens(user.id, user.email, user.role as Role, store.id, store.name)
+    const { accessToken, refreshToken } = generateTokens(
+      user.id,
+      user.email,
+      user.role as Role,
+      user.store_id ?? null,
+      store?.name ?? null,
+    )
 
     await repository.session.create({
       userId: user.id,
@@ -297,8 +306,8 @@ export const createAuthService = (repository: IAuthRepository) => ({
       user.id,
       user.email,
       user.role as Role,
-      store.id,
-      store.name,
+      user.store_id ?? null,
+      store?.name ?? null,
     )
 
     await repository.session.create({
@@ -347,8 +356,8 @@ export const createAuthService = (repository: IAuthRepository) => ({
       user.id,
       user.email,
       user.role as Role,
-      store.id,
-      store.name,
+      user.store_id ?? null,
+      store?.name ?? null,
     )
 
     await repository.session.create({

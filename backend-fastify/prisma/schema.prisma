@@ -10,6 +10,7 @@ datasource db {
 enum ROLE {
   admin
   cajero
+  super_admin
 }
 
 enum UNIT_TYPE {
@@ -58,13 +59,13 @@ model user {
   phone          String?
   image          String?
   role           ROLE    @default(cajero)
-  store_id       String
+  store_id       String?
 
   created_at DateTime  @default(now()) @db.Timestamptz
   updated_at DateTime  @updatedAt @db.Timestamptz
   deleted_at DateTime? @db.Timestamptz
 
-  store               store                @relation(fields: [store_id], references: [id])
+  store               store?               @relation(fields: [store_id], references: [id])
   sessions            session[]
   accounts            account[]
   sales               sale[]
