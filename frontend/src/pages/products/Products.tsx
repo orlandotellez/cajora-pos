@@ -13,6 +13,7 @@ import styles from "./Products.module.css";
 import { Header } from "@/components/pages/products/Header";
 import { Filter } from "@/components/pages/products/Filter";
 import { EditProductModal } from "@/components/pages/products/EditProductModal";
+import { ProductDetailModal } from "@/components/pages/products/ProductDetailModal";
 
 const emptyForm = {
   name: "",
@@ -37,8 +38,6 @@ export default function Products() {
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [barcodeScannerOpen, setBarcodeScannerOpen] = useState(false);
-
-  const isNew = typeof editing === "string";
 
   const {
     items: products,
@@ -90,50 +89,29 @@ export default function Products() {
     }
   }, [categories.length, suppliers.length]);
 
-  useEffect(() => {
-    if (!editing) return;
-    if (isNew) { setForm(emptyForm); return; }
-    setForm({
-      name: editing.name,
-      barcode: editing.barcode ?? "",
-      unit_type: editing.unit_type ?? "",
-      unit_quantity: editing.unit_quantity ?? 0,
-      category_id: editing.category?.id ?? "",
-      supplier_id: editing.supplier?.id ?? "",
-      price: editing.price,
-      cost: editing.cost,
-      stock: editing.stock,
-      low_stock_threshold: editing.low_stock_threshold,
-    });
-  }, [editing]);
+  function openCreate() {
+    setForm(emptyForm);
+    setEditing("new");
+  }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     try {
-      // En creación los ids vacíos van como `undefined` (el server los ignora).
-      // En edición los ids vacíos van como `null` (el server los desenlaza).
-      const emptyToNull = !isNew;
-      const valueOr = (v: string) => v || (emptyToNull ? null : undefined);
-
+      // Los ids vacíos van como `undefined` (el server los ignora).
       const data: CreateProductPayload = {
         name: form.name,
         barcode: form.barcode || undefined,
         unit_type: form.unit_type || undefined,
         unit_quantity: form.unit_quantity || undefined,
-        category_id: valueOr(form.category_id),
-        supplier_id: valueOr(form.supplier_id),
+        category_id: form.category_id || undefined,
+        supplier_id: form.supplier_id || undefined,
         price: form.price,
         cost: form.cost || undefined,
         stock: form.stock,
         low_stock_threshold: form.low_stock_threshold,
       };
-
-      if (isNew) {
-        await productsApi.create(data);
-      } else if (editing) {
-        await productsApi.update(editing.id, data);
-      }
+      await productsApi.create(data);
       setEditing(null);
       cacheClear("products");
       refreshImmediate();
@@ -158,7 +136,7 @@ export default function Products() {
 
   return (
     <div className={styles.page}>
-      <Header total={total} setEditing={() => setEditing("new")} />
+      <Header total={total} setEditing={openCreate} />
 
       <Filter
         q={q}
@@ -182,9 +160,8 @@ export default function Products() {
         refreshing={refreshing}
       />
 
-      {editing &&
+      {editing === "new" && (
         <EditProductModal
-          isNew={isNew}
           setEditing={() => setEditing(null)}
           form={form}
           setForm={setForm}
@@ -193,7 +170,21 @@ export default function Products() {
           setBarcodeScannerOpen={setBarcodeScannerOpen}
           categories={categories}
           suppliers={suppliers}
-        />}
+        />
+      )}
+
+      {typeof editing === "object" && editing && (
+        <ProductDetailModal
+          product={editing}
+          categories={categories}
+          suppliers={suppliers}
+          onClose={() => setEditing(null)}
+          onSaved={() => {
+            cacheClear("products");
+            refreshImmediate();
+          }}
+        />
+      )}
 
       <BarcodeScanner
         open={barcodeScannerOpen}

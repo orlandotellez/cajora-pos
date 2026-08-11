@@ -17,7 +17,6 @@ type Form = {
 }
 
 interface EditProductModalProps {
-  isNew: boolean
   setEditing: () => void
   form: Form
   setForm: React.Dispatch<React.SetStateAction<Form>>
@@ -28,13 +27,13 @@ interface EditProductModalProps {
   suppliers: Supplier[]
 }
 
-export const EditProductModal = ({ isNew, setEditing, handleSave, form, setForm, submitting, setBarcodeScannerOpen, categories, suppliers }: EditProductModalProps) => {
+export const EditProductModal = ({ setEditing, handleSave, form, setForm, submitting, setBarcodeScannerOpen, categories, suppliers }: EditProductModalProps) => {
   return (
     <>
       <div className={styles.overlay} onClick={setEditing}>
         <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
           <div className={styles.modalHeader}>
-            <h2 className={styles.modalTitle}>{isNew ? "Nuevo producto" : "Editar producto"}</h2>
+            <h2 className={styles.modalTitle}>Nuevo producto</h2>
             <button onClick={setEditing} className={styles.modalClose}>
               <X size={18} />
             </button>
@@ -102,7 +101,7 @@ export const EditProductModal = ({ isNew, setEditing, handleSave, form, setForm,
                 <input type="number" step="0.01" value={form.cost} onChange={(e) => setForm({ ...form, cost: Number(e.target.value) })} className={styles.input} />
               </div>
               <div className={styles.field}>
-                <label className={styles.fieldLabel}>Stock</label>
+                <label className={styles.fieldLabel}>Stock inicial</label>
                 <input type="number" value={form.stock} onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })} className={styles.input} />
               </div>
               <div className={styles.field}>
@@ -124,4 +123,3 @@ export const EditProductModal = ({ isNew, setEditing, handleSave, form, setForm,
     </>
   )
 }
-
