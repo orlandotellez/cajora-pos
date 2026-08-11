@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
+import { useAppVersion } from "@/hooks/useAppVersion";
 import { UserMenu } from "./UserMenu";
 import logoDark from "@/assets/logo_dark.svg";
 import logoLight from "@/assets/logo_light.svg";
@@ -70,6 +71,7 @@ const navGroups: NavGroup[] = [
 export function AppShell({ children }: { children: ReactNode }) {
   const { theme, toggle } = useTheme();
   const { user } = useAuth();
+  const appVersion = useAppVersion();
   const location = useLocation();
   const pathname = location.pathname;
   const isAdmin = user?.role === "admin";
@@ -139,6 +141,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             />
             <span className={styles.logoText}>Sistema POS</span>
           </div>
+          {appVersion !== null && (
+            <span className={styles.logoVersion}>v{appVersion}</span>
+          )}
           <div className={styles.logoRole}>
             {user?.role === "admin" ? "Administrador" : "Cajero"}
           </div>
@@ -174,13 +179,18 @@ export function AppShell({ children }: { children: ReactNode }) {
         className={`${styles.drawer} ${mobileMenuOpen ? styles.drawerOpen : ""}`}
       >
         <div className={styles.drawerHeader}>
-          <div className={styles.logoTop}>
-            <img
-              src={theme === "dark" ? logoLight : logoDark}
-              alt="Logo"
-              className={styles.logoImg}
-            />
-            <span className={styles.logoText}>Sistema POS</span>
+          <div>
+            <div className={styles.logoTop}>
+              <img
+                src={theme === "dark" ? logoLight : logoDark}
+                alt="Logo"
+                className={styles.logoImg}
+              />
+              <span className={styles.logoText}>Sistema POS</span>
+            </div>
+            {appVersion !== null && (
+              <span className={styles.logoVersion}>v{appVersion}</span>
+            )}
           </div>
           <button
             className={styles.drawerCloseBtn}
