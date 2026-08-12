@@ -1,0 +1,195 @@
+---
+import Icon from '../components/Icon.astro';
+
+const selfHosted = [
+  'Instalación en servidor propio',
+  'Productos y ventas ilimitadas',
+  'Datos 100% privados',
+  'Comunidad de soporte',
+];
+
+const cloud = [
+  'Respaldos automáticos diarios',
+  'Soporte técnico prioritario',
+  'Configuración asistida',
+  'Acceso remoto desde cualquier lugar',
+  'Actualizaciones automáticas',
+];
+---
+
+<section class="pricing section" id="pricing">
+  <div class="container-narrow">
+    <div class="pricing__heading">
+      <h2 class="pricing__title">Planes flexibles</h2>
+      <p class="pricing__subtitle">Elige la opción que mejor se adapte a tu infraestructura.</p>
+    </div>
+
+    <div class="pricing__grid">
+      <!-- Self-hosted -->
+      <article class="plan">
+        <div class="plan__head">
+          <h3 class="plan__title">Gratis · Self-hosted</h3>
+          <div class="plan__price">
+            <span class="plan__amount">$0</span>
+            <span class="plan__period">/siempre</span>
+          </div>
+        </div>
+
+        <ul class="plan__list">
+          {selfHosted.map((item) => (
+            <li class="plan__item">
+              <span class="plan__check"><Icon name="check" size={16} /></span>
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+
+        <a href="#" class="btn-secondary plan__cta">Descargar Instalador</a>
+      </article>
+
+      <!-- Cloud -->
+      <article class="plan plan--featured">
+        <span class="plan__tag">Recomendado</span>
+        <div class="plan__head">
+          <h3 class="plan__title">Suscripción · Cloud</h3>
+          <div class="plan__price">
+            <span class="plan__amount">$19</span>
+            <span class="plan__period">/mes</span>
+          </div>
+        </div>
+
+        <ul class="plan__list">
+          {cloud.map((item) => (
+            <li class="plan__item">
+              <span class="plan__check"><Icon name="check" size={16} /></span>
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+
+        <a href="#" class="btn-primary plan__cta">Empezar Prueba Gratis</a>
+      </article>
+    </div>
+  </div>
+</section>
+
+<style>
+  .pricing {
+    padding: 6rem 0;
+    background: var(--surface);
+  }
+
+  .pricing__heading {
+    text-align: center;
+    margin-bottom: 4rem;
+  }
+
+  .pricing__title {
+    font-size: 1.875rem;
+    margin-bottom: 1rem;
+  }
+
+  .pricing__subtitle {
+    color: var(--text-muted);
+  }
+
+  .pricing__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .plan {
+    position: relative;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    transition: background-color 250ms ease, border-color 250ms ease;
+  }
+
+  .plan--featured {
+    border-color: var(--text);
+  }
+
+  .plan__tag {
+    position: absolute;
+    top: -0.75rem;
+    right: 2rem;
+    padding: 0.25rem 0.75rem;
+    background: var(--text);
+    color: var(--bg);
+    font-size: 0.625rem;
+    font-weight: 700;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .plan__head {
+    margin-bottom: 2rem;
+  }
+
+  .plan__title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+
+  .plan__price {
+    display: flex;
+    align-items: baseline;
+    gap: 0.25rem;
+  }
+
+  .plan__amount {
+    font-size: 2.25rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .plan__period {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+  }
+
+  .plan__list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+    flex-grow: 1;
+  }
+
+  .plan__item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+  }
+
+  .plan--featured .plan__item {
+    color: var(--text);
+  }
+
+  .plan__check {
+    display: inline-flex;
+    color: var(--green);
+  }
+
+  .plan__cta {
+    padding: 0.75rem 1.5rem;
+    width: 100%;
+    text-align: center;
+    margin-top: auto;
+  }
+
+  @media (min-width: 768px) {
+    .pricing__grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+</style>
