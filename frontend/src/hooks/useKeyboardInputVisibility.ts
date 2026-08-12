@@ -22,10 +22,8 @@ export function useKeyboardInputVisibility() {
       const vv = window.visualViewport;
       const viewportTop = vv ? vv.offsetTop : 0;
       const viewportHeight = vv ? vv.height : window.innerHeight;
-      // Solo corregir si el input quedó tapado por el teclado o fuera de la
-      // pantalla (margen de 12px para no pegarse al borde).
       if (rect.bottom > viewportTop + viewportHeight - 12 || rect.top < viewportTop + 12) {
-        el.scrollIntoView({ block: "center", behavior: "auto" });
+        el.scrollIntoView({ block: "nearest", behavior: "auto" });
       }
     }
 

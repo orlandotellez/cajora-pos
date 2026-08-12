@@ -64,10 +64,14 @@
 }
 
 .mobile-checkout-payment {
-  flex-shrink: 0;
-  padding: 16px;
+  /* Puede encogerse si el teclado deja poco espacio (pantallas bajas): en ese
+     caso overflow-y:auto actúa de fallback y el scroll "nearest" del hook
+     mantiene visible el Total. Sin tope de altura para no forzar scroll
+     interno en el caso normal. */
+  flex-shrink: 1;
+  min-height: 0;
+  padding: 10px 12px;
   border-top: 1px solid var(--border);
   background: var(--card);
-  max-height: 60vh;
   overflow-y: auto;
 }

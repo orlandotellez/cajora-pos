@@ -724,3 +724,70 @@
   accent-color: var(--foreground);
   cursor: pointer;
 }
+
+.mobileCompact .totalsSection {
+  gap: 4px;
+}
+
+.mobileCompact .row {
+  font-size: 13px;
+}
+
+.mobileCompact .discountLabel {
+  font-size: 12px;
+}
+
+.mobileCompact .discountInput {
+  height: 30px;
+}
+
+.mobileCompact .manualAmountLabel {
+  font-size: 12px;
+}
+
+.mobileCompact .divider {
+  margin: 8px 0;
+}
+
+.mobileCompact .totalRow {
+  align-items: center;
+}
+
+.mobileCompact .totalValue {
+  font-size: 24px;
+}
+
+.mobileCompact .paymentSection {
+  margin-top: 8px;
+  gap: 6px;
+}
+
+.mobileCompact .field {
+  gap: 3px;
+}
+
+.mobileCompact .fieldLabel {
+  font-size: 12px;
+}
+
+.mobileCompact .select {
+  height: 34px;
+  padding: 6px 30px 6px 10px;
+  font-size: 13px;
+}
+
+.mobileCompact .input {
+  height: 34px;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.mobileCompact .changeRow {
+  font-size: 13px;
+}
+
+.mobileCompact .checkoutBtn {
+  margin-top: 10px;
+  height: 44px;
+  font-size: 15px;
+}

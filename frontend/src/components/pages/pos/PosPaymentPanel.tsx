@@ -46,7 +46,7 @@ export function PosPaymentPanel({
     if (mobileMode && discountPct === 0) setDiscountEnabled(false);
   }, [discountPct, mobileMode]);
   const showDiscountRows = !mobileMode || discountEnabled;
-  return (
+  const panel = (
     <>
       <div className={styles.totalsSection}>
         {mobileMode && (
@@ -154,4 +154,6 @@ export function PosPaymentPanel({
       )}
     </>
   );
+
+  return mobileMode ? <div className={styles.mobileCompact}>{panel}</div> : panel;
 }
