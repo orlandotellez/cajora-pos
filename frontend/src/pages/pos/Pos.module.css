@@ -412,12 +412,6 @@
   -moz-appearance: textfield;
 }
 
-.tdRight {
-  padding: 12px 16px;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-  color: var(--foreground);
-}
 
 .tdRightBold {
   padding: 12px 16px;
@@ -759,7 +753,7 @@
 
 .mobileCompact .paymentSection {
   margin-top: 8px;
-  gap: 6px;
+  gap: 16px;
 }
 
 .mobileCompact .field {
@@ -767,7 +761,7 @@
 }
 
 .mobileCompact .fieldLabel {
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .mobileCompact .select {
@@ -779,11 +773,11 @@
 .mobileCompact .input {
   height: 34px;
   padding: 6px 10px;
-  font-size: 13px;
+  font-size: 16px;
 }
 
 .mobileCompact .changeRow {
-  font-size: 13px;
+  font-size: 15px;
 }
 
 .mobileCompact .checkoutBtn {
