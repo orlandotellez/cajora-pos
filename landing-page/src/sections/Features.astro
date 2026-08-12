@@ -1,0 +1,135 @@
+---
+import Icon from '../components/Icon.astro';
+
+const features = [
+  {
+    icon: 'scan-barcode',
+    title: 'Ventas rápidas',
+    desc: 'Optimiza el cobro con búsqueda instantánea y compatibilidad con cualquier escáner de código de barras.',
+  },
+  {
+    icon: 'package',
+    title: 'Inventario inteligente',
+    desc: 'Control de stock por lotes, trazabilidad por usuario y ajustes masivos de mercancía.',
+  },
+  {
+    icon: 'clipboard-list',
+    title: 'Recetas y Combos',
+    desc: 'Crea servicios compuestos por múltiples productos con descuento automático de insumos.',
+  },
+  {
+    icon: 'bar-chart-3',
+    title: 'Reportes & KPIs',
+    desc: 'Analiza tus ventas, productos top y cierres de caja con reportes visuales en tiempo real.',
+  },
+  {
+    icon: 'users',
+    title: 'Roles y Accesos',
+    desc: 'Define qué puede hacer cada cajero y administrador con un control granular de permisos.',
+  },
+  {
+    icon: 'printer',
+    title: 'Tickets Térmicos',
+    desc: 'Configura los datos de tu tienda y pie de ticket. Compatible con cualquier impresora térmica.',
+  },
+];
+---
+
+<section class="features section" id="features">
+  <div class="container">
+    <div class="features__heading">
+      <h2 class="features__title">Todo lo que tu negocio necesita</h2>
+      <p class="features__subtitle">Herramientas profesionales para el control total de tu comercio.</p>
+    </div>
+
+    <div class="features__grid">
+      {features.map((f) => (
+        <article class="feature-card">
+          <div class="feature-card__icon">
+            <Icon name={f.icon} size={20} />
+          </div>
+          <h3 class="feature-card__title">{f.title}</h3>
+          <p class="feature-card__desc">{f.desc}</p>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .features {
+    padding: 6rem 0;
+  }
+
+  .features__heading {
+    text-align: center;
+    max-width: 42rem;
+    margin: 0 auto 4rem;
+  }
+
+  .features__title {
+    font-size: 1.875rem;
+    margin-bottom: 1rem;
+  }
+
+  .features__subtitle {
+    color: var(--text-muted);
+  }
+
+  .features__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .feature-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+    transition: transform 150ms ease, border-color 150ms ease,
+      background-color 250ms ease;
+  }
+
+  .feature-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--hover-border);
+  }
+
+  .feature-card__icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text);
+    margin-bottom: 1.5rem;
+  }
+
+  .feature-card__title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+  }
+
+  .feature-card__desc {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+
+  @media (min-width: 768px) {
+    .features__grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .features__grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+</style>
