@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { useModalBack } from "@/hooks/useModalBack";
 import styles from "./ConfirmDialog.module.css";
 
 interface Props {
@@ -22,6 +23,9 @@ export function ConfirmDialog({
   onCancel,
 }: Props) {
   const confirmRef = useRef<HTMLButtonElement>(null);
+
+  // Botón de retroceso de Android / gesto de regreso cierra el diálogo.
+  useModalBack(onCancel, open);
 
   useEffect(() => {
     if (open) {

@@ -4,6 +4,7 @@ import { inventoryApi } from "@/api/inventory";
 import { useToast } from "@/components/common/ui/Toast";
 import { UNIT_TYPE_LABELS } from "@/lib/constants";
 import styles from "./AdjustStockModal.module.css";
+import { useModalBack } from "@/hooks/useModalBack";
 
 interface AdjustStockModalProps {
   adjust: {
@@ -19,6 +20,8 @@ interface AdjustStockModalProps {
 
 export function AdjustStockModal({ adjust, onClose, onApplied }: AdjustStockModalProps) {
   const { toast } = useToast();
+  // Botón de retroceso de Android / gesto de regreso cierra el modal.
+  useModalBack(onClose);
   const [type, setType] = useState<"entrada" | "salida" | "ajuste">("entrada");
   const [qty, setQty] = useState(0);
   const [note, setNote] = useState("");

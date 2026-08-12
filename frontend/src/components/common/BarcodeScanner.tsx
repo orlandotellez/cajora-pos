@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 import { X } from "lucide-react";
+import { useModalBack } from "@/hooks/useModalBack";
 
 interface BarcodeScannerProps {
   open: boolean;
@@ -26,6 +27,9 @@ const SCANNER_ID = "barcode-scanner-element";
 export function BarcodeScanner({ open, onScan, onClose }: BarcodeScannerProps) {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Botón de retroceso de Android / gesto de regreso cierra el escáner.
+  useModalBack(onClose, open);
 
   useEffect(() => {
     if (!open) return;

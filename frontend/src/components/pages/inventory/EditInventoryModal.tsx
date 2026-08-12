@@ -7,6 +7,7 @@ import { money } from "@/lib/format";
 import { BarcodeScanner } from "@/components/common/BarcodeScanner";
 import type { Category, Supplier } from "@/api";
 import styles from "./EditInventoryModal.module.css";
+import { useModalBack } from "@/hooks/useModalBack";
 
 interface EditInventoryModalProps {
   product: Product;
@@ -18,6 +19,8 @@ interface EditInventoryModalProps {
 
 export function EditInventoryModal({ product, categories, suppliers, onClose, onSaved }: EditInventoryModalProps) {
   const { toast } = useToast();
+  // Botón de retroceso de Android / gesto de regreso cierra el modal.
+  useModalBack(onClose);
   const [name, setName] = useState(product.name);
   const [barcode, setBarcode] = useState(product.barcode ?? "");
   const [unitType, setUnitType] = useState(product.unit_type ?? "");

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useModalBack } from "@/hooks/useModalBack";
 import styles from "./PosDialog.module.css";
 
 interface PosDialogProps {
@@ -8,6 +9,9 @@ interface PosDialogProps {
 
 export function PosDialog({ dialog, onClose }: PosDialogProps) {
   const confirmRef = useRef<HTMLButtonElement>(null);
+
+  // Botón de retroceso de Android / gesto de regreso cierra el diálogo.
+  useModalBack(onClose, dialog !== null);
 
   useEffect(() => {
     if (dialog) {

@@ -6,6 +6,7 @@ import { useToast } from "@/components/common/ui/Toast";
 import { money } from "@/lib/format";
 import { UNIT_TYPE_LABELS } from "@/lib/constants";
 import { BarcodeScanner } from "@/components/common/BarcodeScanner";
+import { useModalBack } from "@/hooks/useModalBack";
 import type { Category, Supplier } from "@/api";
 import styles from "./ProductDetailModal.module.css";
 
@@ -29,6 +30,8 @@ type Form = {
 export function ProductDetailModal({ product, categories, suppliers, onClose, onSaved }: ProductDetailModalProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
+  // Botón de retroceso de Android / gesto de regreso cierra el modal.
+  useModalBack(onClose);
   const [productData, setProductData] = useState(product);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);

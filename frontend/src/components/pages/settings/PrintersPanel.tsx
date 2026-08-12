@@ -7,6 +7,7 @@ import type {
 } from "@/api/printers";
 import { sendBytesToPrinter } from "@/lib/tcp-printer";
 import { isTauriRuntime } from "@/lib/fetch";
+import { useModalBack } from "@/hooks/useModalBack";
 import { DataTable, type Column } from "@/components/common/DataTable";
 import { ApiError } from "@/api/client";
 import { useToast } from "@/components/common/ui/Toast";
@@ -61,6 +62,11 @@ export default function PrintersPanel() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const cancelledRef = useRef(false);
+
+  // Botón de retroceso de Android / gesto de regreso cierra los modales de
+  // impresora (formulario y confirmación de borrado) en vez de navegar atrás.
+  useModalBack(() => setFormOpen(false), formOpen);
+  useModalBack(() => setDeletingId(null), deletingId !== null);
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(search.trim().toLowerCase()), 300);

@@ -1,6 +1,7 @@
 import { X, ArrowDownRight, ArrowUpRight, RefreshCw } from "lucide-react";
 import type { InventoryMovement } from "@/api/inventory";
 import styles from "./MovementDetailModal.module.css";
+import { useModalBack } from "@/hooks/useModalBack";
 
 interface MovementDetailModalProps {
   movement: InventoryMovement;
@@ -8,6 +9,8 @@ interface MovementDetailModalProps {
 }
 
 export function MovementDetailModal({ movement, onClose }: MovementDetailModalProps) {
+  // Botón de retroceso de Android / gesto de regreso cierra el modal.
+  useModalBack(onClose);
   return (
     <div className={styles.overlayCenter} onClick={onClose}>
       <div className={styles.detailModal} onClick={(e) => e.stopPropagation()}>

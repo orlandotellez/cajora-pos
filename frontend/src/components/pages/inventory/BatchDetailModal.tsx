@@ -1,6 +1,7 @@
 import { X, ArrowDownRight, ArrowUpRight, RefreshCw } from "lucide-react";
 import type { BatchResponse } from "@/api/inventory";
 import styles from "./BatchDetailModal.module.css";
+import { useModalBack } from "@/hooks/useModalBack";
 
 interface BatchDetailModalProps {
   batch: BatchResponse;
@@ -8,6 +9,8 @@ interface BatchDetailModalProps {
 }
 
 export function BatchDetailModal({ batch, onClose }: BatchDetailModalProps) {
+  // Botón de retroceso de Android / gesto de regreso cierra el modal.
+  useModalBack(onClose);
   return (
     <div className={styles.overlayCenter} onClick={onClose}>
       <div className={styles.detailModal} onClick={(e) => e.stopPropagation()}>

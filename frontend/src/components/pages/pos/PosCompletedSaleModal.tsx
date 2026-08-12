@@ -5,6 +5,7 @@ import { printersApi } from "@/api/printers";
 import { usePosStore, type CartItem, type ProductCartItem, type ServiceCartItem } from "@/store/posStore";
 import styles from "./PosCompletedSaleModal.module.css";
 import { PrinterLoad } from "@/components/common/PrinterLoad";
+import { useModalBack } from "@/hooks/useModalBack";
 
 interface CompletedSaleData {
   saleId: string;
@@ -38,6 +39,8 @@ export function PosCompletedSaleModal({
   const [printing, setPrinting] = useState(false);
   const [hasPrinter, setHasPrinter] = useState(true);
   const currency = usePosStore((s) => s.currency);
+  // Botón de retroceso de Android / gesto de regreso cierra el modal.
+  useModalBack(onClose);
 
   useEffect(() => {
     printersApi.list().then((res) => {

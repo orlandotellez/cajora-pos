@@ -1,5 +1,6 @@
 import { X } from "lucide-react"
 import styles from "./EditUserModal.module.css"
+import { useModalBack } from "@/hooks/useModalBack"
 
 type Form = {
   name: string
@@ -26,6 +27,8 @@ export const EditUserModal = ({
   setForm,
   submitting
 }: EditUserModalProps) => {
+  // Botón de retroceso de Android / gesto de regreso cierra el modal.
+  useModalBack(setEditing);
   return (
     <>
       <div className={styles.overlay} onClick={setEditing}>

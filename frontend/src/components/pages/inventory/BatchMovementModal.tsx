@@ -6,6 +6,7 @@ import type { Supplier, Product } from "@/api";
 import type { CreateBatchPayload } from "@/api/inventory";
 import { UNIT_TYPE_LABELS } from "@/lib/constants";
 import styles from "./BatchMovementModal.module.css";
+import { useModalBack } from "@/hooks/useModalBack";
 
 interface BatchMovementModalProps {
   open: boolean;
@@ -27,6 +28,8 @@ type BatchFormItem = {
 
 export function BatchMovementModal({ open, suppliers, products, onClose, onCreated }: BatchMovementModalProps) {
   const { toast } = useToast();
+  // Botón de retroceso de Android / gesto de regreso cierra el modal.
+  useModalBack(onClose, open);
   const [batchType, setBatchType] = useState<"entrada" | "salida" | "ajuste">("entrada");
   const [batchSupplierId, setBatchSupplierId] = useState("");
   const [batchNotes, setBatchNotes] = useState("");

@@ -4,6 +4,7 @@ import { money } from "@/lib/format";
 import type { Service, Product } from "@/api";
 import type { CreateServicePayload } from "@/api/services";
 import styles from "./ServiceFormModal.module.css";
+import { useModalBack } from "@/hooks/useModalBack";
 
 interface Props {
   editing: Service | "new" | null;
@@ -27,6 +28,9 @@ const EMPTY_FORM = { name: "", description: "", base_price: 0 };
 export function ServiceFormModal({ editing, products, onClose, onSave }: Props) {
   const isNew = typeof editing === "string";
   const editingService = typeof editing === "object" ? editing : null;
+
+  // Botón de retroceso de Android / gesto de regreso cierra el modal.
+  useModalBack(onClose);
 
   const [form, setForm] = useState(EMPTY_FORM);
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);

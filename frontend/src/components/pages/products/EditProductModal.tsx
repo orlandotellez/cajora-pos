@@ -2,6 +2,7 @@ import { Camera, X } from "lucide-react"
 import styles from "./EditProductModal.module.css"
 import { UNIT_TYPE_LABELS } from "@/lib/constants"
 import type { Category, Supplier } from "@/api";
+import { useModalBack } from "@/hooks/useModalBack";
 
 type Form = {
   name: string,
@@ -28,6 +29,8 @@ interface EditProductModalProps {
 }
 
 export const EditProductModal = ({ setEditing, handleSave, form, setForm, submitting, setBarcodeScannerOpen, categories, suppliers }: EditProductModalProps) => {
+  // Botón de retroceso de Android / gesto de regreso cierra el modal.
+  useModalBack(setEditing);
   return (
     <>
       <div className={styles.overlay} onClick={setEditing}>

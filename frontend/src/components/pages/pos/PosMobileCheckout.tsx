@@ -1,4 +1,5 @@
 import type { ComponentProps } from "react";
+import { useModalBack } from "@/hooks/useModalBack";
 import { PosCartTable } from "./PosCartTable";
 import { PosPaymentPanel } from "./PosPaymentPanel";
 import styles from "./PosMobileCheckout.module.css";
@@ -10,6 +11,10 @@ interface Props {
 }
 
 export function PosMobileCheckout({ onClose, cartProps, paymentProps }: Props) {
+  // Botón de retroceso de Android / gesto de regreso vuelve al POS en vez de
+  // navegar a la página anterior o salir de la app.
+  useModalBack(onClose);
+
   return (
     <div className={styles["mobile-checkout"]}>
       <div className={styles["mobile-checkout-header"]}>

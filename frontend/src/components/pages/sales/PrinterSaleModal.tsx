@@ -2,6 +2,7 @@ import { useToast } from "@/components/common/ui/Toast";
 import styles from "./PrinterSaleModal.module.css"
 import { isTauriRuntime } from "@/lib/fetch";
 import { sendBytesToPrinter } from "@/lib/tcp-printer";
+import { useModalBack } from "@/hooks/useModalBack";
 import { ApiError, printersApi, type Sale } from "@/api";
 import { Printer, X } from "lucide-react";
 import { getStoredCurrency, money } from "@/lib/format";
@@ -31,6 +32,8 @@ export const PrinterSaleModal = ({
   storeFooter
 }: PrinterSaleModal) => {
   const { toast } = useToast();
+  // Botón de retroceso de Android / gesto de regreso cierra el modal.
+  useModalBack(setSelected);
   return (
     <>
       <div className={styles.overlay} onClick={setSelected}>
