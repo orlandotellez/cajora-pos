@@ -1,0 +1,96 @@
+---
+---
+
+<section class="cta section">
+  <div class="container-narrow">
+    <div class="cta__card">
+      <h2 class="cta__title">¿Listo para modernizar tu negocio?</h2>
+      <p class="cta__lead">
+        Únete a los comercios que ya optimizan sus operaciones con Caja. Descarga la versión
+        gratuita o prueba nuestra nube hoy mismo.
+      </p>
+      <div class="cta__buttons">
+        <a href="#" class="cta__primary">Crear cuenta Cloud</a>
+        <a href="#" class="cta__secondary">Ver tutorial de instalación</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .cta {
+    padding: 6rem 0;
+  }
+
+  .cta__card {
+    background: var(--text);
+    color: var(--bg);
+    border-radius: var(--radius);
+    padding: 3rem;
+    text-align: center;
+    transition: background-color 250ms ease, color 250ms ease;
+  }
+
+  .cta__title {
+    font-size: clamp(1.75rem, 4vw, 2.25rem);
+    margin-bottom: 1.5rem;
+  }
+
+  .cta__lead {
+    font-size: 1.125rem;
+    opacity: 0.8;
+    max-width: 36rem;
+    margin: 0 auto 2.5rem;
+  }
+
+  .cta__buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+  }
+
+  .cta__primary,
+  .cta__secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem 2rem;
+    border-radius: var(--radius);
+    font-weight: 700;
+    transition: opacity 150ms ease, background-color 150ms ease;
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .cta__primary {
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .cta__primary:hover {
+    opacity: 0.9;
+  }
+
+  .cta__secondary {
+    border: 1px solid var(--bg);
+    background: transparent;
+    color: var(--bg);
+  }
+
+  .cta__secondary:hover {
+    background: rgba(0, 0, 0, 0.05);
+  }
+
+  @media (min-width: 640px) {
+    .cta__buttons {
+      flex-direction: row;
+    }
+
+    .cta__primary,
+    .cta__secondary {
+      width: auto;
+    }
+  }
+</style>
