@@ -1,0 +1,161 @@
+---
+import Icon from '../components/Icon.astro';
+---
+
+<section class="hero" id="top">
+  <div class="hero__glow" aria-hidden="true"></div>
+
+  <div class="container hero__inner">
+    <h1 class="hero__title">
+      Tu punto de venta, sin comisiones<br class="hero__break" />
+      ni letra pequeña
+    </h1>
+
+    <p class="hero__lead">
+      Gestiona tus ventas, inventario y reportes con una herramienta diseñada para la eficiencia.
+      Disponible para Web, Desktop y Android.
+    </p>
+
+    <div class="hero__ctas">
+      <a href="#" class="btn-primary hero__btn-primary">Descargar gratis</a>
+      <a href="#" class="btn-secondary hero__btn-secondary">Ver demo en vivo</a>
+    </div>
+
+    <div class="hero__mockup" aria-label="Vista previa del sistema">
+      <div class="mockup-frame">
+        <div class="mockup-screen">
+          <Icon name="layout-dashboard" size={48} class="mockup__icon" />
+          <span class="mockup__label">Vista previa del sistema</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    padding: 9rem 0 5rem;
+    overflow: hidden;
+  }
+
+  .hero__glow {
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--glow);
+    z-index: -1;
+  }
+
+  .hero__inner {
+    text-align: center;
+  }
+
+  .hero__badge {
+    display: inline-block;
+    padding: 0.25rem 0.875rem;
+    background: var(--surface-2);
+    color: var(--text);
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: 1px solid var(--border-strong);
+    border-radius: 999px;
+    margin-bottom: 1.5rem;
+  }
+
+  .hero__title {
+    font-size: clamp(2.25rem, 5vw, 3.75rem);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+    margin-bottom: 1.5rem;
+  }
+
+  .hero__break {
+    display: none;
+  }
+
+  .hero__lead {
+    font-size: 1.125rem;
+    color: var(--text-muted);
+    max-width: 42rem;
+    margin: 0 auto 2.5rem;
+  }
+
+  .hero__ctas {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 4rem;
+  }
+
+  .hero__btn-primary,
+  .hero__btn-secondary {
+    width: 100%;
+    padding: 0.75rem 2rem;
+    font-size: 1rem;
+    max-width: 280px;
+  }
+
+  .hero__mockup {
+    position: relative;
+    max-width: 64rem;
+    margin: 0 auto;
+  }
+
+  .mockup-frame {
+    padding: 0.5rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    transition: background-color 250ms ease, border-color 250ms ease;
+  }
+
+  .mockup-screen {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    aspect-ratio: 16 / 9;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  .mockup__icon {
+    opacity: 0.2;
+  }
+
+  .mockup__label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    opacity: 0.4;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+  }
+
+  @media (min-width: 640px) {
+    .hero__ctas {
+      flex-direction: row;
+    }
+
+    .hero__btn-primary,
+    .hero__btn-secondary {
+      width: auto;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .hero__break {
+      display: inline;
+    }
+  }
+</style>
