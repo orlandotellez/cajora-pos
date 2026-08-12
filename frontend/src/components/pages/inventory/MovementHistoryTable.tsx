@@ -2,6 +2,7 @@ import { ChevronLeft, ChevronRight, Loader2, ArrowDownRight, ArrowUpRight, Refre
 import type { InventoryMovement } from "@/api/inventory";
 import { MOVEMENT_TYPES } from "@/lib/constants";
 import { RefreshBadge } from "@/components/common/RefreshBadge";
+import { getVisiblePages } from "@/lib/pagination";
 import styles from "./MovementHistoryTable.module.css";
 
 interface MovementHistoryTableProps {
@@ -77,7 +78,7 @@ export function MovementHistoryTable({ movements, page, totalPages, loading = fa
           >
             <ChevronLeft size={16} />
           </button>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+          {getVisiblePages(page, totalPages).map((n) => (
             <button
               key={n}
               onClick={() => onPageChange(n)}

@@ -2,6 +2,7 @@ import { type ReactNode } from "react";
 import { ChevronLeft, ChevronRight, Loader2, Pencil, Trash2 } from "lucide-react";
 import TableSkeleton, { type SkeletonCol } from "@/components/common/TableSkeleton";
 import { RefreshBadge } from "@/components/common/RefreshBadge";
+import { getVisiblePages } from "@/lib/pagination";
 import styles from "./DataTable.module.css";
 
 export interface Column<T> {
@@ -138,7 +139,7 @@ export function DataTable<T extends { id: string }>({
           >
             <ChevronLeft size={16} />
           </button>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+          {getVisiblePages(page, totalPages).map((n) => (
             <button
               key={n}
               onClick={() => onPageChange(n)}

@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight, Loader2, Eye } from "lucide-react";
 import type { BatchResponse } from "@/api/inventory";
 import { RefreshBadge } from "@/components/common/RefreshBadge";
+import { getVisiblePages } from "@/lib/pagination";
 import styles from "./BatchHistoryTable.module.css";
 
 interface BatchHistoryTableProps {
@@ -67,7 +68,7 @@ export function BatchHistoryTable({ batches, page, totalPages, loading = false, 
           >
             <ChevronLeft size={16} />
           </button>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+          {getVisiblePages(page, totalPages).map((n) => (
             <button
               key={n}
               onClick={() => onPageChange(n)}
