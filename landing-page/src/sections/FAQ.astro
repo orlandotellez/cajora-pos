@@ -1,0 +1,127 @@
+---
+import Icon from '../components/Icon.astro';
+
+const items = [
+  {
+    q: '¿Self-hosted es gratis para siempre?',
+    a: 'Sí. La versión self-hosted es gratuita para siempre: descargas el instalador, lo ejecutas en tu propio servidor y no hay comisiones, suscripciones ni letra pequeña. Solo pagas por la nube si decides usar el plan Cloud.',
+  },
+  {
+    q: '¿Dónde se guardan mis datos?',
+    a: 'En tu propia infraestructura. Con la versión self-hosted tus datos viven en tu servidor y son 100% privados. En el plan Cloud se guardan en la nube con respaldos automáticos diarios.',
+  },
+  {
+    q: '¿Funciona sin conexión a internet?',
+    a: 'Sí. La aplicación funciona 100% offline: ventas, inventario y reportes siguen disponibles sin conexión. Todo queda registrado en el dispositivo y se sincroniza automáticamente al reconectar.',
+  },
+  {
+    q: '¿Es compatible con mi impresora de tickets?',
+    a: 'Sí. Es compatible con impresoras térmicas estándar (ESC/POS, USB, Bluetooth y de red). Configura los datos de tu tienda y el pie de ticket desde los ajustes, y la impresión sale directo.',
+  },
+];
+---
+
+<section class="faq section" id="faq">
+  <div class="container-read">
+    <h2 class="faq__title">Preguntas Frecuentes</h2>
+
+    <ul class="faq__list">
+      {items.map((item) => (
+        <li>
+          <details class="faq__item" name="faq">
+            <summary class="faq__q">
+              <span>{item.q}</span>
+              <span class="faq__icon"><Icon name="plus" size={20} /></span>
+            </summary>
+            <p class="faq__a">{item.a}</p>
+          </details>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .faq {
+    padding: 6rem 0;
+  }
+
+  .faq__title {
+    font-size: 1.875rem;
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .faq__list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .faq__item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    transition: border-color 150ms ease, background-color 250ms ease;
+  }
+
+  .faq__item:hover,
+  .faq__item[open] {
+    border-color: var(--hover-border);
+  }
+
+  .faq__q {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.5rem;
+    cursor: pointer;
+    list-style: none;
+    font-weight: 600;
+  }
+
+  /* Oculta el marcador nativo en los navegadores que lo muestran */
+  .faq__q::-webkit-details-marker {
+    display: none;
+  }
+
+  .faq__q::marker {
+    content: '';
+  }
+
+  .faq__icon {
+    display: inline-flex;
+    color: var(--text-muted);
+    transition: color 150ms ease, transform 200ms ease;
+    flex-shrink: 0;
+  }
+
+  .faq__item:hover .faq__icon {
+    color: var(--text);
+  }
+
+  .faq__item[open] .faq__icon {
+    transform: rotate(45deg);
+    color: var(--text);
+  }
+
+  .faq__a {
+    padding: 0 1.5rem 1.5rem;
+    font-size: 0.875rem;
+    line-height: 1.7;
+    color: var(--text-muted);
+    animation: faq-fade 200ms ease;
+  }
+
+  @keyframes faq-fade {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>
