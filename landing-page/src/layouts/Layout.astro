@@ -1,0 +1,213 @@
+---
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = 'Caja POS · Tu punto de venta inteligente',
+  description = 'Gestiona tus ventas, inventario y reportes con una herramienta diseñada para la eficiencia. Disponible para Web, Desktop y Android.',
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="es" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#10151E" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <title>{title}</title>
+    <script is:inline>
+      // Aplica el tema antes del primer paint para evitar parpadeo (FOUC)
+      (function () {
+        var stored = null;
+        try { stored = localStorage.getItem('theme'); } catch (e) {}
+        var prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+        var theme = stored || (prefersLight ? 'light' : 'dark');
+        document.documentElement.setAttribute('data-theme', theme);
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', theme === 'light' ? '#F6F8FB' : '#10151E');
+      })();
+    </script>
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>
+
+<style is:global>
+  :root {
+    /* Design tokens — dark (por defecto) */
+    --radius: 5px;
+    --radius-sm: 3px;
+    --radius-lg: 10px;
+
+    --bg: #10151E;
+    --surface: #161C26;
+    --surface-2: #1A2230;
+    --border: #232B38;
+    --border-strong: #2E3747;
+
+    --text: #F2F2F2;
+    --text-muted: #8A93A3;
+
+    --green: #22C55E;
+
+    /* Dependientes del tema */
+    --glass: rgba(16, 21, 30, 0.8);
+    --glow: radial-gradient(
+      circle,
+      rgba(58, 71, 89, 0.15) 0%,
+      rgba(16, 21, 30, 0) 70%
+    );
+    --shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    --hover-border: #3A4759;
+
+    --max: 1280px;
+    --max-narrow: 1024px;
+    --max-read: 768px;
+
+    --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+
+  html[data-theme='light'] {
+    --bg: #F6F8FB;
+    --surface: #FFFFFF;
+    --surface-2: #EEF2F7;
+    --border: #E3E8EF;
+    --border-strong: #C6CFDA;
+
+    --text: #1A2230;
+    --text-muted: #5B6572;
+
+    --green: #16A34A;
+
+    --glass: rgba(246, 248, 251, 0.85);
+    --glow: radial-gradient(
+      circle,
+      rgba(26, 34, 48, 0.07) 0%,
+      rgba(246, 248, 251, 0) 70%
+    );
+    --shadow: 0 25px 50px -12px rgba(26, 34, 48, 0.18);
+    --hover-border: #C6CFDA;
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    overflow-x: hidden;
+    transition: background-color 250ms ease, color 250ms ease;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+    transition: color 150ms ease;
+  }
+
+  img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+
+  ul {
+    list-style: none;
+  }
+
+  h1, h2, h3, h4 {
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+
+  /* Buttons (shared atomic styles) */
+  .btn-primary,
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius);
+    font-weight: 600;
+    transition: opacity 150ms ease, background-color 150ms ease;
+  }
+
+  .btn-primary {
+    background: var(--text);
+    color: var(--bg);
+  }
+
+  .btn-primary:hover {
+    opacity: 0.9;
+  }
+
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .btn-secondary:hover {
+    background: var(--surface);
+  }
+
+  /* Container helpers (used sparingly to keep clean markup) */
+  .container {
+    width: 100%;
+    max-width: var(--max);
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  .container-narrow {
+    width: 100%;
+    max-width: var(--max-narrow);
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  .container-read {
+    width: 100%;
+    max-width: var(--max-read);
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  /* Smooth reveal on motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+    html {
+      scroll-behavior: auto;
+    }
+  }
+</style>
