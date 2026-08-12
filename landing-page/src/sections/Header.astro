@@ -1,0 +1,226 @@
+---
+import Icon from '../components/Icon.astro';
+import Logo from '../components/Logo.astro';
+
+const links = [
+  { label: 'Inicio', href: '#top' },
+  { label: 'Características', href: '#features' },
+  { label: 'Precios', href: '#pricing' },
+  { label: 'FAQ', href: '#faq' },
+];
+---
+
+<header class="site-header">
+  <div class="container site-header__row">
+    <a href="/" class="brand" aria-label="Caja POS inicio">
+      <span class="brand__mark"><Logo size={28} /></span>
+      <span class="brand__name">POS</span>
+    </a>
+
+    <nav class="site-nav" aria-label="Principal">
+      <ul class="site-nav__list">
+        {links.map((link) => (
+          <li><a href={link.href} class="site-nav__link">{link.label}</a></li>
+        ))}
+      </ul>
+    </nav>
+
+    <div class="site-header__actions">
+      <button
+        class="icon-btn"
+        type="button"
+        role="switch"
+        aria-checked="false"
+        aria-label="Cambiar a tema claro"
+        data-theme-toggle
+      >
+        <span class="icon-btn__sun"><Icon name="sun" size={20} /></span>
+        <span class="icon-btn__moon"><Icon name="moon" size={20} /></span>
+      </button>
+      <a href="#" class="btn-primary site-header__cta">Empezar gratis</a>
+    </div>
+  </div>
+</header>
+
+<script>
+  const root = document.documentElement;
+  const toggle = document.querySelector('[data-theme-toggle]');
+  const lightMeta = '#F6F8FB';
+  const darkMeta = '#10151E';
+
+  const syncToggle = () => {
+    const theme = root.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+    toggle?.setAttribute(
+      'aria-label',
+      theme === 'light' ? 'Cambiar a tema oscuro' : 'Cambiar a tema claro'
+    );
+    toggle?.setAttribute('aria-checked', String(theme === 'light'));
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', theme === 'light' ? lightMeta : darkMeta);
+  };
+
+  toggle?.addEventListener('click', () => {
+    const next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+    root.setAttribute('data-theme', next);
+    try {
+      localStorage.setItem('theme', next);
+    } catch (e) {
+      /* almacenamiento no disponible */
+    }
+    syncToggle();
+  });
+
+  syncToggle();
+
+  /* Scrollspy: resalta el nav item de la sección visible */
+  const navLinks = [...document.querySelectorAll('.site-nav__link')];
+  const sections = navLinks
+    .map((link) => document.querySelector(link.getAttribute('href')))
+    .filter(Boolean);
+
+  const setActive = (id) => {
+    navLinks.forEach((link) => {
+      const isActive = link.getAttribute('href') === `#${id}`;
+      link.classList.toggle('is-active', isActive);
+      if (isActive) {
+        link.setAttribute('aria-current', 'true');
+      } else {
+        link.removeAttribute('aria-current');
+      }
+    });
+  };
+
+  const onScroll = () => {
+    // Línea de detección: justo debajo del header fijo
+    const marker = 90;
+    let current = sections[0]?.id ?? '';
+    for (const section of sections) {
+      if (section.getBoundingClientRect().top <= marker) {
+        current = section.id;
+      } else {
+        break;
+      }
+    }
+    setActive(current);
+  };
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+</script>
+
+<style>
+  .site-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background: var(--glass);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    transition: background-color 250ms ease, border-color 250ms ease;
+  }
+
+  .site-header__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    height: 64px;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text);
+    font-weight: 700;
+    font-size: 1.125rem;
+    letter-spacing: -0.01em;
+  }
+
+  .brand:hover {
+    color: var(--text);
+  }
+
+  .brand__mark {
+    display: inline-flex;
+    color: var(--text);
+  }
+
+  .site-nav__list {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    margin-left: 30px;
+  }
+
+  .site-nav__link {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    transition: color 150ms ease;
+  }
+
+  .site-nav__link:hover {
+    color: var(--text);
+  }
+
+  .site-nav__link.is-active {
+    color: var(--text);
+  }
+
+  .site-header__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .site-header__cta {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  .icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background-color 150ms ease, color 150ms ease;
+  }
+
+  .icon-btn:hover {
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  /* El icono muestra el tema al que se puede cambiar */
+  .icon-btn__sun {
+    display: inline-flex;
+  }
+
+  .icon-btn__moon {
+    display: none;
+  }
+
+  html[data-theme='light'] .icon-btn__sun {
+    display: none;
+  }
+
+  html[data-theme='light'] .icon-btn__moon {
+    display: inline-flex;
+  }
+
+  @media (max-width: 768px) {
+    .site-nav {
+      display: none;
+    }
+  }
+</style>
