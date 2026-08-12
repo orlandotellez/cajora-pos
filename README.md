@@ -9,9 +9,9 @@
 ![Rust](https://img.shields.io/badge/rust-%23000000.svg?style=for-the-badge&logo=rust&logoColor=white)
 ![Axum](https://img.shields.io/badge/axum-%23000000.svg?style=for-the-badge&logo=rust&logoColor=white)
 
-Sistema de Punto de Venta (POS) multiplataforma construido como **monorepo** con tres proyectos coordinados: un frontend común empaquetado con **Tauri** (Web + Desktop + Mobile), un backend **Node.js + Fastify** ya terminado y un backend alternativo **Rust + Axum** actualmente en desarrollo.
+Sistema de Punto de Venta (POS) multiplataforma construido como **monorepo** con cuatro proyectos coordinados: un frontend común empaquetado con **Tauri** (Web + Desktop + Mobile), un backend **Node.js + Fastify** ya terminado, un backend alternativo **Rust + Axum** actualmente en desarrollo y un sitio de **landing page** en Astro.
 
-El sistema cubre la operación típica de un negocio minorista: gestión de productos, categorías, proveedores, inventario por lotes y movimientos individuales, ventas (con productos y servicios), autenticación de usuarios, configuración del negocio y reportes.
+El sistema cubre la operación típica de un negocio minorista: gestión de productos, categorías, proveedores, inventario por lotes y movimientos individuales, ventas (con productos y servicios), autenticación de usuarios, configuración del negocio y reportes. La landing page presenta el producto y sus planes.
 
 ---
 
@@ -26,6 +26,7 @@ El sistema cubre la operación típica de un negocio minorista: gestión de prod
 - [Frontend (Web / Desktop / Mobile)](#frontend-web--desktop--mobile)
 - [Backend Fastify (terminado)](#backend-fastify-terminado)
 - [Backend Rust (en progreso)](#backend-rust-en-progreso)
+- [Landing Page (Astro)](#landing-page-astro)
 - [Modelo de datos](#modelo-de-datos)
 - [Variables de entorno](#variables-de-entorno)
 - [Scripts útiles](#scripts-útiles)
@@ -104,6 +105,16 @@ El frontend puede hablar con **cualquiera** de los dos backends: ambos exponen l
 | Config | `dotenvy` |
 | Utilidades | `uuid`, `chrono`, `async-trait`, `nonce_cell` |
 
+### Landing Page (✅ terminada)
+| Capa | Tecnología |
+| --- | --- |
+| Framework | **Astro 7** |
+| Lenguaje | TypeScript |
+| Estilos | CSS puro con variables (design tokens) — sin Tailwind |
+| Iconos | SVG inline (`Icon.astro`) |
+| Tema | Claro/oscuro con toggle + `localStorage` + `prefers-color-scheme` |
+| Deploy | Build estático (`output: static`) |
+
 ---
 
 ## Estructura del repositorio
@@ -146,24 +157,34 @@ El frontend puede hablar con **cualquiera** de los dos backends: ambos exponen l
 │   ├── http/                # Colección de requests (.http) para VS Code / IntelliJ
 │   └── docs/                # manual-fastify.md, prisma.md
 │
-└── backend-rust/            # API Rust con Axum (EN PROGRESO)
+├── backend-rust/            # API Rust con Axum (EN PROGRESO)
+│   ├── src/
+│   │   ├── main.rs          # Bootstrap Axum + CORS + TraceLayer
+│   │   ├── routes/          # Router principal
+│   │   ├── features/        # Patrón vertical slices (auth implementado)
+│   │   │   └── auth/
+│   │   │       ├── domain/           # contratos + entities
+│   │   │       ├── application/      # servicios (registro, sesión…)
+│   │   │       ├── presentation/     # handlers + dto + routes
+│   │   │       └── infrastructure/   # sqlx repos + models + mapper
+│   │   ├── shared/          # config, errors, security, state, validación
+│   │   ├── database/        # conexión + migrations SQL
+│   │   └── scripts/seed.rs  # Binario independiente de seed
+│   ├── database/migrations/ # Migraciones SQL puras
+│   └── docs/                # manual-axum.md, sqlx.md, estructura.md
+│
+└── landing-page/            # Sitio de marketing en Astro (terminado)
     ├── src/
-    │   ├── main.rs          # Bootstrap Axum + CORS + TraceLayer
-    │   ├── routes/          # Router principal
-    │   ├── features/        # Patrón vertical slices (auth implementado)
-    │   │   └── auth/
-    │   │       ├── domain/           # contratos + entities
-    │   │       ├── application/      # servicios (registro, sesión…)
-    │   │       ├── presentation/     # handlers + dto + routes
-    │   │       └── infrastructure/   # sqlx repos + models + mapper
-    │   ├── shared/          # config, errors, security, state, validación
-    │   ├── database/        # conexión + migrations SQL
-    │   └── scripts/seed.rs  # Binario independiente de seed
-    ├── database/migrations/ # Migraciones SQL puras
-    └── docs/                # manual-axum.md, sqlx.md, estructura.md
+    │   ├── components/      # Icon.astro (SVGs inline), Logo.astro
+    │   ├── layouts/         # Layout.astro (design tokens + tema)
+    │   ├── pages/           # index.astro
+    │   └── sections/        # Header, Hero, Stats, Features, Pricing, FAQ, CTA, Footer
+    ├── public/              # favicons
+    ├── astro.config.mjs
+    └── package.json
 ```
 
-Cada workspace usa **pnpm** (frontend + backend-fastify) y **Cargo** (backend-rust) como package manager.
+Cada workspace usa **pnpm** (frontend + backend-fastify + landing-page) y **Cargo** (backend-rust) como package manager.
 
 ---
 
@@ -173,6 +194,7 @@ Cada workspace usa **pnpm** (frontend + backend-fastify) y **Cargo** (backend-ru
 | --- | --- |
 | `backend-fastify/` | ✅ **Terminado** — todos los módulos implementados con arquitectura por capas (domain / application / presentation / infrastructure). |
 | `frontend/` | ✅ **Terminado** — UI completa, estado global, integración con API, build para Web / Desktop / Android vía Tauri 2. |
+| `landing-page/` | ✅ **Terminada** — sitio estático de marketing con Astro, secciones por componente, tema claro/oscuro y build estático. |
 | `backend-rust/` | 🚧 **En progreso** — bootstrap, conexión a DB, CORS, tracing, shutdown graceful y **módulo `auth`** completos. El resto de features (products, sales, inventory, etc.) se está migrando siguiendo el mismo patrón `features/<recurso>/{domain,application,presentation,infrastructure}`. |
 
 ---
@@ -216,6 +238,11 @@ pnpm tauri android dev      # Ejecuta en un dispositivo/emulador Android
 cd backend-rust
 cp .env.example .env        # editar DATABASE_URL / REDIS_URL / JWT_SECRET
 cargo run --bin server      # arranca en http://localhost:4001
+
+# 4) Landing page (opcional, en otra terminal)
+cd landing-page
+pnpm install
+pnpm dev                    # Dev server en http://localhost:4321
 ```
 
 > Para usar el **backend Rust** solo hay que apuntar el frontend a `http://localhost:4001/api/v1` (configurable vía `config-api.json` o la variable de entorno del Vite dev server). Durante el periodo de transición ambos backends están operativos.
@@ -287,6 +314,40 @@ Réplica de la API escrita en Rust con el mismo contrato HTTP (mismo prefijo `/a
 - Documentación ampliada en `backend-rust/docs/` (`manual-axum.md`, `sqlx.md`, `estructura.md`).
 
 > El resto de features (products, sales, inventory, services, users, suppliers, settings) se está migrando siguiendo el mismo esqueleto del módulo `auth`.
+
+---
+
+## Landing Page (Astro)
+
+Sitio estático de marketing para Caja POS construido con **Astro 7** y CSS puro (sin Tailwind ni frameworks de estilos). Adapta el diseño de `template/landing-page.html` a componentes Astro con estilos scoped.
+
+Secciones incluidas (cada una en `src/sections/`):
+
+- **Header** — navbar fijo con glass effect, navegación con scrollspy (resalta la sección visible) y toggle de tema.
+- **Hero** — título, CTAs y mockup de preview con glow de fondo.
+- **Stats** — banda de 4 estadísticas (ventas rápidas, stock real, multi-usuario, 100% offline).
+- **Features** — grilla de 6 tarjetas con iconos SVG.
+- **Pricing** — plan self-hosted gratis y suscripción cloud con plan recomendado.
+- **FAQ** — accordion nativo `<details>/<summary>` con respuestas.
+- **CTA** — card final invertida con llamados a acción.
+- **Footer** — logo, links legales y copyright.
+
+Características:
+
+- **Tema claro/oscuro** con toggle persistente (`localStorage`), respeta `prefers-color-scheme` como valor inicial y aplica el tema antes del primer paint (sin parpadeo).
+- **Design tokens** en `src/layouts/Layout.astro`: colores, radios, sombras y espaciado vía CSS variables para ambos temas.
+- **Iconos Lucide** inline en `src/components/Icon.astro` (sin dependencias externas de iconos).
+- **Componentes**: `Icon.astro` y `Logo.astro` reutilizables en Header y Footer.
+
+### Comandos
+
+```bash
+cd landing-page
+pnpm install
+pnpm dev        # Dev server en http://localhost:4321
+pnpm build      # Build estático a ./dist/
+pnpm preview    # Previsualizar el build
+```
 
 ---
 
@@ -378,6 +439,11 @@ cargo run --bin seed        # Seed de datos
 cargo test                  # Tests
 cargo fmt --all             # Formatear
 cargo clippy --all-targets  # Lints
+
+# Landing page
+pnpm dev                    # Dev server en http://localhost:4321
+pnpm build                  # Build estático a ./dist/
+pnpm preview                # Previsualizar el build
 ```
 
 ---
