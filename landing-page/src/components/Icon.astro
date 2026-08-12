@@ -1,0 +1,125 @@
+---
+export interface Props {
+  name:
+    | 'moon'
+    | 'sun'
+    | 'scan-barcode'
+    | 'package'
+    | 'clipboard-list'
+    | 'bar-chart-3'
+    | 'users'
+    | 'printer'
+    | 'check'
+    | 'plus'
+    | 'layout-dashboard';
+  size?: number;
+  class?: string;
+}
+
+const { name, size = 24, class: className = '' } = Astro.props;
+const s = size;
+const strokeW = Math.max(1.5, Math.min(2, s / 12));
+---
+
+{name === 'moon' && (
+  <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width={strokeW} stroke-linecap="round" stroke-linejoin="round" class={className}>
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+  </svg>
+)}
+
+{name === 'sun' && (
+  <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width={strokeW} stroke-linecap="round" stroke-linejoin="round" class={className}>
+    <circle cx="12" cy="12" r="4" />
+    <path d="M12 2v2" />
+    <path d="M12 20v2" />
+    <path d="m4.93 4.93 1.41 1.41" />
+    <path d="m17.66 17.66 1.41 1.41" />
+    <path d="M2 12h2" />
+    <path d="M20 12h2" />
+    <path d="m6.34 17.66-1.41 1.41" />
+    <path d="m19.07 4.93-1.41 1.41" />
+  </svg>
+)}
+
+{name === 'scan-barcode' && (
+  <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width={strokeW} stroke-linecap="round" stroke-linejoin="round" class={className}>
+    <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+    <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+    <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+    <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+    <path d="M7 8v8" />
+    <path d="M11 8v8" />
+    <path d="M15 8v8" />
+    <path d="M3 8h18" />
+    <path d="M3 16h18" />
+  </svg>
+)}
+
+{name === 'package' && (
+  <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width={strokeW} stroke-linecap="round" stroke-linejoin="round" class={className}>
+    <path d="M16.5 9.4 7.55 4.24" />
+    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+    <path d="M3.27 6.96 12 12.01l8.73-5.05" />
+    <path d="M12 22.08V12" />
+  </svg>
+)}
+
+{name === 'clipboard-list' && (
+  <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width={strokeW} stroke-linecap="round" stroke-linejoin="round" class={className}>
+    <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+    <path d="M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2z" />
+    <path d="M9 12h.01" />
+    <path d="M9 16h.01" />
+    <path d="M13 12h3" />
+    <path d="M13 16h3" />
+  </svg>
+)}
+
+{name === 'bar-chart-3' && (
+  <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width={strokeW} stroke-linecap="round" stroke-linejoin="round" class={className}>
+    <path d="M3 3v18h18" />
+    <path d="M7 17V9" />
+    <path d="M11 17V5" />
+    <path d="M15 17v-3" />
+    <path d="M19 17v-1" />
+  </svg>
+)}
+
+{name === 'users' && (
+  <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width={strokeW} stroke-linecap="round" stroke-linejoin="round" class={className}>
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+    <circle cx="9" cy="7" r="4" />
+    <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+  </svg>
+)}
+
+{name === 'printer' && (
+  <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width={strokeW} stroke-linecap="round" stroke-linejoin="round" class={className}>
+    <path d="M6 9V2h12v7" />
+    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+    <path d="M6 14h12v8H6z" />
+  </svg>
+)}
+
+{name === 'check' && (
+  <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width={strokeW} stroke-linecap="round" stroke-linejoin="round" class={className}>
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+)}
+
+{name === 'plus' && (
+  <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width={strokeW} stroke-linecap="round" stroke-linejoin="round" class={className}>
+    <line x1="12" y1="5" x2="12" y2="19" />
+    <line x1="5" y1="12" x2="19" y2="12" />
+  </svg>
+)}
+
+{name === 'layout-dashboard' && (
+  <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width={strokeW} stroke-linecap="round" stroke-linejoin="round" class={className}>
+    <rect x="3" y="3" width="7" height="9" />
+    <rect x="14" y="3" width="7" height="5" />
+    <rect x="14" y="12" width="7" height="9" />
+    <rect x="3" y="16" width="7" height="5" />
+  </svg>
+)}
