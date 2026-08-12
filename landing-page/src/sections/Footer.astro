@@ -1,0 +1,86 @@
+---
+import Logo from '../components/Logo.astro';
+
+const legalLinks = [
+  { label: 'Privacidad', href: '#' },
+  { label: 'Términos', href: '#' },
+  { label: 'Contacto', href: '#' },
+  { label: 'GitHub', href: '#' },
+];
+---
+
+<footer class="footer">
+  <div class="container footer__row">
+    <a href="/" class="footer__brand" aria-label="Caja POS">
+      <span class="footer__mark"><Logo size={24} variant="muted" /></span>
+      <span class="footer__name">POS</span>
+    </a>
+
+    <nav class="footer__nav" aria-label="Legal">
+      <ul class="footer__list">
+        {legalLinks.map((link) => (
+          <li><a href={link.href} class="footer__link">{link.label}</a></li>
+        ))}
+      </ul>
+    </nav>
+
+    <p class="footer__meta">© 2026 POS. v2.0.6</p>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    padding: 3rem 0;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.875rem;
+  }
+
+  .footer__row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    text-align: center;
+  }
+
+  .footer__brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-muted);
+  }
+
+  .footer__mark {
+    display: inline-flex;
+    filter: grayscale(1);
+    opacity: 0.5;
+  }
+
+  .footer__name {
+    color: var(--text);
+    opacity: 0.9;
+    font-weight: 700;
+  }
+
+  .footer__list {
+    display: flex;
+    gap: 2rem;
+  }
+
+  .footer__link {
+    color: var(--text-muted);
+  }
+
+  .footer__link:hover {
+    color: var(--text);
+  }
+
+  @media (min-width: 768px) {
+    .footer__row {
+      flex-direction: row;
+      text-align: left;
+    }
+  }
+</style>
