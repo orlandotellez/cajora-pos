@@ -5,11 +5,14 @@ import { PageLoader } from "./components/common/PageLoader";
 import { useAuth } from "./context/AuthContext";
 import { SplashScreen } from "./context/AppBootstrap";
 import { useSelectAllNumberInputs } from "./hooks/useSelectAllNumberInputs";
+import { useKeyboardInputVisibility } from "./hooks/useKeyboardInputVisibility";
 import { installModalBackHandler, installNativeBackHandler } from "./lib/modal-back";
 
 export default function App() {
   const { user, loading } = useAuth();
   useSelectAllNumberInputs();
+  // El teclado de Android no debe tapar el input enfocado: lo mantiene visible.
+  useKeyboardInputVisibility();
 
   // El botón de retroceso de Android cierra modales en vez de navegar atrás.
   useEffect(() => {
