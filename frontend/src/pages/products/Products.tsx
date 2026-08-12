@@ -6,6 +6,7 @@ import type { Product, Category, Supplier } from "@/api";
 import { cacheClear } from "@/lib/simple-cache";
 import { useCrudPagination } from "@/hooks/useCrudPagination";
 import { useToast } from "@/components/common/ui/Toast";
+import { usePosStore } from "@/store/posStore";
 import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
 import { ProductTable } from "@/components/pages/products/ProductTable";
 import { BarcodeScanner } from "@/components/common/BarcodeScanner";
@@ -30,6 +31,7 @@ const emptyForm = {
 
 export default function Products() {
   const { toast } = useToast();
+  const addToCart = usePosStore((s) => s.addToCart);
   const [categoryId, setCategoryId] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -156,6 +158,25 @@ export default function Products() {
         onPageChange={setPage}
         onEdit={(p) => setEditing(p)}
         onDelete={(p) => setDeleteTarget(p.id)}
+        onAddToCart={(p) => {
+          const inCart = usePosStore
+            .getState()
+            .cart.find((x) => x._type === "product" && x.id === p.id);
+          const inCartQty = inCart ? inCart.quantity : 0;
+          if (p.stock <= 0) {
+            toast(`"${p.name}" no tiene stock disponible`, "error");
+            return;
+          }
+          if (inCartQty + 1 > p.stock) {
+            toast(
+              `Stock insuficiente para "${p.name}": disponible ${p.stock}, ya tenés ${inCartQty} en la lista`,
+              "error",
+            );
+            return;
+          }
+          addToCart(p);
+          toast(`"${p.name}" agregado a la lista de venta (${inCartQty + 1} en total)`, "success");
+        }}
         dimmed={false}
         refreshing={refreshing}
       />

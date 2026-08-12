@@ -1,4 +1,5 @@
 import { Plus } from "lucide-react"
+import { CartIndicator } from "@/components/common/CartIndicator"
 import styles from "./Header.module.css"
 
 interface HeaderProps {
@@ -21,9 +22,12 @@ export const Header = ({ total, setEditing, loading = false }: HeaderProps) => {
             )}
           </p>
         </div>
-        <button onClick={setEditing} className={styles.primaryBtn}>
-          <Plus size={16} /> Nuevo
-        </button>
+        <div className={styles.headerActions}>
+          <CartIndicator />
+          <button onClick={setEditing} className={styles.primaryBtn}>
+            <Plus size={16} /> Nuevo
+          </button>
+        </div>
       </header>
     </>
   )

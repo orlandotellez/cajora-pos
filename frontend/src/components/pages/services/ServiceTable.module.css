@@ -16,3 +16,34 @@
 .service-price {
   font-weight: 500;
 }
+
+.add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  background: transparent;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--foreground, #111827);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.add-btn:hover:not(:disabled):not(.add-btn-blocked) {
+  background: var(--accent, #f3f4f6);
+  border-color: color-mix(in srgb, var(--border, #e5e7eb) 40%, var(--foreground, #111827));
+}
+
+.add-btn:active:not(:disabled):not(.add-btn-blocked) {
+  transform: translateY(0.5px);
+}
+
+.add-btn:disabled,
+.add-btn-blocked {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

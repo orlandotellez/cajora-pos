@@ -70,10 +70,10 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: number) =
 
   const bgColor =
     toast.variant === "success"
-      ? "#22c55e"
+      ? "#16a34a"
       : toast.variant === "error"
-        ? "#ef4444"
-        : "#3b82f6";
+        ? "#dc2626"
+        : "#2563eb";
 
   return (
     <div

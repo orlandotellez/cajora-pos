@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { ShoppingCart } from "lucide-react";
 import { money } from "@/lib/format";
 import { DataTable, type Column } from "@/components/common/DataTable";
 import type { Service } from "@/api";
@@ -13,6 +14,8 @@ interface ServiceTableProps {
   onPageChange: (page: number) => void;
   onEdit: (service: Service) => void;
   onDelete: (service: Service) => void;
+  onAddToCart?: (service: Service) => void;
+  blockedIds?: Set<string>;
   dimmed?: boolean;
   refreshing?: boolean;
 }
@@ -26,6 +29,8 @@ export function ServiceTable({
   onPageChange,
   onEdit,
   onDelete,
+  onAddToCart,
+  blockedIds,
   dimmed,
   refreshing,
 }: ServiceTableProps) {
@@ -77,8 +82,44 @@ export function ServiceTable({
           </span>
         ),
       },
+      {
+        key: "add",
+        label: "Agregar",
+        align: "right",
+        width: "110px",
+        render: (s) => {
+          const inactive = !s.is_active;
+          // Bloqueado (visual) cuando los sub-productos no alcanzan para una
+          // unidad más. Se mantiene clickeable a propósito: muestra el toast
+          // de error con el detalle de stock.
+          const blocked = (blockedIds?.has(s.id) ?? false) && !inactive;
+          return (
+            <button
+              className={[
+                styles["add-btn"],
+                blocked ? styles["add-btn-blocked"] : "",
+              ].join(" ")}
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddToCart?.(s);
+              }}
+              disabled={inactive}
+              title={
+                inactive
+                  ? "Servicio inactivo"
+                  : blocked
+                    ? "Stock insuficiente"
+                    : "Agregar a la lista de venta"
+              }
+            >
+              <ShoppingCart size={13} />
+              Agregar
+            </button>
+          );
+        },
+      },
     ],
-    [],
+    [blockedIds],
   );
 
   return (
@@ -95,10 +136,11 @@ export function ServiceTable({
       onDelete={onDelete}
       emptyMessage="Sin servicios"
       skeletonCols={[
-        { width: "30%" },
-        { width: "35%" },
-        { width: "20%", align: "right" },
-        { width: "15%" },
+        { width: "28%" },
+        { width: "32%" },
+        { width: "18%", align: "right" },
+        { width: "12%" },
+        { width: "110px" },
         { width: "80px" },
       ]}
       dimmed={dimmed}

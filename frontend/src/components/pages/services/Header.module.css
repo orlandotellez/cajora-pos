@@ -2,6 +2,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px 16px;
+  flex-wrap: wrap;
   margin-bottom: 32px;
 }
 
@@ -61,4 +63,11 @@
   font-weight: 500;
   cursor: pointer;
   height: 40px;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
 }

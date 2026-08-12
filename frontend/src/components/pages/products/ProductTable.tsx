@@ -1,7 +1,9 @@
 import { useMemo } from "react";
+import { ShoppingCart } from "lucide-react";
 import { money } from "@/lib/format";
 import { UNIT_TYPE_LABELS } from "@/lib/constants";
 import { DataTable, type Column } from "@/components/common/DataTable";
+import { usePosStore } from "@/store/posStore";
 import type { Product } from "@/api";
 import styles from "./ProductTable.module.css";
 
@@ -14,6 +16,7 @@ interface ProductTableProps {
   onPageChange: (page: number) => void;
   onEdit: (product: Product) => void;
   onDelete: (product: Product) => void;
+  onAddToCart?: (product: Product) => void;
   dimmed?: boolean;
   refreshing?: boolean;
 }
@@ -27,9 +30,21 @@ export function ProductTable({
   onPageChange,
   onEdit,
   onDelete,
+  onAddToCart,
   dimmed,
   refreshing,
 }: ProductTableProps) {
+  const cart = usePosStore((s) => s.cart);
+
+  // Cantidad por producto ya agregada a la lista de venta.
+  const cartQty = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const item of cart) {
+      if (item._type === "product") map[item.id] = item.quantity;
+    }
+    return map;
+  }, [cart]);
+
   const columns: Column<Product>[] = useMemo(
     () => [
       {
@@ -77,8 +92,37 @@ export function ProductTable({
           </span>
         ),
       },
+      {
+        key: "add",
+        label: "Agregar",
+        align: "right",
+        width: "110px",
+        render: (p) => {
+          // Bloqueado (visual) cuando no queda stock para una unidad más:
+          // sin existencias o la cantidad en lista ya alcanzó el stock.
+          // Se mantiene clickeable a propósito para mostrar el toast de error.
+          const inCartQty = cartQty[p.id] ?? 0;
+          const blocked = p.stock <= 0 || inCartQty >= p.stock;
+          return (
+            <button
+              className={[
+                styles["add-btn"],
+                blocked ? styles["add-btn-blocked"] : "",
+              ].join(" ")}
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddToCart?.(p);
+              }}
+              title={blocked ? "Stock insuficiente" : "Agregar a la lista de venta"}
+            >
+              <ShoppingCart size={13} />
+              Agregar
+            </button>
+          );
+        },
+      },
     ],
-    [],
+    [cartQty],
   );
 
   return (
@@ -95,9 +139,10 @@ export function ProductTable({
       onDelete={onDelete}
       emptyMessage="Sin productos"
       skeletonCols={[
-        { width: "55%" },
-        { width: "20%", align: "right" },
-        { width: "20%", align: "right" },
+        { width: "50%" },
+        { width: "18%", align: "right" },
+        { width: "18%", align: "right" },
+        { width: "110px" },
         { width: "80px" },
       ]}
       dimmed={dimmed}

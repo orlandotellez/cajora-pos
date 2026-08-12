@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { servicesApi, type CreateServicePayload } from "@/api/services";
 import { productsApi } from "@/api/products";
 import type { Service, Product } from "@/api";
 import { cacheClear } from "@/lib/simple-cache";
 import { useCrudPagination } from "@/hooks/useCrudPagination";
 import { useToast } from "@/components/common/ui/Toast";
+import { usePosStore } from "@/store/posStore";
 import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
 import { ServiceTable } from "@/components/pages/services/ServiceTable";
 import styles from "./Services.module.css";
@@ -14,6 +15,7 @@ import { Filter } from "@/components/pages/services/Filter";
 
 export default function Services() {
   const { toast } = useToast();
+  const addToCart = usePosStore((s) => s.addToCart);
 
   const {
     items: services,
@@ -39,6 +41,23 @@ export default function Services() {
   const [products, setProducts] = useState<Product[]>([]);
   const [editing, setEditing] = useState<Service | "new" | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+
+  const cart = usePosStore((s) => s.cart);
+
+  const blockedServiceIds = useMemo(() => {
+    const blocked = new Set<string>();
+    if (products.length === 0) return blocked;
+    for (const s of services) {
+      const inCart = cart.find((x) => x._type === "service" && x.service_id === s.id);
+      const totalQty = (inCart?.quantity ?? 0) + 1;
+      const shortage = s.products.some((sp) => {
+        const product = products.find((p) => p.id === sp.product_id);
+        return !product || sp.quantity * totalQty > product.stock;
+      });
+      if (shortage) blocked.add(s.id);
+    }
+    return blocked;
+  }, [products, services, cart]);
 
   useEffect(() => {
     productsApi
@@ -80,6 +99,58 @@ export default function Services() {
     }
   }
 
+  async function handleAddToCart(s: Service) {
+    let productsList = products;
+    if (productsList.length === 0) {
+      try {
+        const res = await productsApi.list({ active: true, limit: 100 });
+        productsList = res.products;
+      } catch {
+        toast(`No se pudo verificar el stock de "${s.name}"`, "error");
+        return;
+      }
+    }
+
+    const inCart = usePosStore
+      .getState()
+      .cart.find((x) => x._type === "service" && x.service_id === s.id);
+    const totalQty = (inCart?.quantity ?? 0) + 1;
+
+    const stocks = new Map<string, number>();
+    const shortages: string[] = [];
+    for (const sp of s.products) {
+      const product = productsList.find((p) => p.id === sp.product_id);
+      if (!product) {
+        shortages.push(`"${sp.product_name}" (no se pudo verificar stock)`);
+        continue;
+      }
+      stocks.set(sp.product_id, product.stock);
+      const required = sp.quantity * totalQty;
+      if (required > product.stock) {
+        shortages.push(
+          `"${sp.product_name}": disponible ${product.stock}, requerido ${required} (${sp.quantity} × ${totalQty})`,
+        );
+      }
+    }
+
+    if (shortages.length > 0) {
+      toast(`No hay stock suficiente para "${s.name}": ${shortages.join(" · ")}`, "error");
+      return;
+    }
+
+    addToCart(
+      {
+        id: s.id,
+        service_id: s.id,
+        name: s.name,
+        base_price: s.base_price,
+        products: s.products,
+      },
+      stocks,
+    );
+    toast(`"${s.name}" agregado a la lista de venta`, "success");
+  }
+
   return (
     <div className={styles.page}>
       <Header total={total} setEditing={() => setEditing("new")} loading={loading} />
@@ -95,6 +166,8 @@ export default function Services() {
         onPageChange={setPage}
         onEdit={(s) => setEditing(s)}
         onDelete={(s) => setDeleteTarget(s.id)}
+        onAddToCart={handleAddToCart}
+        blockedIds={blockedServiceIds}
         dimmed={false}
         refreshing={refreshing}
       />
