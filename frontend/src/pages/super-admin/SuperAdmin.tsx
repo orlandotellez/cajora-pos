@@ -5,7 +5,6 @@ import {
   Store,
   Users,
   Package,
-  Receipt,
   Shield,
   ShieldOff,
   Crown,
@@ -23,24 +22,59 @@ import {
 import { useSuperAdminGuard } from "@/hooks/useSuperAdminGuard";
 import styles from "./SuperAdmin.module.css";
 
+/** Iniciales (máx. 2 letras) derivadas del nombre, sin datos extra. */
+function initials(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
+/** Color determinístico por nombre para los avatares. */
+function hueFromString(value: string): number {
+  let hash = 0;
+  for (let i = 0; i < value.length; i++) {
+    hash = (hash * 31 + value.charCodeAt(i)) % 360;
+  }
+  return hash;
+}
+
 function RoleBadge({ role }: { role: string }) {
   const isSuper = role === "super_admin";
   const isAdmin = role === "admin";
   const Icon = isSuper ? Crown : isAdmin ? Shield : ShieldOff;
+  const cls = isSuper ? styles.roleSuper : isAdmin ? styles.roleAdmin : styles.roleCashier;
   return (
-    <span
-      className={styles.roleBadge}
-      style={{
-        background: isSuper
-          ? "rgba(16,185,129,0.12)"
-          : isAdmin
-            ? "rgba(139,92,246,0.12)"
-            : "rgba(59,130,246,0.12)",
-        color: isSuper ? "#10b981" : isAdmin ? "#8b5cf6" : "#3b82f6",
-      }}
-    >
+    <span className={`${styles.roleBadge} ${cls}`}>
       <Icon size={12} />
       {isSuper ? "Super Admin" : isAdmin ? "Admin" : "Cajero"}
+    </span>
+  );
+}
+
+function StatusBadge({ user }: { user: SuperAdminStoreUser }) {
+  if (user.deleted_at) {
+    return (
+      <span className={`${styles.statusBadge} ${styles.statusDeleted}`}>
+        <UserX size={11} />
+        Eliminado
+      </span>
+    );
+  }
+  if (user.email_verified) {
+    return (
+      <span className={`${styles.statusBadge} ${styles.statusVerified}`}>
+        <CheckCircle2 size={11} />
+        Verificado
+      </span>
+    );
+  }
+  return (
+    <span className={`${styles.statusBadge} ${styles.statusUnverified}`}>
+      <AlertTriangle size={11} />
+      Sin verificar
     </span>
   );
 }
@@ -114,6 +148,7 @@ export default function SuperAdmin() {
         value: String(stats.stores.total),
         icon: Store,
         sub: `${stats.stores.created_this_month} este mes`,
+        tone: styles.kpiToneBlue,
         warn: false,
       },
       {
@@ -122,13 +157,15 @@ export default function SuperAdmin() {
         icon: Users,
         sub: `${stats.users.admins} admin · ${stats.users.cashiers} cajero`
           + (stats.users.super_admins > 0 ? ` · ${stats.users.super_admins} super` : ""),
+        tone: styles.kpiToneViolet,
         warn: false,
       },
       {
         label: "Productos",
         value: String(stats.products.total),
         icon: Package,
-        sub: `${stats.products.active} activos · ${stats.products.low_stock} bajo stock`,
+        sub: undefined,
+        tone: styles.kpiToneAmber,
         warn: stats.products.low_stock > 0,
       },
     ]
@@ -137,13 +174,19 @@ export default function SuperAdmin() {
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <div>
-          <h1 className={styles.title}>Panel Super Admin</h1>
+        <div className={styles.headerText}>
+          <div className={styles.titleRow}>
+            <span className={styles.titleIcon}>
+              <Shield size={18} />
+            </span>
+            <h1 className={styles.title}>Panel Super Admin</h1>
+          </div>
           <p className={styles.subtitle}>Vista global de todas las tiendas y sus métricas</p>
         </div>
         <div className={styles.headerActions}>
           {lastUpdated && (
             <span className={styles.updatedAt}>
+              <span className={styles.liveDot} />
               Actualizado {lastUpdated.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}
             </span>
           )}
@@ -172,21 +215,21 @@ export default function SuperAdmin() {
           ? kpis.map((k) => {
             const Icon = k.icon;
             return (
-              <div key={k.label} className={styles.kpiCard}>
-                <div className={styles.kpiTop}>
-                  <span className={styles.kpiLabel}>{k.label}</span>
-                  <Icon size={16} className={styles.kpiIcon} />
+              <div key={k.label} className={`${styles.kpiCard} ${k.warn ? styles.kpiCardWarn : ""}`}>
+                <div className={`${styles.kpiIconChip} ${k.tone}`}>
+                  <Icon size={18} strokeWidth={2.2} />
                 </div>
+                <div className={styles.kpiLabel}>{k.label}</div>
                 <div className={styles.kpiValue}>{k.value}</div>
-                <div className={`${styles.kpiSub} ${k.warn ? styles.kpiSubWarn : ""}`}>{k.sub}</div>
+                {k.sub && <div className={styles.kpiSub}>{k.sub}</div>}
               </div>
             );
           })
-          : Array.from({ length: 4 }).map((_, i) => (
+          : Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className={styles.kpiCard}>
-              <div className={styles.skeleton} style={{ width: "55%", height: 12 }} />
-              <div className={styles.skeleton} style={{ width: "75%", height: 26, marginTop: 10 }} />
-              <div className={styles.skeleton} style={{ width: "65%", height: 12, marginTop: 10 }} />
+              <div className={styles.skeleton} style={{ width: 40, height: 40, borderRadius: 5 }} />
+              <div className={styles.skeleton} style={{ width: "55%", height: 12, marginTop: 14 }} />
+              <div className={styles.skeleton} style={{ width: "75%", height: 26, marginTop: 8 }} />
             </div>
           ))}
       </div>
@@ -194,7 +237,12 @@ export default function SuperAdmin() {
       {/* Tabla de tiendas */}
       <div className={styles.card}>
         <div className={styles.cardHeader}>
-          <h2 className={styles.cardTitle}>Tiendas</h2>
+          <div className={styles.cardHeading}>
+            <span className={styles.cardIcon}>
+              <Store size={15} />
+            </span>
+            <h2 className={styles.cardTitle}>Tiendas</h2>
+          </div>
           <span className={styles.cardCount}>{stores.length} total</span>
         </div>
         <div className={styles.tableWrapper}>
@@ -212,16 +260,21 @@ export default function SuperAdmin() {
               {loading && stores.length === 0
                 ? Array.from({ length: 4 }).map((_, i) => (
                   <tr key={i}>
-                    <td colSpan={5} style={{ padding: "10px 16px" }}>
-                      <div className={styles.skeleton} style={{ width: "100%", height: 22 }} />
+                    <td colSpan={5} style={{ padding: "14px 20px" }}>
+                      <div className={styles.skeleton} style={{ width: "100%", height: 22, borderRadius: 5 }} />
                     </td>
                   </tr>
                 ))
                 : stores.length === 0
                   ? (
                     <tr>
-                      <td colSpan={5} className={styles.empty}>
-                        Todavía no hay tiendas registradas
+                      <td colSpan={5}>
+                        <div className={styles.empty}>
+                          <span className={styles.emptyIcon}>
+                            <Store size={22} />
+                          </span>
+                          <span className={styles.emptyText}>Todavía no hay tiendas registradas</span>
+                        </div>
                       </td>
                     </tr>
                   )
@@ -256,25 +309,45 @@ function StoreRows({
   usersLoading: boolean;
   onToggle: () => void;
 }) {
+  const storeHue = hueFromString(store.name);
   return (
     <>
-      <tr className={styles.storeRow} onClick={onToggle}>
+      <tr
+        className={`${styles.storeRow} ${expanded ? styles.storeRowOpen : ""}`}
+        onClick={onToggle}
+        aria-expanded={expanded}
+      >
         <td>
-          <div className={styles.storeName}>{store.name}</div>
-          {(store.address || store.phone) && (
-            <div className={styles.storeSub}>{[store.address, store.phone].filter(Boolean).join(" · ")}</div>
-          )}
+          <div className={styles.storeCell}>
+            <span
+              className={styles.storeAvatar}
+              style={{
+                background: `oklch(0.72 0.1 ${storeHue})`,
+                color: `oklch(0.22 0.03 ${storeHue})`,
+              }}
+            >
+              {initials(store.name)}
+            </span>
+            <div className={styles.storeText}>
+              <div className={styles.storeName}>{store.name}</div>
+              {(store.address || store.phone) && (
+                <div className={styles.storeSub}>{[store.address, store.phone].filter(Boolean).join(" · ")}</div>
+              )}
+            </div>
+          </div>
         </td>
         <td className={styles.tdNum}>{store.users_count}</td>
         <td className={styles.tdNum}>{store.products_count}</td>
         <td className={styles.tdNum}>{store.services_count}</td>
-        <td>
-          <ChevronDown size={16} className={`${styles.chevron} ${expanded ? styles.chevronOpen : ""}`} />
+        <td className={styles.tdChevron}>
+          <span className={`${styles.chevronBtn} ${expanded ? styles.chevronBtnOpen : ""}`}>
+            <ChevronDown size={16} />
+          </span>
         </td>
       </tr>
       {expanded && (
         <tr className={styles.expandedRow}>
-          <td colSpan={5}>
+          <td colSpan={5} className={styles.expandedCell}>
             <div className={styles.usersPanel}>
               <div className={styles.usersTitle}>
                 <Users size={14} />
@@ -286,39 +359,38 @@ function StoreRows({
                   Cargando usuarios…
                 </div>
               ) : users.length === 0 ? (
-                <div className={styles.empty}>Sin usuarios en esta tienda</div>
+                <div className={styles.usersEmpty}>Sin usuarios en esta tienda</div>
               ) : (
                 <div className={styles.userList}>
-                  {users.map((u) => (
-                    <div key={u.id} className={`${styles.userRow} ${u.deleted_at ? styles.userDeleted : ""}`}>
-                      <div className={styles.userMain}>
-                        <span className={styles.userName}>{u.name}</span>
-                        <span className={styles.userEmail}>{u.email}</span>
-                        <RoleBadge role={u.role} />
+                  {users.map((u) => {
+                    const hue = hueFromString(u.name);
+                    return (
+                      <div key={u.id} className={`${styles.userRow} ${u.deleted_at ? styles.userDeleted : ""}`}>
+                        <div className={styles.userInfo}>
+                          <span
+                            className={styles.userAvatar}
+                            style={{
+                              background: `oklch(0.72 0.1 ${hue})`,
+                              color: `oklch(0.22 0.03 ${hue})`,
+                            }}
+                          >
+                            {initials(u.name)}
+                          </span>
+                          <div className={styles.userText}>
+                            <div className={styles.userName}>{u.name}</div>
+                            <div className={styles.userEmail}>{u.email}</div>
+                          </div>
+                          <RoleBadge role={u.role} />
+                        </div>
+                        <div className={styles.userMeta}>
+                          <StatusBadge user={u} />
+                          <span className={styles.userDate}>
+                            {new Date(u.created_at).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" })}
+                          </span>
+                        </div>
                       </div>
-                      <div className={styles.userMeta}>
-                        {u.deleted_at ? (
-                          <span className={styles.statusBadge} style={{ background: "rgba(239,68,68,0.12)", color: "#ef4444" }}>
-                            <UserX size={11} />
-                            Eliminado
-                          </span>
-                        ) : u.email_verified ? (
-                          <span className={styles.statusBadge} style={{ background: "rgba(34,197,94,0.12)", color: "#22c55e" }}>
-                            <CheckCircle2 size={11} />
-                            Verificado
-                          </span>
-                        ) : (
-                          <span className={styles.statusBadge} style={{ background: "rgba(245,158,11,0.12)", color: "#f59e0b" }}>
-                            <AlertTriangle size={11} />
-                            Sin verificar
-                          </span>
-                        )}
-                        <span className={styles.userDate}>
-                          {new Date(u.created_at).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" })}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
