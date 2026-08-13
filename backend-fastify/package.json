@@ -12,6 +12,9 @@
     "migrate:deploy": "prisma migrate deploy",
     "seed": "tsx src/scripts/seed.ts",
     "create-super-admin": "tsx src/scripts/create-super-admin.ts",
+    "plan:create": "tsx src/scripts/create-paypal-plan.ts",
+    "reconcile": "tsx src/scripts/reconcile-subscriptions.ts",
+    "test": "node --import tsx --test \"src/**/*.test.ts\"",
     "load-test:k6": "k6 run load-test/k6-load-test.js",
     "load-test:sse": "node load-test/sse-flood.mjs"
   },

@@ -13,6 +13,7 @@ import { logger } from "./config/logger"
 import { corsOptions } from "./config/cors"
 import { swaggerOptions, swaggerUiOptions } from "./config/swagger"
 import { routes } from "./http/routes"
+import { reconciliationSchedulerPlugin } from "./modules/subscriptions/infrastructure/reconciliation.scheduler"
 import { getUserIdFromBearerToken, getUserIdFromCookies } from "./core/utils/auth.utils"
 
 export const buildApp = async () => {
@@ -55,6 +56,9 @@ export const buildApp = async () => {
   }, async () => {
     return { status: "ok", timestamp: new Date().toISOString() }
   })
+
+  // Job de reconciliación de suscripciones vs PayPal (scheduler zero-dep)
+  await app.register(reconciliationSchedulerPlugin)
 
   return app
 }

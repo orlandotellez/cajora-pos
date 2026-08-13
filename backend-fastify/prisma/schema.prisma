@@ -27,6 +27,26 @@ enum UNIT_TYPE {
   ristra
 }
 
+enum BILLING_MODE {
+  cloud
+  self_hosted
+}
+
+// Estado de la suscripción de la tienda (trial interno de 14 días sin PayPal)
+enum SUBSCRIPTION_STATUS {
+  trial
+  active
+  past_due
+  canceled
+  expired
+}
+
+// Solo monthly activo por ahora 
+enum SUBSCRIPTION_PLAN {
+  monthly
+  annual
+}
+
 model store {
   id      String  @id @default(uuid())
   name    String
@@ -45,6 +65,7 @@ model store {
   inventory_movements inventory_movement[]
   inventory_batches   inventory_batch[]
   settings            settings?
+  subscription        subscription?
   printers            printer[]
 
   @@index([name])
@@ -518,4 +539,43 @@ model print_job {
   @@index([status, enqueued_at])
   @@index([sale_id])
   @@map("print_jobs")
+}
+
+// Suscripción de la tienda: cloud ($15.99/mes) o self_hosted (gratis).
+// El trial de 14 días es estado interno sin suscripción PayPal (la tarjeta se pide al suscribirse).
+model subscription {
+  id                     String              @id @default(uuid())
+  store_id               String              @unique
+  mode                   BILLING_MODE        @default(self_hosted)
+  plan                   SUBSCRIPTION_PLAN   @default(monthly)
+  status                 SUBSCRIPTION_STATUS @default(active)
+  paypal_subscription_id String?             @unique
+  current_period_start   DateTime?           @db.Timestamptz
+  current_period_end     DateTime?           @db.Timestamptz
+  cancel_at_period_end   Boolean             @default(false)
+  trial_ends_at          DateTime?           @db.Timestamptz
+  created_at             DateTime            @default(now()) @db.Timestamptz
+  updated_at             DateTime            @updatedAt @db.Timestamptz
+
+  store store @relation(fields: [store_id], references: [id])
+
+  @@map("subscriptions")
+}
+
+// Outbox de webhooks de PayPal: UNIQUE event_id = idempotencia frente a reintentos de PayPal
+// (espejo del patrón PayPalWebhookEvent de CURSINET-REPO)
+model paypal_webhook_event {
+  id            String    @id @default(uuid())
+  event_id      String    @unique
+  event_type    String
+  resource_type String?
+  resource_id   String?
+  received_at   DateTime  @default(now()) @db.Timestamptz
+  processed_at  DateTime? @db.Timestamptz
+  notes         String?
+  payload       Json
+
+  @@index([event_type])
+  @@index([received_at])
+  @@map("paypal_webhook_events")
 }

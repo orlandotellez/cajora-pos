@@ -12,21 +12,29 @@ import { usersRoutes } from "@/modules/users/presentation/users.routes";
 import { superAdminRoutes } from "@/modules/super-admin/presentation/super-admin.routes";
 import { type FastifyInstance, type FastifyPluginOptions } from "fastify";
 import { printersRoutes } from "@/modules/printers/presentation/printers.router";
+import { subscriptionRoutes } from "@/modules/subscriptions/presentation/subscription.routes";
+import { webhookRoutes } from "@/modules/subscriptions/presentation/webhook.routes";
+import { licenseGuard } from "@/core/guard/license.guard";
 
 export const routes = async (fastify: FastifyInstance, _opts: FastifyPluginOptions) => {
-  // Endpoint SSE genérico: `GET /api/v1/events` (sin prefix para que la ruta
-  // quede exactamente `/events`, como la usa el frontend).
   fastify.register(eventsRoutes, { prefix: "" })
   fastify.register(authRoutes, { prefix: "/auth" })
-  fastify.register(productsRoutes, { prefix: "/products" })
-  fastify.register(categoriesRoutes, { prefix: "/categories" })
-  fastify.register(servicesRoutes, { prefix: "/services" })
-  fastify.register(salesRoutes, { prefix: "/sales" })
-  fastify.register(inventoryRoutes, { prefix: "/inventory" })
-  fastify.register(batchInventoryRoutes, { prefix: "/inventory/batches" })
-  fastify.register(suppliersRoutes, { prefix: "/suppliers" })
-  fastify.register(settingsRoutes, { prefix: "/settings" })
-  fastify.register(printersRoutes, { prefix: "/printers" })
-  fastify.register(usersRoutes, { prefix: "/users" })
+
+  fastify.register(async (business) => {
+    business.addHook("preHandler", licenseGuard)
+    business.register(productsRoutes, { prefix: "/products" })
+    business.register(categoriesRoutes, { prefix: "/categories" })
+    business.register(servicesRoutes, { prefix: "/services" })
+    business.register(salesRoutes, { prefix: "/sales" })
+    business.register(inventoryRoutes, { prefix: "/inventory" })
+    business.register(batchInventoryRoutes, { prefix: "/inventory/batches" })
+    business.register(suppliersRoutes, { prefix: "/suppliers" })
+    business.register(settingsRoutes, { prefix: "/settings" })
+    business.register(printersRoutes, { prefix: "/printers" })
+    business.register(usersRoutes, { prefix: "/users" })
+  })
+
   fastify.register(superAdminRoutes, { prefix: "/super-admin" })
+  fastify.register(subscriptionRoutes, { prefix: "/subscriptions" })
+  fastify.register(webhookRoutes, { prefix: "/webhooks/paypal" })
 }

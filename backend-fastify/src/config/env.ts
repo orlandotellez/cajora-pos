@@ -15,6 +15,17 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default("15m"),
   JWT_REFRESH_SECRET: z.string().min(32),
   JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
+
+  PAYPAL_ENABLED: z.string().default("false").transform((v) => v === "true"),
+  PAYPAL_SANDBOX: z.string().default("true").transform((v) => v === "true"),
+  PAYPAL_CLIENT_ID: z.string().default(""),
+  PAYPAL_CLIENT_SECRET: z.string().default(""),
+  PAYPAL_WEBHOOK_ID: z.string().default(""),
+  PAYPAL_PLAN_ID_MONTHLY: z.string().default(""),
+  APP_MODE: z.enum(["cloud", "self_hosted"]).default("self_hosted"),
+
+  RECONCILE_INTERVAL_MS: z.coerce.number().default(3_600_000),
+  RECONCILE_ON_START: z.string().default("true").transform((v) => v === "true"),
 });
 
 const _env = envSchema.safeParse(process.env);

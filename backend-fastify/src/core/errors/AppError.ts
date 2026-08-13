@@ -61,3 +61,9 @@ export class TooManyRequestsError extends AppError {
     super(message, 429, 'TOO_MANY_REQUESTS')
   }
 }
+
+export class PaymentRequiredError extends AppError {
+  constructor(message = 'Subscription required') {
+    super(message, 402, 'SUBSCRIPTION_REQUIRED')
+  }
+}

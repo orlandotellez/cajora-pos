@@ -1,6 +1,7 @@
 export const STATUS_MESSAGES: Record<number, string> = {
   400: "Solicitud inválida",
   401: "No autorizado",
+  402: "Se requiere suscripción al plan Cloud",
   403: "Acceso denegado",
   404: "No encontrado",
   405: "Método no permitido",
@@ -19,6 +20,7 @@ export const getErrorMessageForStatus = (status: number): string =>
 export const STATUS_CODES: Record<number, string> = {
   400: "BAD_REQUEST",
   401: "UNAUTHORIZED",
+  402: "SUBSCRIPTION_REQUIRED",
   403: "FORBIDDEN",
   404: "NOT_FOUND",
   405: "METHOD_NOT_ALLOWED",
