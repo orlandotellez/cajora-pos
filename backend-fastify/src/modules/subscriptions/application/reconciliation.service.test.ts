@@ -6,10 +6,26 @@ import { env } from "@/config/env"
 import { AppError } from "@/core/errors/AppError"
 import type { ISubscriptionRepository } from "../domain/subscription.interface"
 import type { ISubscriptionEntity } from "../domain/subscription.entities"
+import type { NewSubscriptionEvent } from "../domain/subscription-event.interface"
 
 const DAY_MS = 86_400_000
 
 const logger = { info: () => {}, warn: () => {}, error: () => {} }
+
+/** Repositorio de eventos en memoria: captura lo auditado. */
+function fakeEventRepo(created: Array<NewSubscriptionEvent>) {
+  return {
+    async create(data: NewSubscriptionEvent) {
+      created.push(data)
+    },
+    async findMany() {
+      return []
+    },
+    async count() {
+      return 0
+    },
+  }
+}
 
 /** Fixture de una fila de suscripción. */
 function makeEntity(overrides: Partial<ISubscriptionEntity> = {}): ISubscriptionEntity {
@@ -75,7 +91,7 @@ describe("ReconciliationService", () => {
 
     const stats = await service.run(logger)
 
-    assert.deepEqual(stats, { reviewed: 0, drifted: 0, errors: 0 })
+    assert.deepEqual(stats, { reviewed: 0, drifted: 0, errors: 0, cleaned: 0 })
     assert.equal(updated.length, 0)
     assert.equal(called, false)
   })
@@ -90,7 +106,7 @@ describe("ReconciliationService", () => {
 
     const stats = await service.run(logger)
 
-    assert.deepEqual(stats, { reviewed: 1, drifted: 0, errors: 0 })
+    assert.deepEqual(stats, { reviewed: 1, drifted: 0, errors: 0, cleaned: 0 })
     assert.equal(updated.length, 0)
   })
 
@@ -198,7 +214,7 @@ describe("ReconciliationService", () => {
 
     const stats = await service.run(logger)
 
-    assert.deepEqual(stats, { reviewed: 1, drifted: 0, errors: 0 })
+    assert.deepEqual(stats, { reviewed: 1, drifted: 0, errors: 0, cleaned: 0 })
     assert.equal(updated.length, 0)
   })
 
@@ -215,7 +231,7 @@ describe("ReconciliationService", () => {
 
     const stats = await service.run(logger)
 
-    assert.deepEqual(stats, { reviewed: 2, drifted: 1, errors: 1 })
+    assert.deepEqual(stats, { reviewed: 2, drifted: 1, errors: 1, cleaned: 0 })
     assert.equal(getRows()[0].status, "active") // la "bad" no se tocó (quedó como estaba)
     assert.equal(getRows()[1].status, "canceled") // la "good" sí
   })
@@ -228,7 +244,47 @@ describe("ReconciliationService", () => {
 
     const stats = await service.run(logger)
 
-    assert.deepEqual(stats, { reviewed: 0, drifted: 0, errors: 0 })
+    assert.deepEqual(stats, { reviewed: 0, drifted: 0, errors: 0, cleaned: 0 })
     assert.equal(updated.length, 0)
+  })
+
+  it("404 en sub NO activa (huérfana) → desvincula el id y registra evento orphan_cleaned", async () => {
+    mock.property(env, "PAYPAL_ENABLED", true)
+    const orphan = makeEntity({
+      store_id: "store-orphan",
+      status: "trial",
+      paypal_subscription_id: "I-ORPHAN",
+    })
+    const { repo, getRows } = makeRepo([orphan])
+    mock.method(paypalClient, "getSubscription", async () => {
+      throw new AppError("The specified resource does not exist.", 404, "PAYMENT_PROVIDER_REJECTED")
+    })
+    const created: Array<NewSubscriptionEvent> = []
+    const service = createReconciliationService(repo, fakeEventRepo(created))
+
+    const stats = await service.run(logger)
+
+    assert.deepEqual(stats, { reviewed: 1, drifted: 0, errors: 0, cleaned: 1 })
+    assert.equal(getRows()[0].paypal_subscription_id, null)
+    assert.equal(created.length, 1)
+    assert.equal(created[0].action, "orphan_cleaned")
+    assert.equal(created[0].store_id, "store-orphan")
+  })
+
+  it("404 en sub ACTIVA → NO desvincula (sospechoso): cuenta como error y no toca la fila", async () => {
+    mock.property(env, "PAYPAL_ENABLED", true)
+    const active = makeEntity({ status: "active" })
+    const { repo, getRows } = makeRepo([active])
+    mock.method(paypalClient, "getSubscription", async () => {
+      throw new AppError("The specified resource does not exist.", 404, "PAYMENT_PROVIDER_REJECTED")
+    })
+    const created: Array<NewSubscriptionEvent> = []
+    const service = createReconciliationService(repo, fakeEventRepo(created))
+
+    const stats = await service.run(logger)
+
+    assert.deepEqual(stats, { reviewed: 1, drifted: 0, errors: 1, cleaned: 0 })
+    assert.equal(getRows()[0].paypal_subscription_id, "I-ACTIVE123") // no se tocó
+    assert.equal(created.length, 0) // sin evento de limpieza
   })
 })

@@ -22,4 +22,10 @@ export const superAdminRoutes = async (fastify: FastifyInstance, _opts: FastifyP
     schema: { tags: TAGS },
     preHandler: [authGuard, superAdminGuard],
   }, superAdminController.storeUsers)
+
+  // Auditoría del ciclo de vida de las suscripciones (quién hizo qué, cuándo).
+  fastify.get("/subscription-events", {
+    schema: { tags: TAGS, description: "Auditoría: acciones de suscripción (usuario, tienda, webhooks) con filtros" },
+    preHandler: [authGuard, superAdminGuard],
+  }, superAdminController.subscriptionEvents)
 }

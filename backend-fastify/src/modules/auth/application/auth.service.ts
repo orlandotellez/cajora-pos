@@ -1,6 +1,7 @@
 import { ConflictError, NotFoundError, UnauthorizedError } from "@/core/errors/AppError"
 import { comparePassword, hashPassword, generateVerificationCode } from "@/core/utils/crypto.utils"
 import { generateTokens, verifyToken } from "@/core/utils/token.utils"
+import { sendVerificationCodeEmail } from "../infrastructure/email-sender"
 import { prisma } from "@/config/prisma"
 import type { IAuthRepository } from "../domain/auth.interface"
 import type {
@@ -99,7 +100,10 @@ export const createAuthService = (repository: IAuthRepository) => ({
       expiresAt: new Date(Date.now() + VERIFICATION_CODE_EXPIRY),
     })
 
-    console.log(`Verification code for ${email}: ${verificationCode}`)
+    // Enviar el código por email (fallback a console si no hay RESEND_API_KEY).
+    await sendVerificationCodeEmail(email, verificationCode).catch((err) => {
+      console.error(`[auth] No se pudo enviar código de verificación a ${email}:`, err)
+    })
 
     const store = await getStoreInfo(storeId)
     if (!store) throw new NotFoundError("Store not found")
@@ -148,13 +152,13 @@ export const createAuthService = (repository: IAuthRepository) => ({
         },
       })
 
-      // 2. Create admin user
+      // 2. Create admin user (email pendiente de verificación)
       const user = await tx.user.create({
         data: {
           name: adminName,
           email: adminEmail,
           role: "admin",
-          email_verified: true,
+          email_verified: false,
           store_id: store.id,
         },
       })
@@ -198,13 +202,24 @@ export const createAuthService = (repository: IAuthRepository) => ({
       expiresAt: new Date(Date.now() + SESSION_EXPIRY),
     })
 
+    // Generar y enviar código de verificación por email (fallback a console sin RESEND_API_KEY).
+    const verificationCode = generateVerificationCode()
+    await repository.verification.create({
+      identifier: adminEmail,
+      value: verificationCode,
+      expiresAt: new Date(Date.now() + VERIFICATION_CODE_EXPIRY),
+    })
+    await sendVerificationCodeEmail(adminEmail, verificationCode).catch((err) => {
+      console.error(`[auth] No se pudo enviar código de verificación a ${adminEmail}:`, err)
+    })
+
     return {
-      message: "Store created successfully",
+      message: "Store created successfully. Please verify your email.",
       user: {
         id: result.user.id,
         name: result.user.name,
         email: result.user.email,
-        email_verified: true,
+        email_verified: false,
         role: "admin",
         phone: undefined,
         image: undefined,
@@ -495,7 +510,9 @@ export const createAuthService = (repository: IAuthRepository) => ({
       expiresAt: new Date(Date.now() + VERIFICATION_CODE_EXPIRY),
     })
 
-    console.log(`Verification code for ${email}: ${verificationCode}`)
+    await sendVerificationCodeEmail(email, verificationCode).catch((err) => {
+      console.error(`[auth] No se pudo reenviar código de verificación a ${email}:`, err)
+    })
 
     return {
       message: "New verification code sent",

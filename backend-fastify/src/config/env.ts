@@ -24,6 +24,9 @@ const envSchema = z.object({
   PAYPAL_PLAN_ID_MONTHLY: z.string().default(""),
   APP_MODE: z.enum(["cloud", "self_hosted"]).default("self_hosted"),
 
+  RESEND_API_KEY: z.string().default(""),
+  EMAIL_FROM: z.string().default("CajoraPOS <no-reply@cajorapos.com>"),
+
   RECONCILE_INTERVAL_MS: z.coerce.number().default(3_600_000),
   RECONCILE_ON_START: z.string().default("true").transform((v) => v === "true"),
 });

@@ -14,3 +14,17 @@ export interface ISubscriptionResponse {
   cancel_at_period_end: boolean
   trial_ends_at: string | null
 }
+
+export interface IBillingPayment {
+  id: string
+  amount: string
+  currency: string
+  paid_at: string
+}
+
+export interface IBillingResponse {
+  payments: IBillingPayment[]
+  total_paid: string
+  currency: string
+  next_payment_at: string | null
+}

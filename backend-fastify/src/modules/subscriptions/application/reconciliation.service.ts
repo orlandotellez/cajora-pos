@@ -1,7 +1,13 @@
 import { env } from "@/config/env"
+import { AppError } from "@/core/errors/AppError"
 import { paypalClient } from "../infrastructure/paypal.client"
 import type { ISubscriptionRepository } from "../domain/subscription.interface"
 import type { UpdateSubscriptionInput } from "../domain/subscription.entities"
+import {
+  SUBSCRIPTION_EVENT_ACTIONS,
+  noopSubscriptionEventRepository,
+  type ISubscriptionEventRepository,
+} from "../domain/subscription-event.interface"
 
 const PAGE_SIZE = 50
 
@@ -20,6 +26,7 @@ interface ReconStats {
   reviewed: number
   drifted: number
   errors: number
+  cleaned: number
 }
 
 interface PayPalStatusResult {
@@ -27,11 +34,6 @@ interface PayPalStatusResult {
   nextBillingTime: string | null
 }
 
-/**
- * Cuánto drift tiene una sub local vs el estado real de PayPal.
- * PayPal es la fuente de verdad del dinero: si el webhook se perdió (o la
- * entrega falló), la DB puede quedar desalineada y este job la corrige.
- */
 function buildUpdates(
   sub: { status: string; current_period_end: Date | null; cancel_at_period_end: boolean },
   paypal: PayPalStatusResult,
@@ -44,9 +46,6 @@ function buildUpdates(
         !sub.current_period_end || sub.current_period_end.getTime() <= Date.now()
       const statusDrift = sub.status !== "active" || sub.cancel_at_period_end !== false
 
-      // Caso crítico: PayPal dice que está activa y cobra, pero el período local
-      // venció o nunca se seteo → se perdió un ACTIVATED o un SALE.COMPLETED.
-      // Alineamos el período con la verdad de PayPal (next_billing_time).
       if (periodMissing && nextBillingTime) {
         return {
           status: "active",
@@ -73,20 +72,16 @@ function buildUpdates(
       return { status: "expired", cancel_at_period_end: true }
 
     default:
-      // APPROVAL_PENDING / APPROVED / desconocido → el usuario aún está en el
-      // flujo de aprobación o es un estado que no tocamos.
       return null
   }
 }
 
-export const createReconciliationService = (repository: ISubscriptionRepository) => ({
-  /**
-   * Pasa de reconciliación: pagina las suscripciones con id de PayPal, consulta
-   * el estado real y corrige la DB donde haya drift. Nunca rompe la pasada
-   * completa por una sub con error (falla individual → warn + contador).
-   */
+export const createReconciliationService = (
+  repository: ISubscriptionRepository,
+  eventRepository: ISubscriptionEventRepository = noopSubscriptionEventRepository,
+) => ({
   async run(logger: ReconLogger): Promise<ReconStats> {
-    const stats: ReconStats = { reviewed: 0, drifted: 0, errors: 0 }
+    const stats: ReconStats = { reviewed: 0, drifted: 0, errors: 0, cleaned: 0 }
 
     if (!env.PAYPAL_ENABLED) {
       logger.info("Reconciliación omitida: PAYPAL_ENABLED=false (modo mock)")
@@ -94,7 +89,7 @@ export const createReconciliationService = (repository: ISubscriptionRepository)
     }
 
     let skip = 0
-    for (;;) {
+    for (; ;) {
       const page = await repository.findPaypalSubscriptions(skip, PAGE_SIZE)
       if (page.length === 0) break
 
@@ -115,11 +110,28 @@ export const createReconciliationService = (repository: ISubscriptionRepository)
             )
           }
         } catch (err) {
-          stats.errors += 1
-          logger.warn(
-            { err, storeId: sub.store_id, paypalId: sub.paypal_subscription_id },
-            "Error reconciliando suscripción con PayPal",
-          )
+          const isOrphan = err instanceof AppError && err.statusCode === 404
+          if (isOrphan && sub.status !== "active") {
+            await repository.update(sub.store_id, { paypal_subscription_id: null })
+            await eventRepository.create({
+              store_id: sub.store_id,
+              user_id: null,
+              action: SUBSCRIPTION_EVENT_ACTIONS.ORPHAN_CLEANED,
+              paypal_subscription_id: sub.paypal_subscription_id,
+              metadata: { reason: "paypal_404", status_local: sub.status },
+            })
+            stats.cleaned += 1
+            logger.warn(
+              { storeId: sub.store_id, paypalId: sub.paypal_subscription_id, statusLocal: sub.status },
+              "Suscripción huérfana en PayPal (404) — id desvinculado de la DB",
+            )
+          } else {
+            stats.errors += 1
+            logger.warn(
+              { err, storeId: sub.store_id, paypalId: sub.paypal_subscription_id },
+              "Error reconciliando suscripción con PayPal",
+            )
+          }
         }
       }
 

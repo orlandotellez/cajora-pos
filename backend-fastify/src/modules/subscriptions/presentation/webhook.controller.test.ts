@@ -5,6 +5,7 @@ import { env } from "@/config/env"
 import { webhookController } from "./webhook.controller"
 import { SubscriptionRepository } from "../infrastructure/subscription.prisma.repository"
 import { PayPalWebhookEventRepository } from "../infrastructure/paypal-webhook-event.prisma.repository"
+import { SubscriptionEventRepository } from "../infrastructure/subscription-event.prisma.repository"
 import type { paypal_webhook_event } from "@prisma/client"
 
 const WEBHOOK_ID = "test-webhook-id-123"
@@ -82,7 +83,11 @@ function makeP2002(): Prisma.PrismaClientKnownRequestError {
 }
 
 describe("webhookController.receive", () => {
-  beforeEach(() => mock.restoreAll())
+  beforeEach(() => {
+    mock.restoreAll()
+    // La auditoría escribe a la DB real: en los tests se mockea (no interesa aquí).
+    mock.method(SubscriptionEventRepository, "create", async () => {})
+  })
   afterEach(() => mock.restoreAll())
 
   it("evento duplicado (mismo event_id) → ACK 200 sin reprocesar", async () => {

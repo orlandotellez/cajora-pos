@@ -4,6 +4,7 @@ import { createSubscriptionService } from "./subscription.service"
 import { paypalClient } from "../infrastructure/paypal.client"
 import type { ISubscriptionRepository } from "../domain/subscription.interface"
 import type { ISubscriptionEntity } from "../domain/subscription.entities"
+import type { NewSubscriptionEvent } from "../domain/subscription-event.interface"
 
 const DAY_MS = 86_400_000
 
@@ -45,6 +46,21 @@ function makeRepo(initial: ISubscriptionEntity | null = null) {
     },
   }
   return { repo, getCurrent: () => current }
+}
+
+/** Repositorio de eventos en memoria: captura lo auditado. */
+function fakeEventRepo(created: Array<NewSubscriptionEvent>) {
+  return {
+    async create(data: NewSubscriptionEvent) {
+      created.push(data)
+    },
+    async findMany() {
+      return []
+    },
+    async count() {
+      return 0
+    },
+  }
 }
 
 describe("SubscriptionService", () => {
@@ -202,6 +218,25 @@ describe("SubscriptionService", () => {
       assert.equal(getCurrent()!.paypal_subscription_id, "I-PAYPAL-1")
     })
 
+    it("activa con cancelación programada → cancela la cancelación (sigue activa)", async () => {
+      const existing = makeEntity({
+        status: "active",
+        cancel_at_period_end: true,
+        paypal_subscription_id: "I-PAYPAL-1",
+      })
+      const { repo, getCurrent } = makeRepo(existing)
+      const created: Array<NewSubscriptionEvent> = []
+      const service = createSubscriptionService(repo, fakeEventRepo(created))
+
+      const res = await service.reactivate("store-1", { userId: "user-1", ip: null, userAgent: null })
+
+      assert.equal(res.status, "active")
+      assert.equal(res.cancel_at_period_end, false)
+      assert.equal(getCurrent()!.cancel_at_period_end, false)
+      assert.equal(created.length, 1)
+      assert.equal(created[0].action, "reactivate")
+    })
+
     it("reabre el flujo desde canceled (estado trial, sin paypal id viejo)", async () => {
       const existing = makeEntity({ status: "canceled", paypal_subscription_id: "I-PAYPAL-1" })
       const { repo, getCurrent } = makeRepo(existing)
@@ -211,6 +246,73 @@ describe("SubscriptionService", () => {
 
       assert.equal(res.status, "trial")
       assert.equal(getCurrent()!.status, "trial")
+    })
+  })
+
+  describe("auditoría", () => {
+    it("elegirCloud audita el alta con el usuario", async () => {
+      const { repo } = makeRepo()
+      const created: Array<NewSubscriptionEvent> = []
+      const service = createSubscriptionService(repo, fakeEventRepo(created))
+
+      await service.elegirCloud("store-1", { userId: "user-2", ip: null, userAgent: null })
+
+      assert.equal(created.length, 1)
+      assert.equal(created[0].action, "cloud")
+      assert.equal(created[0].user_id, "user-2")
+      assert.equal(created[0].store_id, "store-1")
+    })
+
+    it("checkout audita la creación con el paypal id", async () => {
+      mock.method(paypalClient, "createSubscription", async () => ({
+        id: "I-PAYPAL-1",
+        approvalUrl: null,
+        status: "APPROVAL_PENDING",
+        planId: "P-PLAN-1",
+      }))
+      const { repo } = makeRepo()
+      const created: Array<NewSubscriptionEvent> = []
+      const service = createSubscriptionService(repo, fakeEventRepo(created))
+
+      await service.checkout("store-1", "https://ok", "https://cancel", {
+        userId: "user-1",
+        ip: "10.0.0.1",
+        userAgent: "landing",
+      })
+
+      assert.equal(created.length, 1)
+      assert.equal(created[0].action, "checkout")
+      assert.equal(created[0].paypal_subscription_id, "I-PAYPAL-1")
+      assert.equal(created[0].user_id, "user-1")
+    })
+
+    it("cancel audita quién canceló (userId, ip, userAgent) y con qué paypal id", async () => {
+      mock.method(paypalClient, "cancelSubscription", async () => true)
+      const existing = makeEntity({ paypal_subscription_id: "I-PAYPAL-1", status: "active" })
+      const { repo } = makeRepo(existing)
+      const created: Array<NewSubscriptionEvent> = []
+      const service = createSubscriptionService(repo, fakeEventRepo(created))
+
+      await service.cancel("store-1", { userId: "user-1", ip: "1.2.3.4", userAgent: "postman" })
+
+      assert.equal(created.length, 1)
+      assert.equal(created[0].action, "cancel")
+      assert.equal(created[0].user_id, "user-1")
+      assert.deepEqual(created[0].metadata, { ip: "1.2.3.4", userAgent: "postman" })
+      assert.equal(created[0].paypal_subscription_id, "I-PAYPAL-1")
+    })
+
+    it("reactivate audita la reapertura", async () => {
+      const existing = makeEntity({ status: "canceled", paypal_subscription_id: "I-PAYPAL-1" })
+      const { repo } = makeRepo(existing)
+      const created: Array<NewSubscriptionEvent> = []
+      const service = createSubscriptionService(repo, fakeEventRepo(created))
+
+      await service.reactivate("store-1", { userId: "user-9", ip: null, userAgent: null })
+
+      assert.equal(created.length, 1)
+      assert.equal(created[0].action, "reactivate")
+      assert.equal(created[0].user_id, "user-9")
     })
   })
 
@@ -235,6 +337,81 @@ describe("SubscriptionService", () => {
 
       assert.equal(res.mode, "cloud")
       assert.equal(res.status, "past_due")
+    })
+  })
+
+  describe("getBilling", () => {
+    it("arma el historial de cobros con el monto real del webhook y la próxima fecha", async () => {
+      const paidAt = new Date("2026-08-01T12:00:00Z")
+      const events = [
+        {
+          id: "ev-1",
+          store_id: "store-1",
+          user_id: null,
+          action: "webhook_sale_completed",
+          paypal_subscription_id: "I-PAYPAL-1",
+          metadata: { event_id: "wh-1" },
+          created_at: paidAt,
+        },
+      ]
+      const eventRepo = {
+        async create() {},
+        async findMany() {
+          return events
+        },
+        async count() {
+          return 1
+        },
+      }
+      const webhookRepo = {
+        async insert() {
+          throw new Error("no usado")
+        },
+        async markProcessed() {},
+        async findByEventIds() {
+          return [
+            {
+              event_id: "wh-1",
+              payload: { resource: { amount: { total: "15.99", currency: "USD" } } },
+            },
+          ]
+        },
+      }
+
+      const periodEnd = new Date("2026-09-01T12:00:00Z")
+      const { repo } = makeRepo(
+        makeEntity({ status: "active", current_period_end: periodEnd }),
+      )
+      const service = createSubscriptionService(repo, eventRepo, webhookRepo)
+
+      const res = await service.getBilling("store-1")
+
+      assert.equal(res.payments.length, 1)
+      assert.equal(res.payments[0].amount, "15.99")
+      assert.equal(res.payments[0].currency, "USD")
+      assert.equal(res.payments[0].paid_at, "2026-08-01T12:00:00.000Z")
+      assert.equal(res.total_paid, "15.99")
+      assert.equal(res.next_payment_at, "2026-09-01T12:00:00.000Z")
+    })
+
+    it("sin cobros → payments vacío, total 0 y sin próxima fecha si no hay período", async () => {
+      const eventRepo = {
+        async create() {},
+        async findMany() {
+          return []
+        },
+        async count() {
+          return 0
+        },
+      }
+      const { repo } = makeRepo()
+      const service = createSubscriptionService(repo, eventRepo)
+
+      const res = await service.getBilling("store-1")
+
+      assert.deepEqual(res.payments, [])
+      assert.equal(res.total_paid, "0.00")
+      assert.equal(res.next_payment_at, null)
     })
   })
 })

@@ -1,5 +1,5 @@
 import { prisma } from "@/config/prisma"
-import type { paypal_webhook_event } from "@prisma/client"
+import type { paypal_webhook_event, Prisma } from "@prisma/client"
 import type {
   IPayPalWebhookEventRepository,
   NewPayPalWebhookEvent,
@@ -14,6 +14,16 @@ export const PayPalWebhookEventRepository: IPayPalWebhookEventRepository = {
     await prisma.paypal_webhook_event.update({
       where: { id },
       data: { processed_at: new Date(), notes },
+    })
+  },
+
+  async findByEventIds(
+    ids: string[],
+  ): Promise<Array<{ event_id: string; payload: Prisma.JsonValue }>> {
+    if (ids.length === 0) return []
+    return prisma.paypal_webhook_event.findMany({
+      where: { event_id: { in: ids } },
+      select: { event_id: true, payload: true },
     })
   },
 }

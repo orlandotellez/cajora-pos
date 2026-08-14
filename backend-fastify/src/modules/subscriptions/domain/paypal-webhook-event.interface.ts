@@ -12,4 +12,5 @@ export interface NewPayPalWebhookEvent {
 export interface IPayPalWebhookEventRepository {
   insert(data: NewPayPalWebhookEvent): Promise<paypal_webhook_event>
   markProcessed(id: string, notes?: string): Promise<void>
+  findByEventIds(ids: string[]): Promise<Array<{ event_id: string; payload: Prisma.JsonValue }>>
 }

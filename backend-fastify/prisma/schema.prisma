@@ -66,6 +66,7 @@ model store {
   inventory_batches   inventory_batch[]
   settings            settings?
   subscription        subscription?
+  subscription_events subscription_event[]
   printers            printer[]
 
   @@index([name])
@@ -92,6 +93,7 @@ model user {
   sales               sale[]
   inventory_movements inventory_movement[]
   inventory_batches   inventory_batch[]
+  subscription_events subscription_event[]
 
   @@unique([store_id, email])
   @@index([email])
@@ -578,4 +580,27 @@ model paypal_webhook_event {
   @@index([event_type])
   @@index([received_at])
   @@map("paypal_webhook_events")
+}
+
+// Auditoría del ciclo de vida de la suscripción: quién (user_id) hizo qué
+// (action) y con qué contexto (metadata: ip, user-agent). Los eventos de
+// webhook de PayPal también se registran acá (user_id null) para tener el
+// historial completo en un solo lugar: cancelaciones, activaciones, etc.
+model subscription_event {
+  id                     String   @id @default(uuid())
+  store_id               String?
+  user_id                String?
+  action                 String
+  paypal_subscription_id String?
+  metadata               Json?
+  created_at             DateTime @default(now()) @db.Timestamptz
+
+  store store? @relation(fields: [store_id], references: [id])
+  user  user?  @relation(fields: [user_id], references: [id])
+
+  @@index([store_id, created_at])
+  @@index([user_id])
+  @@index([action])
+  @@index([created_at])
+  @@map("subscription_events")
 }

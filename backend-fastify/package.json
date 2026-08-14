@@ -34,6 +34,7 @@
     "ioredis": "^5.4.0",
     "jsonwebtoken": "^9.0.0",
     "pino": "^9.0.0",
+    "resend": "^6.19.0",
     "zod": "^3.23.0",
     "zod-to-json-schema": "^3.25.2"
   },

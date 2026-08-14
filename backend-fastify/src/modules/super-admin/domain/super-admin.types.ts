@@ -52,3 +52,31 @@ export interface IStoreUsersResponse {
   users: IStoreUserRow[]
   total: number
 }
+
+export interface ISubscriptionEventRow {
+  id: string
+  store_id: string | null
+  store_name: string | null
+  user_id: string | null
+  user_name: string | null
+  user_email: string | null
+  action: string
+  paypal_subscription_id: string | null
+  metadata: unknown
+  created_at: Date
+}
+
+export interface ISubscriptionEventsResponse {
+  events: ISubscriptionEventRow[]
+  total: number
+}
+
+export interface ISubscriptionEventsFilters {
+  store_id?: string
+  user_id?: string
+  action?: string
+  from?: string
+  to?: string
+  limit: number
+  offset: number
+}

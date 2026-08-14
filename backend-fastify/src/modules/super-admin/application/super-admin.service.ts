@@ -1,8 +1,11 @@
+import { Prisma } from "@prisma/client"
 import { prisma } from "@/config/prisma"
 import { NotFoundError } from "@/core/errors/AppError"
 import type {
   IGlobalStats,
   IStoresListResponse,
+  ISubscriptionEventsFilters,
+  ISubscriptionEventsResponse,
   IStoreUsersResponse,
 } from "../domain/super-admin.types"
 
@@ -146,6 +149,50 @@ export const superAdminService = {
     return {
       users,
       total: users.length,
+    }
+  },
+
+  async getSubscriptionEvents(
+    filters: ISubscriptionEventsFilters,
+  ): Promise<ISubscriptionEventsResponse> {
+    const where: Prisma.subscription_eventWhereInput = {}
+    if (filters.store_id) where.store_id = filters.store_id
+    if (filters.user_id) where.user_id = filters.user_id
+    if (filters.action) where.action = filters.action
+    if (filters.from || filters.to) {
+      where.created_at = {}
+      if (filters.from) where.created_at.gte = new Date(filters.from)
+      if (filters.to) where.created_at.lte = new Date(filters.to)
+    }
+
+    const [events, total] = await Promise.all([
+      prisma.subscription_event.findMany({
+        where,
+        orderBy: { created_at: "desc" },
+        skip: filters.offset,
+        take: filters.limit,
+        include: {
+          store: { select: { name: true } },
+          user: { select: { name: true, email: true } },
+        },
+      }),
+      prisma.subscription_event.count({ where }),
+    ])
+
+    return {
+      events: events.map((e) => ({
+        id: e.id,
+        store_id: e.store_id,
+        store_name: e.store?.name ?? null,
+        user_id: e.user_id,
+        user_name: e.user?.name ?? null,
+        user_email: e.user?.email ?? null,
+        action: e.action,
+        paypal_subscription_id: e.paypal_subscription_id,
+        metadata: e.metadata,
+        created_at: e.created_at,
+      })),
+      total,
     }
   },
 }

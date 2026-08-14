@@ -4,6 +4,9 @@ import type { FastifyReply, FastifyRequest } from "fastify"
 import { verifyPayPalWebhook } from "../infrastructure/paypal.webhook-verifier"
 import { SubscriptionRepository } from "../infrastructure/subscription.prisma.repository"
 import { PayPalWebhookEventRepository } from "../infrastructure/paypal-webhook-event.prisma.repository"
+import { SubscriptionEventRepository } from "../infrastructure/subscription-event.prisma.repository"
+import { SUBSCRIPTION_EVENT_ACTIONS } from "../domain/subscription-event.interface"
+import type { SubscriptionEventAction } from "../domain/subscription-event.interface"
 import type { UpdateSubscriptionInput } from "../domain/subscription.entities"
 
 const PERIOD_DAYS = 30
@@ -34,11 +37,13 @@ function getRawBody(request: FastifyRequest): string {
   return JSON.stringify(body ?? {})
 }
 
-async function updateByResource(
+async function applyByResource(
   log: FastifyRequest["log"],
-  resourceId: string | null,
+  ev: paypal_webhook_event,
   data: UpdateSubscriptionInput,
+  action: SubscriptionEventAction,
 ): Promise<void> {
+  const resourceId = ev.resource_id
   if (!resourceId) return
   const sub = await SubscriptionRepository.getByPaypalSubscriptionId(resourceId)
   if (!sub) {
@@ -46,6 +51,14 @@ async function updateByResource(
     return
   }
   await SubscriptionRepository.update(sub.store_id, data)
+  // Auditoría: quién (sistema) y qué evento de PayPal cambió el estado local.
+  await SubscriptionEventRepository.create({
+    store_id: sub.store_id,
+    user_id: null,
+    action,
+    paypal_subscription_id: sub.paypal_subscription_id ?? resourceId,
+    metadata: { event_type: ev.event_type, event_id: ev.event_id },
+  })
 }
 
 export const webhookController = {
@@ -114,40 +127,50 @@ async function dispatch(request: FastifyRequest, ev: paypal_webhook_event): Prom
           ? {}
           : { current_period_end: new Date(now.getTime() + PERIOD_DAYS * 86_400_000) }),
       })
+      await SubscriptionEventRepository.create({
+        store_id: sub.store_id,
+        user_id: null,
+        action: SUBSCRIPTION_EVENT_ACTIONS.WEBHOOK_ACTIVATED,
+        paypal_subscription_id: sub.paypal_subscription_id ?? ev.resource_id,
+        metadata: { event_type: ev.event_type, event_id: ev.event_id },
+      })
       break
     }
 
     case "PAYMENT.SALE.COMPLETED": {
       // Renovación mensual cobrada: extiende el período +30 días
       const now = new Date()
-      await updateByResource(log, ev.resource_id, {
+      await applyByResource(log, ev, {
         status: "active",
         current_period_start: now,
         current_period_end: new Date(now.getTime() + PERIOD_DAYS * 86_400_000),
         cancel_at_period_end: false,
-      })
+      }, SUBSCRIPTION_EVENT_ACTIONS.WEBHOOK_SALE_COMPLETED)
       break
     }
 
     case "BILLING.SUBSCRIPTION.CANCELLED":
       // PayPal confirmó el corte al fin del período
-      await updateByResource(log, ev.resource_id, {
+      await applyByResource(log, ev, {
         status: "canceled",
         cancel_at_period_end: true,
-      })
+      }, SUBSCRIPTION_EVENT_ACTIONS.WEBHOOK_CANCELLED)
       break
 
     case "BILLING.SUBSCRIPTION.SUSPENDED":
-    case "PAYMENT.SALE.PAYMENT.FAILED":
       // Pago fallido → entra el grace period del licenseGuard
-      await updateByResource(log, ev.resource_id, { status: "past_due" })
+      await applyByResource(log, ev, { status: "past_due" }, SUBSCRIPTION_EVENT_ACTIONS.WEBHOOK_SUSPENDED)
+      break
+
+    case "PAYMENT.SALE.PAYMENT.FAILED":
+      await applyByResource(log, ev, { status: "past_due" }, SUBSCRIPTION_EVENT_ACTIONS.WEBHOOK_PAYMENT_FAILED)
       break
 
     case "BILLING.SUBSCRIPTION.EXPIRED":
-      await updateByResource(log, ev.resource_id, {
+      await applyByResource(log, ev, {
         status: "expired",
         cancel_at_period_end: true,
-      })
+      }, SUBSCRIPTION_EVENT_ACTIONS.WEBHOOK_EXPIRED)
       break
 
     default:

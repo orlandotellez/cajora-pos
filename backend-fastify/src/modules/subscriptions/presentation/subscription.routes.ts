@@ -16,6 +16,11 @@ export const subscriptionRoutes = async (fastify: FastifyInstance, _opts: Fastif
     preHandler: [authGuard, storeGuard],
   }, subscriptionController.getMine)
 
+  fastify.get("/billing", {
+    schema: { tags: TAGS, description: "Historial de cobros mensuales y próxima fecha de pago" },
+    preHandler: [authGuard, storeGuard],
+  }, subscriptionController.getBilling)
+
   fastify.post("/cloud", {
     schema: { tags: TAGS, description: "Elegir modo Cloud e iniciar trial de 14 días (sin tarjeta)" },
     preHandler: [authGuard, storeGuard],
