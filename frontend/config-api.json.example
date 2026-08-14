@@ -1,5 +1,6 @@
 {
   "current_api_url": "https://api-url.com/api/v1",
   "app_version": "1.2.1",
-  "apk_url": "https://url-donde-esta-la-apk-en-el-bucket.apk"
+  "apk_url": "https://url-donde-esta-la-apk-en-el-bucket.apk",
+  "checkout_url": "http://localhost:4321/pos-system/"
 }

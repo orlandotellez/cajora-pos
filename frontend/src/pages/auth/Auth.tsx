@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -6,17 +5,11 @@ import { useAppVersion } from "@/hooks/useAppVersion";
 import { ShoppingCart, Package, BarChart3, Shield, Sun, Moon } from "lucide-react";
 import styles from "./Auth.module.css";
 import { LoginForm } from "@/components/pages/auth/LoginForm";
-import { RegisterForm } from "@/components/pages/auth/RegisterForm";
-import logoDark from "@/assets/logo_dark.svg";
-import logoLight from "@/assets/logo_light.svg";
-
-type AuthMode = "login" | "register";
 
 export default function Auth() {
   const { user, loading } = useAuth();
   const { theme, toggle } = useTheme();
   const appVersion = useAppVersion();
-  const [mode, setMode] = useState<AuthMode>("login");
 
   if (!loading && user) {
     return <Navigate to="/pos" replace />;
@@ -54,11 +47,7 @@ export default function Auth() {
       </div>
 
       <div className={styles.formPanel}>
-        {mode === "login" ? (
-          <LoginForm onRegisterClick={() => setMode("register")} />
-        ) : (
-          <RegisterForm onBackClick={() => setMode("login")} />
-        )}
+        <LoginForm />
       </div>
 
       {appVersion !== null && (

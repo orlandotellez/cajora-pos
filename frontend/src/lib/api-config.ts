@@ -51,6 +51,7 @@ export interface BootstrapResult {
   apiUrl: string;
   appVersion: string | null;
   apkUrl: string | null;
+  checkoutUrl: string | null;
 }
 
 /**
@@ -67,7 +68,7 @@ export async function fetchBootstrap(
 ): Promise<BootstrapResult | null> {
   // En dev no consultamos el bootstrap remoto: usamos el servidor local directamente
   if (IS_DEV) {
-    return { apiUrl: DEFAULT_API_URL, appVersion: null, apkUrl: null };
+    return { apiUrl: DEFAULT_API_URL, appVersion: null, apkUrl: null, checkoutUrl: null };
   }
 
   if (externalSignal?.aborted) return null;
@@ -91,6 +92,7 @@ export async function fetchBootstrap(
       current_api_url?: unknown;
       app_version?: unknown;
       apk_url?: unknown;
+      checkout_url?: unknown;
     };
     if (!isValidApiUrl(data.current_api_url)) return null;
     if (externalSignal?.aborted) return null;
@@ -104,12 +106,16 @@ export async function fetchBootstrap(
         typeof data.apk_url === "string" && /^https?:\/\/\S+$/i.test(data.apk_url)
           ? data.apk_url
           : null,
+      checkoutUrl:
+        typeof data.checkout_url === "string" && /^https?:\/\/\S+$/i.test(data.checkout_url)
+          ? data.checkout_url
+          : null,
     };
   } catch (err) {
     // Si el fetch remoto falla (ej. Rust reqwest, red, TLS), usamos la URL de producción
     // como fallback para que la app pueda arrancar sin intervención manual.
     console.warn("[bootstrap] fetch remoto falló, usando URL de producción como fallback:", err);
-    return { apiUrl: FALLBACK_PRODUCTION_URL, appVersion: null, apkUrl: null };
+    return { apiUrl: FALLBACK_PRODUCTION_URL, appVersion: null, apkUrl: null, checkoutUrl: null };
   } finally {
     window.clearTimeout(timeoutId);
     externalSignal?.removeEventListener("abort", onAbort);

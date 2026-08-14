@@ -1,0 +1,133 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  animation: paywall-fade 150ms ease;
+}
+
+.card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--card, #fff);
+  color: var(--card-foreground, #111);
+  border-radius: 14px;
+  padding: 32px 28px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  animation: paywall-pop 180ms ease;
+}
+
+.icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary, #3b82f6);
+  color: var(--primary-foreground, #fff);
+}
+
+.title {
+  margin: 0 0 8px;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.subtitle {
+  margin: 0 0 20px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  opacity: 0.8;
+}
+
+.features {
+  list-style: none;
+  margin: 0 0 24px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+}
+
+.features li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--accent, rgba(0, 0, 0, 0.04));
+}
+
+.features li svg {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.payButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 13px 16px;
+  border: none;
+  border-radius: 9px;
+  background: var(--primary, #3b82f6);
+  color: var(--primary-foreground, #fff);
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.15s;
+}
+
+.payButton:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.payButtonArrow {
+  margin-left: auto;
+}
+
+.logoutButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px 16px;
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.15));
+  border-radius: 9px;
+  background: transparent;
+  color: inherit;
+  font-size: 0.85rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.logoutButton:hover {
+  opacity: 0.7;
+}
+
+@keyframes paywall-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes paywall-pop {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}

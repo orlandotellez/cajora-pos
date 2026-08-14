@@ -180,3 +180,8 @@
   background: var(--accent);
   color: var(--foreground);
 }
+
+.secondaryButtonArrow {
+  margin-left: auto;
+  opacity: 0.6;
+}

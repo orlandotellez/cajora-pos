@@ -23,6 +23,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useUpdate } from "@/context/UpdateContext";
 import { useAppVersion } from "@/hooks/useAppVersion";
 import { UserMenu } from "./UserMenu";
+import { PaywallOverlay } from "@/components/pages/auth/PaywallOverlay";
 import logoDark from "@/assets/logo_dark.svg";
 import logoLight from "@/assets/logo_light.svg";
 import styles from "./AppShell.module.css";
@@ -260,6 +261,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       <main className={styles.main}>{children}</main>
+
+      {/* Muro de pago global: se muestra sobre cualquier pantalla cuando el
+          backend responde 402 Payment Required (suscripción Cloud no activa). */}
+      <PaywallOverlay />
     </div>
   );
 }

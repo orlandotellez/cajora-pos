@@ -1,6 +1,7 @@
 import { readApiUrl } from "@/lib/api-config";
 import { crossFetch } from "@/lib/fetch";
 import { extractErrorCode, resolveErrorMessage } from "./error-messages";
+import { usePaywallStore } from "@/store/paywallStore";
 
 export class ApiError extends Error {
   status: number;
@@ -80,6 +81,17 @@ async function request<T>(
 
   if (!res.ok) {
     const code = extractErrorCode(data) ?? (res.status === 403 ? "FORBIDDEN" : "UNKNOWN");
+
+    // 402 Payment Required = licenseGuard del backend: la suscripción no está
+    // activa (o el trial venció con su gracia). Abrimos el muro de pago.
+    if (res.status === 402) {
+      const message =
+        typeof data?.message === "string" && data.message.trim() !== ""
+          ? data.message
+          : "Tu suscripción Cloud no está activa.";
+      usePaywallStore.getState().openPaywall(message);
+      throw new ApiError(res.status, code, message);
+    }
 
     if (res.status === 403 && code === STORE_CONTEXT_REQUIRED) {
       const currentUser = (() => {

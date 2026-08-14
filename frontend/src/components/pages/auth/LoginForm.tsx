@@ -1,16 +1,13 @@
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { Building2, Eye, EyeOff } from "lucide-react";
+import { Building2, Eye, EyeOff, ArrowUpRight } from "lucide-react";
+import { openCheckout } from "@/lib/checkout-url";
 import styles from "./LoginForm.module.css";
 import { useTheme } from "@/context/ThemeContext";
 import logoDark from "@/assets/logo_dark.svg";
 import logoLight from "@/assets/logo_light.svg";
 
-interface Props {
-  onRegisterClick: () => void;
-}
-
-export function LoginForm({ onRegisterClick }: Props) {
+export function LoginForm() {
   const { login } = useAuth();
   const { theme } = useTheme();
   const [email, setEmail] = useState("");
@@ -100,11 +97,12 @@ export function LoginForm({ onRegisterClick }: Props) {
 
       <button
         type="button"
-        onClick={onRegisterClick}
+        onClick={() => void openCheckout()}
         className={styles.secondaryButton}
       >
         <Building2 size={16} />
-        Crear tienda
+        Crear mi tienda en la web
+        <ArrowUpRight size={14} className={styles.secondaryButtonArrow} />
       </button>
     </div>
   );

@@ -6,6 +6,7 @@ import {
   readApiUrl,
   writeApiUrl,
 } from "@/lib/api-config";
+import { writeCheckoutUrl } from "@/lib/checkout-url";
 import { UpdateProvider, type UpdateInfo } from "@/context/UpdateContext";
 
 type State =
@@ -206,6 +207,7 @@ export function AppBootstrap({ children }: { children: ReactNode }) {
 
       if (result !== null) {
         writeApiUrl(result.apiUrl);
+        if (result.checkoutUrl) writeCheckoutUrl(result.checkoutUrl);
         if (result.appVersion && result.apkUrl) {
           setUpdateInfo({ appVersion: result.appVersion, apkUrl: result.apkUrl });
         }
@@ -246,6 +248,7 @@ export function AppBootstrap({ children }: { children: ReactNode }) {
       if (result !== null || readApiUrl() !== DEFAULT_API_URL) {
         if (result !== null) {
           writeApiUrl(result.apiUrl);
+          if (result.checkoutUrl) writeCheckoutUrl(result.checkoutUrl);
           if (result.appVersion && result.apkUrl) {
             setUpdateInfo({ appVersion: result.appVersion, apkUrl: result.apkUrl });
           }
