@@ -44,8 +44,49 @@ const links = [
       <a href={import.meta.env.BASE_URL + '#pricing'} class="btn-primary site-header__cta" data-auth-cta="primary">
         Registrar tienda
       </a>
+      <button
+        class="menu-btn"
+        type="button"
+        aria-label="Abrir menú"
+        aria-expanded="false"
+        aria-controls="site-menu"
+        data-menu-toggle
+      >
+        <span class="menu-btn__bar"></span>
+        <span class="menu-btn__bar"></span>
+        <span class="menu-btn__bar"></span>
+      </button>
     </div>
   </div>
+
+  <!-- Menú móvil: se despliega de arriba hacia abajo -->
+  <nav class="site-menu" id="site-menu" data-menu hidden aria-label="Menú móvil">
+    <ul class="site-menu__list">
+      {links.map((link) => (
+        <li>
+          <a href={link.href} class="site-menu__link" data-menu-close>{link.label}</a>
+        </li>
+      ))}
+    </ul>
+    <div class="site-menu__actions">
+      <a
+        href={import.meta.env.BASE_URL + 'login'}
+        class="btn-secondary site-menu__cta"
+        data-auth-cta="secondary"
+        data-menu-close
+      >
+        Iniciar sesión
+      </a>
+      <a
+        href={import.meta.env.BASE_URL + '#pricing'}
+        class="btn-primary site-menu__cta"
+        data-auth-cta="primary"
+        data-menu-close
+      >
+        Registrar tienda
+      </a>
+    </div>
+  </nav>
 </header>
 
 <script>
@@ -77,6 +118,53 @@ const links = [
   });
 
   syncToggle();
+
+  // -------- Menú móvil (hamburguesa) --------
+  const menu = document.querySelector('[data-menu]');
+  const menuToggle = document.querySelector('[data-menu-toggle]');
+
+  const setMenuOpen = (open) => {
+    if (!menu || !menuToggle) return;
+    menuToggle.setAttribute('aria-expanded', String(open));
+    menuToggle.setAttribute('aria-label', open ? 'Cerrar menú' : 'Abrir menú');
+    if (open) {
+      menu.hidden = false;
+      menu.removeAttribute('data-closing');
+    } else {
+      // Animar el cierre (menú visible → oculto) sin quitar el nodo del flujo
+      menu.setAttribute('data-closing', '');
+      menu.addEventListener(
+        'animationend',
+        () => {
+          if (menu.hasAttribute('data-closing')) {
+            menu.hidden = true;
+            menu.removeAttribute('data-closing');
+          }
+        },
+        { once: true }
+      );
+    }
+  };
+
+  menuToggle?.addEventListener('click', () => {
+    setMenuOpen(menu?.hidden === true);
+  });
+
+  // Cerrar al tocar un enlace del menú
+  document.querySelectorAll('[data-menu-close]').forEach((el) => {
+    el.addEventListener('click', () => setMenuOpen(false));
+  });
+
+  // Cerrar con Escape
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') setMenuOpen(false);
+  });
+
+  // Cerrar si la ventana crece a tamaño desktop (el menú es solo móvil)
+  const mqDesktop = window.matchMedia('(min-width: 769px)');
+  mqDesktop.addEventListener('change', (e) => {
+    if (e.matches) setMenuOpen(false);
+  });
 
   const baseUrl = import.meta.env.BASE_URL;
   const navLinks = [...document.querySelectorAll('.site-nav__link')];
@@ -126,8 +214,6 @@ const links = [
     right: 0;
     z-index: 50;
     background: var(--glass);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border);
     transition: background-color 250ms ease, border-color 250ms ease;
   }
@@ -231,6 +317,143 @@ const links = [
 
   html[data-theme='light'] .icon-btn__moon {
     display: inline-flex;
+  }
+
+  /* -------- Botón hamburguesa (solo móvil) -------- */
+  .menu-btn {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 4px;
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: background-color 150ms ease, color 150ms ease;
+  }
+
+  .menu-btn:hover {
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  .menu-btn__bar {
+    display: block;
+    width: 16px;
+    height: 2px;
+    border-radius: 2px;
+    background: currentColor;
+    transition: transform 200ms ease, opacity 150ms ease;
+  }
+
+  .menu-btn[aria-expanded='true'] .menu-btn__bar:nth-child(1) {
+    transform: translateY(6px) rotate(45deg);
+  }
+
+  .menu-btn[aria-expanded='true'] .menu-btn__bar:nth-child(2) {
+    opacity: 0;
+  }
+
+  .menu-btn[aria-expanded='true'] .menu-btn__bar:nth-child(3) {
+    transform: translateY(-6px) rotate(-45deg);
+  }
+
+  /* -------- Menú móvil (desplegable de arriba hacia abajo) -------- */
+  .site-menu[hidden] {
+    display: none;
+  }
+
+  .site-menu {
+    display: none;
+  }
+
+  .site-menu__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .site-menu__link {
+    display: block;
+    padding: 0.875rem 0;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+    transition: color 150ms ease;
+  }
+
+  .site-menu__link:hover {
+    color: var(--text);
+  }
+
+  .site-menu__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding-top: 1rem;
+    margin-top: 1rem;
+  }
+
+  .site-menu__cta {
+    width: 100%;
+    padding: 0.75rem 1rem;
+  }
+
+  @media (max-width: 768px) {
+    .menu-btn {
+      display: inline-flex;
+    }
+
+    /* En el header solo queda "Registrar tienda" + hamburguesa */
+    .site-header__cta[data-auth-cta='secondary'] {
+      display: none;
+    }
+
+    .site-menu {
+      display: block;
+      position: absolute;
+      top: 64px;
+      left: 0;
+      right: 0;
+      z-index: 49;
+      background: var(--glass);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem 1.5rem;
+      animation: menu-slide-down 220ms ease;
+    }
+
+    .site-menu[data-closing] {
+      animation: menu-slide-up 180ms ease forwards;
+    }
+  }
+
+  @keyframes menu-slide-down {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes menu-slide-up {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
   }
 
   @media (max-width: 768px) {
