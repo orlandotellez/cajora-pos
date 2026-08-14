@@ -11,6 +11,8 @@ const allowedOrigins = process.env.CORS_ORIGIN?.split(",") ?? [
   "http://localhost:1420",
   "http://192.168.0.10:1420",
   "http://tauri.localhost",
+  "https://cajorapos.com",
+  "https://app.cajorapos.com"
 ]
 
 export const corsOptions: FastifyCorsOptions = {
