@@ -958,8 +958,11 @@ import Footer from '../sections/Footer.astro';
 
 <style>
   .checkout {
-    /* padding superior: header fijo (64px) + aire */
-    padding: calc(64px + 2rem) 0 5rem;
+    /* padding superior: header fijo (64px) + aire.
+       OJO: no usar shorthand con 0 horizontal porque pisa el
+       padding lateral de .container-narrow (misma especificidad). */
+    padding-top: calc(64px + 2rem);
+    padding-bottom: 5rem;
   }
 
   .checkout__steps {
@@ -1503,10 +1506,45 @@ import Footer from '../sections/Footer.astro';
     }
   }
 
-  @media (max-width: 480px) {
+  /* En móvil el resumen va debajo del formulario y pierde el sticky */
+  @media (max-width: 899px) {
+    .checkout__summary {
+      position: static;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .checkout__steps {
+      gap: 0.375rem;
+      overflow-x: auto;
+      justify-content: flex-start;
+      padding-bottom: 0.25rem;
+      margin-bottom: 1.75rem;
+    }
+
+    .checkout__step {
+      padding: 0.4rem 0.75rem;
+      font-size: 0.75rem;
+      white-space: nowrap;
+    }
+
+    .checkout__card {
+      padding: 1.5rem;
+    }
+
+    .checkout__title {
+      font-size: 1.375rem;
+    }
+  }
+
+  @media (max-width: 400px) {
     .checkout__card,
     .checkout__summary {
-      padding: 1.75rem;
+      padding: 1.25rem;
+    }
+
+    .plans-modal__plan {
+      padding: 1.25rem;
     }
   }
 </style>

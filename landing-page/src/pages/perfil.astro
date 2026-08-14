@@ -522,7 +522,8 @@ import Footer from '../sections/Footer.astro';
 <style>
   .profile {
     /* padding superior: header fijo (64px) + aire */
-    padding: calc(64px + 2rem) 0 5rem;
+    padding-top: calc(64px + 2rem);
+    padding-bottom: 5rem;
   }
 
   .profile__title {
@@ -774,9 +775,86 @@ import Footer from '../sections/Footer.astro';
   }
 
   @media (max-width: 480px) {
-    .profile__billing-table th:nth-child(2),
-    .profile__billing-table td:nth-child(2) {
+    .profile__card {
+      padding: 1.25rem;
+    }
+
+    .profile__danger-row {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.75rem;
+    }
+
+    .profile__danger-btn,
+    .profile__submit {
+      width: 100%;
+      align-self: stretch;
+      justify-content: center;
+    }
+
+    .profile__actions {
+      width: 100%;
+    }
+
+    .profile__billing-next {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.25rem;
+    }
+
+    .profile__billing-total {
+      text-align: left;
+    }
+  }
+
+  /* Facturación: en móvil la tabla se convierte en tarjetas apiladas */
+  @media (max-width: 560px) {
+    .profile__billing-table thead {
       display: none;
+    }
+
+    .profile__billing-table,
+    .profile__billing-table tbody {
+      display: block;
+    }
+
+    .profile__billing-table tr {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.25rem 1rem;
+      padding: 0.875rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .profile__billing-table td {
+      display: block;
+      border-bottom: 0;
+      padding: 0;
+      white-space: normal;
+    }
+
+    .profile__billing-table td:nth-child(1) {
+      grid-column: 1;
+      font-weight: 600;
+    }
+
+    .profile__billing-table td:nth-child(2) {
+      grid-column: 1;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      order: 3;
+    }
+
+    .profile__billing-table td:nth-child(3) {
+      grid-column: 2;
+      grid-row: 1 / span 2;
+      text-align: right;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .profile__billing-table td:first-child {
+      white-space: normal;
     }
   }
 
@@ -840,18 +918,6 @@ import Footer from '../sections/Footer.astro';
     .profile__grid {
       grid-template-columns: 1fr 1fr;
       gap: 2.5rem;
-    }
-  }
-
-  @media (max-width: 480px) {
-    .profile__card {
-      padding: 1.5rem;
-    }
-
-    .profile__danger-row {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.75rem;
     }
   }
 </style>

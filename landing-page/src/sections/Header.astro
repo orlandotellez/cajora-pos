@@ -237,5 +237,26 @@ const links = [
     .site-nav {
       display: none;
     }
+
+    /* En móvil el header queda de 2 columnas: marca | acciones a la derecha */
+    .site-header__row {
+      grid-template-columns: auto 1fr;
+      gap: 1rem;
+    }
+
+    .site-header__actions {
+      justify-self: end;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .site-header__actions {
+      gap: 0.5rem;
+    }
+
+    .site-header__cta {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8125rem;
+    }
   }
 </style>

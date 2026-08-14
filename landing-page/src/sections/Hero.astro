@@ -7,8 +7,7 @@ import Icon from '../components/Icon.astro';
 
   <div class="container hero__inner">
     <h1 class="hero__title">
-      Tu punto de venta, sin comisiones<br class="hero__break" />
-      ni letra pequeña
+      Tu punto de venta, sin comisiones ni letra pequeña
     </h1>
 
     <p class="hero__lead">
@@ -72,10 +71,7 @@ import Icon from '../components/Icon.astro';
     letter-spacing: -0.025em;
     line-height: 1.1;
     margin-bottom: 1.5rem;
-  }
-
-  .hero__break {
-    display: none;
+    text-wrap: balance;
   }
 
   .hero__lead {
@@ -150,12 +146,6 @@ import Icon from '../components/Icon.astro';
     .hero__btn-primary,
     .hero__btn-secondary {
       width: auto;
-    }
-  }
-
-  @media (min-width: 768px) {
-    .hero__break {
-      display: inline;
     }
   }
 </style>
