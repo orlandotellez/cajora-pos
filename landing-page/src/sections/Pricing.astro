@@ -21,8 +21,7 @@ const cloud = [
   <div class="container-narrow">
     <div class="pricing__heading">
       <h2 class="pricing__title">Planes flexibles</h2>
-      <p class="pricing__subtitle">Elige la opción que mejor se adapte a tu infraestructura.</p>
-    </div>
+      <p class="pricing__subtitle">Elige la opción que mejor se adapte a tu infraestructura.</p>    </div>
 
     <div class="pricing__grid">
       <!-- Self-hosted -->
@@ -47,13 +46,14 @@ const cloud = [
         <a href="#" class="btn-secondary plan__cta">Descargar Instalador</a>
       </article>
 
-      <!-- Cloud -->
-      <article class="plan plan--featured">
-        <span class="plan__tag">Recomendado</span>
+      <!-- Cloud: se adapta según el estado del usuario (ver script auth-aware en Layout) -->
+      <article class="plan plan--featured" id="plan-cloud" data-auth-paid>
+        <span class="plan__tag" data-auth-tag>Recomendado</span>
         <div class="plan__head">
           <h3 class="plan__title">Suscripción · Cloud</h3>
+          <p class="plan__trial">14 días de prueba gratis</p>
           <div class="plan__price">
-            <span class="plan__amount">$19</span>
+            <span class="plan__amount">$15.99</span>
             <span class="plan__period">/mes</span>
           </div>
         </div>
@@ -67,7 +67,9 @@ const cloud = [
           ))}
         </ul>
 
-        <a href="#" class="btn-primary plan__cta">Empezar Prueba Gratis</a>
+        <a href={import.meta.env.BASE_URL + 'checkout'} class="btn-primary plan__cta" data-auth-cta="content">
+          Empezar Prueba Gratis
+        </a>
       </article>
     </div>
   </div>
@@ -130,6 +132,13 @@ const cloud = [
 
   .plan__head {
     margin-bottom: 2rem;
+  }
+
+  .plan__trial {
+    color: var(--green);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
   }
 
   .plan__title {

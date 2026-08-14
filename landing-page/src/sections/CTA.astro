@@ -10,7 +10,7 @@
         gratuita o prueba nuestra nube hoy mismo.
       </p>
       <div class="cta__buttons">
-        <a href="#" class="cta__primary">Crear cuenta Cloud</a>
+        <a href={import.meta.env.BASE_URL + 'checkout'} class="cta__primary" data-auth-cta="content">Crear cuenta Cloud</a>
         <a href="#" class="cta__secondary">Ver tutorial de instalación</a>
       </div>
     </div>
@@ -67,6 +67,7 @@
   .cta__primary {
     background: var(--bg);
     color: var(--text);
+    border: 0;
   }
 
   .cta__primary:hover {

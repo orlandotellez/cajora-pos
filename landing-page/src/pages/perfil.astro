@@ -1,0 +1,857 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../sections/Header.astro';
+import Footer from '../sections/Footer.astro';
+---
+
+<Layout
+  title="Tu perfil · CajoraPos"
+  description="Tu tienda y el estado de tu suscripción."
+>
+  <Header />
+
+  <main class="profile container-narrow">
+    <!-- Cargando -->
+    <div data-profile-loading>
+      <h1 class="profile__title">Tu perfil</h1>
+      <p class="profile__lead">Cargando tu tienda…</p>
+    </div>
+
+    <!-- Sin sesión / token inválido -->
+    <div data-profile-empty hidden>
+      <h1 class="profile__title" data-empty-title>No estás logueado</h1>
+      <p class="profile__lead" data-empty-text>
+        Creá tu tienda o iniciá sesión para ver tu perfil y el estado de tu suscripción.
+      </p>
+      <a href={import.meta.env.BASE_URL + 'checkout'} class="btn-primary profile__submit">
+        Crear cuenta / Iniciar sesión
+      </a>
+    </div>
+
+    <!-- Contenido -->
+    <div data-profile-content hidden>
+      <h1 class="profile__title">Tu perfil</h1>
+      <p class="profile__lead">Datos de tu tienda y estado de tu suscripción.</p>
+
+      <div class="profile__grid">
+        <!-- Tu tienda (editable; el email no) -->
+        <section class="profile__card">
+          <h2 class="profile__card-title">Tu tienda</h2>
+          <form class="profile__form" data-store-form>
+            <label class="profile__field">
+              <span>Nombre de la tienda</span>
+              <input type="text" name="name" required minlength="2" data-store-name />
+            </label>
+
+            <label class="profile__field">
+              <span>Dirección</span>
+              <input type="text" name="address" placeholder="Calle y número" data-store-address />
+            </label>
+
+            <label class="profile__field">
+              <span>Teléfono</span>
+              <input type="text" name="phone" placeholder="+52 555 123 4567" data-store-phone />
+            </label>
+
+            <label class="profile__field">
+              <span>Email (no se puede cambiar)</span>
+              <input type="email" disabled data-store-email />
+            </label>
+
+            <p class="profile__save-msg" data-store-msg role="status" hidden></p>
+
+            <button type="submit" class="btn-primary profile__submit" data-store-save>
+              Guardar cambios
+            </button>
+          </form>
+        </section>
+
+        <!-- Suscripción -->
+        <section class="profile__card">
+          <h2 class="profile__card-title">Suscripción</h2>
+
+          <span class="profile__badge" data-profile-badge hidden></span>
+
+          <dl class="profile__list">
+            <div class="profile__row">
+              <dt>Plan</dt>
+              <dd data-profile-plan>—</dd>
+            </div>
+            <div class="profile__row">
+              <dt>Precio</dt>
+              <dd>$15.99/mes</dd>
+            </div>
+            <div class="profile__row" data-profile-row-period>
+              <dt data-profile-period-label>Próxima renovación</dt>
+              <dd data-profile-period>—</dd>
+            </div>
+            <div class="profile__row" data-profile-row-trial hidden>
+              <dt>Fin de la prueba</dt>
+              <dd data-profile-trial>—</dd>
+            </div>
+            <div class="profile__row" data-profile-row-cancel hidden>
+              <dt>Cancelación</dt>
+              <dd data-profile-cancel-date>—</dd>
+            </div>
+          </dl>
+
+          <p class="profile__status-text" data-profile-text></p>
+
+          <div class="profile__actions">
+            <a href="#" class="btn-primary profile__submit" data-profile-cta hidden>—</a>
+            <a href={import.meta.env.BASE_URL + 'checkout'} class="profile__link" data-profile-pay hidden>
+              Pagar ahora — $15.99/mes
+            </a>
+          </div>
+        </section>
+      </div>
+
+      <!-- Facturación -->
+      <section class="profile__card profile__billing" aria-label="Facturación">
+        <h2 class="profile__card-title">Facturación</h2>
+        <p class="profile__billing-note">
+          Cobros mensuales de tu suscripción Cloud. Acá ves cuándo se pagó cada mes y cuándo
+          vence el período actual.
+        </p>
+
+        <div class="profile__billing-next" data-billing-next hidden>
+          <span class="profile__billing-next-label">Próxima fecha de pago</span>
+          <strong data-billing-next-date>—</strong>
+        </div>
+
+        <p data-billing-loading class="profile__billing-note">Consultando tus pagos…</p>
+
+        <p data-billing-empty hidden class="profile__billing-note">
+          Todavía no hay cobros. Tu primer pago se registrará acá al activar la suscripción.
+        </p>
+
+        <table class="profile__billing-table" data-billing-table hidden>
+          <thead>
+            <tr>
+              <th>Fecha de pago</th>
+              <th>Concepto</th>
+              <th class="profile__billing-align-right">Monto</th>
+            </tr>
+          </thead>
+          <tbody data-billing-body></tbody>
+        </table>
+
+        <div class="profile__billing-total" data-billing-total hidden>
+          Total pagado: <strong data-billing-total-amount>—</strong>
+        </div>
+      </section>
+
+      <!-- Zona de peligro -->
+      <section class="profile__danger" aria-label="Zona de peligro">
+        <h2 class="profile__danger-title">Zona de peligro</h2>
+
+        <div class="profile__danger-row" data-danger-cancel hidden>
+          <div>
+            <p class="profile__danger-name">Cancelar suscripción</p>
+            <p class="profile__danger-desc">
+              Se cancela al final del período ya pagado. Seguís con acceso hasta esa fecha.
+            </p>
+          </div>
+          <button type="button" class="profile__danger-btn" data-profile-cancel>
+            Cancelar suscripción
+          </button>
+        </div>
+
+        <div class="profile__danger-row" data-danger-scheduled hidden>
+          <div>
+            <p class="profile__danger-name">Cancelación programada</p>
+            <p class="profile__danger-desc" data-danger-scheduled-text>—</p>
+          </div>
+          <button type="button" class="btn-secondary profile__submit" data-profile-reactivate>
+            Reactivar suscripción
+          </button>
+        </div>
+
+        <div class="profile__danger-row">
+          <div>
+            <p class="profile__danger-name">Cerrar sesión</p>
+            <p class="profile__danger-desc">Cierra tu sesión en este dispositivo.</p>
+          </div>
+          <button type="button" class="profile__danger-btn" data-logout>
+            Cerrar sesión
+          </button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <Footer />
+</Layout>
+
+<script>
+  (() => {
+    const $ = (sel) => document.querySelector(sel);
+
+    const apiUrl = import.meta.env.PUBLIC_API_URL;
+    const posUrl = import.meta.env.PUBLIC_POS_URL;
+    const checkoutUrl = import.meta.env.BASE_URL + 'checkout';
+    const homeUrl = import.meta.env.BASE_URL;
+
+    const SESSION_KEY = "caja_checkout";
+    const readSession = () => {
+      try {
+        return JSON.parse(sessionStorage.getItem(SESSION_KEY));
+      } catch {
+        return null;
+      }
+    };
+    const saveSession = (data) => sessionStorage.setItem(SESSION_KEY, JSON.stringify(data));
+    const clearSession = () => sessionStorage.removeItem(SESSION_KEY);
+
+    const loading = $("[data-profile-loading]");
+    const empty = $("[data-profile-empty]");
+    const content = $("[data-profile-content]");
+
+    const showEmpty = (title, text) => {
+      loading.hidden = true;
+      content.hidden = true;
+      empty.hidden = false;
+      $("[data-empty-title]").textContent = title;
+      $("[data-empty-text]").textContent = text;
+    };
+
+    const formatDate = (iso) => {
+      if (!iso) return "—";
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return "—";
+      return d.toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" });
+    };
+
+    const daysLeft = (iso) => {
+      if (!iso) return 0;
+      return Math.max(0, Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000));
+    };
+
+    const session = readSession();
+    if (!session?.accessToken) {
+      showEmpty("No estás logueado", "Creá tu tienda o iniciá sesión para ver tu perfil y el estado de tu suscripción.");
+      return;
+    }
+
+    const authHeaders = { Authorization: `Bearer ${session.accessToken}` };
+
+    // -------- Cerrar sesión --------
+    $("[data-logout]").addEventListener("click", async () => {
+      if (session.refreshToken) {
+        try {
+          await fetch(`${apiUrl}/auth/logout`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ refreshToken: session.refreshToken }),
+          });
+        } catch {
+          /* best effort: la sesión local se limpia igual */
+        }
+      }
+      clearSession();
+      window.location.href = homeUrl;
+    });
+
+    // -------- Render de la suscripción --------
+    const badge = $("[data-profile-badge]");
+    const text = $("[data-profile-text]");
+    const cta = $("[data-profile-cta]");
+    const payLink = $("[data-profile-pay]");
+    const rowPeriod = $("[data-profile-row-period]");
+    const periodLabel = $("[data-profile-period-label]");
+    const periodValue = $("[data-profile-period]");
+    const rowTrial = $("[data-profile-row-trial]");
+    const trialValue = $("[data-profile-trial]");
+    const rowCancel = $("[data-profile-row-cancel]");
+    const cancelDate = $("[data-profile-cancel-date]");
+    const dangerCancel = $("[data-danger-cancel]");
+    const dangerScheduled = $("[data-danger-scheduled]");
+    const dangerScheduledText = $("[data-danger-scheduled-text]");
+
+    const setBadge = (label, cls) => {
+      badge.textContent = label;
+      badge.className = `profile__badge ${cls}`;
+      badge.hidden = false;
+    };
+
+    const renderSub = (sub) => {
+      $("[data-profile-plan]").textContent =
+        sub.plan === "annual" ? "Anual" : "Mensual ($15.99/mes)";
+      rowPeriod.hidden = sub.status === "trial";
+      rowTrial.hidden = sub.status !== "trial";
+      rowCancel.hidden = true;
+      dangerCancel.hidden = true;
+      dangerScheduled.hidden = true;
+
+      cta.hidden = true;
+      payLink.hidden = true;
+
+      switch (sub.status) {
+        case "trial": {
+          const days = daysLeft(sub.trial_ends_at);
+          trialValue.textContent = `${formatDate(sub.trial_ends_at)} (${days} día${days === 1 ? "" : "s"} restantes)`;
+          setBadge("Prueba gratis", "is-trial");
+          text.textContent =
+            "Tu prueba está activa. Al suscribirte pagás $15.99/mes y podés cancelar cuando quieras.";
+          payLink.hidden = false;
+          break;
+        }
+        case "active": {
+          periodLabel.textContent = "Próxima renovación";
+          periodValue.textContent = formatDate(sub.current_period_end);
+          setBadge("Activa", "is-active");
+          if (sub.cancel_at_period_end) {
+            text.textContent =
+              "Tu suscripción se cancelará al final del período pagado. Seguís con acceso hasta esa fecha.";
+            cancelDate.textContent = formatDate(sub.current_period_end);
+            rowCancel.hidden = false;
+            dangerScheduledText.textContent =
+              `Se cancelará el ${formatDate(sub.current_period_end)}. ¿Cambiaste de opinión?`;
+            dangerScheduled.hidden = false;
+          } else {
+            text.textContent =
+              "Tu suscripción está activa. Podés cancelarla cuando quieras (sigue activa hasta fin de mes).";
+            dangerCancel.hidden = false;
+          }
+          cta.hidden = false;
+          cta.textContent = "Ir a mi tienda";
+          cta.href = posUrl;
+          break;
+        }
+        case "past_due": {
+          periodLabel.textContent = "Próxima renovación";
+          periodValue.textContent = formatDate(sub.current_period_end);
+          setBadge("Pago pendiente", "is-past-due");
+          text.textContent = "Hubo un problema con el cobro. Revisá tu método de pago para no perder el acceso.";
+          cta.hidden = false;
+          cta.textContent = "Revisar pago";
+          cta.href = checkoutUrl;
+          break;
+        }
+        case "canceled":
+        case "expired": {
+          setBadge(sub.status === "canceled" ? "Cancelada" : "Vencida", "is-canceled");
+          text.textContent =
+            "Tu suscripción no está activa. Volvé a suscribirte para seguir usando el modo Cloud.";
+          cta.hidden = false;
+          cta.textContent = "Suscribirme de nuevo";
+          cta.href = checkoutUrl;
+          break;
+        }
+        default:
+          setBadge("—", "is-trial");
+          text.textContent = "No se pudo determinar el estado.";
+      }
+    };
+
+    // -------- Facturación --------
+    const billingNext = $("[data-billing-next]");
+    const billingNextDate = $("[data-billing-next-date]");
+    const billingLoading = $("[data-billing-loading]");
+    const billingEmpty = $("[data-billing-empty]");
+    const billingTable = $("[data-billing-table]");
+    const billingBody = $("[data-billing-body]");
+    const billingTotal = $("[data-billing-total]");
+    const billingTotalAmount = $("[data-billing-total-amount]");
+
+    async function renderBilling() {
+      try {
+        const res = await fetch(`${apiUrl}/subscriptions/billing`, { headers: authHeaders });
+        if (!res.ok) throw new Error("No se pudo cargar la facturación.");
+        const data = await res.json();
+
+        billingLoading.hidden = true;
+
+        if (data.next_payment_at) {
+          billingNext.hidden = false;
+          billingNextDate.textContent = formatDate(data.next_payment_at);
+        }
+
+        const payments = Array.isArray(data.payments) ? data.payments : [];
+        if (payments.length === 0) {
+          billingEmpty.hidden = false;
+          return;
+        }
+
+        billingTable.hidden = false;
+        billingBody.innerHTML = "";
+        for (const p of payments) {
+          const tr = document.createElement("tr");
+          const tdDate = document.createElement("td");
+          tdDate.textContent = formatDate(p.paid_at);
+          const tdConcept = document.createElement("td");
+          tdConcept.textContent = "Suscripción Cloud — mensual";
+          const tdAmount = document.createElement("td");
+          tdAmount.className = "profile__billing-align-right profile__billing-amount";
+          tdAmount.textContent = `${Number(p.amount).toFixed(2)} ${p.currency}`;
+          tr.append(tdDate, tdConcept, tdAmount);
+          billingBody.appendChild(tr);
+        }
+
+        if (data.total_paid) {
+          billingTotal.hidden = false;
+          billingTotalAmount.textContent = `${Number(data.total_paid).toFixed(2)} ${data.currency}`;
+        }
+      } catch (err) {
+        billingLoading.hidden = true;
+        billingEmpty.hidden = false;
+        billingEmpty.textContent = err.message ?? "No se pudo cargar la facturación.";
+      }
+    }
+
+    // -------- Acciones de la suscripción (zona de peligro) --------
+    $("[data-profile-cancel]").addEventListener("click", async () => {
+      if (!window.confirm("¿Cancelar tu suscripción? Se cancelará al final del período ya pagado y seguirás con acceso hasta esa fecha.")) {
+        return;
+      }
+      try {
+        const res = await fetch(`${apiUrl}/subscriptions/cancel`, {
+          method: "POST",
+          headers: authHeaders,
+        });
+        if (!res.ok) throw new Error("No se pudo cancelar la suscripción.");
+        renderSub(await res.json());
+      } catch (err) {
+        window.alert(err.message ?? "No se pudo cancelar la suscripción.");
+      }
+    });
+
+    $("[data-profile-reactivate]").addEventListener("click", async () => {
+      try {
+        const res = await fetch(`${apiUrl}/subscriptions/reactivate`, {
+          method: "POST",
+          headers: authHeaders,
+        });
+        if (!res.ok) throw new Error("No se pudo reactivar la suscripción.");
+        renderSub(await res.json());
+      } catch (err) {
+        window.alert(err.message ?? "No se pudo reactivar la suscripción.");
+      }
+    });
+
+    // -------- Carga inicial --------
+    (async () => {
+      try {
+        const [subRes, settingsRes] = await Promise.all([
+          fetch(`${apiUrl}/subscriptions/mine`, { headers: authHeaders }),
+          fetch(`${apiUrl}/settings`, { headers: authHeaders }).catch(() => null),
+        ]);
+
+        if (subRes.status === 401) {
+          showEmpty(
+            "Tu sesión expiró",
+            "Iniciá sesión de nuevo para ver tu perfil y el estado de tu suscripción.",
+          );
+          return;
+        }
+        if (!subRes.ok) throw new Error("No se pudo cargar la suscripción.");
+
+        const sub = await subRes.json();
+        loading.hidden = true;
+        empty.hidden = true;
+        content.hidden = false;
+
+        // Tienda: preferimos los datos reales de /settings; email siempre de la sesión.
+        let settings = null;
+        if (settingsRes && settingsRes.ok) {
+          settings = await settingsRes.json().catch(() => null);
+        }
+        $("[data-store-name]").value = settings?.name ?? session.storeName ?? "";
+        $("[data-store-address]").value = settings?.address ?? "";
+        $("[data-store-phone]").value = settings?.phone ?? "";
+        $("[data-store-email]").value = session.email ?? "";
+
+        renderSub(sub);
+        void renderBilling();
+      } catch (err) {
+        showEmpty(
+          "No se pudo cargar tu perfil",
+          "Hubo un problema al consultar el estado. Intentalo de nuevo en unos minutos.",
+        );
+      }
+    })();
+
+    // -------- Guardar datos de la tienda --------
+    const storeForm = $("[data-store-form]");
+    const storeMsg = $("[data-store-msg]");
+    const storeSave = $("[data-store-save]");
+
+    storeForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      storeMsg.hidden = true;
+      storeSave.disabled = true;
+      storeSave.textContent = "Guardando...";
+
+      const fd = new FormData(storeForm);
+      const payload = {
+        name: String(fd.get("name") ?? "").trim(),
+        address: String(fd.get("address") ?? "").trim() || null,
+        phone: String(fd.get("phone") ?? "").trim() || null,
+      };
+
+      try {
+        const res = await fetch(`${apiUrl}/settings`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", ...authHeaders },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => null);
+          throw new Error(data?.message ?? "No se pudieron guardar los cambios.");
+        }
+
+        saveSession({ ...readSession(), storeName: payload.name });
+        storeMsg.textContent = "Datos guardados correctamente ✓";
+        storeMsg.classList.remove("is-error");
+        storeMsg.hidden = false;
+        setTimeout(() => {
+          storeMsg.hidden = true;
+        }, 3000);
+      } catch (err) {
+        storeMsg.textContent = err.message ?? "No se pudieron guardar los cambios.";
+        storeMsg.classList.add("is-error");
+        storeMsg.hidden = false;
+      } finally {
+        storeSave.disabled = false;
+        storeSave.textContent = "Guardar cambios";
+      }
+    });
+  })();
+</script>
+
+<style>
+  .profile {
+    /* padding superior: header fijo (64px) + aire */
+    padding: calc(64px + 2rem) 0 5rem;
+  }
+
+  .profile__title {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .profile__lead {
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+  }
+
+  .profile__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  .profile__card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 2rem;
+  }
+
+  .profile__card-title {
+    font-size: 1.125rem;
+    margin-bottom: 1.25rem;
+  }
+
+  /* -------- Formulario de la tienda -------- */
+  .profile__form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .profile__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  .profile__field input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    padding: 0.625rem 0.75rem;
+    font-size: 0.9375rem;
+    transition: border-color 150ms ease;
+  }
+
+  .profile__field input:focus {
+    outline: none;
+    border-color: var(--border-strong);
+  }
+
+  .profile__field input:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .profile__save-msg {
+    font-size: 0.8125rem;
+    color: var(--green);
+  }
+
+  .profile__save-msg.is-error {
+    color: #ef4444;
+  }
+
+  .profile__submit {
+    padding: 0.75rem 1.5rem;
+    align-self: flex-start;
+  }
+
+  /* -------- Suscripción -------- */
+  .profile__list {
+    margin: 0 0 1rem;
+    padding: 0;
+  }
+
+  .profile__row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: 0.875rem;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .profile__row:last-child {
+    border-bottom: 0;
+  }
+
+  .profile__row dt {
+    color: var(--text-muted);
+  }
+
+  .profile__row dd {
+    margin: 0;
+    text-align: right;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+  }
+
+  .profile__badge {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+    margin-bottom: 1rem;
+  }
+
+  .profile__badge.is-active {
+    background: rgba(34, 197, 94, 0.12);
+    color: var(--green);
+    border: 1px solid rgba(34, 197, 94, 0.35);
+  }
+
+  .profile__badge.is-trial {
+    background: rgba(59, 130, 246, 0.12);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.35);
+  }
+
+  .profile__badge.is-past-due {
+    background: rgba(245, 158, 11, 0.12);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.35);
+  }
+
+  .profile__badge.is-canceled {
+    background: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+  }
+
+  .profile__status-text {
+    color: var(--text-muted);
+    font-size: 0.9375rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .profile__actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .profile__link {
+    background: none;
+    border: 0;
+    color: var(--text);
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .profile__link:hover {
+    color: var(--text-muted);
+  }
+
+  /* -------- Facturación -------- */
+  .profile__billing {
+    margin-top: 2rem;
+  }
+
+  .profile__billing-note {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    margin: 0 0 1rem;
+  }
+
+  .profile__billing-next {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .profile__billing-next-label {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+  }
+
+  .profile__billing-next strong {
+    font-size: 0.9375rem;
+    text-align: right;
+  }
+
+  .profile__billing-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+  }
+
+  .profile__billing-table th,
+  .profile__billing-table td {
+    text-align: left;
+    padding: 0.625rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .profile__billing-table th {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+  }
+
+  .profile__billing-table td:first-child {
+    white-space: nowrap;
+  }
+
+  .profile__billing-align-right {
+    text-align: right;
+  }
+
+  .profile__billing-amount {
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .profile__billing-total {
+    margin-top: 1.25rem;
+    text-align: right;
+    font-size: 0.9375rem;
+    color: var(--text-muted);
+  }
+
+  .profile__billing-total strong {
+    color: var(--text);
+  }
+
+  @media (max-width: 480px) {
+    .profile__billing-table th:nth-child(2),
+    .profile__billing-table td:nth-child(2) {
+      display: none;
+    }
+  }
+
+  /* -------- Zona de peligro -------- */
+  .profile__danger {
+    margin-top: 2.5rem;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    border-radius: 5px;
+    background: rgba(239, 68, 68, 0.04);
+    padding: 1.5rem;
+  }
+
+  .profile__danger-title {
+    font-size: 1rem;
+    color: #ef4444;
+    margin-bottom: 0.5rem;
+  }
+
+  .profile__danger-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .profile__danger-row:first-of-type {
+    border-top: 0;
+  }
+
+  .profile__danger-name {
+    font-weight: 600;
+    font-size: 0.9375rem;
+  }
+
+  .profile__danger-desc {
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+    margin-top: 0.25rem;
+  }
+
+  .profile__danger-btn {
+    flex-shrink: 0;
+    background: transparent;
+    border: 1px solid rgba(239, 68, 68, 0.5);
+    border-radius: var(--radius);
+    color: #ef4444;
+    padding: 0.6rem 1rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background-color 150ms ease;
+  }
+
+  .profile__danger-btn:hover {
+    background: rgba(239, 68, 68, 0.1);
+  }
+
+  @media (min-width: 900px) {
+    .profile__grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 2.5rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .profile__card {
+      padding: 1.5rem;
+    }
+
+    .profile__danger-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+  }
+</style>

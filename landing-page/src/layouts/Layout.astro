@@ -5,7 +5,7 @@ interface Props {
 }
 
 const {
-  title = 'Caja POS · Tu punto de venta inteligente',
+  title = 'CajoraPos · Tu punto de venta inteligente',
   description = 'Gestiona tus ventas, inventario y reportes con una herramienta diseñada para la eficiencia. Disponible para Web, Desktop y Android.',
 } = Astro.props;
 ---
@@ -45,6 +45,86 @@ const {
   </head>
   <body>
     <slot />
+    <script>
+      (() => {
+        const readSession = () => {
+          try {
+            return JSON.parse(sessionStorage.getItem('caja_checkout'));
+          } catch {
+            return null;
+          }
+        };
+        const saveSession = (data) => sessionStorage.setItem('caja_checkout', JSON.stringify(data));
+        const checkoutUrl = import.meta.env.BASE_URL + 'checkout';
+        const loginUrl = import.meta.env.BASE_URL + 'login';
+        const perfilUrl = import.meta.env.BASE_URL + 'perfil';
+        const pricingUrl = import.meta.env.BASE_URL + '#pricing';
+        const posUrl = import.meta.env.PUBLIC_POS_URL;
+
+        const applyAuth = (paid) => {
+          const session = readSession();
+          const hasSession = !!session?.accessToken;
+
+          document.querySelectorAll('[data-auth-paid]').forEach((el) => {
+            const tag = el.querySelector('[data-auth-tag]');
+            if (tag) tag.textContent = paid ? 'Tu plan actual' : 'Recomendado';
+          });
+          document.querySelectorAll('[data-auth-cta="secondary"]').forEach((el) => {
+            el.hidden = false;
+            if (hasSession) {
+              el.setAttribute('href', perfilUrl);
+              el.textContent = 'Mi perfil';
+            } else {
+              el.setAttribute('href', loginUrl);
+              el.textContent = 'Iniciar sesión';
+            }
+          });
+          document.querySelectorAll('[data-auth-cta="primary"]').forEach((el) => {
+            if (paid) {
+              el.hidden = true;
+            } else if (hasSession) {
+              el.hidden = false;
+              el.setAttribute('href', checkoutUrl);
+              el.textContent = 'Continuar pago';
+            } else {
+              el.hidden = false;
+              el.setAttribute('href', pricingUrl);
+              el.textContent = 'Registrar tienda';
+            }
+          });
+          document.querySelectorAll('[data-auth-cta="content"]').forEach((el) => {
+            if (paid) {
+              el.setAttribute('href', posUrl);
+              el.textContent = 'Ir a mi tienda';
+            } else if (hasSession) {
+              el.setAttribute('href', checkoutUrl);
+              el.textContent = 'Continuar pago';
+            } else {
+              el.setAttribute('href', checkoutUrl);
+            }
+          });
+        };
+
+        const session = readSession();
+        applyAuth(!!session?.paid);
+
+        if (session?.accessToken && !session.paid) {
+          const apiUrl = import.meta.env.PUBLIC_API_URL;
+          fetch(`${apiUrl}/subscriptions/mine`, {
+            headers: { Authorization: `Bearer ${session.accessToken}` },
+          })
+            .then((r) => r.json().catch(() => null))
+            .then((data) => {
+              if (data?.status === 'active') {
+                saveSession({ ...session, paid: true });
+                applyAuth(true);
+              }
+            })
+            .catch(() => {
+            });
+        }
+      })();
+    </script>
   </body>
 </html>
 
@@ -55,9 +135,9 @@ const {
     --radius-sm: 3px;
     --radius-lg: 10px;
 
-    --bg: #10151E;
-    --surface: #161C26;
-    --surface-2: #1A2230;
+    --bg: #040609;
+    --surface: #090b0f;
+    --surface-2: #090b0f;
     --border: #232B38;
     --border-strong: #2E3747;
 
@@ -67,7 +147,7 @@ const {
     --green: #22C55E;
 
     /* Dependientes del tema */
-    --glass: rgba(16, 21, 30, 0.8);
+    --glass: rgba(9, 11, 15, 0.8);
     --glow: radial-gradient(
       circle,
       rgba(58, 71, 89, 0.15) 0%,
@@ -200,7 +280,27 @@ const {
     padding: 0 1.5rem;
   }
 
-  /* Smooth reveal on motion */
+  .page-back {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+  }
+
+  .page-back:hover {
+    color: var(--text);
+  }
+
+  [hidden] {
+    display: none !important;
+  }
+
+  section[id] {
+    scroll-margin-top: 65px;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       animation-duration: 0.01ms !important;
