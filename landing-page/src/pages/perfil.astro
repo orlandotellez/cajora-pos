@@ -297,6 +297,18 @@ import Footer from '../sections/Footer.astro';
           break;
         }
         case "active": {
+          // Sin fila de suscripción el backend devuelve un default
+          // { mode: "self_hosted", status: "active" } (subscription.service
+          // getByStore) — NO es una suscripción real. Distinguirlo evita
+          // mostrar un falso "Activa" a una tienda que nunca pagó.
+          if (sub.mode === "self_hosted") {
+            rowPeriod.hidden = true;
+            setBadge("Sin suscripción Cloud", "is-self-hosted");
+            text.textContent =
+              "No tenés una suscripción Cloud activa. Activá tu plan para empezar a usar la nube.";
+            payLink.hidden = false;
+            break;
+          }
           periodLabel.textContent = "Próxima renovación";
           periodValue.textContent = formatDate(sub.current_period_end);
           setBadge("Activa", "is-active");
@@ -666,6 +678,12 @@ import Footer from '../sections/Footer.astro';
     background: rgba(239, 68, 68, 0.12);
     color: #ef4444;
     border: 1px solid rgba(239, 68, 68, 0.35);
+  }
+
+  .profile__badge.is-self-hosted {
+    background: rgba(138, 147, 163, 0.12);
+    color: var(--text-muted);
+    border: 1px solid rgba(138, 147, 163, 0.35);
   }
 
   .profile__status-text {

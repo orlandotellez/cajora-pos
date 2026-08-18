@@ -108,17 +108,19 @@ const {
         const session = readSession();
         applyAuth(!!session?.paid);
 
-        if (session?.accessToken && !session.paid) {
+        if (session?.accessToken) {
           const apiUrl = import.meta.env.PUBLIC_API_URL;
           fetch(`${apiUrl}/subscriptions/mine`, {
             headers: { Authorization: `Bearer ${session.accessToken}` },
           })
             .then((r) => r.json().catch(() => null))
             .then((data) => {
-              if (data?.status === 'active') {
-                saveSession({ ...session, paid: true });
-                applyAuth(true);
+              const paid = data?.status === 'active' && data?.mode === 'cloud';
+              const current = readSession();
+              if (current?.accessToken && !!current.paid !== paid) {
+                saveSession({ ...current, paid });
               }
+              applyAuth(paid);
             })
             .catch(() => {
             });

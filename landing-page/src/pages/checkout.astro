@@ -925,7 +925,10 @@ import Footer from '../sections/Footer.astro';
         });
         const data = await res.json().catch(() => null);
 
-        if (res.ok && data?.status === "active") {
+        // Solo una suscripción Cloud real cuenta como activa: el backend
+        // devuelve { mode: "self_hosted", status: "active" } como default
+        // cuando la tienda no tiene fila de suscripción.
+        if (res.ok && data?.status === "active" && data?.mode === "cloud") {
           saveSession({ ...session, paid: true, emailVerified: true });
           setSummary(session.storeName, session.email);
           setStep(4);
