@@ -210,6 +210,7 @@ import Footer from '../sections/Footer.astro';
           refreshToken: data.refreshToken,
           storeName: data.store?.name ?? null,
           email: data.user?.email ?? payload.email,
+          emailVerified: data.user?.email_verified ?? false,
         });
         window.location.href = perfilUrl;
       } catch (err) {
