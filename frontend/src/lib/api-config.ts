@@ -11,7 +11,7 @@ export const DEFAULT_API_URL = "http://192.168.0.10:3000/api/v1";
  * Se usa como fallback cuando el fetch del bootstrap falla.
  * Mantener sincronizada con el valor en config-api.json del repo.
  */
-export const FALLBACK_PRODUCTION_URL = "https://pos-system-production-6509.up.railway.app/api/v1";
+export const FALLBACK_PRODUCTION_URL = "https://cajora-pos-production.up.railway.app/api/v1";
 
 // En dev (vite dev / pnpm dev) se usa el servidor local
 // En producción se usa la URL obtenida del bootstrap remoto
