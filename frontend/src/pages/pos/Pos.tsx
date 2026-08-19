@@ -18,9 +18,11 @@ import styles from "./Pos.module.css";
 import { useAuth } from "@/context/AuthContext";
 import { PosMobileCheckout } from "@/components/pages/pos/PosMobileCheckout";
 import { PosScannerSection } from "@/components/pages/pos/PosScannerSection";
+import { useIsMobile } from "@/hooks/useMediaQuery";
 
 export default function Pos() {
   const { user } = useAuth()
+  const isMobile = useIsMobile();
   const scanRef = useRef<HTMLInputElement>(null);
   const searchWrapperRef = useRef<HTMLDivElement>(null);
   const [scan, setScan] = useState("");
@@ -427,12 +429,14 @@ export default function Pos() {
 
       {/* ─── Main POS view ─────────────────────────────────── */}
       <div className={`${styles.leftPanel} ${scannerActive ? styles["left-panel-scanner-active"] : ""}`}>
-        <PosScannerSection
-          active={scannerActive}
-          onToggle={toggleScanner}
-          toggleRef={scannerToggleRef}
-          elementId={elementId}
-        />
+        {isMobile && (
+          <PosScannerSection
+            active={scannerActive}
+            onToggle={toggleScanner}
+            toggleRef={scannerToggleRef}
+            elementId={elementId}
+          />
+        )}
 
         <PosSearchBar
           searchTerm={scan}
