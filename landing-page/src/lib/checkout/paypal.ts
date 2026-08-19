@@ -104,19 +104,6 @@ export function createPaypal(opts: {
     }
 
     try {
-      const cloudRes = await fetch(`${opts.apiUrl}/subscriptions/cloud`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${opts.getToken()}` },
-      });
-      if (!cloudRes.ok) {
-        if (cloudRes.status === 401 || cloudRes.status === 403) {
-          opts.onReset();
-          return;
-        }
-        const data = (await cloudRes.json().catch(() => null)) as { message?: string } | null;
-        throw new Error(data?.message ?? "No se pudo iniciar el trial.");
-      }
-
       const checkoutRes = await fetch(`${opts.apiUrl}/subscriptions/checkout`, {
         method: "POST",
         headers: {

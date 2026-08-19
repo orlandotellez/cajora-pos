@@ -8,11 +8,3 @@ export function formatDate(iso?: string | null): string {
     year: "numeric",
   });
 }
-
-export function daysLeft(iso?: string | null): number {
-  if (!iso) return 0;
-  return Math.max(
-    0,
-    Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000),
-  );
-}

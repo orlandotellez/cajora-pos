@@ -1,10 +1,9 @@
-import { formatDate, daysLeft } from './format';
+import { formatDate } from './format';
 
 export interface Subscription {
   plan: string;
   status: string;
   mode?: string;
-  trial_ends_at?: string | null;
   current_period_end?: string | null;
   cancel_at_period_end?: boolean;
 }
@@ -28,8 +27,6 @@ export function renderSub(sub: Subscription): void {
   const rowPeriodEl = document.querySelector<HTMLElement>('[data-profile-row-period]')!;
   const periodLabelEl = document.querySelector<HTMLElement>('[data-profile-period-label]')!;
   const periodValueEl = document.querySelector<HTMLElement>('[data-profile-period]')!;
-  const rowTrialEl = document.querySelector<HTMLElement>('[data-profile-row-trial]')!;
-  const trialValueEl = document.querySelector<HTMLElement>('[data-profile-trial]')!;
   const rowCancelEl = document.querySelector<HTMLElement>('[data-profile-row-cancel]')!;
   const cancelDateEl = document.querySelector<HTMLElement>('[data-profile-cancel-date]')!;
   const dangerCancelEl = document.querySelector<HTMLElement>('[data-danger-cancel]')!;
@@ -37,8 +34,7 @@ export function renderSub(sub: Subscription): void {
   const dangerScheduledTextEl = document.querySelector<HTMLElement>('[data-danger-scheduled-text]')!;
 
   planEl.textContent = sub.plan === 'annual' ? 'Anual' : 'Mensual ($15.99/mes)';
-  rowPeriodEl.hidden = sub.status === 'trial';
-  rowTrialEl.hidden = sub.status !== 'trial';
+  rowPeriodEl.hidden = sub.status === 'pending';
   rowCancelEl.hidden = true;
   dangerCancelEl.hidden = true;
   dangerScheduledEl.hidden = true;
@@ -47,12 +43,10 @@ export function renderSub(sub: Subscription): void {
   payLinkEl.hidden = true;
 
   switch (sub.status) {
-    case 'trial': {
-      const days = daysLeft(sub.trial_ends_at);
-      trialValueEl.textContent = `${formatDate(sub.trial_ends_at)} (${days} día${days === 1 ? '' : 's'} restantes)`;
-      setBadge('Prueba gratis', 'is-trial');
+    case 'pending': {
+      setBadge('Pendiente de pago', 'is-past-due');
       textEl.textContent =
-        'Tu prueba está activa. Al suscribirte pagás $15.99/mes y podés cancelar cuando quieras.';
+        'Tu suscripción está pendiente. Completá el pago para activar tu tienda.';
       payLinkEl.hidden = false;
       break;
     }
@@ -112,7 +106,7 @@ export function renderSub(sub: Subscription): void {
       break;
     }
     default:
-      setBadge('—', 'is-trial');
+      setBadge('—', 'is-self-hosted');
       textEl.textContent = 'No se pudo determinar el estado.';
   }
 }
