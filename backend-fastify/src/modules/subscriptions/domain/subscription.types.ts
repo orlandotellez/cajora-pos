@@ -12,7 +12,6 @@ export interface ISubscriptionResponse {
   current_period_start: string | null
   current_period_end: string | null
   cancel_at_period_end: boolean
-  trial_ends_at: string | null
 }
 
 export interface IBillingPayment {

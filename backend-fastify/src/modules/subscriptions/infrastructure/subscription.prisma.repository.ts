@@ -17,7 +17,6 @@ function mapToEntity(sub: subscription): ISubscriptionEntity {
     current_period_start: sub.current_period_start,
     current_period_end: sub.current_period_end,
     cancel_at_period_end: sub.cancel_at_period_end,
-    trial_ends_at: sub.trial_ends_at,
     created_at: sub.created_at,
     updated_at: sub.updated_at,
   }
@@ -56,13 +55,17 @@ export const SubscriptionRepository: ISubscriptionRepository = {
         mode: data.mode,
         plan: data.plan,
         status: data.status,
-        trial_ends_at: data.trial_ends_at,
+        ...(data.paypal_subscription_id !== undefined && {
+          paypal_subscription_id: data.paypal_subscription_id,
+        }),
       },
       update: {
         mode: data.mode,
         plan: data.plan,
         status: data.status,
-        trial_ends_at: data.trial_ends_at,
+        ...(data.paypal_subscription_id !== undefined && {
+          paypal_subscription_id: data.paypal_subscription_id,
+        }),
       },
     })
     return mapToEntity(sub)
@@ -87,7 +90,6 @@ export const SubscriptionRepository: ISubscriptionRepository = {
           ...(data.cancel_at_period_end !== undefined && {
             cancel_at_period_end: data.cancel_at_period_end,
           }),
-          ...(data.trial_ends_at !== undefined && { trial_ends_at: data.trial_ends_at }),
         },
       })
       return mapToEntity(sub)

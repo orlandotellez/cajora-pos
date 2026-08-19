@@ -12,7 +12,6 @@ import {
   type SubscriptionActor,
 } from "../domain/subscription-event.interface"
 
-const TRIAL_DAYS = 14
 const PERIOD_DAYS = 30
 const PLAN_PRICE = "15.99"
 const PLAN_CURRENCY = "USD"
@@ -26,21 +25,7 @@ function mapToResponse(sub: ISubscriptionEntity): ISubscriptionResponse {
     current_period_start: sub.current_period_start?.toISOString() ?? null,
     current_period_end: sub.current_period_end?.toISOString() ?? null,
     cancel_at_period_end: sub.cancel_at_period_end,
-    trial_ends_at: sub.trial_ends_at?.toISOString() ?? null,
   }
-}
-
-/** Crea/restablece la fila cloud en estado trial (14 días, sin PayPal). */
-function startTrial(
-  repository: ISubscriptionRepository,
-  storeId: string,
-): Promise<ISubscriptionEntity> {
-  return repository.upsertCloud(storeId, {
-    mode: "cloud",
-    plan: "monthly",
-    status: "trial",
-    trial_ends_at: new Date(Date.now() + TRIAL_DAYS * 86_400_000),
-  })
 }
 
 function noopActor(): SubscriptionActor {
@@ -82,17 +67,6 @@ export const createSubscriptionService = (
   }
 
   return {
-    async elegirCloud(storeId: string, actor: SubscriptionActor = noopActor()): Promise<ISubscriptionResponse> {
-      const existing = await repository.getByStoreId(storeId)
-      if (existing?.paypal_subscription_id) {
-        await audit(actor, storeId, SUBSCRIPTION_EVENT_ACTIONS.CLOUD, existing.paypal_subscription_id)
-        return mapToResponse(existing)
-      }
-      const sub = await startTrial(repository, storeId)
-      await audit(actor, storeId, SUBSCRIPTION_EVENT_ACTIONS.CLOUD)
-      return mapToResponse(sub)
-    },
-
     async checkout(
       storeId: string,
       returnUrl: string,
@@ -104,9 +78,17 @@ export const createSubscriptionService = (
 
       const existing = await repository.getByStoreId(storeId)
       if (!existing) {
-        await startTrial(repository, storeId)
+        // La fila debe existir con el paypal_subscription_id ANTES de que PayPal
+        // complete el pago: el webhook la busca por ese id.
+        await repository.upsertCloud(storeId, {
+          mode: "cloud",
+          plan: "monthly",
+          status: "pending",
+          paypal_subscription_id: created.id,
+        })
+      } else {
+        await repository.update(storeId, { paypal_subscription_id: created.id })
       }
-      await repository.update(storeId, { paypal_subscription_id: created.id })
       await audit(actor, storeId, SUBSCRIPTION_EVENT_ACTIONS.CHECKOUT, created.id)
 
       return {
@@ -130,7 +112,6 @@ export const createSubscriptionService = (
         status: "active",
         current_period_start: now,
         current_period_end: new Date(now.getTime() + PERIOD_DAYS * 86_400_000),
-        trial_ends_at: null,
       })
       if (!updated) throw new ConflictError("No hay suscripción activa")
       await audit(actor, storeId, SUBSCRIPTION_EVENT_ACTIONS.ACTIVATE, paypalSubscriptionId)
@@ -155,7 +136,11 @@ export const createSubscriptionService = (
     async reactivate(storeId: string, actor: SubscriptionActor = noopActor()): Promise<ISubscriptionResponse> {
       const existing = await repository.getByStoreId(storeId)
       if (!existing) {
-        const sub = await startTrial(repository, storeId)
+        const sub = await repository.upsertCloud(storeId, {
+          mode: "cloud",
+          plan: "monthly",
+          status: "pending",
+        })
         await audit(actor, storeId, SUBSCRIPTION_EVENT_ACTIONS.REACTIVATE)
         return mapToResponse(sub)
       }
@@ -171,7 +156,7 @@ export const createSubscriptionService = (
         return mapToResponse(existing)
       }
       const updated = await repository.update(storeId, {
-        status: "trial",
+        status: "pending",
         cancel_at_period_end: false,
       })
       if (!updated) throw new ConflictError("No hay suscripción activa")
@@ -190,7 +175,6 @@ export const createSubscriptionService = (
           current_period_start: null,
           current_period_end: null,
           cancel_at_period_end: false,
-          trial_ends_at: null,
         }
       }
       return mapToResponse(sub)

@@ -43,11 +43,6 @@ export const subscriptionController = {
     return reply.status(200).send(result)
   },
 
-  cloud: async (request: FastifyRequest, reply: FastifyReply) => {
-    const result = await subscriptionService.elegirCloud(requireStoreId(request), buildActor(request))
-    return reply.status(200).send(result)
-  },
-
   checkout: async (request: FastifyRequest, reply: FastifyReply) => {
     const { return_url, cancel_url } = CheckoutSubscriptionDtoSchema.parse(request.body)
     const result = await subscriptionService.checkout(

@@ -29,17 +29,15 @@ export const licenseGuard = async (
 
   if (sub.status === "active") return
 
-  if (sub.status === "expired") {
+  if (sub.status === "pending") {
     throw new PaymentRequiredError(
-      "Suscripción vencida. Renueva tu plan Cloud para continuar."
+      "Plan Cloud requiere suscripción. Elige tu plan para continuar."
     )
   }
 
-  const deadline =
-    sub.status === "trial" ? sub.trial_ends_at : sub.current_period_end
+  const deadline = sub.current_period_end
 
   if (!deadline) {
-    if (sub.status === "trial") return
     throw new PaymentRequiredError(
       "Suscripción vencida. Renueva tu plan Cloud para continuar."
     )

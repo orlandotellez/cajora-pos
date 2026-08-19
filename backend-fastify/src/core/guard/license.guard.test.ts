@@ -15,12 +15,11 @@ function makeSub(overrides: Partial<ISubscriptionEntity> = {}): ISubscriptionEnt
     store_id: "store-1",
     mode: "cloud",
     plan: "monthly",
-    status: "trial",
+    status: "pending",
     paypal_subscription_id: null,
     current_period_start: null,
     current_period_end: null,
     cancel_at_period_end: false,
-    trial_ends_at: new Date(Date.now() + 14 * DAY_MS),
     created_at: new Date(),
     updated_at: new Date(),
     ...overrides,
@@ -64,32 +63,17 @@ describe("licenseGuard", () => {
     await assert.doesNotReject(() => licenseGuard(makeRequest("store-1") as never, {} as never))
   })
 
-  it("cloud trial vigente → pasa", async () => {
+  it("cloud pending (eligió Cloud pero no pagó) → 402", async () => {
     mock.property(env, "APP_MODE", "cloud")
-    mock.method(SubscriptionRepository, "getByStoreId", async () => makeSub({ status: "trial" }))
-
-    await assert.doesNotReject(() => licenseGuard(makeRequest("store-1") as never, {} as never))
-  })
-
-  it("cloud trial vencido hace 10 días → 402", async () => {
-    mock.property(env, "APP_MODE", "cloud")
-    mock.method(SubscriptionRepository, "getByStoreId", async () =>
-      makeSub({ status: "trial", trial_ends_at: new Date(Date.now() - 10 * DAY_MS) }),
-    )
+    mock.method(SubscriptionRepository, "getByStoreId", async () => makeSub({ status: "pending" }))
 
     await assert.rejects(
       () => licenseGuard(makeRequest("store-1") as never, {} as never),
-      (err: unknown) => err instanceof PaymentRequiredError,
+      (err: unknown) =>
+        err instanceof PaymentRequiredError &&
+        err.statusCode === 402 &&
+        /Elige tu plan para continuar/.test((err as Error).message),
     )
-  })
-
-  it("cloud trial vencido dentro del grace (2 días) → pasa", async () => {
-    mock.property(env, "APP_MODE", "cloud")
-    mock.method(SubscriptionRepository, "getByStoreId", async () =>
-      makeSub({ status: "trial", trial_ends_at: new Date(Date.now() - 2 * DAY_MS) }),
-    )
-
-    await assert.doesNotReject(() => licenseGuard(makeRequest("store-1") as never, {} as never))
   })
 
   it("cloud expired sin current_period_end → 402 (hoyo cerrado)", async () => {

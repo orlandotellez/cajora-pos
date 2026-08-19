@@ -8,7 +8,6 @@ export interface SubscriptionActor {
 }
 
 export const SUBSCRIPTION_EVENT_ACTIONS = {
-  CLOUD: "cloud",
   CHECKOUT: "checkout",
   ACTIVATE: "activate",
   CANCEL: "cancel",

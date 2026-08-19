@@ -21,11 +21,6 @@ export const subscriptionRoutes = async (fastify: FastifyInstance, _opts: Fastif
     preHandler: [authGuard, storeGuard],
   }, subscriptionController.getBilling)
 
-  fastify.post("/cloud", {
-    schema: { tags: TAGS, description: "Elegir modo Cloud e iniciar trial de 14 días (sin tarjeta)" },
-    preHandler: [authGuard, storeGuard],
-  }, subscriptionController.cloud)
-
   fastify.post("/checkout", {
     schema: { tags: TAGS, description: "Crear la suscripción en PayPal (aquí se pide la tarjeta)", body: toJsonSchema(CheckoutSubscriptionDtoSchema) },
     preHandler: [authGuard, storeGuard],
@@ -42,7 +37,7 @@ export const subscriptionRoutes = async (fastify: FastifyInstance, _opts: Fastif
   }, subscriptionController.cancel)
 
   fastify.post("/reactivate", {
-    schema: { tags: TAGS, description: "Reabrir el flujo de suscripción (estado trial)" },
+    schema: { tags: TAGS, description: "Reabrir el flujo de pago (deja la suscripción en pending hasta pagar)" },
     preHandler: [authGuard, storeGuard],
   }, subscriptionController.reactivate)
 }

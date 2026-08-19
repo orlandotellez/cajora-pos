@@ -16,12 +16,11 @@ function makeEntity(overrides: Partial<ISubscriptionEntity> = {}): ISubscription
     store_id: "store-1",
     mode: "cloud",
     plan: "monthly",
-    status: "trial",
+    status: "pending",
     paypal_subscription_id: null,
     current_period_start: null,
     current_period_end: null,
     cancel_at_period_end: false,
-    trial_ends_at: new Date(now.getTime() + 14 * DAY_MS),
     created_at: now,
     updated_at: now,
     ...overrides,
@@ -67,38 +66,6 @@ describe("SubscriptionService", () => {
   beforeEach(() => mock.restoreAll())
   afterEach(() => mock.restoreAll())
 
-  describe("elegirCloud", () => {
-    it("crea una fila cloud con trial de 14 días si no existía", async () => {
-      const { repo, getCurrent } = makeRepo()
-      const service = createSubscriptionService(repo)
-
-      const res = await service.elegirCloud("store-1")
-
-      assert.equal(res.mode, "cloud")
-      assert.equal(res.status, "trial")
-      assert.equal(res.paypal_subscription_id, null)
-      const trialEnds = new Date(getCurrent()!.trial_ends_at!).getTime()
-      const diff = trialEnds - Date.now()
-      assert.ok(diff > 13 * DAY_MS && diff <= 14 * DAY_MS, "trial_ends_at debe ser ~14 días")
-    })
-
-    it("NO degrada a una tienda que ya tiene suscripción PayPal", async () => {
-      const existing = makeEntity({
-        paypal_subscription_id: "I-BUY-123",
-        status: "active",
-      })
-      const { repo, getCurrent } = makeRepo(existing)
-      const service = createSubscriptionService(repo)
-
-      const res = await service.elegirCloud("store-1")
-
-      // No se toca la fila: sigue active con el paypal id original
-      assert.equal(res.status, "active")
-      assert.equal(res.paypal_subscription_id, "I-BUY-123")
-      assert.equal(getCurrent()!.status, "active")
-    })
-  })
-
   describe("checkout", () => {
     it("crea la suscripción en PayPal y guarda el paypal_subscription_id", async () => {
       mock.method(paypalClient, "createSubscription", async () => ({
@@ -115,30 +82,31 @@ describe("SubscriptionService", () => {
       assert.equal(res.paypalSubscriptionId, "I-PAYPAL-1")
       assert.equal(res.approvalUrl, "https://paypal.com/approve/1")
       assert.equal(getCurrent()!.paypal_subscription_id, "I-PAYPAL-1")
-      // La fila fue asegurada como trial (tienda self_hosted que va directo a checkout)
-      assert.equal(getCurrent()!.status, "trial")
+      // Sin fila previa, checkout crea la fila en pending: el webhook la busca
+      // por paypal_subscription_id y la pasa a active cuando PayPal cobra.
+      assert.equal(getCurrent()!.status, "pending")
     })
 
-    it("si la tienda ya es cloud, no duplica la fila (mantiene status)", async () => {
+    it("si la tienda ya es cloud activa, no duplica la fila (mantiene status)", async () => {
       mock.method(paypalClient, "createSubscription", async () => ({
         id: "I-PAYPAL-2",
         approvalUrl: null,
         status: "APPROVAL_PENDING",
         planId: "P-PLAN-1",
       }))
-      const existing = makeEntity()
+      const existing = makeEntity({ status: "active" })
       const { repo, getCurrent } = makeRepo(existing)
       const service = createSubscriptionService(repo)
 
       await service.checkout("store-1", "https://ok", "https://cancel")
 
-      assert.equal(getCurrent()!.status, "trial")
+      assert.equal(getCurrent()!.status, "active")
       assert.equal(getCurrent()!.paypal_subscription_id, "I-PAYPAL-2")
     })
   })
 
   describe("activate", () => {
-    it("activa la suscripción con período de 30 días y limpia el trial", async () => {
+    it("activa la suscripción con período de 30 días", async () => {
       const existing = makeEntity({ paypal_subscription_id: "I-PAYPAL-1" })
       const { repo } = makeRepo(existing)
       const service = createSubscriptionService(repo)
@@ -146,7 +114,6 @@ describe("SubscriptionService", () => {
       const res = await service.activate("store-1", "I-PAYPAL-1")
 
       assert.equal(res.status, "active")
-      assert.equal(res.trial_ends_at, null)
       const start = new Date(res.current_period_start!).getTime()
       const end = new Date(res.current_period_end!).getTime()
       assert.ok(end - start >= 29 * DAY_MS && end - start <= 30 * DAY_MS)
@@ -197,14 +164,14 @@ describe("SubscriptionService", () => {
   })
 
   describe("reactivate", () => {
-    it("crea fila trial si no existía", async () => {
+    it("crea fila pending si no existía", async () => {
       const { repo, getCurrent } = makeRepo()
       const service = createSubscriptionService(repo)
 
       const res = await service.reactivate("store-1")
 
-      assert.equal(res.status, "trial")
-      assert.ok(getCurrent()!.trial_ends_at)
+      assert.equal(res.status, "pending")
+      assert.equal(getCurrent()!.status, "pending")
     })
 
     it("no-op si ya está activa (idempotente)", async () => {
@@ -237,32 +204,20 @@ describe("SubscriptionService", () => {
       assert.equal(created[0].action, "reactivate")
     })
 
-    it("reabre el flujo desde canceled (estado trial, sin paypal id viejo)", async () => {
+    it("reabre el flujo desde canceled (queda pending para pagar de nuevo)", async () => {
       const existing = makeEntity({ status: "canceled", paypal_subscription_id: "I-PAYPAL-1" })
       const { repo, getCurrent } = makeRepo(existing)
       const service = createSubscriptionService(repo)
 
       const res = await service.reactivate("store-1")
 
-      assert.equal(res.status, "trial")
-      assert.equal(getCurrent()!.status, "trial")
+      assert.equal(res.status, "pending")
+      assert.equal(getCurrent()!.status, "pending")
+      assert.equal(getCurrent()!.cancel_at_period_end, false)
     })
   })
 
   describe("auditoría", () => {
-    it("elegirCloud audita el alta con el usuario", async () => {
-      const { repo } = makeRepo()
-      const created: Array<NewSubscriptionEvent> = []
-      const service = createSubscriptionService(repo, fakeEventRepo(created))
-
-      await service.elegirCloud("store-1", { userId: "user-2", ip: null, userAgent: null })
-
-      assert.equal(created.length, 1)
-      assert.equal(created[0].action, "cloud")
-      assert.equal(created[0].user_id, "user-2")
-      assert.equal(created[0].store_id, "store-1")
-    })
-
     it("checkout audita la creación con el paypal id", async () => {
       mock.method(paypalClient, "createSubscription", async () => ({
         id: "I-PAYPAL-1",

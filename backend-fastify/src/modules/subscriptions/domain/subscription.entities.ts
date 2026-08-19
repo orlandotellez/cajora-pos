@@ -14,16 +14,15 @@ export interface ISubscriptionEntity {
   current_period_start: Date | null
   current_period_end: Date | null
   cancel_at_period_end: boolean
-  trial_ends_at: Date | null
   created_at: Date
   updated_at: Date
 }
 
-export interface CloudTrialInput {
+export interface CloudPendingInput {
   mode: "cloud"
   plan: SubscriptionPlan
-  status: "trial"
-  trial_ends_at: Date
+  status: "pending"
+  paypal_subscription_id?: string | null
 }
 
 export type UpdateSubscriptionInput = {
@@ -33,5 +32,4 @@ export type UpdateSubscriptionInput = {
   current_period_start?: Date | null
   current_period_end?: Date | null
   cancel_at_period_end?: boolean
-  trial_ends_at?: Date | null
 }

@@ -40,7 +40,6 @@ function makeEntity(overrides: Partial<ISubscriptionEntity> = {}): ISubscription
     current_period_start: now,
     current_period_end: new Date(now.getTime() + 30 * DAY_MS),
     cancel_at_period_end: false,
-    trial_ends_at: null,
     created_at: now,
     updated_at: now,
     ...overrides,
@@ -129,12 +128,12 @@ describe("ReconciliationService", () => {
     assert.ok(Math.abs(row.current_period_end.getTime() - nextBilling.getTime()) < 1000)
   })
 
-  it("ACTIVE sobre una sub en trial sin período → activa con período desde next_billing_time (ACTIVATED perdido)", async () => {
+  it("ACTIVE sobre una sub en pending sin período → activa con período desde next_billing_time (ACTIVATED perdido)", async () => {
     mock.property(env, "PAYPAL_ENABLED", true)
     const nextBilling = new Date(Date.now() + 30 * DAY_MS)
     const { repo, getRows } = makeRepo([
       makeEntity({
-        status: "trial",
+        status: "pending",
         paypal_subscription_id: "I-APPROVED",
         current_period_start: null,
         current_period_end: null,
@@ -204,7 +203,7 @@ describe("ReconciliationService", () => {
 
   it("APPROVAL_PENDING → no toca (sigue el flujo de aprobación)", async () => {
     mock.property(env, "PAYPAL_ENABLED", true)
-    const { repo, updated } = makeRepo([makeEntity({ status: "trial" })])
+    const { repo, updated } = makeRepo([makeEntity({ status: "pending" })])
     mock.method(paypalClient, "getSubscription", async (id: string) => ({
       id,
       status: "APPROVAL_PENDING",
@@ -252,7 +251,7 @@ describe("ReconciliationService", () => {
     mock.property(env, "PAYPAL_ENABLED", true)
     const orphan = makeEntity({
       store_id: "store-orphan",
-      status: "trial",
+      status: "pending",
       paypal_subscription_id: "I-ORPHAN",
     })
     const { repo, getRows } = makeRepo([orphan])

@@ -10,8 +10,8 @@
  * - Idempotente: si PAYPAL_PLAN_ID_MONTHLY ya está configurado y es válido, no
  *   crea nada. Si no, busca por nombre antes de crear (evita duplicados al
  *   correr dos veces).
- * - El plan NO lleva trial de PayPal a propósito: el trial de 14 días es interno
- *   de la DB (decisión D0.2 — la tarjeta se pide recién al suscribirse).
+ * - El plan NO lleva trial de PayPal a propósito (decisión D0.2): el pago es
+ *   inmediato — la tarjeta se pide al suscribirse.
  */
 import "dotenv/config"
 import { env } from "@/config/env"

@@ -32,9 +32,9 @@ enum BILLING_MODE {
   self_hosted
 }
 
-// Estado de la suscripción de la tienda (trial interno de 14 días sin PayPal)
+// Estado de la suscripción de la tienda: pending = eligió Cloud pero aún no pagó
 enum SUBSCRIPTION_STATUS {
-  trial
+  pending
   active
   past_due
   canceled
@@ -544,7 +544,7 @@ model print_job {
 }
 
 // Suscripción de la tienda: cloud ($15.99/mes) o self_hosted (gratis).
-// El trial de 14 días es estado interno sin suscripción PayPal (la tarjeta se pide al suscribirse).
+// Pago inmediato: status 'pending' hasta que PayPal confirme el primer cobro.
 model subscription {
   id                     String              @id @default(uuid())
   store_id               String              @unique
@@ -555,7 +555,6 @@ model subscription {
   current_period_start   DateTime?           @db.Timestamptz
   current_period_end     DateTime?           @db.Timestamptz
   cancel_at_period_end   Boolean             @default(false)
-  trial_ends_at          DateTime?           @db.Timestamptz
   created_at             DateTime            @default(now()) @db.Timestamptz
   updated_at             DateTime            @updatedAt @db.Timestamptz
 
