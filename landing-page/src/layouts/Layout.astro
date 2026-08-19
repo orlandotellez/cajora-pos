@@ -1,4 +1,7 @@
 ---
+import Header from '../components/Header.astro'
+import Footer from '../components/Footer.astro'
+
 interface Props {
   title?: string;
   description?: string;
@@ -44,7 +47,9 @@ const {
     </script>
   </head>
   <body>
+    <Header />
     <slot />
+    <Footer/>
     <script>
       import { goToPosWithSso } from "../lib/sso";
       (() => {
