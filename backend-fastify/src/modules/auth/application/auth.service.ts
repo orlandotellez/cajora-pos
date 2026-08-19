@@ -23,15 +23,18 @@ import type {
   IRegisterStorePayload,
   IRegisterStoreResponse,
   IStoreResponse,
+  ISsoChallengeResponse,
 } from "../domain/auth.types"
 import type { Role } from "@/types/auth"
 import { env } from "@/config/env"
 import type { IUserEntity } from "../domain/auth.entities"
+import { generateSsoCode, type ISsoCodeStore } from "../infrastructure/sso-code.store"
 
 const ACCESS_TOKEN_EXPIRY = 15 * 60 * 1000
 const REFRESH_TOKEN_EXPIRY = 7 * 24 * 60 * 60 * 1000
 const VERIFICATION_CODE_EXPIRY = 15 * 60 * 1000
 const SESSION_EXPIRY = 7 * 24 * 60 * 60 * 1000
+const SSO_CODE_TTL_SECONDS = 120
 
 function mapUserToResponse(user: IUserEntity): IUserResponse {
   return {
@@ -65,7 +68,7 @@ async function getStoreInfo(storeId: string | null): Promise<IStoreResponse | nu
   return mapStoreToResponse(store)
 }
 
-export const createAuthService = (repository: IAuthRepository) => ({
+export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISsoCodeStore) => ({
 
   register: async (data: IRegisterPayload, storeId: string): Promise<IAuthResponse> => {
     const { name, email, password, role = "cajero" } = data
@@ -228,6 +231,55 @@ export const createAuthService = (repository: IAuthRepository) => ({
         updated_at: result.user.updated_at,
       },
       store: mapStoreToResponse(result.store),
+      accessToken,
+      refreshToken,
+    }
+  },
+
+  ssoChallenge: async (userId: string): Promise<ISsoChallengeResponse> => {
+    const code = generateSsoCode()
+    await ssoCodeStore.set(code, userId, SSO_CODE_TTL_SECONDS)
+
+    return {
+      code,
+      expires_in: SSO_CODE_TTL_SECONDS,
+    }
+  },
+
+  ssoExchange: async (code: string): Promise<IAuthResponse> => {
+    const userId = await ssoCodeStore.consume(code)
+    if (!userId) {
+      throw new UnauthorizedError("Invalid or expired SSO code")
+    }
+
+    const user = await repository.user.findById(userId)
+    if (!user) {
+      throw new UnauthorizedError("User not found")
+    }
+
+    if (user.deleted_at) {
+      throw new UnauthorizedError("Account has been deactivated")
+    }
+
+    const store = await getStoreInfo(user.store_id)
+    const { accessToken, refreshToken } = generateTokens(
+      user.id,
+      user.email,
+      user.role as Role,
+      user.store_id ?? null,
+      store?.name ?? null,
+    )
+
+    await repository.session.create({
+      userId: user.id,
+      token: refreshToken,
+      expiresAt: new Date(Date.now() + SESSION_EXPIRY),
+    })
+
+    return {
+      message: "SSO login successfully",
+      user: mapUserToResponse(user),
+      store,
       accessToken,
       refreshToken,
     }

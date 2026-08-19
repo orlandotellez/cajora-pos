@@ -184,6 +184,7 @@ import Footer from '../sections/Footer.astro';
 </Layout>
 
 <script>
+  import { goToPosWithSso } from "../lib/sso";
   (() => {
     const $ = (sel) => document.querySelector(sel);
 
@@ -256,6 +257,13 @@ import Footer from '../sections/Footer.astro';
     const badge = $("[data-profile-badge]");
     const text = $("[data-profile-text]");
     const cta = $("[data-profile-cta]");
+
+    cta.addEventListener("click", (e) => {
+      if (cta.getAttribute("href") === posUrl) {
+        e.preventDefault();
+        void goToPosWithSso();
+      }
+    });
     const payLink = $("[data-profile-pay]");
     const rowPeriod = $("[data-profile-row-period]");
     const periodLabel = $("[data-profile-period-label]");

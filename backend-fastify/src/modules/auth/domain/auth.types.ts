@@ -119,3 +119,9 @@ export interface IRegisterStoreResponse {
   accessToken: string
   refreshToken: string
 }
+
+// ─── SSO ───
+export interface ISsoChallengeResponse {
+  code: string
+  expires_in: number
+}

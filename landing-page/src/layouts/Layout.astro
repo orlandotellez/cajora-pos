@@ -46,6 +46,7 @@ const {
   <body>
     <slot />
     <script>
+      import { goToPosWithSso } from "../lib/sso";
       (() => {
         const readSession = () => {
           try {
@@ -107,6 +108,15 @@ const {
 
         const session = readSession();
         applyAuth(!!session?.paid);
+
+        document.querySelectorAll('[data-auth-cta="content"]').forEach((el) => {
+          el.addEventListener('click', (e) => {
+            if (el.getAttribute('href') === posUrl) {
+              e.preventDefault();
+              void goToPosWithSso();
+            }
+          });
+        });
 
         if (session?.accessToken) {
           const apiUrl = import.meta.env.PUBLIC_API_URL;

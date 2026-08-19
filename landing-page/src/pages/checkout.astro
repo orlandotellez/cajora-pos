@@ -312,6 +312,7 @@ import Footer from '../sections/Footer.astro';
 </Layout>
 
 <script>
+  import { goToPosWithSso } from "../lib/sso";
   (() => {
     const $ = (sel) => document.querySelector(sel);
     const $$ = (sel) => [...document.querySelectorAll(sel)];
@@ -452,6 +453,10 @@ import Footer from '../sections/Footer.astro';
 
     $$("[data-go-pos]").forEach((a) => {
       a.href = posUrl;
+      a.addEventListener("click", (e) => {
+        e.preventDefault();
+        void goToPosWithSso();
+      });
     });
 
     $$("[data-toggle-password]").forEach((btn) => {

@@ -39,6 +39,10 @@ export const RevokeSessionDtoSchema = z.object({
   sessionId: z.string().uuid("Invalid session ID")
 })
 
+export const SsoExchangeDtoSchema = z.object({
+  code: z.string().min(1, "SSO code is required")
+})
+
 export const RegisterStoreDtoSchema = z.object({
   storeName: z.string().min(2, "Store name must be at least 2 characters"),
   storeAddress: z.string().optional(),
@@ -56,4 +60,5 @@ export type ForgotPasswordDto = z.infer<typeof ForgotPasswordDtoSchema>
 export type ResetPasswordDto = z.infer<typeof ResetPasswordDtoSchema>
 export type RefreshTokenDto = z.infer<typeof RefreshTokenDtoSchema>
 export type RevokeSessionDto = z.infer<typeof RevokeSessionDtoSchema>
+export type SsoExchangeDto = z.infer<typeof SsoExchangeDtoSchema>
 export type RegisterStoreDto = z.infer<typeof RegisterStoreDtoSchema>

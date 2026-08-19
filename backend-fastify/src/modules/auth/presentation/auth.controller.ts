@@ -9,14 +9,16 @@ import {
   ForgotPasswordDtoSchema,
   ResetPasswordDtoSchema,
   ResendVerificationDtoSchema,
-  RevokeSessionDtoSchema
+  RevokeSessionDtoSchema,
+  SsoExchangeDtoSchema
 } from "./auth.dto"
 import { env } from "@/config/env"
 import { clearAuthCookies, setAuthCookies } from "@/core/utils/cookie.utils"
 import { ConflictError, UnauthorizedError } from "@/core/errors/AppError"
 import { resolveCurrentUserId } from "@/core/utils/auth.utils"
+import { redisSsoCodeStore } from "../infrastructure/sso-code.store"
 
-const authService = createAuthService(AuthRepository)
+const authService = createAuthService(AuthRepository, redisSsoCodeStore)
 
 function getRefreshToken(request: FastifyRequest): string {
   const cookieToken = request.cookies.refreshToken
@@ -87,6 +89,34 @@ export const authController = {
     if (currentUserId && currentUserId !== result.user.id) {
       await clearAuthCookies(reply)
     }
+
+    setAuthCookies(reply, result.accessToken, result.refreshToken, env.NODE_ENV === "production")
+
+    return reply.status(200).send({
+      message: result.message,
+      user: result.user,
+      store: result.store,
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken
+    })
+  },
+
+  ssoChallenge: async (request: FastifyRequest, reply: FastifyReply) => {
+    const userId = request.userId
+
+    if (!userId) {
+      throw new UnauthorizedError("Authentication required")
+    }
+
+    const result = await authService.ssoChallenge(userId)
+
+    return reply.status(200).send(result)
+  },
+
+  ssoExchange: async (request: FastifyRequest, reply: FastifyReply) => {
+    const { code } = SsoExchangeDtoSchema.parse(request.body)
+
+    const result = await authService.ssoExchange(code)
 
     setAuthCookies(reply, result.accessToken, result.refreshToken, env.NODE_ENV === "production")
 

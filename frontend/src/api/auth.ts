@@ -89,6 +89,10 @@ export interface RegisterStorePayload {
   adminPassword: string;
 }
 
+export interface SsoExchangePayload {
+  code: string;
+}
+
 export const authApi = {
   register: (data: RegisterPayload) =>
     api.post<AuthResponse>("/auth/register", data),
@@ -116,4 +120,7 @@ export const authApi = {
 
   registerStore: (data: RegisterStorePayload) =>
     api.post<AuthResponse>("/auth/register-store", data),
+
+  ssoExchange: (data: SsoExchangePayload) =>
+    api.post<AuthResponse>("/auth/sso/exchange", data),
 };

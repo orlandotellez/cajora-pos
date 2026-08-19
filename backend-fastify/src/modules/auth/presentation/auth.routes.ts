@@ -11,6 +11,7 @@ import {
   ResendVerificationDtoSchema,
   ForgotPasswordDtoSchema,
   ResetPasswordDtoSchema,
+  SsoExchangeDtoSchema,
 } from "./auth.dto"
 
 const TAGS = ["Auth"]
@@ -37,6 +38,16 @@ export const authRoutes = async (fastify: FastifyInstance, _opts: FastifyPluginO
   fastify.post("/logout", {
     schema: { tags: TAGS, body: toJsonSchema(RefreshTokenDtoSchema) },
   }, authController.logout)
+
+  fastify.post("/sso/challenge", {
+    schema: { tags: TAGS },
+    preHandler: authGuard,
+  }, authController.ssoChallenge)
+
+  fastify.post("/sso/exchange", {
+    schema: { tags: TAGS, body: toJsonSchema(SsoExchangeDtoSchema) },
+    config: { rateLimit: { max: 10, timeWindow: "1 minute" } },
+  }, authController.ssoExchange)
 
   // Email Verification
   fastify.post("/verify-email", {

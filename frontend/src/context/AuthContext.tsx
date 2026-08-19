@@ -46,6 +46,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const initialize = async () => {
+      const code = new URLSearchParams(window.location.search).get("code");
+      if (code) {
+        window.history.replaceState({}, "", window.location.pathname);
+        try {
+          const res = await authApi.ssoExchange({ code });
+          setUser(res.user);
+          setStore(res.store);
+          localStorage.setItem("auth-token", res.accessToken);
+          localStorage.setItem("auth-refresh-token", res.refreshToken);
+          setLoading(false);
+          navigate(res.user.role === "super_admin" ? "/super-admin" : "/pos");
+          return;
+        } catch (err) {
+          console.warn("[Auth] Error al canjear código SSO:", err);
+        }
+      }
+
       const refreshToken = localStorage.getItem("auth-refresh-token");
       if (!refreshToken) {
         setLoading(false);
