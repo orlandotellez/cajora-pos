@@ -1,4 +1,4 @@
-import { readSession, saveSession } from './session';
+import { readSession, saveSession } from '../session';
 
 const apiUrl = import.meta.env.PUBLIC_API_URL;
 

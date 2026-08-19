@@ -3,7 +3,7 @@ export const SESSION_KEY = "caja_checkout";
 export interface SessionData {
   accessToken?: string;
   refreshToken?: string;
-  storeName?: string;
+  storeName?: string | null;
   email?: string;
   emailVerified?: boolean;
   paypalMounted?: boolean;
