@@ -212,7 +212,9 @@ const links = [
     top: 0;
     left: 0;
     right: 0;
-    z-index: 50;
+    /* Alto a propósito: los iframes de terceros (botones PayPal) se pintan
+       en capas propias y con z-index bajos pueden quedar por encima. */
+    z-index: 1000;
     background: var(--glass);
     border-bottom: 1px solid var(--border);
     transition: background-color 250ms ease, border-color 250ms ease;

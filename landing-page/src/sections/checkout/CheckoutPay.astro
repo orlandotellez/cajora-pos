@@ -61,6 +61,13 @@
     margin-top: 1rem;
   }
 
+  /* Confina los iframes de PayPal en un stacking context propio: sin esto,
+     al scrollear quedan por encima del header fijo. */
+  #paypal-buttons {
+    position: relative;
+    z-index: 0;
+  }
+
   :global(.pay__sep) {
     text-align: center;
     color: var(--text-muted);
