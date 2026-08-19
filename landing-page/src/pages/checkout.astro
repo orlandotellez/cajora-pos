@@ -191,6 +191,10 @@ import Footer from '../sections/Footer.astro';
           </div>
 
           <div id="paypal-buttons" data-pay-buttons></div>
+          <div class="pay__loading" data-pay-loading role="status" hidden>
+            <span class="pay__spinner" aria-hidden="true"></span>
+            <span>Cargando método de pago...</span>
+          </div>
           <p class="pay__error" data-pay-error role="alert" hidden></p>
 
           <div class="pay__skip">
@@ -346,6 +350,7 @@ import Footer from '../sections/Footer.astro';
     const summaryEmail = $("[data-summary-email]");
     const payError = $("[data-pay-error]");
     const payButtons = $("[data-pay-buttons]");
+    const payLoading = $("[data-pay-loading]");
     const paySuccess = $("[data-pay-success]");
 
     let accessToken = null;
@@ -423,19 +428,16 @@ import Footer from '../sections/Footer.astro';
     };
 
     // Navegación entre pasos completados (retroceder/avanzar).
-    stepEls.forEach((el) => {
-      el.addEventListener("click", () => {
-        const n = Number(el.dataset.step);
-        if (n === currentStep || !canVisit(n)) return;
-        setStep(n);
-        if (n === 3) {
-          const session = readSession();
-          if (!session?.paypalMounted) {
+      stepEls.forEach((el) => {
+        el.addEventListener("click", () => {
+          const n = Number(el.dataset.step);
+          if (n === currentStep || !canVisit(n)) return;
+          setStep(n);
+          if (n === 3 && payButtons.childElementCount === 0) {
             void mountPaypal();
           }
-        }
+        });
       });
-    });
 
     const setSummary = (storeName, email) => {
       summaryStore.textContent = storeName || "—";
@@ -447,6 +449,7 @@ import Footer from '../sections/Footer.astro';
       clearSession();
       accessToken = null;
       payButtons.innerHTML = "";
+      payLoading.hidden = true;
       setSummary("—", "—");
       setStep(1);
     };
@@ -778,7 +781,7 @@ import Footer from '../sections/Footer.astro';
         paySuccess.hidden = false;
       }
       setStep(3);
-      if (!readSession()?.paypalMounted) {
+      if (payButtons.childElementCount === 0) {
         await mountPaypal();
         saveSession({ ...(readSession() ?? {}), paypalMounted: true });
       }
@@ -786,6 +789,7 @@ import Footer from '../sections/Footer.astro';
 
     async function mountPaypal() {
       payButtons.innerHTML = "";
+      payLoading.hidden = false;
 
       if (!paypalClientId) {
         const btn = document.createElement("a");
@@ -793,6 +797,7 @@ import Footer from '../sections/Footer.astro';
         btn.href = posUrl;
         btn.textContent = "Ir a mi tienda";
         payButtons.appendChild(btn);
+        payLoading.hidden = true;
         return;
       }
 
@@ -838,9 +843,13 @@ import Footer from '../sections/Footer.astro';
 
         await loadScript(sdkUrl);
 
+        if (!window.paypal?.Buttons) {
+          throw new Error("No se pudo cargar el método de pago. Intentalo de nuevo.");
+        }
+
         const render = (fundingSource, targetId) => {
-          if (!window.paypal?.Buttons) return;
-          window.paypal
+          if (!window.paypal?.Buttons) return Promise.resolve();
+          return window.paypal
             .Buttons({
               fundingSource,
               style: { label: "subscribe", shape: "rect", layout: "vertical", height: 45 },
@@ -858,7 +867,7 @@ import Footer from '../sections/Footer.astro';
             .render(targetId);
         };
 
-        render("card", "#paypal-buttons");
+        const cardRender = render("card", "#paypal-buttons");
 
         const sep = document.createElement("p");
         sep.className = "pay__sep";
@@ -869,8 +878,13 @@ import Footer from '../sections/Footer.astro';
         paypalContainer.id = "paypal-buttons-account";
         payButtons.appendChild(paypalContainer);
 
-        render("paypal", "#paypal-buttons-account");
+        const paypalRender = render("paypal", "#paypal-buttons-account");
+
+        // Los botones recién existen cuando .render() resolvió.
+        await Promise.all([cardRender, paypalRender]);
+        payLoading.hidden = true;
       } catch (err) {
+        payLoading.hidden = true;
         showError(payError, err.message);
       }
     }
@@ -1145,13 +1159,13 @@ import Footer from '../sections/Footer.astro';
     display: block;
   }
 
-  .checkout__submit {
+  :global(.checkout__submit) {
     padding: 0.75rem 1.25rem;
     width: 100%;
     margin-top: 0.5rem;
   }
 
-  .checkout__submit:disabled {
+  :global(.checkout__submit:disabled) {
     opacity: 0.5;
     cursor: not-allowed;
   }
@@ -1395,11 +1409,43 @@ import Footer from '../sections/Footer.astro';
     margin-top: 1rem;
   }
 
-  .pay__sep {
+  :global(.pay__sep) {
     text-align: center;
     color: var(--text-muted);
     font-size: 0.8125rem;
     margin: 0.75rem 0;
+  }
+
+  .pay__loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.625rem;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding: 2rem 0;
+    margin-top: 0.75rem;
+  }
+
+  .pay__loading[hidden] {
+    display: none;
+  }
+
+  .pay__spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--text);
+    border-radius: 50%;
+    animation: pay-spin 700ms linear infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes pay-spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   .pay__skip {
