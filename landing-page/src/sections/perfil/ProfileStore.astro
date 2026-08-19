@@ -1,0 +1,109 @@
+---
+---
+
+<!-- Tu tienda (editable; el email no) -->
+<section class="profile__card">
+  <h2 class="profile__card-title">Tu tienda</h2>
+  <form class="profile__form" data-store-form>
+    <label class="profile__field">
+      <span>Nombre de la tienda</span>
+      <input type="text" name="name" required minlength="2" data-store-name />
+    </label>
+
+    <label class="profile__field">
+      <span>Dirección</span>
+      <input type="text" name="address" placeholder="Calle y número" data-store-address />
+    </label>
+
+    <label class="profile__field">
+      <span>Teléfono</span>
+      <input type="text" name="phone" placeholder="+52 555 123 4567" data-store-phone />
+    </label>
+
+    <label class="profile__field">
+      <span>Email (no se puede cambiar)</span>
+      <input type="email" disabled data-store-email />
+    </label>
+
+    <p class="profile__save-msg" data-store-msg role="status" hidden></p>
+
+    <button type="submit" class="btn-primary profile__submit" data-store-save>
+      Guardar cambios
+    </button>
+  </form>
+</section>
+
+<style>
+  .profile__card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 2rem;
+  }
+
+  .profile__card-title {
+    font-size: 1.125rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .profile__form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .profile__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  .profile__field input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    padding: 0.625rem 0.75rem;
+    font-size: 0.9375rem;
+    transition: border-color 150ms ease;
+  }
+
+  .profile__field input:focus {
+    outline: none;
+    border-color: var(--border-strong);
+  }
+
+  .profile__field input:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .profile__save-msg {
+    font-size: 0.8125rem;
+    color: var(--green);
+  }
+
+  .profile__save-msg.is-error {
+    color: #ef4444;
+  }
+
+  .profile__submit {
+    padding: 0.75rem 1.5rem;
+    align-self: flex-start;
+  }
+
+  @media (max-width: 480px) {
+    .profile__card {
+      padding: 1.25rem;
+    }
+
+    .profile__submit {
+      width: 100%;
+      align-self: stretch;
+      justify-content: center;
+    }
+  }
+</style>

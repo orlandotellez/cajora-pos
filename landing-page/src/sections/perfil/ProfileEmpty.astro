@@ -1,0 +1,38 @@
+---
+---
+
+<!-- Sin sesión / token inválido -->
+<div data-profile-empty hidden>
+  <h1 class="profile__title" data-empty-title>No estás logueado</h1>
+  <p class="profile__lead" data-empty-text>
+    Creá tu tienda o iniciá sesión para ver tu perfil y el estado de tu suscripción.
+  </p>
+  <a href={import.meta.env.BASE_URL + 'checkout'} class="btn-primary profile__submit">
+    Crear cuenta / Iniciar sesión
+  </a>
+</div>
+
+<style>
+  .profile__title {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .profile__lead {
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+  }
+
+  .profile__submit {
+    padding: 0.75rem 1.5rem;
+    align-self: flex-start;
+  }
+
+  @media (max-width: 480px) {
+    .profile__submit {
+      width: 100%;
+      align-self: stretch;
+      justify-content: center;
+    }
+  }
+</style>

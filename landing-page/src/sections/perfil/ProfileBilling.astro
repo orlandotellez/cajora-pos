@@ -1,0 +1,195 @@
+---
+---
+
+<!-- Facturación -->
+<section class="profile__card profile__billing" aria-label="Facturación">
+  <h2 class="profile__card-title">Facturación</h2>
+  <p class="profile__billing-note">
+    Cobros mensuales de tu suscripción Cloud. Acá ves cuándo se pagó cada mes y cuándo
+    vence el período actual.
+  </p>
+
+  <div class="profile__billing-next" data-billing-next hidden>
+    <span class="profile__billing-next-label">Próxima fecha de pago</span>
+    <strong data-billing-next-date>—</strong>
+  </div>
+
+  <p data-billing-loading class="profile__billing-note">Consultando tus pagos…</p>
+
+  <p data-billing-empty hidden class="profile__billing-note">
+    Todavía no hay cobros. Tu primer pago se registrará acá al activar la suscripción.
+  </p>
+
+  <table class="profile__billing-table" data-billing-table hidden>
+    <thead>
+      <tr>
+        <th>Fecha de pago</th>
+        <th>Concepto</th>
+        <th class="profile__billing-align-right">Monto</th>
+      </tr>
+    </thead>
+    <tbody data-billing-body></tbody>
+  </table>
+
+  <div class="profile__billing-total" data-billing-total hidden>
+    Total pagado: <strong data-billing-total-amount>—</strong>
+  </div>
+</section>
+
+<style>
+  .profile__card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 2rem;
+  }
+
+  .profile__card-title {
+    font-size: 1.125rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .profile__billing {
+    margin-top: 2rem;
+  }
+
+  .profile__billing-note {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    margin: 0 0 1rem;
+  }
+
+  .profile__billing-next {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .profile__billing-next-label {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+  }
+
+  .profile__billing-next strong {
+    font-size: 0.9375rem;
+    text-align: right;
+  }
+
+  :global(.profile__billing-table) {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+  }
+
+  :global(.profile__billing-table th),
+  :global(.profile__billing-table td) {
+    text-align: left;
+    padding: 0.625rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  :global(.profile__billing-table th) {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+  }
+
+  :global(.profile__billing-table td:first-child) {
+    white-space: nowrap;
+  }
+
+  :global(.profile__billing-align-right) {
+    text-align: right;
+  }
+
+  :global(.profile__billing-amount) {
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .profile__billing-total {
+    margin-top: 1.25rem;
+    text-align: right;
+    font-size: 0.9375rem;
+    color: var(--text-muted);
+  }
+
+  .profile__billing-total strong {
+    color: var(--text);
+  }
+
+  @media (max-width: 480px) {
+    .profile__card {
+      padding: 1.25rem;
+    }
+
+    .profile__billing-next {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.25rem;
+    }
+
+    .profile__billing-total {
+      text-align: left;
+    }
+  }
+
+  /* Facturación: en móvil la tabla se convierte en tarjetas apiladas */
+  @media (max-width: 560px) {
+    :global(.profile__billing-table thead) {
+      display: none;
+    }
+
+    :global(.profile__billing-table),
+    :global(.profile__billing-table tbody) {
+      display: block;
+    }
+
+    :global(.profile__billing-table tr) {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.25rem 1rem;
+      padding: 0.875rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    :global(.profile__billing-table td) {
+      display: block;
+      border-bottom: 0;
+      padding: 0;
+      white-space: normal;
+    }
+
+    :global(.profile__billing-table td:nth-child(1)) {
+      grid-column: 1;
+      font-weight: 600;
+    }
+
+    :global(.profile__billing-table td:nth-child(2)) {
+      grid-column: 1;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      order: 3;
+    }
+
+    :global(.profile__billing-table td:nth-child(3)) {
+      grid-column: 2;
+      grid-row: 1 / span 2;
+      text-align: right;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    :global(.profile__billing-table td:first-child) {
+      white-space: normal;
+    }
+  }
+</style>

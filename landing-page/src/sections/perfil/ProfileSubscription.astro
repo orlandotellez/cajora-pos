@@ -1,0 +1,172 @@
+---
+---
+
+<!-- Suscripción -->
+<section class="profile__card">
+  <h2 class="profile__card-title">Suscripción</h2>
+
+  <span class="profile__badge" data-profile-badge hidden></span>
+
+  <dl class="profile__list">
+    <div class="profile__row">
+      <dt>Plan</dt>
+      <dd data-profile-plan>—</dd>
+    </div>
+    <div class="profile__row">
+      <dt>Precio</dt>
+      <dd>$15.99/mes</dd>
+    </div>
+    <div class="profile__row" data-profile-row-period>
+      <dt data-profile-period-label>Próxima renovación</dt>
+      <dd data-profile-period>—</dd>
+    </div>
+    <div class="profile__row" data-profile-row-trial hidden>
+      <dt>Fin de la prueba</dt>
+      <dd data-profile-trial>—</dd>
+    </div>
+    <div class="profile__row" data-profile-row-cancel hidden>
+      <dt>Cancelación</dt>
+      <dd data-profile-cancel-date>—</dd>
+    </div>
+  </dl>
+
+  <p class="profile__status-text" data-profile-text></p>
+
+  <div class="profile__actions">
+    <a href="#" class="btn-primary profile__submit" data-profile-cta hidden>—</a>
+    <a href={import.meta.env.BASE_URL + 'checkout'} class="profile__link" data-profile-pay hidden>
+      Pagar ahora — $15.99/mes
+    </a>
+  </div>
+</section>
+
+<style>
+  .profile__card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 2rem;
+  }
+
+  .profile__card-title {
+    font-size: 1.125rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .profile__list {
+    margin: 0 0 1rem;
+    padding: 0;
+  }
+
+  .profile__row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: 0.875rem;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .profile__row:last-child {
+    border-bottom: 0;
+  }
+
+  .profile__row dt {
+    color: var(--text-muted);
+  }
+
+  .profile__row dd {
+    margin: 0;
+    text-align: right;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+  }
+
+  .profile__badge {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+    margin-bottom: 1rem;
+  }
+
+  .profile__badge.is-active {
+    background: rgba(34, 197, 94, 0.12);
+    color: var(--green);
+    border: 1px solid rgba(34, 197, 94, 0.35);
+  }
+
+  .profile__badge.is-trial {
+    background: rgba(59, 130, 246, 0.12);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.35);
+  }
+
+  .profile__badge.is-past-due {
+    background: rgba(245, 158, 11, 0.12);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.35);
+  }
+
+  .profile__badge.is-canceled {
+    background: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+  }
+
+  .profile__badge.is-self-hosted {
+    background: rgba(138, 147, 163, 0.12);
+    color: var(--text-muted);
+    border: 1px solid rgba(138, 147, 163, 0.35);
+  }
+
+  .profile__status-text {
+    color: var(--text-muted);
+    font-size: 0.9375rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .profile__actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .profile__link {
+    background: none;
+    border: 0;
+    color: var(--text);
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .profile__link:hover {
+    color: var(--text-muted);
+  }
+
+  .profile__submit {
+    padding: 0.75rem 1.5rem;
+    align-self: flex-start;
+  }
+
+  @media (max-width: 480px) {
+    .profile__card {
+      padding: 1.25rem;
+    }
+
+    .profile__actions {
+      width: 100%;
+    }
+
+    .profile__submit {
+      width: 100%;
+      align-self: stretch;
+      justify-content: center;
+    }
+  }
+</style>
