@@ -83,7 +83,7 @@ async function request<T>(
     const code = extractErrorCode(data) ?? (res.status === 403 ? "FORBIDDEN" : "UNKNOWN");
 
     // 402 Payment Required = licenseGuard del backend: la suscripción no está
-    // activa (o el trial venció con su gracia). Abrimos el muro de pago.
+    // activa (estado pending, vencida o cancelada). Abrimos el muro de pago.
     if (res.status === 402) {
       const message =
         typeof data?.message === "string" && data.message.trim() !== ""

@@ -8,7 +8,7 @@ import styles from "./PaywallOverlay.module.css";
  * Muro de pago global.
  *
  * Aparece cuando el backend responde 402 Payment Required (licenseGuard):
- * la suscripción Cloud no está activa o el trial venció con su gracia.
+ * la suscripción Cloud no está activa (estado pending, vencida o cancelada).
  * El pago vive en la landing page (/checkout) — este overlay solo guía al
  * usuario hacia ahí y le permite cerrar sesión si quiere cambiar de cuenta.
  */
@@ -51,7 +51,7 @@ export function PaywallOverlay() {
           </li>
           <li>
             <CreditCard size={16} />
-            <span>$15.99/mes · 14 días de prueba gratis</span>
+            <span>$15.99/mes · cancelá cuando quieras</span>
           </li>
         </ul>
 
