@@ -3,17 +3,31 @@ import { saveSession } from '../session';
 const apiUrl = import.meta.env.PUBLIC_API_URL;
 const perfilUrl = import.meta.env.BASE_URL + 'perfil';
 
-interface LoginPayload {
+export interface LoginPayload {
   email: string;
   password: string;
 }
 
-interface LoginResponse {
+export interface LoginResponse {
   accessToken?: string;
   refreshToken?: string;
   message?: string;
   store?: { name?: string } | null;
   user?: { email?: string; email_verified?: boolean } | null;
+}
+
+export async function loginUser(email: string, password: string): Promise<LoginResponse> {
+  const res = await fetch(`${apiUrl}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  const data = (await res.json().catch(() => null)) as LoginResponse | null;
+
+  if (!res.ok) {
+    throw new Error(data?.message ?? "Email o contraseña incorrectos.");
+  }
+  return data as LoginResponse;
 }
 
 export function initLoginForm(): void {
@@ -29,7 +43,7 @@ export function initLoginForm(): void {
   // Ojo para mostrar/ocultar contraseña
   $$("[data-toggle-password]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const input = btn.closest(".field-password")?.querySelector("input");
+      const input = btn.closest<HTMLElement>(".field-password")?.querySelector<HTMLInputElement>("input");
       if (!input) return;
       const show = input.type === "password";
       input.type = show ? "text" : "password";
@@ -58,21 +72,7 @@ export function initLoginForm(): void {
     };
 
     try {
-      const res = await fetch(`${apiUrl}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = (await res.json().catch(() => null)) as LoginResponse | null;
-
-      if (!res.ok) {
-        error.textContent = data?.message ?? "Email o contraseña incorrectos.";
-        error.hidden = false;
-        submit.disabled = false;
-        submit.textContent = "Iniciar sesión";
-        return;
-      }
-
+      const data = await loginUser(payload.email, payload.password);
       saveSession({
         accessToken: data?.accessToken,
         refreshToken: data?.refreshToken,

@@ -1,0 +1,112 @@
+---
+---
+
+<ol class="checkout__steps" data-steps aria-label="Progreso del checkout">
+  <li class="checkout__step" data-step="1">
+    <span class="checkout__step-num">1</span>
+    Tu tienda
+  </li>
+  <li class="checkout__step" data-step="2">
+    <span class="checkout__step-num">2</span>
+    Confirmar correo
+  </li>
+  <li class="checkout__step" data-step="3">
+    <span class="checkout__step-num">3</span>
+    Pago
+  </li>
+  <li class="checkout__step" data-step="4">
+    <span class="checkout__step-num">4</span>
+    Listo
+  </li>
+</ol>
+
+<style>
+  .checkout__steps {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    list-style: none;
+    margin: 0 0 2.5rem;
+    padding: 0;
+  }
+
+  .checkout__step {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease;
+  }
+
+  .checkout__step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: var(--surface-2);
+    color: var(--text-muted);
+  }
+
+  .checkout__step.is-active {
+    background: var(--text);
+    color: var(--bg);
+    border-color: var(--text);
+  }
+
+  .checkout__step.is-active .checkout__step-num {
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .checkout__step.is-done {
+    border-color: var(--green);
+    color: var(--green);
+  }
+
+  .checkout__step.is-done .checkout__step-num {
+    background: var(--green);
+    color: var(--bg);
+  }
+
+  .checkout__step.is-clickable {
+    cursor: pointer;
+    transition: transform 150ms ease, color 150ms ease, border-color 150ms ease;
+  }
+
+  .checkout__step.is-clickable:hover {
+    transform: translateY(-1px);
+    border-color: var(--green);
+    color: var(--green);
+  }
+
+  .checkout__step.is-clickable:focus-visible {
+    outline: 2px solid var(--green);
+    outline-offset: 2px;
+  }
+
+  @media (max-width: 640px) {
+    .checkout__steps {
+      gap: 0.375rem;
+      overflow-x: auto;
+      justify-content: flex-start;
+      padding-bottom: 0.25rem;
+      margin-bottom: 1.75rem;
+    }
+
+    .checkout__step {
+      padding: 0.4rem 0.75rem;
+      font-size: 0.75rem;
+      white-space: nowrap;
+    }
+  }
+</style>

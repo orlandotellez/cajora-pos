@@ -1,0 +1,64 @@
+---
+---
+
+<!-- Paso 4: listo -->
+<div data-step-panel="4" hidden>
+  <h1 class="checkout__title">¡Suscripción activa! 🎉</h1>
+  <p class="checkout__lead">
+    Tu suscripción Cloud está activa. Ahora entrá a tu tienda y empezá a vender.
+  </p>
+  <a href="#" class="btn-primary checkout__submit" data-go-pos>Ir a mi tienda</a>
+  <div class="pay__switch">
+    <a href={import.meta.env.BASE_URL + 'perfil'} class="checkout__link">Ver mi perfil</a>
+  </div>
+</div>
+
+<style>
+  .checkout__title {
+    font-size: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .checkout__lead {
+    color: var(--text-muted);
+    font-size: 0.9375rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .checkout__submit {
+    padding: 0.75rem 1.25rem;
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+
+  .checkout__submit:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .pay__switch {
+    text-align: center;
+    margin-top: 0.5rem;
+  }
+
+  .checkout__link {
+    background: none;
+    border: 0;
+    color: var(--text);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .checkout__link:hover {
+    color: var(--text-muted);
+  }
+
+  @media (max-width: 640px) {
+    .checkout__title {
+      font-size: 1.375rem;
+    }
+  }
+</style>

@@ -1,0 +1,161 @@
+---
+---
+
+<aside class="checkout__summary" aria-label="Resumen del pedido">
+  <h2 class="summary__title">Resumen</h2>
+
+  <div class="summary__plan">
+    <div>
+      <span class="summary__plan-name">Suscripción Cloud</span>
+      <span class="summary__plan-tag">Recomendado</span>
+    </div>
+    <div class="summary__plan-price">
+      <span class="summary__amount">$15.99</span>
+      <span class="summary__period">/mes</span>
+    </div>
+  </div>
+
+  <p class="summary__trial">14 días de prueba gratis · sin tarjeta</p>
+
+  <dl class="summary__store">
+    <div class="summary__store-row">
+      <dt>Tienda</dt>
+      <dd data-summary-store>—</dd>
+    </div>
+    <div class="summary__store-row">
+      <dt>Email</dt>
+      <dd data-summary-email>—</dd>
+    </div>
+  </dl>
+
+  <p class="summary__plans-link">
+    <button type="button" class="checkout__link" data-plans-open>Comparar todos los planes</button>
+  </p>
+</aside>
+
+<style>
+  /* -------- Resumen -------- */
+  .checkout__summary {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 2rem;
+    position: sticky;
+    top: 84px;
+  }
+
+  .summary__title {
+    font-size: 1.125rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .summary__plan {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .summary__plan-name {
+    display: block;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    margin-bottom: 0.375rem;
+  }
+
+  .summary__plan-tag {
+    display: inline-block;
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--bg);
+    background: var(--text);
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+  }
+
+  .summary__plan-price {
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .summary__amount {
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .summary__period {
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+  }
+
+  .summary__trial {
+    color: var(--green);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    margin: 0.75rem 0 1.25rem;
+  }
+
+  .summary__store {
+    margin: 0;
+    padding: 0;
+  }
+
+  .summary__store-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: 0.875rem;
+    padding: 0.25rem 0;
+  }
+
+  .summary__store-row dt {
+    color: var(--text-muted);
+  }
+
+  .summary__store-row dd {
+    margin: 0;
+    text-align: right;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+  }
+
+  .summary__plans-link {
+    margin: 1rem 0 0;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    text-align: center;
+  }
+
+  .checkout__link {
+    background: none;
+    border: 0;
+    color: var(--text);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .checkout__link:hover {
+    color: var(--text-muted);
+  }
+
+  /* En móvil el resumen va debajo del formulario y pierde el sticky */
+  @media (max-width: 899px) {
+    .checkout__summary {
+      position: static;
+    }
+  }
+
+  @media (max-width: 400px) {
+    .checkout__summary {
+      padding: 1.25rem;
+    }
+  }
+</style>
