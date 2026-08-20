@@ -60,6 +60,7 @@ model store {
   products            product[]
   categories          category[]
   suppliers           supplier[]
+  clients             client[]
   services            service[]
   sales               sale[]
   inventory_movements inventory_movement[]
@@ -204,6 +205,32 @@ model supplier {
   @@map("suppliers")
 }
 
+model client {
+  id         String  @id @default(uuid())
+  name       String
+  phone      String?
+  email      String?
+  address    String?
+  notes      String?
+  is_active  Boolean @default(true) @map("is_active")
+  store_id   String
+
+  created_at DateTime  @default(now()) @db.Timestamptz
+  updated_at DateTime  @updatedAt @db.Timestamptz
+  deleted_at DateTime? @db.Timestamptz
+
+  store  store  @relation(fields: [store_id], references: [id])
+  sales  sale[]
+
+  @@index([name])
+  @@index([phone])
+  @@index([is_active])
+  @@index([store_id])
+  @@index([store_id, deleted_at])
+  @@index([store_id, name])
+  @@map("clients")
+}
+
 model product {
   id                  String     @id @default(uuid())
   barcode             String?
@@ -290,20 +317,23 @@ model sale {
   amount_received Decimal? @db.Decimal(10, 2)
   change_given    Decimal? @db.Decimal(10, 2)
 
-  user_id   String
-  user_name String?
-  store_id  String
+  user_id    String
+  user_name  String?
+  client_id  String?
+  store_id   String
 
   created_at DateTime @default(now()) @db.Timestamptz
   updated_at DateTime @updatedAt @db.Timestamptz
 
-  store         store          @relation(fields: [store_id], references: [id])
-  user          user           @relation(fields: [user_id], references: [id])
+  store   store   @relation(fields: [store_id], references: [id])
+  user    user    @relation(fields: [user_id], references: [id])
+  client  client? @relation(fields: [client_id], references: [id])
   items         sale_item[]
   service_items sale_service[]
   print_jobs    print_job[]
 
   @@index([user_id])
+  @@index([client_id])
   @@index([store_id, created_at])
   @@map("sales")
 }
