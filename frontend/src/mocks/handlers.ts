@@ -31,8 +31,8 @@ const API = "*/api/v1";
 
 const BOOTSTRAP_CONFIG = {
   current_api_url: "https://cajora-pos-production.up.railway.app/api/v1",
-  app_version: "2.0.6",
-  apk_url: "https://pub-17156739f1d5412cb62a579bb0ccbc35.r2.dev/versions/apk/pos-system-v2.0.6-universal.apk",
+  app_version: "2.0.7",
+  apk_url: "https://pub-17156739f1d5412cb62a579bb0ccbc35.r2.dev/versions/apk/pos-system-v2.0.7-universal.apk",
   checkout_url: "https://cajorapos.com/checkout",
 };
 
