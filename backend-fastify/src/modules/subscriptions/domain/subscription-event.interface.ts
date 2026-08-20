@@ -29,6 +29,8 @@ export interface NewSubscriptionEvent {
   action: SubscriptionEventAction
   paypal_subscription_id?: string | null
   metadata?: Prisma.InputJsonValue | null
+  period_start?: Date | null
+  created_at?: Date
 }
 
 export interface SubscriptionEventFilters {
@@ -48,17 +50,22 @@ export interface ISubscriptionEventEntity {
   action: string
   paypal_subscription_id: string | null
   metadata: Prisma.JsonValue | null
+  period_start: Date | null
   created_at: Date
 }
 
 export interface ISubscriptionEventRepository {
   create(data: NewSubscriptionEvent): Promise<void>
+  createIdempotent(data: NewSubscriptionEvent): Promise<ISubscriptionEventEntity | null>
   findMany(filters: SubscriptionEventFilters): Promise<ISubscriptionEventEntity[]>
   count(filters: Omit<SubscriptionEventFilters, "limit" | "offset">): Promise<number>
 }
 
 export const noopSubscriptionEventRepository: ISubscriptionEventRepository = {
   async create() { },
+  async createIdempotent() {
+    return null
+  },
   async findMany() {
     return []
   },

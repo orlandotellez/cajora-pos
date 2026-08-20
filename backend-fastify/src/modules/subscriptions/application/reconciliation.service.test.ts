@@ -14,9 +14,28 @@ const logger = { info: () => {}, warn: () => {}, error: () => {} }
 
 /** Repositorio de eventos en memoria: captura lo auditado. */
 function fakeEventRepo(created: Array<NewSubscriptionEvent>) {
+  const keys = new Set<string>()
+  const keyOf = (d: NewSubscriptionEvent) =>
+    [d.store_id, d.action, d.paypal_subscription_id ?? "", d.period_start?.getTime() ?? "null"].join("|")
   return {
     async create(data: NewSubscriptionEvent) {
       created.push(data)
+    },
+    async createIdempotent(data: NewSubscriptionEvent) {
+      const key = keyOf(data)
+      if (keys.has(key)) return null
+      keys.add(key)
+      created.push(data)
+      return {
+        id: `ev-${created.length}`,
+        store_id: data.store_id,
+        user_id: data.user_id,
+        action: data.action,
+        paypal_subscription_id: data.paypal_subscription_id ?? null,
+        metadata: (data.metadata ?? null) as never,
+        period_start: data.period_start ?? null,
+        created_at: data.created_at ?? new Date(),
+      }
     },
     async findMany() {
       return []
@@ -72,6 +91,11 @@ function paypalActive(nextBillingTime: string | null) {
     status: "ACTIVE",
     nextBillingTime,
   }))
+  paypalNoTransactions()
+}
+
+function paypalNoTransactions() {
+  mock.method(paypalClient, "getTransactions", async () => [])
 }
 
 describe("ReconciliationService", () => {
@@ -90,7 +114,7 @@ describe("ReconciliationService", () => {
 
     const stats = await service.run(logger)
 
-    assert.deepEqual(stats, { reviewed: 0, drifted: 0, errors: 0, cleaned: 0 })
+    assert.deepEqual(stats, { reviewed: 0, drifted: 0, errors: 0, cleaned: 0, paymentsBackfilled: 0 })
     assert.equal(updated.length, 0)
     assert.equal(called, false)
   })
@@ -105,7 +129,7 @@ describe("ReconciliationService", () => {
 
     const stats = await service.run(logger)
 
-    assert.deepEqual(stats, { reviewed: 1, drifted: 0, errors: 0, cleaned: 0 })
+    assert.deepEqual(stats, { reviewed: 1, drifted: 0, errors: 0, cleaned: 0, paymentsBackfilled: 0 })
     assert.equal(updated.length, 0)
   })
 
@@ -159,6 +183,7 @@ describe("ReconciliationService", () => {
       status: "CANCELLED",
       nextBillingTime: null,
     }))
+    paypalNoTransactions()
     const service = createReconciliationService(repo)
 
     const stats = await service.run(logger)
@@ -176,6 +201,7 @@ describe("ReconciliationService", () => {
       status: "SUSPENDED",
       nextBillingTime: null,
     }))
+    paypalNoTransactions()
     const service = createReconciliationService(repo)
 
     const stats = await service.run(logger)
@@ -192,6 +218,7 @@ describe("ReconciliationService", () => {
       status: "EXPIRED",
       nextBillingTime: null,
     }))
+    paypalNoTransactions()
     const service = createReconciliationService(repo)
 
     const stats = await service.run(logger)
@@ -209,11 +236,12 @@ describe("ReconciliationService", () => {
       status: "APPROVAL_PENDING",
       nextBillingTime: null,
     }))
+    paypalNoTransactions()
     const service = createReconciliationService(repo)
 
     const stats = await service.run(logger)
 
-    assert.deepEqual(stats, { reviewed: 1, drifted: 0, errors: 0, cleaned: 0 })
+    assert.deepEqual(stats, { reviewed: 1, drifted: 0, errors: 0, cleaned: 0, paymentsBackfilled: 0 })
     assert.equal(updated.length, 0)
   })
 
@@ -226,11 +254,12 @@ describe("ReconciliationService", () => {
       if (id === "I-BAD") throw new AppError("red caída", 502, "PAYPAL_NETWORK_ERROR")
       return { id, status: "CANCELLED", nextBillingTime: null }
     })
+    paypalNoTransactions()
     const service = createReconciliationService(repo)
 
     const stats = await service.run(logger)
 
-    assert.deepEqual(stats, { reviewed: 2, drifted: 1, errors: 1, cleaned: 0 })
+    assert.deepEqual(stats, { reviewed: 2, drifted: 1, errors: 1, cleaned: 0, paymentsBackfilled: 0 })
     assert.equal(getRows()[0].status, "active") // la "bad" no se tocó (quedó como estaba)
     assert.equal(getRows()[1].status, "canceled") // la "good" sí
   })
@@ -243,7 +272,7 @@ describe("ReconciliationService", () => {
 
     const stats = await service.run(logger)
 
-    assert.deepEqual(stats, { reviewed: 0, drifted: 0, errors: 0, cleaned: 0 })
+    assert.deepEqual(stats, { reviewed: 0, drifted: 0, errors: 0, cleaned: 0, paymentsBackfilled: 0 })
     assert.equal(updated.length, 0)
   })
 
@@ -263,7 +292,7 @@ describe("ReconciliationService", () => {
 
     const stats = await service.run(logger)
 
-    assert.deepEqual(stats, { reviewed: 1, drifted: 0, errors: 0, cleaned: 1 })
+    assert.deepEqual(stats, { reviewed: 1, drifted: 0, errors: 0, cleaned: 1, paymentsBackfilled: 0 })
     assert.equal(getRows()[0].paypal_subscription_id, null)
     assert.equal(created.length, 1)
     assert.equal(created[0].action, "orphan_cleaned")
@@ -282,8 +311,66 @@ describe("ReconciliationService", () => {
 
     const stats = await service.run(logger)
 
-    assert.deepEqual(stats, { reviewed: 1, drifted: 0, errors: 1, cleaned: 0 })
+    assert.deepEqual(stats, { reviewed: 1, drifted: 0, errors: 1, cleaned: 0, paymentsBackfilled: 0 })
     assert.equal(getRows()[0].paypal_subscription_id, "I-ACTIVE123") // no se tocó
     assert.equal(created.length, 0) // sin evento de limpieza
+  })
+
+  it("rellena un cobro faltante desde las transacciones de PayPal (idempotente entre pasadas)", async () => {
+    mock.property(env, "PAYPAL_ENABLED", true)
+    const periodStart = new Date(Date.now() - 10 * DAY_MS)
+    const { repo, getRows } = makeRepo([
+      makeEntity({
+        status: "active",
+        current_period_start: periodStart,
+        current_period_end: new Date(Date.now() + 20 * DAY_MS),
+      }),
+    ])
+    mock.method(paypalClient, "getSubscription", async (id: string) => ({
+      id,
+      status: "ACTIVE",
+      nextBillingTime: new Date(Date.now() + 30 * DAY_MS).toISOString(),
+    }))
+    // La transacción del cobro figura en PayPal pero nunca llegó el webhook.
+    mock.method(paypalClient, "getTransactions", async (id: string, fromISO: string, toISO: string) => {
+      assert.equal(id, "I-ACTIVE123")
+      assert.ok(fromISO < toISO)
+      return [
+        {
+          id: "TX-100",
+          amount: "15.99",
+          currency: "USD",
+          time: periodStart.toISOString(),
+          status: "COMPLETED",
+        },
+        {
+          id: "TX-PEND",
+          amount: "15.99",
+          currency: "USD",
+          time: new Date(periodStart.getTime() + DAY_MS).toISOString(),
+          status: "PENDING",
+        },
+      ]
+    })
+    const created: Array<NewSubscriptionEvent> = []
+    const service = createReconciliationService(repo, fakeEventRepo(created))
+
+    const stats1 = await service.run(logger)
+    assert.equal(stats1.paymentsBackfilled, 1, "solo las COMPLETED se rellenan")
+    const paymentEvents = created.filter((e) => e.action === "webhook_sale_completed")
+    assert.equal(paymentEvents.length, 1)
+    assert.equal(paymentEvents[0].store_id, "store-1")
+    assert.equal(paymentEvents[0].paypal_subscription_id, "I-ACTIVE123")
+    assert.equal(paymentEvents[0].period_start?.getTime(), periodStart.getTime())
+    assert.equal((paymentEvents[0].metadata as Record<string, unknown>)?.source, "reconciliation")
+    assert.equal((paymentEvents[0].metadata as Record<string, unknown>)?.transaction_id, "TX-100")
+    assert.equal((paymentEvents[0].metadata as Record<string, unknown>)?.amount, "15.99")
+    assert.equal((paymentEvents[0].metadata as Record<string, unknown>)?.currency, "USD")
+
+    // Segunda pasada: el unique (idempotente) no duplica el cobro ya registrado.
+    const stats2 = await service.run(logger)
+    assert.equal(stats2.paymentsBackfilled, 0, "la segunda pasada no vuelve a insertar")
+    assert.equal(created.filter((e) => e.action === "webhook_sale_completed").length, 1)
+    assert.equal(getRows().length, 1)
   })
 })

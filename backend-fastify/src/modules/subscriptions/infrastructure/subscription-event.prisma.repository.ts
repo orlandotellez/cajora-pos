@@ -16,6 +16,7 @@ function mapToEntity(ev: subscription_event): ISubscriptionEventEntity {
     action: ev.action,
     paypal_subscription_id: ev.paypal_subscription_id,
     metadata: ev.metadata,
+    period_start: ev.period_start,
     created_at: ev.created_at,
   }
 }
@@ -44,8 +45,32 @@ export const SubscriptionEventRepository: ISubscriptionEventRepository = {
         action: data.action,
         paypal_subscription_id: data.paypal_subscription_id ?? null,
         metadata: (data.metadata as Prisma.InputJsonValue | undefined) ?? undefined,
+        period_start: data.period_start ?? undefined,
+        created_at: data.created_at ?? undefined,
       },
     })
+  },
+
+  async createIdempotent(data: NewSubscriptionEvent): Promise<ISubscriptionEventEntity | null> {
+    try {
+      const ev = await prisma.subscription_event.create({
+        data: {
+          store_id: data.store_id,
+          user_id: data.user_id,
+          action: data.action,
+          paypal_subscription_id: data.paypal_subscription_id ?? null,
+          metadata: (data.metadata as Prisma.InputJsonValue | undefined) ?? undefined,
+          period_start: data.period_start ?? undefined,
+          created_at: data.created_at ?? undefined,
+        },
+      })
+      return mapToEntity(ev)
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+        return null
+      }
+      throw err
+    }
   },
 
   async findMany(filters: SubscriptionEventFilters): Promise<ISubscriptionEventEntity[]> {

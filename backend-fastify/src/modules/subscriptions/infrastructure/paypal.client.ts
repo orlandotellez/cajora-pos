@@ -119,6 +119,24 @@ export interface PayPalSubscriptionDetail {
   nextBillingTime: string | null
 }
 
+export interface PayPalTransaction {
+  id: string
+  amount: string
+  currency: string
+  time: string
+  status: string
+}
+
+interface PayPalTransactionItem {
+  id?: string
+  status?: string
+  time?: string
+  amount?: { total?: string; currency?: string }
+  amount_with_breakdown?: {
+    gross_amount?: { value?: string; currency_code?: string }
+  }
+}
+
 export const paypalClient = {
   async createSubscription(
     planId: string,
@@ -197,5 +215,29 @@ export const paypalClient = {
       status: data.status ?? "UNKNOWN",
       nextBillingTime: data.billing_info?.next_billing_time ?? null,
     }
+  },
+
+  async getTransactions(
+    subscriptionId: string,
+    startTime: string,
+    endTime: string,
+  ): Promise<PayPalTransaction[]> {
+    if (!env.PAYPAL_ENABLED) return []
+
+    const query = new URLSearchParams({
+      start_time: startTime,
+      end_time: endTime,
+    })
+    const data = await paypalRequest<{ transactions?: PayPalTransactionItem[] }>(
+      `/v1/billing/subscriptions/${encodeURIComponent(subscriptionId)}/transactions?${query.toString()}`,
+    )
+
+    return (data.transactions ?? []).map((t) => ({
+      id: t.id ?? "",
+      amount: t.amount?.total ?? t.amount_with_breakdown?.gross_amount?.value ?? "",
+      currency: t.amount?.currency ?? t.amount_with_breakdown?.gross_amount?.currency_code ?? "",
+      time: t.time ?? "",
+      status: t.status ?? "",
+    }))
   },
 }

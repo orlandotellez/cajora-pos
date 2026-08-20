@@ -48,10 +48,32 @@ function makeRepo(initial: ISubscriptionEntity | null = null) {
 }
 
 /** Repositorio de eventos en memoria: captura lo auditado. */
-function fakeEventRepo(created: Array<NewSubscriptionEvent>) {
+function fakeEventRepo(
+  created: Array<NewSubscriptionEvent>,
+  preExisting: NewSubscriptionEvent[] = [],
+) {
+  const keyOf = (d: NewSubscriptionEvent) =>
+    [d.store_id, d.action, d.paypal_subscription_id ?? "", d.period_start?.getTime() ?? "null"].join("|")
+  const keys = new Set(preExisting.map(keyOf))
   return {
     async create(data: NewSubscriptionEvent) {
       created.push(data)
+    },
+    async createIdempotent(data: NewSubscriptionEvent) {
+      const key = keyOf(data)
+      if (keys.has(key)) return null
+      keys.add(key)
+      created.push(data)
+      return {
+        id: `ev-${created.length}`,
+        store_id: data.store_id,
+        user_id: data.user_id,
+        action: data.action,
+        paypal_subscription_id: data.paypal_subscription_id ?? null,
+        metadata: (data.metadata ?? null) as never,
+        period_start: data.period_start ?? null,
+        created_at: data.created_at ?? new Date(),
+      }
     },
     async findMany() {
       return []
@@ -137,6 +159,72 @@ describe("SubscriptionService", () => {
         () => service.activate("store-1", "I-AJENO"),
         /no pertenece a esta tienda/,
       )
+    })
+
+    it("registra el pago inicial como webhook_sale_completed (source=app_activate)", async () => {
+      const existing = makeEntity({ paypal_subscription_id: "I-PAYPAL-1" })
+      const { repo, getCurrent } = makeRepo(existing)
+      const created: Array<NewSubscriptionEvent> = []
+      const service = createSubscriptionService(repo, fakeEventRepo(created))
+
+      await service.activate("store-1", "I-PAYPAL-1", { userId: "user-1", ip: null, userAgent: null })
+
+      const pay = created.find((e) => e.action === "webhook_sale_completed")
+      assert.ok(pay, "debe registrar un cobro en subscription_events")
+      assert.equal(pay.store_id, "store-1")
+      assert.equal(pay.paypal_subscription_id, "I-PAYPAL-1")
+      assert.ok(pay.period_start instanceof Date)
+      const meta = pay.metadata as Record<string, unknown>
+      assert.equal(meta.source, "app_activate")
+      assert.equal(meta.event_id, undefined, "sin event_id → getBilling usa el fallback del precio del plan")
+      assert.ok(typeof meta.period_start === "string" && meta.period_start.length > 0)
+      assert.equal(pay.period_start.getTime(), getCurrent()!.current_period_start!.getTime())
+    })
+
+    it("doble click con período vigente → NO resetea el período ni registra un segundo pago", async () => {
+      const now = new Date()
+      const active = makeEntity({
+        status: "active",
+        paypal_subscription_id: "I-PAYPAL-1",
+        current_period_start: now,
+        current_period_end: new Date(now.getTime() + 20 * DAY_MS),
+      })
+      const { repo, getCurrent } = makeRepo(active)
+      const created: Array<NewSubscriptionEvent> = []
+      const service = createSubscriptionService(repo, fakeEventRepo(created))
+
+      const res = await service.activate("store-1", "I-PAYPAL-1")
+
+      assert.equal(res.status, "active")
+      assert.equal(res.current_period_start, now.toISOString(), "el período original no se resetea")
+      assert.equal(created.filter((e) => e.action === "webhook_sale_completed").length, 0)
+      assert.equal(created.filter((e) => e.action === "activate").length, 1, "audita la activación una vez")
+      assert.equal(getCurrent()!.current_period_start!.getTime(), now.getTime())
+    })
+
+    it("si el webhook ya registró el cobro → el insert idempotente no duplica", async () => {
+      mock.timers.enable({ apis: ["Date"] })
+      const fixedNow = new Date("2026-08-15T10:00:00Z")
+      mock.timers.setTime(fixedNow.getTime())
+
+      const webhookEvent: NewSubscriptionEvent = {
+        store_id: "store-1",
+        user_id: null,
+        action: "webhook_sale_completed",
+        paypal_subscription_id: "I-PAYPAL-1",
+        metadata: { event_id: "wh-x", event_type: "PAYMENT.SALE.COMPLETED" },
+        period_start: fixedNow,
+      }
+      const existing = makeEntity({ paypal_subscription_id: "I-PAYPAL-1" })
+      const { repo } = makeRepo(existing)
+      const created: Array<NewSubscriptionEvent> = [webhookEvent]
+      const service = createSubscriptionService(repo, fakeEventRepo(created, [webhookEvent]))
+
+      await service.activate("store-1", "I-PAYPAL-1")
+
+      const pays = created.filter((e) => e.action === "webhook_sale_completed")
+      assert.equal(pays.length, 1, "el cobro del webhook no se duplica")
+      assert.equal((pays[0].metadata as Record<string, unknown>)?.event_id, "wh-x")
     })
   })
 
@@ -306,11 +394,15 @@ describe("SubscriptionService", () => {
           action: "webhook_sale_completed",
           paypal_subscription_id: "I-PAYPAL-1",
           metadata: { event_id: "wh-1" },
+          period_start: null,
           created_at: paidAt,
         },
       ]
       const eventRepo = {
         async create() {},
+        async createIdempotent() {
+          return null
+        },
         async findMany() {
           return events
         },
@@ -352,6 +444,9 @@ describe("SubscriptionService", () => {
     it("sin cobros → payments vacío, total 0 y sin próxima fecha si no hay período", async () => {
       const eventRepo = {
         async create() {},
+        async createIdempotent() {
+          return null
+        },
         async findMany() {
           return []
         },
@@ -367,6 +462,88 @@ describe("SubscriptionService", () => {
       assert.deepEqual(res.payments, [])
       assert.equal(res.total_paid, "0.00")
       assert.equal(res.next_payment_at, null)
+    })
+
+    it("getBilling muestra el cobro de app_activate con el precio del plan (fallback 15.99 USD)", async () => {
+      const paidAt = new Date("2026-08-15T10:00:00Z")
+      const events = [
+        {
+          id: "ev-app",
+          store_id: "store-1",
+          user_id: null,
+          action: "webhook_sale_completed",
+          paypal_subscription_id: "I-PAYPAL-1",
+          metadata: { source: "app_activate", period_start: paidAt.toISOString() },
+          period_start: null,
+          created_at: paidAt,
+        },
+      ]
+      const eventRepo = {
+        async create() {},
+        async createIdempotent() {
+          return null
+        },
+        async findMany() {
+          return events
+        },
+        async count() {
+          return 1
+        },
+      }
+      const { repo } = makeRepo(makeEntity({ status: "active" }))
+      const service = createSubscriptionService(repo, eventRepo)
+
+      const res = await service.getBilling("store-1")
+
+      assert.equal(res.payments.length, 1)
+      assert.equal(res.payments[0].amount, "15.99")
+      assert.equal(res.payments[0].currency, "USD")
+      assert.equal(res.payments[0].paid_at, "2026-08-15T10:00:00.000Z")
+      assert.equal(res.total_paid, "15.99")
+      assert.equal(res.currency, "USD")
+    })
+
+    it("getBilling usa metadata.amount/currency del evento cuando están presentes", async () => {
+      const paidAt = new Date("2026-08-15T10:00:00Z")
+      const events = [
+        {
+          id: "ev-rec",
+          store_id: "store-1",
+          user_id: null,
+          action: "webhook_sale_completed",
+          paypal_subscription_id: "I-PAYPAL-1",
+          metadata: {
+            source: "reconciliation",
+            transaction_id: "TX-9",
+            amount: "19.49",
+            currency: "EUR",
+          },
+          period_start: null,
+          created_at: paidAt,
+        },
+      ]
+      const eventRepo = {
+        async create() {},
+        async createIdempotent() {
+          return null
+        },
+        async findMany() {
+          return events
+        },
+        async count() {
+          return 1
+        },
+      }
+      const { repo } = makeRepo(makeEntity({ status: "active" }))
+      const service = createSubscriptionService(repo, eventRepo)
+
+      const res = await service.getBilling("store-1")
+
+      assert.equal(res.payments.length, 1)
+      assert.equal(res.payments[0].amount, "19.49")
+      assert.equal(res.payments[0].currency, "EUR")
+      assert.equal(res.total_paid, "19.49")
+      assert.equal(res.currency, "EUR")
     })
   })
 })

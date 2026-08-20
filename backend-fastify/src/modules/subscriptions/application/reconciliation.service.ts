@@ -27,12 +27,15 @@ interface ReconStats {
   drifted: number
   errors: number
   cleaned: number
+  paymentsBackfilled: number
 }
 
 interface PayPalStatusResult {
   status: string
   nextBillingTime: string | null
 }
+
+const BACKFILL_WINDOW_BUFFER_MS = 2 * 86_400_000
 
 function buildUpdates(
   sub: { status: string; current_period_end: Date | null; cancel_at_period_end: boolean },
@@ -76,12 +79,53 @@ function buildUpdates(
   }
 }
 
+async function backfillPayments(
+  logger: ReconLogger,
+  sub: { store_id: string; paypal_subscription_id: string | null; current_period_start: Date | null },
+  eventRepository: ISubscriptionEventRepository,
+  client: typeof paypalClient,
+  stats: ReconStats,
+): Promise<void> {
+  if (!sub.paypal_subscription_id || !sub.current_period_start) return
+
+  const fromISO = new Date(sub.current_period_start.getTime() - BACKFILL_WINDOW_BUFFER_MS).toISOString()
+  const toISO = new Date().toISOString()
+
+  const transactions = await client.getTransactions(sub.paypal_subscription_id, fromISO, toISO)
+
+  for (const tx of transactions) {
+    if (tx.status !== "COMPLETED" || !tx.time) continue
+    const periodStart = new Date(tx.time)
+    const inserted = await eventRepository.createIdempotent({
+      store_id: sub.store_id,
+      user_id: null,
+      action: SUBSCRIPTION_EVENT_ACTIONS.WEBHOOK_SALE_COMPLETED,
+      paypal_subscription_id: sub.paypal_subscription_id,
+      metadata: {
+        source: "reconciliation",
+        transaction_id: tx.id,
+        amount: tx.amount,
+        currency: tx.currency,
+      },
+      period_start: periodStart,
+      created_at: periodStart,
+    })
+    if (inserted) {
+      stats.paymentsBackfilled += 1
+      logger.info(
+        { storeId: sub.store_id, transactionId: tx.id, amount: tx.amount },
+        "Cobro faltante rellenado desde transacciones de PayPal",
+      )
+    }
+  }
+}
+
 export const createReconciliationService = (
   repository: ISubscriptionRepository,
   eventRepository: ISubscriptionEventRepository = noopSubscriptionEventRepository,
 ) => ({
   async run(logger: ReconLogger): Promise<ReconStats> {
-    const stats: ReconStats = { reviewed: 0, drifted: 0, errors: 0, cleaned: 0 }
+    const stats: ReconStats = { reviewed: 0, drifted: 0, errors: 0, cleaned: 0, paymentsBackfilled: 0 }
 
     if (!env.PAYPAL_ENABLED) {
       logger.info("Reconciliación omitida: PAYPAL_ENABLED=false (modo mock)")
@@ -108,6 +152,10 @@ export const createReconciliationService = (
               "Suscripción realineada con PayPal: %s",
               String(sub.paypal_subscription_id),
             )
+          }
+
+          if (sub.status === "active" || sub.current_period_start) {
+            await backfillPayments(logger, sub, eventRepository, paypalClient, stats)
           }
         } catch (err) {
           const isOrphan = err instanceof AppError && err.statusCode === 404

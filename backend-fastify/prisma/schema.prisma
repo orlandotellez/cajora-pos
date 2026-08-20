@@ -586,17 +586,23 @@ model paypal_webhook_event {
 // webhook de PayPal también se registran acá (user_id null) para tener el
 // historial completo en un solo lugar: cancelaciones, activaciones, etc.
 model subscription_event {
-  id                     String   @id @default(uuid())
+  id                     String    @id @default(uuid())
   store_id               String?
   user_id                String?
   action                 String
   paypal_subscription_id String?
   metadata               Json?
-  created_at             DateTime @default(now()) @db.Timestamptz
+  // Inicio del período que cubre el cobro. Solo lo setean los cobros
+  // (webhook_sale_completed); los eventos de auditoría lo dejan NULL.
+  // La UNIQUE con NULLs repetidos es válida en Postgres (NULL != NULL),
+  // así que los eventos de auditoría no colisionan entre sí.
+  period_start           DateTime? @db.Timestamptz
+  created_at             DateTime  @default(now()) @db.Timestamptz
 
   store store? @relation(fields: [store_id], references: [id])
   user  user?  @relation(fields: [user_id], references: [id])
 
+  @@unique([store_id, action, paypal_subscription_id, period_start])
   @@index([store_id, created_at])
   @@index([user_id])
   @@index([action])

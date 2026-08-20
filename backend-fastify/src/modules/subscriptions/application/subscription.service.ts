@@ -108,12 +108,35 @@ export const createSubscriptionService = (
       }
 
       const now = new Date()
+
+      const alreadyActive =
+        sub.status === "active" &&
+        sub.current_period_start !== null &&
+        sub.current_period_end !== null &&
+        sub.current_period_start.getTime() <= now.getTime() &&
+        now.getTime() < sub.current_period_end.getTime()
+      if (alreadyActive) {
+        await audit(actor, storeId, SUBSCRIPTION_EVENT_ACTIONS.ACTIVATE, paypalSubscriptionId)
+        return mapToResponse(sub)
+      }
+
       const updated = await repository.update(storeId, {
         status: "active",
         current_period_start: now,
         current_period_end: new Date(now.getTime() + PERIOD_DAYS * 86_400_000),
       })
       if (!updated) throw new ConflictError("No hay suscripción activa")
+
+      await eventRepository.createIdempotent({
+        store_id: storeId,
+        user_id: actor.userId,
+        action: SUBSCRIPTION_EVENT_ACTIONS.WEBHOOK_SALE_COMPLETED,
+        paypal_subscription_id: paypalSubscriptionId,
+        metadata: { source: "app_activate", period_start: now.toISOString() },
+        period_start: now,
+        created_at: now,
+      })
+
       await audit(actor, storeId, SUBSCRIPTION_EVENT_ACTIONS.ACTIVATE, paypalSubscriptionId)
       return mapToResponse(updated)
     },
@@ -199,12 +222,30 @@ export const createSubscriptionService = (
       }
 
       const payments = events.map((e) => {
-        const meta = (e.metadata as { event_id?: string } | null) ?? {}
-        const a = amounts.get(meta.event_id ?? "") ?? { amount: PLAN_PRICE, currency: PLAN_CURRENCY }
+        const meta = (e.metadata as { event_id?: string; amount?: string; currency?: string } | null) ?? {}
+
+        let amount: string
+        let currency: string
+
+        const fromOutbox = amounts.get(meta.event_id ?? "")
+        if (fromOutbox) {
+          // Monto real del payload del webhook de PayPal.
+          amount = fromOutbox.amount
+          currency = fromOutbox.currency
+        } else if (typeof meta.amount === "string" && meta.amount.trim()) {
+          // Evento registrado por la app (activate / reconciliación) con monto propio.
+          amount = meta.amount
+          currency = typeof meta.currency === "string" && meta.currency.trim() ? meta.currency : PLAN_CURRENCY
+        } else {
+          // Último recurso: precio del plan.
+          amount = PLAN_PRICE
+          currency = PLAN_CURRENCY
+        }
+
         return {
           id: e.id,
-          amount: a.amount,
-          currency: a.currency,
+          amount,
+          currency,
           paid_at: e.created_at.toISOString(),
         }
       })

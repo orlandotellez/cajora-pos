@@ -27,9 +27,10 @@ async function main() {
 
   console.log("")
   console.log("Resumen de la reconciliación:")
-  console.log(`  Revisadas : ${stats.reviewed}`)
-  console.log(`  Corregidas: ${stats.drifted}`)
-  console.log(`  Errores   : ${stats.errors}`)
+  console.log(`  Revisadas   : ${stats.reviewed}`)
+  console.log(`  Corregidas  : ${stats.drifted}`)
+  console.log(`  Cobros retro: ${stats.paymentsBackfilled}`)
+  console.log(`  Errores     : ${stats.errors}`)
 }
 
 main()
