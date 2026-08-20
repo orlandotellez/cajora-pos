@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ChevronDown, Settings, LogOut } from "lucide-react";
+import { ChevronDown, Settings, CreditCard, LogOut } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
 import styles from "./UserMenu.module.css";
@@ -11,7 +11,7 @@ export function UserMenu() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  
+
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
@@ -23,7 +23,7 @@ export function UserMenu() {
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
-  
+
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => {
@@ -33,14 +33,14 @@ export function UserMenu() {
     return () => document.removeEventListener("keydown", handler);
   }, [open]);
 
-  
+
   const initials = user?.name
     ? user.name
-        .split(" ")
-        .map((n) => n.charAt(0))
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
+      .split(" ")
+      .map((n) => n.charAt(0))
+      .join("")
+      .toUpperCase()
+      .slice(0, 2)
     : user?.email?.charAt(0).toUpperCase() ?? "?";
 
   return (
@@ -75,9 +75,6 @@ export function UserMenu() {
             </div>
           </div>
 
-          {/* Ajustes es admin-only (igual que el grupo ADMINISTRACIÓN del sidebar).
-              El divider va DENTRO del condicional para que un cajero no vea dos
-              líneas divisorias consecutivas. */}
           {user?.role === "admin" && (
             <>
               <div className={styles.divider} />
@@ -89,6 +86,15 @@ export function UserMenu() {
               >
                 <Settings className={styles.menuItemIcon} />
                 Ajustes
+              </Link>
+              <Link
+                to="/subscription"
+                className={styles.menuItem}
+                role="menuitem"
+                onClick={() => setOpen(false)}
+              >
+                <CreditCard className={styles.menuItemIcon} />
+                Suscripción
               </Link>
             </>
           )}

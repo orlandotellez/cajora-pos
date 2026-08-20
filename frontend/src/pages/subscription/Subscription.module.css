@@ -1,0 +1,434 @@
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding-bottom: 3rem;
+}
+
+@media (min-width: 768px) {
+  .page {
+    padding: 40px 40px 3rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: 16px 24px 2rem;
+  }
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  color: var(--foreground);
+  margin-bottom: 1.5rem;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 2rem;
+}
+
+.cardTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin: 0 0 1.25rem;
+}
+
+.list {
+  margin: 0 0 1rem;
+  padding: 0;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.875rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.row dt {
+  color: var(--muted-foreground);
+}
+
+.row dd {
+  margin: 0;
+  text-align: right;
+  font-weight: 500;
+  color: var(--foreground);
+  overflow-wrap: anywhere;
+}
+
+.badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  margin-bottom: 1rem;
+}
+
+/* Mismos colores que la landing (independientes del tema de la app). */
+.badge.is-active {
+  background: rgba(34, 197, 94, 0.12);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.35);
+}
+
+.badge.is-past-due {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.badge.is-canceled {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.badge.is-self-hosted {
+  background: rgba(138, 147, 163, 0.12);
+  color: var(--muted-foreground);
+  border: 1px solid rgba(138, 147, 163, 0.35);
+}
+
+.statusText {
+  color: var(--muted-foreground);
+  font-size: 0.9375rem;
+  margin: 0 0 1.5rem;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.link {
+  background: none;
+  border: 0;
+  color: var(--foreground);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}
+
+.link:hover {
+  color: var(--muted-foreground);
+}
+
+.primaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  align-self: flex-start;
+  background: var(--foreground);
+  color: var(--background);
+  border: none;
+  border-radius: 5px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 120ms ease;
+}
+
+.primaryButton:hover {
+  opacity: 0.9;
+}
+
+/* ---------- Facturación ---------- */
+
+.billing {
+  margin-top: 2rem;
+}
+
+.billingNote {
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  margin: 0 0 1rem;
+}
+
+.billingNext {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.billingNextLabel {
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+}
+
+.billingNext strong {
+  font-size: 0.9375rem;
+  color: var(--foreground);
+  text-align: right;
+}
+
+.billingTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.billingTable th,
+.billingTable td {
+  text-align: left;
+  padding: 0.625rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--foreground);
+}
+
+.billingTable th {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+.billingTable td:first-child {
+  white-space: nowrap;
+}
+
+.alignRight {
+  text-align: right !important;
+}
+
+.amount {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.billingTotal {
+  margin-top: 1.25rem;
+  text-align: right;
+  font-size: 0.9375rem;
+  color: var(--muted-foreground);
+}
+
+.billingTotal strong {
+  color: var(--foreground);
+}
+
+/* ---------- Zona de peligro ---------- */
+
+.danger {
+  margin-top: 2.5rem;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 5px;
+  background: rgba(239, 68, 68, 0.04);
+  padding: 1.5rem;
+}
+
+.dangerTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ef4444;
+  margin: 0 0 0.5rem;
+}
+
+.dangerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.dangerRow:first-of-type {
+  border-top: 0;
+}
+
+.dangerName {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--foreground);
+  margin: 0;
+}
+
+.dangerDesc {
+  color: var(--muted-foreground);
+  font-size: 0.8125rem;
+  margin-top: 0.25rem;
+}
+
+.dangerBtn {
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  border-radius: 5px;
+  color: #ef4444;
+  padding: 0.6rem 1rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.dangerBtn:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* ---------- Estados ---------- */
+
+.note {
+  color: var(--muted-foreground);
+  font-size: 0.9375rem;
+}
+
+.errorBox {
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 5px;
+  background: rgba(239, 68, 68, 0.04);
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.errorText {
+  color: var(--foreground);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.retryButton {
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  border-radius: 5px;
+  color: #ef4444;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.retryButton:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.busyOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in oklch, var(--background) 60%, transparent);
+  color: var(--foreground);
+  font-size: 1.5rem;
+}
+
+/* ---------- Responsive (igual que la landing) ---------- */
+
+@media (max-width: 560px) {
+  .card {
+    padding: 1.25rem;
+  }
+
+  .actions {
+    width: 100%;
+  }
+
+  .primaryButton,
+  .link {
+    width: 100%;
+    justify-content: center;
+    align-self: stretch;
+  }
+
+  .billingNext {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .billingTotal {
+    text-align: left;
+  }
+
+  /* Facturación: la tabla se convierte en tarjetas apiladas */
+  .billingTable thead {
+    display: none;
+  }
+
+  .billingTable,
+  .billingTable tbody {
+    display: block;
+  }
+
+  .billingTable tr {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.25rem 1rem;
+    padding: 0.875rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .billingTable td {
+    display: block;
+    border-bottom: 0;
+    padding: 0;
+    white-space: normal;
+  }
+
+  .billingTable td:nth-child(1) {
+    grid-column: 1;
+    font-weight: 600;
+  }
+
+  .billingTable td:nth-child(2) {
+    grid-column: 1;
+    font-size: 0.8125rem;
+    color: var(--muted-foreground);
+    order: 3;
+  }
+
+  .billingTable td:nth-child(3) {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    text-align: right;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .billingTable td:first-child {
+    white-space: normal;
+  }
+
+  .dangerRow {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .dangerBtn {
+    width: 100%;
+    align-self: stretch;
+  }
+}

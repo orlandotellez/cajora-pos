@@ -17,6 +17,7 @@ const Services = lazy(() => import("@/pages/services/Services"));
 const Suppliers = lazy(() => import("@/pages/suppliers/Suppliers"));
 const Categories = lazy(() => import("@/pages/categories/Categories"));
 const SuperAdmin = lazy(() => import("@/pages/super-admin/SuperAdmin"));
+const Subscription = lazy(() => import("@/pages/subscription/Subscription"));
 
 function HomeRedirect() {
   const { user, loading } = useAuth();
@@ -39,6 +40,7 @@ export function AppRoutes() {
         <Route path="/sales" element={<Sales />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/subscription" element={<Subscription />} />
         <Route path="/users" element={<Users />} />
         <Route path="/super-admin" element={<SuperAdmin />} />
         <Route path="*" element={<NotFound />} />
