@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { X, Loader2, ChevronDown, ChevronRight } from "lucide-react";
 import { clientsApi, type ClientDetailResponse } from "@/api/clients";
+import { creditsApi } from "@/api/credits";
 import { money } from "@/lib/format";
 import { usePosStore } from "@/store/posStore";
 import styles from "./ClientDetailModal.module.css";
@@ -30,6 +31,7 @@ export function ClientDetailModal({ clientId, onClose }: ClientDetailModalProps)
   useModalBack(onClose);
   const currency = usePosStore((s) => s.currency);
   const [client, setClient] = useState<ClientDetailResponse | null>(null);
+  const [clientDebt, setClientDebt] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [expandedSale, setExpandedSale] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -39,10 +41,15 @@ export function ClientDetailModal({ clientId, onClose }: ClientDetailModalProps)
     setLoading(true);
     setError(null);
 
-    clientsApi
-      .getById(clientId)
-      .then((data) => {
-        if (!cancelled) setClient(data);
+    Promise.all([
+      clientsApi.getById(clientId),
+      creditsApi.getClientDebt(clientId).catch(() => null),
+    ])
+      .then(([clientData, debtData]) => {
+        if (!cancelled) {
+          setClient(clientData);
+          setClientDebt(debtData?.client?.total_debt ?? 0);
+        }
       })
       .catch((err) => {
         if (!cancelled) setError(err?.message || "Error al cargar el cliente");
@@ -130,6 +137,12 @@ export function ClientDetailModal({ clientId, onClose }: ClientDetailModalProps)
                       {money(client.total_spent ?? 0, currency)}
                     </div>
                     <div className={styles.statLabel}>Total gastado</div>
+                  </div>
+                  <div className={`${styles.statCard} ${clientDebt > 0 ? styles.statCardDebt : ""}`}>
+                    <div className={`${styles.statValue} ${clientDebt > 0 ? styles.statValueDebt : ""}`}>
+                      {money(clientDebt, currency)}
+                    </div>
+                    <div className={styles.statLabel}>Deuda pendiente</div>
                   </div>
                 </div>
               </section>

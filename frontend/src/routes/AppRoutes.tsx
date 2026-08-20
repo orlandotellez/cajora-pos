@@ -17,6 +17,7 @@ const Services = lazy(() => import("@/pages/services/Services"));
 const Suppliers = lazy(() => import("@/pages/suppliers/Suppliers"));
 const Categories = lazy(() => import("@/pages/categories/Categories"));
 const Clients = lazy(() => import("@/pages/clients/Clients"));
+const Credits = lazy(() => import("@/pages/credits/Credits"));
 const SuperAdmin = lazy(() => import("@/pages/super-admin/SuperAdmin"));
 const Subscription = lazy(() => import("@/pages/subscription/Subscription"));
 
@@ -38,6 +39,7 @@ export function AppRoutes() {
         <Route path="/suppliers" element={<Suppliers />} />
         <Route path="/categories" element={<Categories />} />
         <Route path="/clients" element={<Clients />} />
+        <Route path="/credits" element={<Credits />} />
         <Route path="/inventory" element={<Inventory />} />
         <Route path="/sales" element={<Sales />} />
         <Route path="/reports" element={<Reports />} />

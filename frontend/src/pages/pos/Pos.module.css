@@ -778,6 +778,17 @@
   color: var(--foreground);
 }
 
+.debtBadge {
+  font-size: 11px;
+  font-weight: 600;
+  color: #dc2626;
+  background: rgba(220, 38, 38, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .clientSearchWrapper {
   position: relative;
 }
@@ -875,6 +886,16 @@
   height: 16px;
   accent-color: var(--foreground);
   cursor: pointer;
+}
+
+.creditHint {
+  font-size: 12px;
+  color: #d97706;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin: 0;
 }
 
 .mobileCompact .totalsSection {

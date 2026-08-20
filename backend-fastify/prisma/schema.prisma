@@ -63,6 +63,7 @@ model store {
   clients             client[]
   services            service[]
   sales               sale[]
+  credit_payments     credit_payment[]
   inventory_movements inventory_movement[]
   inventory_batches   inventory_batch[]
   settings            settings?
@@ -92,6 +93,7 @@ model user {
   sessions            session[]
   accounts            account[]
   sales               sale[]
+  credit_payments     credit_payment[]
   inventory_movements inventory_movement[]
   inventory_batches   inventory_batch[]
   subscription_events subscription_event[]
@@ -221,6 +223,7 @@ model client {
 
   store  store  @relation(fields: [store_id], references: [id])
   sales  sale[]
+  credit_payments credit_payment[]
 
   @@index([name])
   @@index([phone])
@@ -328,14 +331,38 @@ model sale {
   store   store   @relation(fields: [store_id], references: [id])
   user    user    @relation(fields: [user_id], references: [id])
   client  client? @relation(fields: [client_id], references: [id])
-  items         sale_item[]
-  service_items sale_service[]
-  print_jobs    print_job[]
+  items              sale_item[]
+  service_items      sale_service[]
+  print_jobs         print_job[]
+  credit_payments    credit_payment[]
 
   @@index([user_id])
   @@index([client_id])
   @@index([store_id, created_at])
   @@map("sales")
+}
+
+model credit_payment {
+  id            String  @id @default(uuid())
+  sale_id       String
+  client_id     String
+  amount        Decimal @db.Decimal(10, 2)
+  payment_method String // "efectivo" | "tarjeta" | "transferencia"
+  notes         String?
+  user_id       String
+  store_id      String
+
+  created_at DateTime @default(now()) @db.Timestamptz
+
+  sale   sale   @relation(fields: [sale_id], references: [id])
+  client client @relation(fields: [client_id], references: [id])
+  user   user   @relation(fields: [user_id], references: [id])
+  store  store  @relation(fields: [store_id], references: [id])
+
+  @@index([sale_id])
+  @@index([client_id])
+  @@index([store_id, created_at])
+  @@map("credit_payments")
 }
 
 model sale_service {

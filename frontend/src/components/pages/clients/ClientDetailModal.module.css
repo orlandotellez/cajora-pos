@@ -150,6 +150,15 @@
   margin-top: 4px;
 }
 
+.statCardDebt {
+  border-color: rgba(220, 38, 38, 0.3);
+  background: rgba(220, 38, 38, 0.02);
+}
+
+.statValueDebt {
+  color: #dc2626;
+}
+
 .salesList {
   display: flex;
   flex-direction: column;

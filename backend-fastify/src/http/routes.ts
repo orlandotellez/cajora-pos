@@ -7,6 +7,7 @@ import { inventoryRoutes } from "@/modules/inventory/presentation/inventory.rout
 import { batchInventoryRoutes } from "@/modules/batch-inventory/presentation/batch-inventory.routes";
 import { suppliersRoutes } from "@/modules/suppliers/presentation/suppliers.routes";
 import { clientsRoutes } from "@/modules/clients/presentation/client.routes";
+import { creditRoutes } from "@/modules/credits/presentation/credit.controller";
 import { servicesRoutes } from "@/modules/services/presentation/services.routes";
 import { settingsRoutes } from "@/modules/settings/presentation/settings.routes";
 import { usersRoutes } from "@/modules/users/presentation/users.routes";
@@ -31,6 +32,7 @@ export const routes = async (fastify: FastifyInstance, _opts: FastifyPluginOptio
     business.register(batchInventoryRoutes, { prefix: "/inventory/batches" })
     business.register(suppliersRoutes, { prefix: "/suppliers" })
     business.register(clientsRoutes, { prefix: "/clients" })
+    business.register(creditRoutes, { prefix: "/credits" })
     business.register(settingsRoutes, { prefix: "/settings" })
     business.register(printersRoutes, { prefix: "/printers" })
     business.register(usersRoutes, { prefix: "/users" })

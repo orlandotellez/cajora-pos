@@ -4,6 +4,7 @@ import { money } from "@/lib/format";
 import { PAYMENT_METHODS } from "@/lib/constants";
 import { usePosStore } from "@/store/posStore";
 import { clientsApi, type Client } from "@/api/clients";
+import { creditsApi } from "@/api/credits";
 import styles from "../../../pages/pos/Pos.module.css";
 
 
@@ -56,6 +57,7 @@ export function PosPaymentPanel({
   const [newPhone, setNewPhone] = useState("");
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [clientDebt, setClientDebt] = useState<number | null>(null);
   const clientSearchRef = useRef<HTMLDivElement>(null);
   const clientSearchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -77,6 +79,23 @@ export function PosPaymentPanel({
       }
     }, 300);
   }, []);
+
+  // Fetch client debt when clientId changes
+  useEffect(() => {
+    if (!clientId) {
+      setClientDebt(null);
+      return;
+    }
+    let cancelled = false;
+    creditsApi.getClientDebt(clientId)
+      .then((res) => {
+        if (!cancelled) setClientDebt(res.client.total_debt);
+      })
+      .catch(() => {
+        if (!cancelled) setClientDebt(null);
+      });
+    return () => { cancelled = true; };
+  }, [clientId]);
 
   useEffect(() => {
     searchClients(clientSearch);
@@ -160,6 +179,9 @@ export function PosPaymentPanel({
             <div className={styles.selectedClient}>
               <UserCheck size={14} className={styles.selectedClientIcon} />
               <span className={styles.selectedClientName}>{clientName}</span>
+              {clientDebt != null && clientDebt > 0 && (
+                <span className={styles.debtBadge}>Debe {money(clientDebt, currency)}</span>
+              )}
               <button
                 type="button"
                 onClick={() => { clearClient(); setShowClientSection(false); }}
@@ -279,7 +301,10 @@ export function PosPaymentPanel({
           <label className={styles.fieldLabel}>Método de pago</label>
           <select
             value={payment}
-            onChange={(e) => onPayment(e.target.value)}
+            onChange={(e) => {
+              onPayment(e.target.value);
+              if (e.target.value === "credito") setShowClientSection(true);
+            }}
             className={styles.select}
           >
             {PAYMENT_METHODS.map((pm) => (
@@ -287,6 +312,9 @@ export function PosPaymentPanel({
             ))}
           </select>
         </div>
+        {payment === "credito" && !clientId && (
+          <p className={styles.creditHint}>Selecciona un cliente para vender a crédito</p>
+        )}
         {payment !== "credito" && (
           <>
             {payment === "tarjeta" || payment === "transferencia"
@@ -329,7 +357,12 @@ export function PosPaymentPanel({
 
       <button
         onClick={onCheckout}
-        disabled={cartLength === 0 || checkingOut || ((payment === "efectivo" || manualAmount) && received !== "" && Number(received || 0) < totals.total)}
+        disabled={
+          cartLength === 0 ||
+          checkingOut ||
+          (payment === "credito" && !clientId) ||
+          ((payment === "efectivo" || manualAmount) && received !== "" && Number(received || 0) < totals.total)
+        }
         className={styles.checkoutBtn}
       >
         {checkingOut ? "Procesando venta..." : "Cobrar"}
