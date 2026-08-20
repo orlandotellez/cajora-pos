@@ -358,6 +358,7 @@ export const createPrintersService = (repository: IPrinterRepository) => ({
       include: {
         items: true,
         service_items: { include: { products: true } },
+        client: { select: { name: true } },
       },
     })
     if (!sale) throw new NotFoundError("Venta no encontrada")
@@ -398,6 +399,7 @@ export const createPrintersService = (repository: IPrinterRepository) => ({
         ticket_footer: settings?.ticket_footer ?? null,
         sale_id: sale.id,
         user_name: sale.user_name ?? "",
+        client_name: sale.client?.name ?? null,
         created_at: sale.created_at,
         subtotal: Number(sale.subtotal),
         discount: Number(sale.discount),

@@ -271,6 +271,7 @@ export interface SaleReceiptData {
   ticket_footer: string | null
   sale_id: string
   user_name: string
+  client_name: string | null
   created_at: Date
   subtotal: number
   discount: number
@@ -314,6 +315,7 @@ export function renderSaleReceipt(config: SaleReceiptConfig, data: SaleReceiptDa
   parts.push(enc(dateStr + "\n"))
   parts.push(enc("Ticket: " + data.sale_id.slice(0, 8) + "\n"))
   parts.push(enc("Atendido por: " + data.user_name + "\n"))
+  parts.push(enc("Cliente: " + (data.client_name || "Cliente General") + "\n"))
 
   // Separator
   // Thin separator (dashes like the frontend)
