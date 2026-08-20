@@ -710,6 +710,7 @@
   color: var(--muted-foreground);
   cursor: pointer;
   user-select: none;
+  margin-top: 16px;
 }
 
 .clientToggleCheckbox {
@@ -731,6 +732,7 @@
     opacity: 0;
     transform: translateY(-4px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -787,6 +789,7 @@
   transform: translateY(-50%);
   color: var(--muted-foreground);
   pointer-events: none;
+  margin-top: 5px;
 }
 
 .clientSearchInput {
@@ -799,6 +802,7 @@
   color: var(--foreground);
   font-size: 13px;
   outline: none;
+  margin-top: 10px;
 }
 
 .clientSearchInput:focus {
@@ -938,4 +942,8 @@
   margin-top: 10px;
   height: 44px;
   font-size: 15px;
+}
+
+.mobileCompact .clientToggle {
+  margin-top: 0px;
 }
