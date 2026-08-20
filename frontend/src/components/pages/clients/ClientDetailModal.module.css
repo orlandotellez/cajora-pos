@@ -150,33 +150,78 @@
   margin-top: 4px;
 }
 
-.salesTable {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
+.salesList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.salesTable th {
+.saleCard {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.saleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--foreground);
   text-align: left;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--border);
+}
+
+.saleRow:hover {
+  background: var(--accent);
+}
+
+.saleArrow {
+  display: flex;
+  align-items: center;
   color: var(--muted-foreground);
-  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.saleDate {
+  flex: 1;
+}
+
+.salePayment {
+  color: var(--muted-foreground);
   font-size: 12px;
 }
 
-.salesTable td {
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--border);
-  color: var(--foreground);
+.saleTotal {
+  font-weight: 600;
+  white-space: nowrap;
 }
 
-.alignRight {
-  text-align: right;
+.saleItems {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border);
+  background: var(--accent);
 }
 
-.amount {
-  font-weight: 500;
+.saleItem {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 12px 6px 34px;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+.saleItemName {
+  flex: 1;
+}
+
+.saleItemPrice {
+  white-space: nowrap;
 }
 
 .emptyText {

@@ -154,6 +154,20 @@ export const ClientRepository: IClientRepository = {
         total: true,
         payment_method: true,
         created_at: true,
+        items: {
+          select: {
+            product_name: true,
+            quantity: true,
+            line_total: true,
+          },
+        },
+        service_items: {
+          select: {
+            service_name: true,
+            base_price: true,
+            line_total: true,
+          },
+        },
       },
       orderBy: { created_at: "desc" },
       take: limit,
@@ -163,6 +177,16 @@ export const ClientRepository: IClientRepository = {
       total: Number(s.total),
       payment_method: s.payment_method,
       created_at: s.created_at,
+      items: s.items.map((i) => ({
+        name: i.product_name,
+        quantity: i.quantity,
+        line_total: Number(i.line_total),
+      })),
+      service_items: s.service_items.map((si) => ({
+        name: si.service_name,
+        quantity: 1,
+        line_total: Number(si.line_total),
+      })),
     }))
   },
 }

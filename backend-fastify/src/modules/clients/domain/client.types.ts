@@ -19,11 +19,19 @@ export interface IClientListResponse {
   limit: number
 }
 
+export interface IClientSaleItem {
+  name: string
+  quantity: number
+  line_total: number
+}
+
 export interface IClientSaleSummary {
   id: string
   total: number
   payment_method: string
   created_at: string
+  items: IClientSaleItem[]
+  service_items: IClientSaleItem[]
 }
 
 export interface IClientDetailResponse extends IClientResponse {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { X, Loader2 } from "lucide-react";
+import { X, Loader2, ChevronDown, ChevronRight } from "lucide-react";
 import { clientsApi, type ClientDetailResponse } from "@/api/clients";
 import { money } from "@/lib/format";
 import { usePosStore } from "@/store/posStore";
@@ -31,6 +31,7 @@ export function ClientDetailModal({ clientId, onClose }: ClientDetailModalProps)
   const currency = usePosStore((s) => s.currency);
   const [client, setClient] = useState<ClientDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [expandedSale, setExpandedSale] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -139,26 +140,44 @@ export function ClientDetailModal({ clientId, onClose }: ClientDetailModalProps)
                 {client.recent_sales.length === 0 ? (
                   <p className={styles.emptyText}>Este cliente aún no tiene compras registradas.</p>
                 ) : (
-                  <table className={styles.salesTable}>
-                    <thead>
-                      <tr>
-                        <th>Fecha</th>
-                        <th>Pago</th>
-                        <th className={styles.alignRight}>Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {client.recent_sales.map((sale) => (
-                        <tr key={sale.id}>
-                          <td>{formatDate(sale.created_at)}</td>
-                          <td>{PAYMENT_LABELS[sale.payment_method] ?? sale.payment_method}</td>
-                          <td className={`${styles.alignRight} ${styles.amount}`}>
-                            {money(sale.total, currency)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  <div className={styles.salesList}>
+                    {client.recent_sales.map((sale) => {
+                      const allItems = [...sale.items, ...sale.service_items];
+                      const isExpanded = expandedSale === sale.id;
+                      return (
+                        <div key={sale.id} className={styles.saleCard}>
+                          <button
+                            type="button"
+                            className={styles.saleRow}
+                            onClick={() => setExpandedSale(isExpanded ? null : sale.id)}
+                          >
+                            <span className={styles.saleArrow}>
+                              {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                            </span>
+                            <span className={styles.saleDate}>{formatDate(sale.created_at)}</span>
+                            <span className={styles.salePayment}>{PAYMENT_LABELS[sale.payment_method] ?? sale.payment_method}</span>
+                            <span className={styles.saleTotal}>{money(sale.total, currency)}</span>
+                          </button>
+                          {isExpanded && allItems.length > 0 && (
+                            <div className={styles.saleItems}>
+                              {sale.items.map((item, i) => (
+                                <div key={`p-${i}`} className={styles.saleItem}>
+                                  <span className={styles.saleItemName}>{item.quantity}× {item.name}</span>
+                                  <span className={styles.saleItemPrice}>{money(item.line_total, currency)}</span>
+                                </div>
+                              ))}
+                              {sale.service_items.map((item, i) => (
+                                <div key={`s-${i}`} className={styles.saleItem}>
+                                  <span className={styles.saleItemName}>{item.quantity}× {item.name}</span>
+                                  <span className={styles.saleItemPrice}>{money(item.line_total, currency)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
               </section>
             </>

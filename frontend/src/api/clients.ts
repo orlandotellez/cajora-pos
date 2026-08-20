@@ -21,11 +21,19 @@ export interface ClientListResponse {
   limit: number
 }
 
+export interface ClientSaleItem {
+  name: string
+  quantity: number
+  line_total: number
+}
+
 export interface ClientSaleSummary {
   id: string
   total: number
   payment_method: string
   created_at: string
+  items: ClientSaleItem[]
+  service_items: ClientSaleItem[]
 }
 
 export interface ClientDetailResponse extends Client {

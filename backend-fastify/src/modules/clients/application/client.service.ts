@@ -62,6 +62,8 @@ export const createClientService = (repository: IClientRepository) => ({
         total: s.total,
         payment_method: s.payment_method,
         created_at: s.created_at instanceof Date ? s.created_at.toISOString() : s.created_at,
+        items: s.items,
+        service_items: s.service_items,
       })),
     }
   },
