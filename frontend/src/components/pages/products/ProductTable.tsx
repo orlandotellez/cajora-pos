@@ -89,6 +89,11 @@ export function ProductTable({
             }}
           >
             {p.stock}
+            {p.unit_type && (
+              <span style={{ fontSize: "11px", color: "var(--muted-foreground)", marginLeft: 3 }}>
+                {UNIT_TYPE_LABELS[p.unit_type] || p.unit_type}
+              </span>
+            )}
           </span>
         ),
       },
