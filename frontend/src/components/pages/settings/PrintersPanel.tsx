@@ -6,6 +6,7 @@ import type {
   CreatePrinterPayload,
 } from "@/api/printers";
 import { sendBytesToPrinter } from "@/lib/tcp-printer";
+import { printReceiptBrowser } from "@/lib/browser-print";
 import { isTauriRuntime } from "@/lib/fetch";
 import { useModalBack } from "@/hooks/useModalBack";
 import { DataTable, type Column } from "@/components/common/DataTable";
@@ -182,38 +183,104 @@ export default function PrintersPanel() {
     }
   }
 
-  async function runTestPrint(id: string) {
+  async function runTestPrint() {
     setBusy(true);
     try {
-      const res = await printersApi.testPrint(id, 1);
-      if (!res.ticket_base64 || !res.printer) {
-        toast("El servidor no generó el ticket de prueba", "error");
+      // Validar datos del formulario
+      if (form.connection_type === "net" && !isValidIPv4(form.address)) {
+        toast("Ingresá una IP válida para probar", "error");
+        return;
+      }
+      if (form.connection_type !== "net" && !form.address.trim()) {
+        toast("Ingresá la dirección del dispositivo para probar", "error");
         return;
       }
 
       if (isTauriRuntime()) {
-        // Tauri (desktop/Android): envía TCP directo desde el dispositivo
+        // Tauri: generar ticket ESC/POS de prueba y enviar TCP directo
+        const ESC = String.fromCharCode(27);
+        const NL = String.fromCharCode(10);
+        const printerName = form.name || "Tienda Test";
+        const addr = form.address + (form.port ? ":" + form.port : "");
+        const now = new Date();
+        const dateStr = now.toLocaleDateString("es-MX") + " " + now.toLocaleTimeString("es-MX");
+        const C = String.fromCharCode(204); // ñ en CP850
+        const A1 = String.fromCharCode(160); // á
+        const E1 = String.fromCharCode(130); // é
+        const I1 = String.fromCharCode(161); // í
+        const O1 = String.fromCharCode(162); // ó
+        const U1 = String.fromCharCode(163); // ú
+        const testText =
+          ESC + "@" + // Initialize printer
+          ESC + "a" + String.fromCharCode(1) + // Center align
+          ESC + "!" + String.fromCharCode(1) + // Bold on (small)
+          "TIENDA EJEMPLO S.A." + NL +
+          "Direccion: 1ra Calle, 2da Avenida" + NL +
+          "Tel: (505) 2222-3333" + NL +
+          ESC + "!" + String.fromCharCode(0) + // Bold off
+          NL +
+          "--------------------------------" + NL +
+          ESC + "a" + String.fromCharCode(0) + // Left align
+          "Fecha: " + dateStr + NL +
+          "Ticket: TEST-001" + NL +
+          "Cajero: Admin Test" + NL +
+          "Cliente: Publico General" + NL +
+          NL +
+          "--------------------------------" + NL +
+          "Cant  Descripcion        Total" + NL +
+          "--------------------------------" + NL +
+          "  2   Coca Cola 350ml    C$ 60.00" + NL +
+          "  1   Harina Prima 1kg   C$ 45.00" + NL +
+          "  3   Jabon Dove         C$ 105.00" + NL +
+          "  1   Pan Bimbo 600g     C$ 38.00" + NL +
+          "--------------------------------" + NL +
+          ESC + "a" + String.fromCharCode(2) + // Right align
+          "Subtotal:       C$ 248.00" + NL +
+          "Descuento:      C$  10.00" + NL +
+          ESC + "!" + String.fromCharCode(1) + // Bold on
+          "TOTAL:          C$ 238.00" + NL +
+          ESC + "!" + String.fromCharCode(0) + // Bold off
+          "Efectivo:       C$ 250.00" + NL +
+          "Cambio:         C$  12.00" + NL +
+          "--------------------------------" + NL +
+          ESC + "a" + String.fromCharCode(1) + // Center align
+          NL +
+          "--- Prueba de caracteres ---" + NL +
+          "ñ Ñ acento: " + A1 + E1 + I1 + O1 + U1 + NL +
+          "Caracteres: @ # $ % & * ! ?" + NL +
+          NL +
+          "*** GRACIAS POR SU COMPRA ***" + NL +
+          NL + NL + NL +
+          ESC + "d" + String.fromCharCode(3) + // Feed 3 lines
+          ESC + "m"; // Cut
+        const testBytes = btoa(testText);
         const tcpResult = await sendBytesToPrinter(
-          res.ticket_base64,
-          res.printer.address,
-          res.printer.port,
+          testBytes,
+          form.address,
+          form.port ?? 9100,
         );
-
         if (tcpResult.success) {
           toast(`Test exitoso: ${tcpResult.bytes_sent} bytes en ${tcpResult.duration_ms}ms`, "success");
         } else {
           toast(tcpResult.error || "Falló la conexión con la impresora", "error");
         }
       } else {
-        // Web: envía TCP proxeado por el backend. Si la conexión falla el backend
-        // responde !ok (502) y client.ts lanza ApiError → cae al catch de abajo.
-        const proxyResult = await printersApi.sendTcp(
-          res.ticket_base64,
-          res.printer.address,
-          res.printer.port,
-        );
-
-        toast(`Test exitoso: ${proxyResult.bytes_sent} bytes en ${proxyResult.duration_ms}ms`, "success");
+        // Web: imprimir recibo de prueba desde el navegador
+        printReceiptBrowser({
+          storeName: form.name || "Test de Impresión",
+          saleId: "test-000000",
+          date: new Date().toLocaleString("es-MX"),
+          userName: "Sistema",
+          clientName: "Test",
+          items: [{ name: "Producto de prueba", quantity: 1, unitPrice: 10, lineTotal: 10 }],
+          subtotal: 10,
+          discount: 0,
+          total: 10,
+          paymentMethod: "efectivo",
+          amountReceived: 10,
+          change: 0,
+        });
+        toast("Recibo de prueba abierto para impresión", "success");
       }
     } catch (err) {
       toast(`Test falló: ${(err as ApiError).message}`, "error");
@@ -525,22 +592,16 @@ export default function PrintersPanel() {
 
               {error && <div className={styles.toastError}>{error}</div>}
 
-              {editingId && (
-                <div className={styles.drawerActionsRow}>
+              <div className={styles.drawerActionsRow}>
                   <button
                     type="button"
                     className={styles.secondaryBtn}
-                    onClick={() => runTestPrint(editingId)}
+                    onClick={() => runTestPrint()}
                     disabled={busy}
-                    title={
-                      form.connection_type === "net"
-                        ? undefined
-                        : "Probar impresión solo para impresoras de red"
-                    }
                   >
                     Probar impresión
                   </button>
-                  {!form.is_default && (
+                  {editingId && !form.is_default && (
                     <button
                       type="button"
                       className={styles.secondaryBtn}
@@ -551,7 +612,6 @@ export default function PrintersPanel() {
                     </button>
                   )}
                 </div>
-              )}
 
               <div className={styles.modalFooter}>
                 <button

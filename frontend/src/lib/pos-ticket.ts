@@ -36,7 +36,7 @@ export function printTicket(
       .reduce((s, p) => s + p.unitPrice * p.quantity, 0);
     const lineTotal = baseTotal + additiveTotal;
     return buildTicketServiceRows({
-      displayName: `${svcQty}× ${svc.name}`,
+      displayName: `${svcQty}x ${svc.name}`,
       basePrice: baseTotal,
       lineTotal,
       products,

@@ -173,7 +173,7 @@ export function PosCompletedSaleModal({
                           .filter((sp) => sp.quantity > 0 && !sp.affects_price)
                           .map((sp) => (
                             <tr key={`${x.id}-inc-${sp.product_id}`} className={styles.detailsTrSub}>
-                              <td colSpan={3}>Incluye: {sp.product_name} × {sp.quantity * svcQty}</td>
+                              <td colSpan={3}>Incluye: {sp.product_name} x {sp.quantity * svcQty}</td>
                               <td className={styles.detailsTdRight}>—</td>
                             </tr>
                           ))}
@@ -181,7 +181,7 @@ export function PosCompletedSaleModal({
                           .filter((sp) => sp.quantity > 0 && sp.affects_price)
                           .map((sp) => (
                             <tr key={`${x.id}-add-${sp.product_id}`} className={styles.detailsTrSub}>
-                              <td>+ {sp.product_name} × {sp.quantity * svcQty}</td>
+                              <td>+ {sp.product_name} x {sp.quantity * svcQty}</td>
                               <td></td>
                               <td className={styles.detailsTdRight}>{money(sp.unit_price, currency)}</td>
                               <td className={styles.detailsTdRight}>{money(sp.unit_price * sp.quantity * svcQty, currency)}</td>
@@ -240,13 +240,23 @@ export function PosCompletedSaleModal({
             <div className={styles.divider} />
 
             <table className={styles.table}>
+              <thead>
+                <tr>
+                  <td className={styles.tdLeft}>Cant</td>
+                  <td className={styles.tdLeft}>Producto</td>
+                  <td className={styles.tdRight}>P.Unit</td>
+                  <td className={styles.tdRight}>Subt</td>
+                </tr>
+              </thead>
               <tbody>
                 {completedSale.cart.map((x) => {
                   if (x._type === "product") {
                     const prod = x as ProductCartItem;
                     return (
                       <tr key={x.id}>
-                        <td className={styles.tdLeft}>{x.quantity}× {x.name}</td>
+                        <td className={styles.tdLeft}>{x.quantity}</td>
+                        <td className={styles.tdLeft}>{x.name}</td>
+                        <td className={styles.tdRight}>{money(prod.price, currency)}</td>
                         <td className={styles.tdRight}>{money(prod.price * x.quantity, currency)}</td>
                       </tr>
                     );
@@ -261,27 +271,33 @@ export function PosCompletedSaleModal({
                   return (
                     <React.Fragment key={x.id}>
                       <tr>
-                        <td className={styles.tdLeft}>{svcQty}× {svc.name}</td>
+                        <td className={styles.tdLeft}>{svcQty}</td>
+                        <td className={styles.tdLeft}>{svc.name}</td>
+                        <td className={styles.tdRight}>{money(svc.base_price, currency)}</td>
                         <td className={styles.tdRight}>{money(baseTotal, currency)}</td>
                       </tr>
                       {svc.products
                         .filter((sp) => sp.quantity > 0 && !sp.affects_price)
                         .map((sp) => (
                           <tr key={`${x.id}-inc-${sp.product_id}`}>
-                            <td className={styles.tdSub} colSpan={2}>{sp.product_name} × {sp.quantity * svcQty}</td>
+                            <td className={styles.tdSub} colSpan={2}>Incluye: {sp.product_name} x{sp.quantity * svcQty}</td>
+                            <td className={styles.tdRightSub}></td>
+                            <td className={styles.tdRightSub}></td>
                           </tr>
                         ))}
                       {svc.products
                         .filter((sp) => sp.quantity > 0 && sp.affects_price)
                         .map((sp) => (
                           <tr key={`${x.id}-add-${sp.product_id}`}>
-                            <td className={styles.tdSub}>+ {sp.product_name} × {sp.quantity * svcQty}</td>
+                            <td className={styles.tdSub}>{sp.quantity * svcQty}</td>
+                            <td className={styles.tdSub}>+ {sp.product_name}</td>
+                            <td className={styles.tdRightSub}>{money(sp.unit_price, currency)}</td>
                             <td className={styles.tdRightSub}>{money(sp.unit_price * sp.quantity * svcQty, currency)}</td>
                           </tr>
                         ))}
                       {additiveTotal > 0 && (
                         <tr key={`${x.id}-total`}>
-                          <td className={styles.tdTotalLine}>Total servicio</td>
+                          <td className={styles.tdTotalLine} colSpan={3}>Total servicio</td>
                           <td className={styles.tdRightTotalLine}>{money(baseTotal + additiveTotal, currency)}</td>
                         </tr>
                       )}

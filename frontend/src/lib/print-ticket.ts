@@ -7,7 +7,7 @@ export interface TicketProductRow {
 }
 
 export function buildTicketProductRow(item: TicketProductRow): string {
-  return `<tr><td>${item.quantity}× ${item.name}</td><td style="text-align:right">${money(item.lineTotal)}</td></tr>`;
+  return `<tr><td>${item.quantity}x ${item.name}</td><td style="text-align:right">${money(item.lineTotal)}</td></tr>`;
 }
 
 
@@ -26,7 +26,7 @@ export function buildTicketServiceRows(svc: {
 }): string {
   const included = svc.products
     .filter((p) => !p.affectsPrice && p.quantity > 0)
-    .map((p) => `${p.name} × ${p.quantity}`);
+    .map((p) => `${p.name} x ${p.quantity}`);
 
   const additives = svc.products.filter((p) => p.affectsPrice && p.quantity > 0);
 
@@ -41,7 +41,7 @@ export function buildTicketServiceRows(svc: {
 
   for (const p of additives) {
     rows.push(
-      `<tr><td style="padding-left:8px;font-size:10px">+ ${p.name} × ${p.quantity}</td><td style="text-align:right;font-size:10px">${money(p.unitPrice * p.quantity)}</td></tr>`
+      `<tr><td style="padding-left:8px;font-size:10px">+ ${p.name} x ${p.quantity}</td><td style="text-align:right;font-size:10px">${money(p.unitPrice * p.quantity)}</td></tr>`
     );
   }
 

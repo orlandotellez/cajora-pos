@@ -352,6 +352,7 @@ export const createPrintersService = (repository: IPrinterRepository) => ({
     const items: SaleReceiptItem[] = (sale.items || []).map((i) => ({
       product_name: i.product_name,
       quantity: i.quantity,
+      unit_price: Number(i.unit_price),
       line_total: Number(i.line_total),
     }))
 

@@ -48,7 +48,7 @@ function buildReceiptHTML(data: ReceiptData): string {
     .map(
       (item) =>
         `<tr>
-          <td style="text-align:left;padding:2px 0">${item.quantity}× ${item.name}</td>
+          <td style="text-align:left;padding:2px 0">${item.quantity}x ${item.name}</td>
           <td style="text-align:right;padding:2px 0;font-variant-numeric:tabular-nums">$${item.lineTotal.toFixed(2)}</td>
         </tr>`
     )
@@ -58,19 +58,19 @@ function buildReceiptHTML(data: ReceiptData): string {
     data.serviceItems
       ?.map((svc) => {
         let html = `<tr>
-          <td style="text-align:left;padding:2px 0">${svc.quantity}× ${svc.name}</td>
+          <td style="text-align:left;padding:2px 0">${svc.quantity}x ${svc.name}</td>
           <td style="text-align:right;padding:2px 0;font-variant-numeric:tabular-nums">$${svc.basePrice.toFixed(2)}</td>
         </tr>`;
         svc.products
           .filter((sp) => sp.isIncluded)
           .forEach((sp) => {
-            html += `<tr><td colspan="2" style="padding:1px 0 1px 8px;font-size:10px;color:#888">Incluye: ${sp.name} × ${sp.quantity}</td></tr>`;
+            html += `<tr><td colspan="2" style="padding:1px 0 1px 8px;font-size:10px;color:#888">Incluye: ${sp.name} x ${sp.quantity}</td></tr>`;
           });
         svc.products
           .filter((sp) => sp.isAdditive)
           .forEach((sp) => {
             html += `<tr>
-              <td style="padding:1px 0 1px 8px;font-size:10px;color:#888">+ ${sp.name} × ${sp.quantity}</td>
+              <td style="padding:1px 0 1px 8px;font-size:10px;color:#888">+ ${sp.name} x ${sp.quantity}</td>
               <td style="text-align:right;padding:1px 0;font-size:10px;color:#888">$${sp.lineTotal.toFixed(2)}</td>
             </tr>`;
           });

@@ -246,6 +246,7 @@ export interface SaleReceiptConfig {
 export interface SaleReceiptItem {
   product_name: string
   quantity: number
+  unit_price: number
   line_total: number
 }
 
@@ -322,13 +323,56 @@ export function renderSaleReceipt(config: SaleReceiptConfig, data: SaleReceiptDa
   parts.push(CMD.ALIGN_LEFT)
   parts.push(enc(dash + "\n"))
 
+  // Column layout for 80mm
+  const COL_QTY = 4
+  const COL_PRICE = 10
+  const COL_SUB = 10
+  const COL_GAP = 1
+  const COL_NAME_MAX = chars - COL_QTY - COL_GAP - COL_PRICE - COL_GAP - COL_SUB
+
+  // Column headers
+  if (chars >= 40 && COL_NAME_MAX >= 8) {
+    const hdrQty = "Cant"
+    const hdrName = "Producto"
+    const hdrPrice = "P.Unit"
+    const hdrSub = "Subt"
+    parts.push(enc(
+      hdrQty.padEnd(COL_QTY) +
+      " ".repeat(COL_GAP) +
+      hdrName.padEnd(COL_NAME_MAX) +
+      " ".repeat(COL_GAP) +
+      hdrPrice.padStart(COL_PRICE) +
+      " ".repeat(COL_GAP) +
+      hdrSub.padStart(COL_SUB) + "\n"
+    ))
+    parts.push(enc(dash + "\n"))
+  }
+
   // Regular items
   for (const item of data.items) {
-    const line = `${item.quantity}× ${item.product_name}`
-    const price = fmt2(item.line_total)
-    const maxNameLen = chars - price.length - 2
-    const truncated = line.length > maxNameLen ? line.slice(0, maxNameLen) + ".." : line
-    parts.push(enc(truncated + " ".repeat(Math.max(1, chars - truncated.length - price.length)) + price + "\n"))
+    if (chars >= 40 && COL_NAME_MAX >= 8) {
+      // 80mm: 4-column layout
+      const unit = item.unit_price ?? item.line_total / item.quantity
+      const name = item.product_name.length > COL_NAME_MAX
+        ? item.product_name.slice(0, COL_NAME_MAX - 2) + ".."
+        : item.product_name
+      parts.push(enc(
+        String(item.quantity).padEnd(COL_QTY) +
+        " ".repeat(COL_GAP) +
+        name.padEnd(COL_NAME_MAX) +
+        " ".repeat(COL_GAP) +
+        fmt2(unit).padStart(COL_PRICE) +
+        " ".repeat(COL_GAP) +
+        fmt2(item.line_total).padStart(COL_SUB) + "\n"
+      ))
+    } else {
+      // 58mm: simple 2-column
+      const line = `${item.quantity}x ${item.product_name}`
+      const price = fmt2(item.line_total)
+      const maxNameLen = chars - price.length - 2
+      const truncated = line.length > maxNameLen ? line.slice(0, maxNameLen) + ".." : line
+      parts.push(enc(truncated + " ".repeat(Math.max(1, chars - truncated.length - price.length)) + price + "\n"))
+    }
   }
 
   // Service items
@@ -340,12 +384,12 @@ export function renderSaleReceipt(config: SaleReceiptConfig, data: SaleReceiptDa
       const additives = svc.products.filter((p) => p.affects_price && p.quantity > 0)
 
       if (included.length > 0) {
-        const names = included.map((p) => `${p.product_name} ×${p.quantity}`).join(", ")
+        const names = included.map((p) => `${p.product_name} x${p.quantity}`).join(", ")
         parts.push(enc("  Incluye: " + names + "\n"))
       }
 
       for (const p of additives) {
-        const addLine = "  + " + p.product_name + " ×" + p.quantity
+        const addLine = "  + " + p.product_name + " x" + p.quantity
         const price = fmt2(p.line_total)
         parts.push(enc(priceRight(addLine, price, chars) + "\n"))
       }

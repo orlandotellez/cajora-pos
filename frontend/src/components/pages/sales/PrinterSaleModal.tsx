@@ -232,13 +232,13 @@ export const PrinterSaleModal = ({
                         </tr>
                         {svc.products.filter((sp) => sp.quantity > 0 && !sp.affects_price).map((sp) => (
                           <tr key={`${svc.id}-inc-${sp.id}`} className={styles.detailsTrSub}>
-                            <td colSpan={3}>Incluye: {sp.product_name} × {sp.quantity}</td>
+                            <td colSpan={3}>Incluye: {sp.product_name} x {sp.quantity}</td>
                             <td className={styles.detailsTdRight}>—</td>
                           </tr>
                         ))}
                         {svc.products.filter((sp) => sp.quantity > 0 && sp.affects_price).map((sp) => (
                           <tr key={`${svc.id}-add-${sp.id}`} className={styles.detailsTrSub}>
-                            <td>+ {sp.product_name} × {sp.quantity}</td>
+                            <td>+ {sp.product_name} x {sp.quantity}</td>
                             <td></td>
                             <td className={styles.detailsTdRight}>{money(sp.unit_price)}</td>
                             <td className={styles.detailsTdRight}>{money(sp.unit_price * sp.quantity)}</td>
@@ -299,33 +299,49 @@ export const PrinterSaleModal = ({
               <div className={styles.ticketDivider}></div>
 
               <table className={styles.ticketTable}>
+                <thead>
+                  <tr>
+                    <td className={styles.ticketTdLeft}>Cant</td>
+                    <td className={styles.ticketTdLeft}>Producto</td>
+                    <td className={styles.ticketTdRight}>P.Unit</td>
+                    <td className={styles.ticketTdRight}>Subt</td>
+                  </tr>
+                </thead>
                 <tbody>
                   {(selected.items ?? []).map((item) => (
                     <tr key={item.id}>
-                      <td className={styles.ticketTdLeft}>{item.quantity}× {item.product_name}</td>
+                      <td className={styles.ticketTdLeft}>{item.quantity}</td>
+                      <td className={styles.ticketTdLeft}>{item.product_name}</td>
+                      <td className={styles.ticketTdRight}>{money(item.unit_price)}</td>
                       <td className={styles.ticketTdRight}>{money(item.line_total)}</td>
                     </tr>
                   ))}
                   {(selected.service_items ?? []).map((svc) => (
                     <Fragment key={svc.id}>
                       <tr>
+                        <td className={styles.ticketTdLeft}>1</td>
                         <td className={styles.ticketTdLeft}>{svc.service_name}</td>
                         <td className={styles.ticketTdRight}>{money(svc.base_price)}</td>
+                        <td className={styles.ticketTdRight}>{money(svc.line_total)}</td>
                       </tr>
                       {svc.products.filter((sp) => sp.quantity > 0 && !sp.affects_price).map((sp) => (
                         <tr key={`${svc.id}-inc-${sp.id}`}>
-                          <td className={styles.ticketTdSub} colSpan={2}>Incluye: {sp.product_name} × {sp.quantity}</td>
+                          <td className={styles.ticketTdSub} colSpan={2}>Incluye: {sp.product_name} x{sp.quantity}</td>
+                          <td className={styles.ticketTdRightSub}></td>
+                          <td className={styles.ticketTdRightSub}></td>
                         </tr>
                       ))}
                       {svc.products.filter((sp) => sp.quantity > 0 && sp.affects_price).map((sp) => (
                         <tr key={`${svc.id}-add-${sp.id}`}>
-                          <td className={styles.ticketTdSub}>+ {sp.product_name} × {sp.quantity}</td>
+                          <td className={styles.ticketTdSub}>{sp.quantity}</td>
+                          <td className={styles.ticketTdSub}>+ {sp.product_name}</td>
+                          <td className={styles.ticketTdRightSub}>{money(sp.unit_price)}</td>
                           <td className={styles.ticketTdRightSub}>{money(sp.unit_price * sp.quantity)}</td>
                         </tr>
                       ))}
                       {svc.products.some((sp) => sp.affects_price) && (
                         <tr>
-                          <td className={styles.ticketTdTotalLine}>Total servicio</td>
+                          <td className={styles.ticketTdTotalLine} colSpan={3}>Total servicio</td>
                           <td className={styles.ticketTdRightTotalLine}>{money(svc.line_total)}</td>
                         </tr>
                       )}
