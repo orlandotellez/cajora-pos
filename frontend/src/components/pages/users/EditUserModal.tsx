@@ -1,4 +1,5 @@
-import { X } from "lucide-react"
+import { useState } from "react"
+import { X, Eye, EyeOff } from "lucide-react"
 import styles from "./EditUserModal.module.css"
 import { useModalBack } from "@/hooks/useModalBack"
 
@@ -29,6 +30,7 @@ export const EditUserModal = ({
 }: EditUserModalProps) => {
   // Botón de retroceso de Android / gesto de regreso cierra el modal.
   useModalBack(setEditing);
+  const [showPassword, setShowPassword] = useState(false);
   return (
     <>
       <div className={styles.overlay} onClick={setEditing}>
@@ -54,7 +56,24 @@ export const EditUserModal = ({
                 Contraseña {isNew && <span className={styles["required-star"]}>*</span>}
                 {!isNew && <span className={styles["password-hint"]}>(dejar vacío para mantener)</span>}
               </label>
-              <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className={styles.input} required={isNew} minLength={isNew ? 8 : undefined} />
+              <div className={styles.passwordWrapper}>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  className={`${styles.input} ${styles.passwordInput}`}
+                  required={isNew}
+                  minLength={isNew ? 8 : undefined}
+                />
+                <button
+                  type="button"
+                  className={styles.eyeBtn}
+                  onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
             </div>
             <div className={styles.field}>
               <label className={styles.fieldLabel}>Rol</label>

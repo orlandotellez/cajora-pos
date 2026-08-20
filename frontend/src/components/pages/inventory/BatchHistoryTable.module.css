@@ -156,7 +156,7 @@
 
 .pageActive {
   background: var(--primary, #3b82f6) !important;
-  color: #000 !important;
+  color: var(--background) !important;
   border-color: var(--primary, #3b82f6) !important;
 }
 

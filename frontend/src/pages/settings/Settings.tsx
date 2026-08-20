@@ -180,19 +180,6 @@ function GeneralSettings() {
         />
       </div>
 
-      <div className={styles.fieldRow}>
-        <div className={styles.field}>
-          <label className={styles.label}>Stock mínimo por defecto</label>
-          <input
-            type="number"
-            value={form.low_stock_threshold}
-            onChange={(e) => setForm({ ...form, low_stock_threshold: Number(e.target.value) })}
-            onFocus={(e) => e.currentTarget.select()}
-            className={styles.input}
-          />
-        </div>
-      </div>
-
       <div className={styles.field}>
         <label className={styles.label}>Moneda predeterminada</label>
         <select
