@@ -177,10 +177,28 @@ const links = [
     })
     .filter(Boolean);
 
+  // ¿Estamos en la home? Solo ahí existen las secciones del scroll-spy.
+  const isHome = location.pathname.replace(/\/+$/, '') === baseUrl.replace(/\/+$/, '');
+  const normalizePath = (p) => p.replace(/\/+$/, '');
+
   const setActive = (id) => {
+    const path = normalizePath(location.pathname);
     navLinks.forEach((link) => {
       const href = link.getAttribute('href') ?? '';
-      const isActive = id === '' ? href === baseUrl : href.endsWith(`#${id}`);
+      const hashIndex = href.indexOf('#');
+      let isActive;
+
+      if (hashIndex !== -1) {
+        // Link ancla: activo solo en la home, según la sección visible por scroll.
+        isActive = isHome && id !== '' && href.endsWith(`#${id}`);
+      } else if (normalizePath(href) === normalizePath(baseUrl)) {
+        // "Inicio": activo solo en la home cuando ninguna sección ancla está visible.
+        isActive = isHome && id === '';
+      } else {
+        // Link a otra página (ej. /descargar): activo si la ruta actual coincide.
+        isActive = path === normalizePath(href);
+      }
+
       link.classList.toggle('is-active', isActive);
       if (isActive) {
         link.setAttribute('aria-current', 'true');

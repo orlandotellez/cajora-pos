@@ -1,18 +1,16 @@
 ---
-import Icon from '../../components/Icon.astro';
----
 
 <section class="hero" id="top">
   <div class="hero__glow" aria-hidden="true"></div>
 
   <div class="container hero__inner">
     <h1 class="hero__title">
-      Tu punto de venta, sin comisiones ni letra pequeña
+      Tu punto de venta, tus datos, tu negocio
     </h1>
 
     <p class="hero__lead">
-      Gestiona tus ventas, inventario y reportes con una herramienta diseñada para la eficiencia.
-      Disponible para Web, Desktop y Android.
+      Vendé, controlá tu inventario y crecé con una herramienta que funciona para vos.
+      Disponible gratis en tu servidor o en la nube.
     </p>
 
     <div class="hero__ctas">
@@ -23,8 +21,13 @@ import Icon from '../../components/Icon.astro';
     <div class="hero__mockup" aria-label="Vista previa del sistema">
       <div class="mockup-frame">
         <div class="mockup-screen">
-          <Icon name="layout-dashboard" size={48} class="mockup__icon" />
-          <span class="mockup__label">Vista previa del sistema</span>
+          <img
+            src={import.meta.env.BASE_URL + '1.webp'}
+            alt="Vista previa del sistema CajoraPOS"
+            class="mockup__img"
+            width="1755"
+            height="896"
+          />
         </div>
       </div>
     </div>
@@ -117,25 +120,13 @@ import Icon from '../../components/Icon.astro';
     background: var(--bg);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    aspect-ratio: 16 / 9;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    color: var(--text-muted);
+    overflow: hidden;
   }
 
-  .mockup__icon {
-    opacity: 0.2;
-  }
-
-  .mockup__label {
-    font-size: 0.875rem;
-    font-weight: 500;
-    opacity: 0.4;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
+  .mockup__img {
+    display: block;
+    width: 100%;
+    height: auto;
   }
 
   @media (min-width: 640px) {
