@@ -16,10 +16,10 @@
 import "dotenv/config"
 import { env } from "@/config/env"
 
-const PRODUCT_NAME = "Cursinet Cloud"
-const PRODUCT_DESCRIPTION = "Plan Cloud de Cursinet POS: suscripción mensual con hosting y respaldos."
-const PLAN_NAME = "Cursinet Cloud — Mensual $15.99"
-const PLAN_DESCRIPTION = "Acceso al plan Cloud de Cursinet POS: $15.99 USD por mes."
+const PRODUCT_NAME = "CajoraPOS Cloud"
+const PRODUCT_DESCRIPTION = "Plan Cloud de CajoraPOS: suscripción mensual con hosting y respaldos."
+const PLAN_NAME = "CajoraPOS Cloud — Mensual $15.99"
+const PLAN_DESCRIPTION = "Acceso al plan Cloud de CajoraPOS: $15.99 USD por mes."
 const PRICE_USD = "15.99"
 
 interface PayPalProduct {
