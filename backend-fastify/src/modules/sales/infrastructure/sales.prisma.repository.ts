@@ -13,6 +13,7 @@ const saleInclude = {
       product: { select: { id: true, name: true, price: true } },
     },
   },
+  client: { select: { id: true, name: true } },
 } as const
 
 type ServiceProductWithProduct = Prisma.service_productGetPayload<{
@@ -33,6 +34,7 @@ export const SaleRepository: ISaleRepository = {
           store_id: storeId,
           user_id: data.user_id,
           user_name: data.user_name,
+          ...(data.client_id && { client_id: data.client_id }),
           items: {
             create: data.items.map((item) => ({
               product_id: item.product_id,
@@ -158,6 +160,7 @@ export const SaleRepository: ISaleRepository = {
           service_items: {
             include: { products: true },
           },
+          client: { select: { id: true, name: true } },
         },
       })
 
@@ -175,6 +178,7 @@ export const SaleRepository: ISaleRepository = {
         service_items: {
           include: { products: true },
         },
+        client: { select: { id: true, name: true } },
       },
     })
     if (!sale) return null
@@ -197,6 +201,7 @@ export const SaleRepository: ISaleRepository = {
           products: true,
         },
       },
+      client: { select: { id: true, name: true } },
     } as const
 
     if (!needsRawQuery) {
@@ -337,6 +342,7 @@ export const SaleRepository: ISaleRepository = {
         service_items: {
           include: { products: true },
         },
+        client: { select: { id: true, name: true } },
       },
     })
 

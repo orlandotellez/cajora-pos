@@ -36,6 +36,8 @@ export interface ISaleResponse {
   change_given?: number
   user_id: string
   user_name: string
+  client_id?: string
+  client_name?: string
   created_at: string
   items?: ISaleItemResponse[]
   service_items?: ISaleServiceResponse[]

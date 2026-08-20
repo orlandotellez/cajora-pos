@@ -4,6 +4,7 @@ import type { sale, sale_item, sale_service, sale_service_product } from "@prism
 type SaleWithRelations = sale & {
   items?: sale_item[]
   service_items?: (sale_service & { products?: sale_service_product[] })[]
+  client?: { id: string; name: string } | null
 }
 
 export function mapPrismaSaleToEntity(sale: SaleWithRelations): ISaleEntity {
@@ -17,6 +18,8 @@ export function mapPrismaSaleToEntity(sale: SaleWithRelations): ISaleEntity {
     change_given: sale.change_given || undefined,
     user_id: sale.user_id,
     user_name: sale.user_name ?? "",
+    client_id: sale.client_id || undefined,
+    client_name: sale.client?.name,
     created_at: sale.created_at,
     updated_at: sale.updated_at,
     items: sale.items?.map(mapPrismaSaleItemToEntity),

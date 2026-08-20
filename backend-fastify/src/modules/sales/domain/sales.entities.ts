@@ -10,6 +10,8 @@ export interface ISaleEntity {
   change_given?: Decimal
   user_id: string
   user_name: string
+  client_id?: string
+  client_name?: string
   created_at: Date
   updated_at: Date
   items?: ISaleItemEntity[]
@@ -85,6 +87,7 @@ export type CreateSaleData = {
   change_given?: number
   user_id: string
   user_name: string
+  client_id?: string
   items: CreateSaleItemData[]
   service_items?: CreateSaleServiceItemData[]
 }

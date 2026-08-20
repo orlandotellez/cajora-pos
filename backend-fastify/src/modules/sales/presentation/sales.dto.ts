@@ -33,6 +33,7 @@ export const CreateSaleDtoSchema = z.object({
   amount_received: z.number().positive().optional(),
   change_given: z.number().min(0).optional(),
   user_name: z.string().min(1),
+  client_id: z.string().uuid().optional(),
   items: z.array(CreateSaleItemDtoSchema).optional().default([]),
   service_items: z.array(CreateSaleServiceItemDtoSchema).optional().default([]),
 }).refine(

@@ -34,6 +34,8 @@ function mapSaleToResponse(sale: RichSale): ISaleResponse {
     change_given: sale.change_given ? Number(sale.change_given) : undefined,
     user_id: sale.user_id,
     user_name: sale.user_name,
+    client_id: sale.client_id || undefined,
+    client_name: sale.client_name,
     created_at: sale.created_at instanceof Date ? sale.created_at.toISOString() : sale.created_at,
     items: sale.items?.map((item: ISaleItemEntity) => ({
       id: item.id,
