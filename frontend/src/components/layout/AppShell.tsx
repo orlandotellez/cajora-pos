@@ -17,6 +17,7 @@ import {
   Moon,
   Sun,
   Download,
+  UserCheck,
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
@@ -53,6 +54,7 @@ const navGroups: NavGroup[] = [
       { to: "/services", label: "Servicios", icon: Wrench },
       { to: "/suppliers", label: "Proveedores", icon: Truck },
       { to: "/categories", label: "Categorías", icon: Tag },
+      { to: "/clients", label: "Clientes", icon: UserCheck },
       { to: "/inventory", label: "Inventario", icon: Boxes },
     ],
   },
