@@ -168,7 +168,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               className={styles.logoImg}
             />
             <div className={styles.logoInfo}>
-              <span className={styles.logoText}>Sistema POS</span>
+              <span className={styles.logoText}>Cajora POS</span>
               {appVersion !== null && (
                 <span className={styles.logoVersion}>v{appVersion}</span>
               )}
@@ -222,7 +222,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 className={styles.logoImg}
               />
               <div className={styles.logoInfo}>
-                <span className={styles.logoText}>Sistema POS</span>
+                <span className={styles.logoText}>Cajora POS</span>
                 {appVersion !== null && (
                   <span className={styles.logoVersion}>v{appVersion}</span>
                 )}
