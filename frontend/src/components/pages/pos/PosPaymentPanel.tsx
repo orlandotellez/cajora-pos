@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { X, Search, UserCheck } from "lucide-react";
+import { X, Search, UserCheck, UserPlus, Loader2 } from "lucide-react";
 import { money } from "@/lib/format";
 import { PAYMENT_METHODS } from "@/lib/constants";
 import { usePosStore } from "@/store/posStore";
@@ -51,6 +51,11 @@ export function PosPaymentPanel({
   const [clientResults, setClientResults] = useState<Client[]>([]);
   const [clientSearching, setClientSearching] = useState(false);
   const [showClientResults, setShowClientResults] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newPhone, setNewPhone] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
   const clientSearchRef = useRef<HTMLDivElement>(null);
   const clientSearchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -198,6 +203,73 @@ export function PosPaymentPanel({
                 </div>
               )}
             </div>
+          )}
+
+          {/* Create client inline form */}
+          {!clientId && (
+            <>
+              {!showCreateForm ? (
+                <button
+                  type="button"
+                  className={styles.createClientToggle}
+                  onClick={() => { setShowCreateForm(true); setCreateError(null); }}
+                >
+                  <UserPlus size={13} /> Crear cliente
+                </button>
+              ) : (
+                <div className={styles.createClientForm}>
+                  <input
+                    type="text"
+                    placeholder="Nombre *"
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    className={styles.createClientInput}
+                    autoFocus
+                  />
+                  <input
+                    type="tel"
+                    placeholder="Teléfono (opcional)"
+                    value={newPhone}
+                    onChange={(e) => setNewPhone(e.target.value)}
+                    className={styles.createClientInput}
+                  />
+                  {createError && <span className={styles.createClientError}>{createError}</span>}
+                  <div className={styles.createClientActions}>
+                    <button
+                      type="button"
+                      className={styles.createClientCancel}
+                      onClick={() => { setShowCreateForm(false); setNewName(""); setNewPhone(""); setCreateError(null); }}
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.createClientSubmit}
+                      disabled={!newName.trim() || creating}
+                      onClick={async () => {
+                        if (!newName.trim()) return;
+                        setCreating(true);
+                        setCreateError(null);
+                        try {
+                          const created = await clientsApi.create({ name: newName.trim(), phone: newPhone.trim() || undefined });
+                          setClient(created.id, created.name);
+                          setNewName("");
+                          setNewPhone("");
+                          setShowCreateForm(false);
+                          setShowClientResults(false);
+                        } catch (err) {
+                          setCreateError((err as any)?.message || "Error al crear cliente");
+                        } finally {
+                          setCreating(false);
+                        }
+                      }}
+                    >
+                      {creating ? <Loader2 size={13} className={styles.spinner} /> : "Crear"}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
