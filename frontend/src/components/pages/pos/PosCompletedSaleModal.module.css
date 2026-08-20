@@ -38,6 +38,140 @@
   margin: 0;
 }
 
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--muted-foreground);
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.tab:hover {
+  color: var(--foreground);
+}
+
+.tabActive {
+  color: var(--foreground);
+  border-bottom-color: var(--foreground);
+  font-weight: 500;
+}
+
+/* Detalles de la venta - Vista formal */
+.detailsView {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.detailsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.detailsSectionTitle {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted-foreground);
+  margin: 0;
+}
+
+.detailsList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.detailsRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+.detailsRow dt {
+  color: var(--muted-foreground);
+}
+
+.detailsRow dd {
+  color: var(--foreground);
+  font-weight: 500;
+}
+
+.detailsTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.detailsTable th {
+  text-align: left;
+  padding: 8px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted-foreground);
+  border-bottom: 1px solid var(--border);
+}
+
+.detailsThRight {
+  text-align: right !important;
+}
+
+.detailsTable td {
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
+  color: var(--foreground);
+}
+
+.detailsTdRight {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.detailsTrSub td {
+  font-size: 12px;
+  color: var(--muted-foreground);
+  padding-left: 16px;
+}
+
+.detailsSummary {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 300px;
+  margin-left: auto;
+}
+
+.detailsSummaryRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 14px;
+  color: var(--foreground);
+}
+
+.detailsSummaryTotal {
+  font-size: 16px;
+  font-weight: 700;
+  padding-top: 8px;
+  margin-top: 4px;
+  border-top: 2px solid var(--foreground);
+}
+
+/* Diseño de impresión - Estilo recibo */
 .ticket {
   padding: 40px 24px;
   font-family: ui-monospace, monospace;
