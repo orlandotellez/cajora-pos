@@ -714,6 +714,23 @@ export const handlers = [
   }),
 
   // ==========================================================================
+  // PREFLIGHT CORS — los POST/PUT/DELETE con JSON van a otro origin
+  // ==========================================================================
+  http.options("*", ({ request }) => {
+    const origin = request.headers.get("origin") ?? "*";
+    return new HttpResponse(null, {
+      status: 204,
+      headers: {
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Max-Age": "86400",
+      },
+    });
+  }),
+
+  // ==========================================================================
   // CATCH-ALL — la garantía estructural: cualquier request sin handler explícito
   // recibe 404 y JAMÁS sale del Service Worker hacia la red real.
   //
