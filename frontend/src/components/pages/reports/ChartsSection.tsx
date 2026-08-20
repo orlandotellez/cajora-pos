@@ -143,9 +143,10 @@ export function ChartsSection({ report, range }: { report: SaleReport | null; ra
   const hasCategories = categoryData.some((c) => c.revenue > 0);
 
   function formatXLabel(dateStr: string) {
-    const d = new Date(dateStr);
-    if (range === "1y") return d.toLocaleDateString("es-MX", { month: "short" });
-    return d.toLocaleDateString("es-MX", { day: "numeric", month: "short" });
+    const [y, m, d] = dateStr.split("-").map(Number);
+    const local = new Date(y, m - 1, d);
+    if (range === "1y") return local.toLocaleDateString("es-MX", { month: "short" });
+    return local.toLocaleDateString("es-MX", { day: "numeric", month: "short" });
   }
 
   function periodLabel() {
@@ -197,13 +198,14 @@ export function ChartsSection({ report, range }: { report: SaleReport | null; ra
                   contentStyle={TOOLTIP_CONTENT_STYLE}
                   labelStyle={TOOLTIP_LABEL_STYLE}
                   itemStyle={TOOLTIP_ITEM_STYLE}
-                  labelFormatter={(dateStr) =>
-                    new Date(dateStr as string).toLocaleDateString("es-MX", {
+                  labelFormatter={(dateStr) => {
+                    const [y, m, d] = (dateStr as string).split("-").map(Number);
+                    return new Date(y, m - 1, d).toLocaleDateString("es-MX", {
                       day: "numeric",
                       month: "long",
                       year: "numeric",
-                    })
-                  }
+                    });
+                  }}
                   formatter={(v) => [money(v as number), "Ingresos"]}
                 />
                 <Line
