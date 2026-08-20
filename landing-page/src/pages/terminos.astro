@@ -1,0 +1,101 @@
+---
+import Layout from '../layouts/Layout.astro';
+import LegalArticle from '../sections/legal/LegalArticle.astro';
+
+const sections = [
+  {
+    title: '1. Aceptación de los términos',
+    intro:
+      'Al crear una cuenta, acceder o usar CajoraPos (el "Servicio"), aceptás estos Términos y Condiciones. Si no estás de acuerdo, no uses el Servicio.',
+  },
+  {
+    title: '2. Descripción del servicio',
+    intro:
+      'CajoraPos es un sistema de punto de venta (POS) que permite gestionar ventas, inventario, productos y reportes. El Servicio ofrece dos modalidades: Self-hosted (gratuita, se instala en tu propio servidor) y Cloud (suscripción mensual de USD $15.99, con acceso remoto, respaldos automáticos diarios y soporte prioritario).',
+  },
+  {
+    title: '3. Cuentas y registro',
+    intro:
+      'Para usar el Servicio necesitás crear una cuenta con datos veraces y actualizados. Sos responsable de mantener la confidencialidad de tu contraseña y de toda actividad que ocurra en tu cuenta. Debes notificarnos de cualquier uso no autorizado escribiendo a payments@cajorapos.com.',
+  },
+  {
+    title: '4. Suscripción y pagos',
+    intro:
+      'El plan Cloud tiene un precio de USD $15.99 por mes, facturado por adelantado a través de PayPal. No existe período de prueba gratuito: el pago se realiza al suscribirte. La suscripción se renueva automáticamente al inicio de cada período mensual hasta que la canceles. Los precios pueden cambiar en el futuro; te lo notificaremos con anticipación y el cambio no afectará el período ya pagado.',
+  },
+  {
+    title: '5. Cancelación y reembolsos',
+    intro:
+      'Podés cancelar tu suscripción en cualquier momento desde tu panel. La cancelación tiene efecto al final del período ya pagado: seguís con acceso hasta esa fecha. No se realizan reembolsos por períodos parciales no utilizados, salvo en caso de error comprobado del sistema (a nuestra discreción, reembolsado a través de PayPal). Si reactivás tu suscripción después de cancelarla, se abrirá un nuevo flujo de pago.',
+  },
+  {
+    title: '6. Fallos de pago',
+    intro:
+      'Si un cobro falla, PayPal reintentará el cargo (hasta 3 intentos). Tu cuenta pasará a estado de pago pendiente y conservarás acceso por un período de gracia de hasta 3 días luego de la fecha de vencimiento. Si el pago no se regulariza, el acceso al plan Cloud se suspenderá hasta que completes el pago.',
+  },
+  {
+    title: '7. Uso aceptable',
+    intro: 'Te comprometés a no:',
+    list: [
+      'usar el Servicio para actividades ilegales;',
+      'revender, sublicenciar o distribuir el Servicio sin autorización;',
+      'intentar vulnerar la seguridad del sistema;',
+      'usar el Servicio de forma que pueda dañar, sobrecargar o perjudicar la infraestructura;',
+      'ni acceder a cuentas o datos de otros usuarios sin autorización.',
+    ],
+  },
+  {
+    title: '8. Propiedad intelectual y tus datos',
+    intro:
+      'El software de CajoraPos es propiedad de CajoraPos (la versión self-hosted se distribuye bajo licencia AGPL-3.0). Tus datos —productos, ventas y configuraciones de tu negocio— son tuyos. CajoraPos no reclama propiedad sobre ellos y solo los usa para operar el Servicio.',
+  },
+  {
+    title: '9. Responsabilidad sobre los datos de tu negocio',
+    intro:
+      'Sos el responsable de los datos que cargás en el Servicio, incluidos los datos personales de tus clientes, empleados o proveedores. Debes cumplir con la legislación de protección de datos aplicable a tu actividad.',
+  },
+  {
+    title: '10. Disponibilidad y soporte',
+    intro:
+      'Ofrecemos el Servicio con un esfuerzo razonable de disponibilidad, con posibles ventanas de mantenimiento programado. En el plan Cloud realizamos respaldos automáticos diarios. No garantizamos disponibilidad ininterrumpida ni la ausencia de errores.',
+  },
+  {
+    title: '11. Limitación de responsabilidad',
+    intro:
+      'En la máxima medida permitida por la ley, CajoraPos no será responsable por daños indirectos, incidentales, especiales o consecuentes (incluida la pérdida de datos, ganancias o clientes) derivados del uso o la imposibilidad de uso del Servicio. Nuestra responsabilidad total, en cualquier caso, se limita al monto que hayas pagado por el Servicio en los tres meses anteriores al hecho que originó la reclamación.',
+  },
+  {
+    title: '12. Terminación',
+    intro:
+      'Podemos suspender o cancelar tu acceso al Servicio si violás estos Términos. En caso de cancelación por nuestra parte, te lo notificaremos por correo. También podemos dar de baja el Servicio en su totalidad con un aviso previo razonable.',
+  },
+  {
+    title: '13. Ley aplicable',
+    intro:
+      'Estos Términos se rigen por las leyes de la República de Nicaragua. Cualquier controversia será sometida a los tribunales competentes de la ciudad de Managua, Nicaragua.',
+  },
+  {
+    title: '14. Cambios a los términos',
+    intro:
+      'Podemos actualizar estos Términos periódicamente. Publicaremos los cambios en esta página con la fecha de última actualización. El uso continuado del Servicio después de los cambios implica su aceptación.',
+  },
+  {
+    title: '15. Contacto',
+    intro:
+      'Para consultas sobre estos Términos: payments@cajorapos.com — CajoraPos, Managua, Nicaragua.',
+  },
+];
+---
+
+<Layout
+  title="Términos y Condiciones · CajoraPos"
+  description="Términos y Condiciones de CajoraPos: uso del servicio, suscripción, pagos y responsabilidades."
+>
+  <main class="container-read">
+    <LegalArticle
+      title="Términos y Condiciones"
+      updated="Última actualización: 19 de agosto de 2026"
+      sections={sections}
+    />
+  </main>
+</Layout>

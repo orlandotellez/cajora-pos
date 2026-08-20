@@ -1,0 +1,99 @@
+---
+import Layout from '../layouts/Layout.astro';
+import LegalArticle from '../sections/legal/LegalArticle.astro';
+
+const sections = [
+  {
+    title: '1. Introducción',
+    intro:
+      'En CajoraPos nos tomamos en serio la privacidad de tus datos. Esta Política de Privacidad explica qué información recopilamos cuando usás CajoraPos (nuestro sistema de punto de venta), por qué la recopilamos, cómo la usamos y qué derechos tenés sobre ella. Al crear una cuenta o usar nuestros servicios, aceptás esta política.',
+  },
+  {
+    title: '2. Responsable del tratamiento',
+    intro:
+      'CajoraPos, Managua, Nicaragua. Contacto: payments@cajorapos.com. Para cualquier consulta sobre tus datos personales, escribinos a ese correo.',
+  },
+  {
+    title: '3. Datos que recopilamos',
+    list: [
+      'Datos de la cuenta: nombre y apellido, correo electrónico y contraseña (almacenada de forma segura, con cifrado de un solo sentido — nunca en texto plano).',
+      'Datos del negocio: nombre de tu tienda, dirección y teléfono (opcionales), y la configuración general de tu negocio (moneda, umbral de stock mínimo, pie de página del ticket).',
+      'Datos de operación: productos, ventas, proveedores y usuarios del equipo que crees dentro de tu tienda. Estos datos son de tu negocio y se guardan para que el servicio funcione.',
+      'Datos técnicos: tokens de sesión (cookies seguras "accessToken" y "refreshToken" que usamos para mantener tu sesión iniciada), y en algunos casos la dirección IP y el navegador, solo con fines de seguridad y auditoría.',
+      'Datos de pago: CajoraPos NO ve, almacena ni procesa los datos de tu tarjeta. Los pagos de la suscripción se procesan íntegramente a través de PayPal, que tiene su propia política de privacidad.',
+    ],
+  },
+  {
+    title: '4. Cómo usamos tus datos',
+    list: [
+      'Proveer y operar el servicio (vender, inventario, reportes, acceso a tu tienda).',
+      'Gestionar tu suscripción y sus cobros (a través de PayPal).',
+      'Verificar tu correo electrónico y recuperar tu contraseña.',
+      'Brindarte soporte técnico.',
+      'Proteger la seguridad del servicio (prevención de accesos no autorizados y abuso).',
+    ],
+    outro:
+      'No utilizamos tus datos para publicidad ni vendemos tus datos a terceros. No utilizamos cookies de seguimiento ni herramientas de analítica de terceros.',
+  },
+  {
+    title: '5. Base legal',
+    intro:
+      'Tratamos tus datos personales sobre la base del contrato de servicio (para operar tu cuenta y cobrar tu suscripción), tu consentimiento (cuando nos los proporcionás voluntariamente) y nuestras obligaciones legales, en línea con la Ley No. 787 de Protección de Datos Personales de Nicaragua y estándares internacionales aplicables.',
+  },
+  {
+    title: '6. Compartir datos con terceros',
+    intro: 'Solo compartimos datos con proveedores estrictamente necesarios para operar el servicio:',
+    list: [
+      'PayPal: procesamiento de pagos de la suscripción. Recibe la referencia de tu suscripción y el monto; nunca recibe tus datos de negocio.',
+      'Resend: envío de correos transaccionales (códigos de verificación de email).',
+      'Railway: infraestructura de hosting donde se ejecuta la API y se almacenan los datos (servidores en el extranjero).',
+      'Cloudflare R2: almacenamiento de archivos de configuración y actualizaciones de la aplicación.',
+    ],
+    outro:
+      'Estos proveedores solo acceden a los datos necesarios para prestar su servicio y están obligados a tratarlos de forma confidencial.',
+  },
+  {
+    title: '7. Seguridad y almacenamiento',
+    intro:
+      'Protegemos tus datos con cifrado en tránsito (HTTPS), contraseñas con hash criptográfico, control de acceso a la información y respaldos automáticos diarios en el plan Cloud. Ningún sistema es 100% seguro, pero aplicamos medidas razonables para proteger tu información.',
+  },
+  {
+    title: '8. Retención de datos',
+    intro:
+      'Conservamos tus datos mientras tu cuenta esté activa. Si cancelás tu suscripción, tu cuenta queda sin acceso pero tus datos se conservan por si decidís volver. Si querés que eliminemos tus datos, escribinos a payments@cajorapos.com y lo haremos en un plazo razonable.',
+  },
+  {
+    title: '9. Tus derechos',
+    intro:
+      'De acuerdo con la Ley No. 787 de Nicaragua y normativas internacionales aplicables, tenés derecho a: acceder a tus datos personales, rectificarlos (corregir información incorrecta), solicitar su cancelación (supresión) y oponerte a su tratamiento. Para ejercer cualquiera de estos derechos, escribinos a payments@cajorapos.com. Responderemos dentro de un plazo razonable.',
+  },
+  {
+    title: '10. Menores de edad',
+    intro:
+      'CajoraPos no está dirigido a menores de 18 años. No recopilamos intencionalmente datos personales de menores.',
+  },
+  {
+    title: '11. Cambios a esta política',
+    intro:
+      'Podemos actualizar esta política periódicamente. Publicaremos los cambios en esta página con la fecha de última actualización. Si los cambios son significativos, te lo notificaremos por correo.',
+  },
+  {
+    title: '12. Contacto',
+    intro:
+      'Si tenés preguntas sobre esta política o sobre tus datos personales: payments@cajorapos.com — CajoraPos, Managua, Nicaragua.',
+  },
+];
+---
+
+<Layout
+  title="Política de Privacidad · CajoraPos"
+  description="Política de Privacidad de CajoraPos: qué datos recopilamos, cómo los usamos y qué derechos tenés sobre ellos."
+>
+  <main class="container-read">
+    <LegalArticle
+      title="Política de Privacidad"
+      updated="Última actualización: 19 de agosto de 2026"
+      sections={sections}
+    />
+  </main>
+</Layout>

@@ -1,11 +1,13 @@
 ---
 import Logo from '../components/Logo.astro';
 
+const base = import.meta.env.BASE_URL;
+
 const legalLinks = [
-  { label: 'Privacidad', href: '#' },
-  { label: 'Términos', href: '#' },
-  { label: 'Contacto', href: '#' },
-  { label: 'GitHub', href: '#' },
+  { label: 'Privacidad', href: base + 'privacidad' },
+  { label: 'Términos', href: base + 'terminos' },
+  { label: 'Contacto', href: 'mailto:payments@cajorapos.com' },
+  { label: 'GitHub', href: 'https://github.com/orlandotellez/cajora-pos', external: true },
 ];
 ---
 
@@ -19,7 +21,7 @@ const legalLinks = [
     <nav class="footer__nav" aria-label="Legal">
       <ul class="footer__list">
         {legalLinks.map((link) => (
-          <li><a href={link.href} class="footer__link">{link.label}</a></li>
+          <li><a href={link.href} class="footer__link" target={link.external ? '_blank' : undefined} rel={link.external ? 'noopener noreferrer' : undefined}>{link.label}</a></li>
         ))}
       </ul>
     </nav>

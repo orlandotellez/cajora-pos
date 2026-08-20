@@ -1,0 +1,85 @@
+---
+interface LegalSection {
+  title: string;
+  intro?: string;
+  list?: string[];
+  outro?: string;
+}
+
+interface Props {
+  title: string;
+  updated: string;
+  sections: LegalSection[];
+}
+
+const { title, updated, sections } = Astro.props;
+---
+
+<article class="legal">
+  <h1 class="legal__title">{title}</h1>
+  <p class="legal__updated">{updated}</p>
+
+  <div class="legal__body">
+    {sections.map((section) => (
+      <section class="legal__section">
+        <h2>{section.title}</h2>
+        {section.intro && <p>{section.intro}</p>}
+        {section.list && (
+          <ul class="legal__list">
+            {section.list.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        )}
+        {section.outro && <p>{section.outro}</p>}
+      </section>
+    ))}
+  </div>
+</article>
+
+<style>
+  .legal {
+    /* header fijo (64px) + aire */
+    padding-top: calc(64px + 2rem);
+    padding-bottom: 5rem;
+  }
+
+  .legal__title {
+    font-size: 1.875rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .legal__updated {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .legal__section {
+    margin-top: 2.5rem;
+  }
+
+  .legal__section h2 {
+    font-size: 1.125rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .legal__section p {
+    color: var(--text-muted);
+    font-size: 0.9375rem;
+    line-height: 1.7;
+  }
+
+  .legal__list {
+    list-style: disc;
+    margin-top: 0.75rem;
+    padding-left: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    color: var(--text-muted);
+    font-size: 0.9375rem;
+    line-height: 1.7;
+  }
+</style>
