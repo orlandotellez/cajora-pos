@@ -15,7 +15,7 @@ export const licenseGuard = async (
 
   const fromCookies = getUserIdFromCookies(request)
   const fromBearer = getUserIdFromBearerToken(request)
-  const { storeId } = fromCookies.userId ? fromCookies : fromBearer
+  const { storeId } = fromCookies.storeId ? fromCookies : fromBearer
 
   if (!storeId) return
 

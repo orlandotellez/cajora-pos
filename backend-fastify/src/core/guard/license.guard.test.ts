@@ -151,4 +151,26 @@ describe("licenseGuard", () => {
     await assert.doesNotReject(() => licenseGuard(request as never, {} as never))
     assert.equal(getByStoreId.mock.callCount(), 0)
   })
+
+  it("cookie refresh (userId sin storeId) + Bearer con storeId → gatea con el Bearer (regresión: bypass en web)", async () => {
+    mock.property(env, "APP_MODE", "cloud")
+    const getByStoreId = mock.method(SubscriptionRepository, "getByStoreId", async () => null)
+    // El navegador web tiene la cookie refreshToken (7 días, sin storeId) y el
+    // frontend manda el accessToken por Bearer (con storeId). Antes, la cookie
+    // ganaba la precedencia → storeId null → el guard se saltaba y una tienda
+    // pending podía usar la app sin pagar.
+    const refreshToken = jwt.sign({ userId: "user-1" }, env.JWT_REFRESH_SECRET, { expiresIn: "7d" })
+    const accessToken = jwt.sign(
+      { userId: "user-1", role: "admin", storeId: "store-1", storeName: "Tienda" },
+      env.JWT_SECRET,
+      { expiresIn: "1h" },
+    )
+    const request = { cookies: { refreshToken }, headers: { authorization: `Bearer ${accessToken}` } }
+
+    await assert.rejects(
+      () => licenseGuard(request as never, {} as never),
+      (err: unknown) => err instanceof PaymentRequiredError && err.statusCode === 402,
+    )
+    assert.equal(getByStoreId.mock.callCount(), 1)
+  })
 })
