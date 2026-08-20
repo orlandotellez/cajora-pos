@@ -118,6 +118,7 @@ export const PrinterSaleModal = ({
               <div>{new Date(selected.created_at).toLocaleString("es-MX")}</div>
               <div>Ticket: {selected.id.slice(0, 8)}</div>
               <div>Atendido por: {selected.user_name}</div>
+              <div>Cliente: {selected.client_name || "Cliente General"}</div>
             </div>
             <div className={styles.ticketDivider}></div>
 

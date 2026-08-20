@@ -28,6 +28,15 @@ export function SaleTable({ sales, loading, total, page, totalPages, onPageChang
       ),
     },
     {
+      key: "client",
+      label: "Cliente",
+      render: (s) => (
+        <span className={styles["sale-client"]}>
+          {s.client_name ?? "—"}
+        </span>
+      ),
+    },
+    {
       key: "items",
       label: "Artículos",
       align: "right",

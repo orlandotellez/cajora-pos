@@ -12,7 +12,8 @@ export function printTicket(
   storeAddress: string,
   storePhone: string,
   storeFooter: string,
-  discountPct: number
+  discountPct: number,
+  clientName?: string,
 ) {
   const date = new Date().toLocaleString("es-MX");
 
@@ -49,6 +50,7 @@ export function printTicket(
     storeFooter,
     saleId,
     userName,
+    clientName,
     date,
     rows,
     subtotal: totals.subtotal,

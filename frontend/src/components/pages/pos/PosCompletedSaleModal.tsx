@@ -10,6 +10,7 @@ import { useModalBack } from "@/hooks/useModalBack";
 interface CompletedSaleData {
   saleId: string;
   userName: string;
+  clientName: string | null;
   cart: CartItem[];
   totals: { subtotal: number; discount: number; total: number; change: number };
   payment: string;
@@ -76,6 +77,7 @@ export function PosCompletedSaleModal({
           <div className={styles.date}>{new Date().toLocaleString("es-MX")}</div>
           <div className={styles.ticketId}>Ticket: {completedSale.saleId.slice(0, 8)}</div>
           <div className={styles.ticketId}>Atendido por: {completedSale.userName}</div>
+          <div className={styles.ticketId}>Cliente: {completedSale.clientName || "Cliente General"}</div>
 
           <div className={styles.divider} />
 

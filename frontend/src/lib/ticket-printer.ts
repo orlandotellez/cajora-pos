@@ -21,6 +21,7 @@ export function printSaleTicket(
   storeAddress?: string,
   storePhone?: string,
   storeFooter?: string,
+  clientName?: string,
 ): void {
   const date = new Date(sale.created_at).toLocaleString("es-MX");
 
@@ -58,6 +59,7 @@ export function printSaleTicket(
     saleId: sale.id,
     date,
     userName,
+    clientName,
     rows,
     subtotal: sale.subtotal,
     discount: sale.discount,

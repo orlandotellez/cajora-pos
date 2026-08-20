@@ -10,3 +10,8 @@
 .sale-total {
   font-weight: 600;
 }
+
+.sale-client {
+  font-size: 13px;
+  color: var(--foreground);
+}

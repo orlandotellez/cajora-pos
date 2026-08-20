@@ -77,6 +77,7 @@ export function buildTicketHtml(opts: {
   storeFooter?: string;
   saleId: string;
   userName: string;
+  clientName?: string;
   date: string;
   rows: string;
   subtotal: number;
@@ -89,7 +90,7 @@ export function buildTicketHtml(opts: {
 }): string {
   const {
     storeName, storeAddress, storePhone, storeFooter,
-    saleId, userName, date, rows,
+    saleId, userName, clientName, date, rows,
     subtotal, discount, discountPct,
     total, paymentMethod, amountReceived, changeGiven,
   } = opts;
@@ -114,6 +115,7 @@ ${storePhone ? `<div class="m">${storePhone}</div>` : ""}
 <div class="m">${date}</div>
 <div class="m">Ticket: ${saleId.slice(0, 8)}</div>
 <div class="m">Atendido por: ${userName}</div>
+<div class="m">Cliente: ${clientName || "Cliente General"}</div>
 <div class="line"></div>
 <table>${rows}</table>
 <div class="line"></div>

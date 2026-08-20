@@ -38,6 +38,8 @@ export interface Sale {
   change_given?: number;
   user_id: string;
   user_name: string;
+  client_id?: string;
+  client_name?: string;
   created_at: string;
   items?: SaleItem[];
   service_items?: SaleServiceItem[];
@@ -109,6 +111,7 @@ export interface CreateSalePayload {
   amount_received?: number;
   change_given?: number;
   user_name: string;
+  client_id?: string;
   items?: CreateSaleItemPayload[];
   service_items?: CreateSaleServiceItemPayload[];
 }

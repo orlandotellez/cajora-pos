@@ -18,6 +18,7 @@ export interface CheckoutTotals {
 export interface CompletedSale {
   saleId: string;
   userName: string;
+  clientName: string | null;
   cart: CartItem[];
   totals: CheckoutTotals;
   payment: string;
@@ -101,6 +102,7 @@ export function useCheckout(opts: UseCheckoutOptions): UseCheckoutReturn {
   const handlePrintTicket = useCallback(
     async (saleId: string, saleUserName: string) => {
       if (!completedSale) return;
+      const clientName = completedSale.clientName;
       try {
         const res = await printersApi.list();
         const defaultPrinter = res.printers.find(
@@ -207,6 +209,8 @@ export function useCheckout(opts: UseCheckoutOptions): UseCheckoutReturn {
 
       const shouldSendAmount = payment === "efectivo" || manualAmount;
 
+      const clientId = usePosStore.getState().clientId;
+
       const payload: CreateSalePayload = {
         subtotal: totals.subtotal,
         discount: totals.discount,
@@ -215,6 +219,7 @@ export function useCheckout(opts: UseCheckoutOptions): UseCheckoutReturn {
         amount_received: shouldSendAmount && Number.isFinite(rcvd) ? rcvd : undefined,
         change_given: shouldSendAmount ? totals.change : undefined,
         user_name: userName,
+        client_id: clientId ?? undefined,
         items: productItems.length > 0 ? productItems : undefined,
         service_items: serviceItems.length > 0 ? serviceItems : undefined,
       };
@@ -223,6 +228,7 @@ export function useCheckout(opts: UseCheckoutOptions): UseCheckoutReturn {
       setCompletedSale({
         saleId: sale.id,
         userName: sale.user_name,
+        clientName: usePosStore.getState().clientName,
         cart: [...cart],
         totals: { ...totals },
         payment,
