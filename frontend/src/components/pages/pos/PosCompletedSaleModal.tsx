@@ -80,7 +80,7 @@ export function PosCompletedSaleModal({
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.header}>
           <div className={styles.icon}>
-            <CheckCircle />
+            <CheckCircle color="rgb(22, 163, 74)" />
           </div>
           <h2 className={styles.title}>Venta realizada exitosamente</h2>
         </div>
