@@ -4,6 +4,67 @@
   gap: 1rem;
 }
 
+.platformBanner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+}
+
+@media (max-width: 640px) {
+  .platformBanner {
+    grid-template-columns: 1fr;
+  }
+}
+
+.platformItem {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.platformIcon {
+  color: var(--muted-foreground);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.platformItem strong {
+  font-size: 13px;
+  color: var(--foreground);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.platformItem p {
+  font-size: 12px;
+  color: var(--muted-foreground);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.platformCurrent {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  background: rgba(59, 130, 246, 0.08);
+  color: #2563eb;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.platformCurrentWeb {
+  background: rgba(16, 185, 129, 0.08);
+  color: #059669;
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
 .actions {
   display: flex;
   justify-content: space-between;

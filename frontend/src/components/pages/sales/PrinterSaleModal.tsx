@@ -3,6 +3,7 @@ import { useToast } from "@/components/common/ui/Toast";
 import styles from "./PrinterSaleModal.module.css"
 import { isTauriRuntime } from "@/lib/fetch";
 import { sendBytesToPrinter } from "@/lib/tcp-printer";
+import { printReceiptBrowser } from "@/lib/browser-print";
 import { useModalBack } from "@/hooks/useModalBack";
 import { ApiError, printersApi, type Sale } from "@/api";
 import { Printer, X } from "lucide-react";
@@ -49,6 +50,52 @@ export const PrinterSaleModal = ({
   async function handlePrint() {
     setPrinting(true);
     try {
+      // --- Web: imprimir desde el navegador ---
+      if (!isTauriRuntime()) {
+        const items = (selected.items ?? []).map((item) => ({
+          name: item.product_name,
+          quantity: item.quantity,
+          unitPrice: item.unit_price,
+          lineTotal: item.line_total,
+        }));
+        const serviceItems = (selected.service_items ?? []).map((svc) => ({
+          name: svc.service_name,
+          quantity: 1,
+          basePrice: svc.base_price,
+          lineTotal: svc.line_total,
+          products: svc.products.map((sp) => ({
+            name: sp.product_name,
+            quantity: sp.quantity,
+            unitPrice: sp.unit_price,
+            lineTotal: sp.line_total,
+            isIncluded: !sp.affects_price,
+            isAdditive: sp.affects_price,
+          })),
+        }));
+        printReceiptBrowser({
+          storeName,
+          storeAddress,
+          storePhone,
+          storeFooter,
+          saleId: selected.id,
+          date: new Date(selected.created_at).toLocaleString("es-MX"),
+          userName: selected.user_name,
+          clientName: selected.client_name || "Cliente General",
+          items,
+          serviceItems,
+          subtotal: selected.subtotal,
+          discount: selected.discount,
+          total: selected.total,
+          paymentMethod: selected.payment_method,
+          amountReceived: selected.amount_received ?? selected.total,
+          change: selected.change_given ?? 0,
+        });
+        toast("Recibo abierto para impresión", "success");
+        setPrinting(false);
+        return;
+      }
+
+      // --- Tauri: imprimir via TCP directo ---
       const res = await printersApi.list();
       const defaultPrinter = res.printers.find(
         (p) => p.is_default && p.is_active
@@ -67,31 +114,17 @@ export const PrinterSaleModal = ({
         return;
       }
 
-      let printSuccess: boolean;
-      let printError: string | null = null;
+      const tcpResult = await sendBytesToPrinter(
+        result.ticket_base64,
+        result.printer.address,
+        result.printer.port,
+      );
 
-      if (isTauriRuntime()) {
-        const tcpResult = await sendBytesToPrinter(
-          result.ticket_base64,
-          result.printer.address,
-          result.printer.port,
-        );
-        printSuccess = tcpResult.success;
-        printError = tcpResult.error;
-      } else {
-        const proxyResult = await printersApi.sendTcp(
-          result.ticket_base64,
-          result.printer.address,
-          result.printer.port,
-        );
-        printSuccess = proxyResult.success;
-      }
-
-      if (printSuccess) {
+      if (tcpResult.success) {
         toast("Recibo impreso correctamente", "success");
       } else {
         toast(
-          printError || "No se pudo enviar el recibo a la impresora. Verificá que esté encendida y conectada.",
+          tcpResult.error || "No se pudo enviar el recibo a la impresora. Verificá que esté encendida y conectada.",
           "error"
         );
       }
@@ -114,9 +147,9 @@ export const PrinterSaleModal = ({
           <div className={styles.modalHeader}>
             <h2 className={styles.modalTitle}>Venta {selected.id.slice(0, 8)}</h2>
             <div className={styles.modalHeaderActions}>
-              <button onClick={handlePrint} className={styles.printBtn} disabled={printing || !hasPrinter}
-                title={!hasPrinter ? "No hay impresora predeterminada configurada. Andá a Ajustes > Impresoras." : undefined}>
-                <Printer size={16} /> {!hasPrinter ? "Sin impresora" : "Reimprimir"}
+              <button onClick={handlePrint} className={styles.printBtn} disabled={printing || (isTauriRuntime() && !hasPrinter)}
+                title={isTauriRuntime() && !hasPrinter ? "No hay impresora predeterminada configurada. Andá a Ajustes > Impresoras." : undefined}>
+                <Printer size={16} /> Reimprimir
               </button>
               <button onClick={setSelected} className={styles.modalClose}>
                 <X size={18} />

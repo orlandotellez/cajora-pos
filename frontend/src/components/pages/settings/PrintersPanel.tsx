@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Search, X } from "lucide-react";
+import { Search, X, Monitor, Smartphone, Globe } from "lucide-react";
 import { printersApi } from "@/api/printers";
 import type {
   Printer,
@@ -301,8 +301,39 @@ export default function PrintersPanel() {
     },
   ];
 
+  const isTauri = isTauriRuntime();
+
   return (
     <div className={styles.panel}>
+      {/* Indicador de plataforma */}
+      <div className={styles.platformBanner}>
+        <div className={styles.platformItem}>
+          <Monitor size={16} className={styles.platformIcon} />
+          <div>
+            <strong>Desktop / App móvil</strong>
+            <p>Conexión directa via TCP a la impresora. Configurá la IP y puerto de la impresora en la tabla.</p>
+          </div>
+        </div>
+        <div className={styles.platformItem}>
+          <Globe size={16} className={styles.platformIcon} />
+          <div>
+            <strong>Navegador web</strong>
+            <p>Usa la impresora configurada en tu sistema operativo. No necesita configurar IP en esta tabla.</p>
+          </div>
+        </div>
+      </div>
+
+      {isTauri && (
+        <div className={styles.platformCurrent}>
+          <Monitor size={14} /> Estás en la app de escritorio — la impresión usa TCP directo
+        </div>
+      )}
+      {!isTauri && (
+        <div className={`${styles.platformCurrent} ${styles.platformCurrentWeb}`}>
+          <Globe size={14} /> Estás en el navegador — la impresión usa la impresora de tu sistema operativo
+        </div>
+      )}
+
       <div className={styles.actions}>
         <div className={styles.searchWrapper}>
           <Search size={16} className={styles.searchIcon} />

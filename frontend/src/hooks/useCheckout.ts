@@ -4,6 +4,7 @@ import { printersApi } from "@/api/printers";
 import { ApiError } from "@/api/client";
 import { getStoredCurrency, money } from "@/lib/format";
 import { sendBytesToPrinter } from "@/lib/tcp-printer";
+import { printReceiptBrowser } from "@/lib/browser-print";
 import { isTauriRuntime } from "@/lib/fetch";
 import { type PaymentMethod } from "@/lib/constants";
 import { usePosStore, type CartItem, type ProductCartItem, type ServiceCartItem } from "@/store/posStore";
@@ -103,6 +104,61 @@ export function useCheckout(opts: UseCheckoutOptions): UseCheckoutReturn {
     async (saleId: string, saleUserName: string) => {
       if (!completedSale) return;
       const clientName = completedSale.clientName;
+
+      // --- Web: imprimir desde el navegador (no necesita impresora en backend) ---
+      if (!isTauriRuntime()) {
+        const items = completedSale.cart
+          .filter((x) => x._type === "product")
+          .map((x) => {
+            const p = x as ProductCartItem;
+            return { name: p.name, quantity: x.quantity, unitPrice: p.price, lineTotal: p.price * x.quantity };
+          });
+        const serviceItems = completedSale.cart
+          .filter((x) => x._type === "service")
+          .map((x) => {
+            const svc = x as ServiceCartItem;
+            return {
+              name: svc.name,
+              quantity: svc.quantity,
+              basePrice: svc.base_price,
+              lineTotal: svc.base_price * svc.quantity + svc.products.filter((sp) => sp.affects_price).reduce((s, sp) => s + sp.unit_price * sp.quantity, 0) * svc.quantity,
+              products: svc.products.map((sp) => ({
+                name: sp.product_name,
+                quantity: sp.quantity * svc.quantity,
+                unitPrice: sp.unit_price,
+                lineTotal: sp.unit_price * sp.quantity * svc.quantity,
+                isIncluded: !sp.affects_price,
+                isAdditive: sp.affects_price,
+              })),
+            };
+          });
+        const received = completedSale.payment === "efectivo" || completedSale.received
+          ? Number(completedSale.received || 0)
+          : completedSale.totals.total;
+        printReceiptBrowser({
+          storeName: storeSettings.storeName,
+          storeAddress: storeSettings.storeAddress,
+          storePhone: storeSettings.storePhone,
+          storeFooter: storeSettings.storeFooter,
+          saleId,
+          date: new Date().toLocaleString("es-MX"),
+          userName: saleUserName,
+          clientName: clientName || "Cliente General",
+          items,
+          serviceItems,
+          subtotal: completedSale.totals.subtotal,
+          discount: completedSale.totals.discount,
+          discountPct: completedSale.discountPct,
+          total: completedSale.totals.total,
+          paymentMethod: completedSale.payment,
+          amountReceived: received,
+          change: completedSale.totals.change,
+        });
+        finalizeSale();
+        return;
+      }
+
+      // --- Tauri (desktop/APK): imprimir via TCP directo ---
       try {
         const res = await printersApi.list();
         const defaultPrinter = res.printers.find(
@@ -121,31 +177,17 @@ export function useCheckout(opts: UseCheckoutOptions): UseCheckoutReturn {
           return;
         }
 
-        let success: boolean;
-        let error: string | null = null;
+        const tcpResult = await sendBytesToPrinter(
+          result.ticket_base64,
+          result.printer.address,
+          result.printer.port,
+        );
 
-        if (isTauriRuntime()) {
-          const tcpResult = await sendBytesToPrinter(
-            result.ticket_base64,
-            result.printer.address,
-            result.printer.port,
-          );
-          success = tcpResult.success;
-          error = tcpResult.error;
-        } else {
-          const proxyResult = await printersApi.sendTcp(
-            result.ticket_base64,
-            result.printer.address,
-            result.printer.port,
-          );
-          success = proxyResult.success;
-        }
-
-        if (success) {
+        if (tcpResult.success) {
           finalizeSale();
         } else {
           showAlert(
-            error ||
+            tcpResult.error ||
               "No se pudo enviar el recibo a la impresora. Verificá que esté encendida y conectada."
           );
         }
@@ -155,7 +197,7 @@ export function useCheckout(opts: UseCheckoutOptions): UseCheckoutReturn {
         );
       }
     },
-    [completedSale, finalizeSale, showAlert],
+    [completedSale, storeSettings, finalizeSale, showAlert],
   );
 
   const checkout = useCallback(async () => {

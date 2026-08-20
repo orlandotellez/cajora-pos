@@ -197,22 +197,6 @@ export const createPrintersService = (repository: IPrinterRepository) => ({
     const existing = await repository.findById(id, storeId)
     if (!existing) throw new NotFoundError("Impresora no encontrada")
 
-    const sameRoleOthers = (await repository.findByStore(storeId)).filter(
-      (p) => p.role === existing.role && p.id !== existing.id && p.is_active
-    )
-
-    if (sameRoleOthers.length === 0) {
-      throw new ConflictError(
-        `Esta es la única impresora activa del rol '${existing.role}'. Agregá otra antes de borrar esta.`
-      )
-    }
-
-    if (existing.is_default) {
-      throw new ConflictError(
-        `Esta es la impresora predeterminada del rol '${existing.role}'. Marcá otra como predeterminada antes de borrarla.`
-      )
-    }
-
     await repository.softDelete(id, storeId)
   },
 
