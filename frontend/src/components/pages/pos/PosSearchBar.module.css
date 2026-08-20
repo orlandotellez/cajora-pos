@@ -148,6 +148,19 @@
   animation-delay: 0.32s;
 }
 
+.unitTag {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--foreground);
+  color: var(--background);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+  width: fit-content;
+}
+
 @keyframes searchBounce {
   0%, 80%, 100% {
     transform: scale(0.6);

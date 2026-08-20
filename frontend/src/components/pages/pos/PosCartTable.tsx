@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Trash2, X, ScanBarcode, Wrench, PackagePlus } from "lucide-react";
 import { money } from "@/lib/format";
+import { UNIT_TYPE_LABELS } from "@/lib/constants";
 import { usePosStore, type CartItem, type ProductCartItem, type ServiceCartItem } from "@/store/posStore";
 import type { Product } from "@/api/products";
 import styles from "../../../pages/pos/Pos.module.css";
@@ -67,6 +68,11 @@ export function PosCartTable({
               <div className={styles.productName}>
                 {x._type === "service" && <Wrench size={12} style={{ display: "inline", marginRight: 4, verticalAlign: "middle", opacity: 0.5 }} />}
                 {x.name}
+                {x._type === "product" && (x as ProductCartItem).unit_type && (
+                  <span className={styles.unitTag}>
+                    {UNIT_TYPE_LABELS[(x as ProductCartItem).unit_type!] || (x as ProductCartItem).unit_type}
+                  </span>
+                )}
               </div>
               {x._type === "product" && (x as ProductCartItem).barcode && (
                 <div className={styles.productBarcode}>{(x as ProductCartItem).barcode}</div>

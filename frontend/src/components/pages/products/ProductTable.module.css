@@ -42,3 +42,17 @@
   opacity: 0.45;
   cursor: not-allowed;
 }
+
+.unitTag {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--foreground);
+  color: var(--background);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+  vertical-align: middle;
+  margin-left: 4px;
+}

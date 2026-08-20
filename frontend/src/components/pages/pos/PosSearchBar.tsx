@@ -1,6 +1,7 @@
 import { Wrench } from "lucide-react";
 import type { Product, Service } from "@/api";
 import { money } from "@/lib/format";
+import { UNIT_TYPE_LABELS } from "@/lib/constants";
 import { usePosStore } from "@/store/posStore";
 import styles from "./PosSearchBar.module.css";
 
@@ -9,6 +10,7 @@ export interface SearchResult {
   id: string;
   name: string;
   barcode?: string;
+  unit_type?: string;
   price: number;
   data: Product | Service;
 }
@@ -79,6 +81,7 @@ export function PosSearchBar({
                     {r.name}
                   </span>
                   {r.barcode && <span className={styles.searchResultCode}>{r.barcode}</span>}
+                  {r._type === "product" && r.unit_type && <span className={styles.unitTag}>{UNIT_TYPE_LABELS[r.unit_type] || r.unit_type}</span>}
                   {r._type === "product" && isOutOfStock && <span className={styles.searchResultCode}>Sin stock</span>}
                   {r._type === "product" && isLowStock && <span className={styles.searchResultCodeLowStock}>Stock bajo</span>}
                   {r._type === "service" && <span className={styles.searchResultCode}>Servicio</span>}

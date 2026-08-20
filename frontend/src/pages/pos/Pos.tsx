@@ -45,15 +45,15 @@ export default function Pos() {
   } = usePosScanner({
     onScan: async (decodedText) => {
       try {
-        const product = await productsApi.getByBarcode(decodedText);
-        const result: SearchResult = {
-          _type: "product",
-          id: product.id,
-          name: product.name,
-          barcode: product.barcode,
-          price: product.price,
-          data: product,
-        };
+        const product = await productsApi.getByBarcode(decodedText);          const result: SearchResult = {
+            _type: "product",
+            id: product.id,
+            name: product.name,
+            barcode: product.barcode,
+            unit_type: product.unit_type,
+            price: product.price,
+            data: product,
+          };
         addToCart(result);
         setScan("");
         setShowResults(false);
@@ -101,7 +101,7 @@ export default function Pos() {
 
       const results: SearchResult[] = [];
       for (const p of prodRes.products) {
-        results.push({ _type: "product", id: p.id, name: p.name, barcode: p.barcode, price: p.price, data: p });
+        results.push({ _type: "product", id: p.id, name: p.name, barcode: p.barcode, unit_type: p.unit_type, price: p.price, data: p });
       }
       for (const s of svcRes.services) {
         results.push({ _type: "service", id: s.id, name: s.name, barcode: undefined, price: s.base_price, data: s });
