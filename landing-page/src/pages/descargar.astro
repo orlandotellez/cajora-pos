@@ -1,0 +1,204 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Icon from '../components/Icon.astro';
+
+const downloads = [
+  {
+    platform: 'Android',
+    icon: 'android',
+    available: true,
+    file: 'APK universal',
+    size: '~50 MB',
+    version: 'v2.0.6',
+    url: 'https://pub-17156739f1d5412cb62a579bb0ccbc35.r2.dev/versions/apk/pos-system-v2.0.6-universal.apk',
+  },
+  {
+    platform: 'Windows',
+    icon: 'windows',
+    available: false,
+    file: '.exe',
+    size: '',
+    version: '',
+    url: '', 
+  },
+  {
+    platform: 'Linux',
+    icon: 'linux',
+    available: false,
+    file: '.AppImage',
+    size: '',
+    version: '',
+    url: '', 
+  },
+];
+---
+
+<Layout
+  title="Descargas · CajoraPOS"
+  description="Descargá CajoraPOS para Android, Windows y Linux. La versión self-hosted es gratuita para siempre."
+>
+  <main class="downloads container-narrow">
+    <h1 class="downloads__title">Descargá CajoraPOS</h1>
+    <p class="downloads__lead">
+      Disponible para Android, Windows y Linux. La versión self-hosted es gratuita para siempre.
+    </p>
+
+    <div class="downloads__grid">
+      {downloads.map((item) => (
+        <article class="download-card">
+          <div class="download-card__icon">
+            <Icon name={item.icon} size={28} />
+          </div>
+          <h2 class="download-card__name">{item.platform}</h2>
+          {item.available ? (
+            <p class="download-card__meta">
+              {item.file} · {item.size} · {item.version}
+            </p>
+          ) : (
+            <p class="download-card__meta">—</p>
+          )}
+          {item.available ? (
+            <a href={item.url} class="btn-primary download-card__btn">
+              <Icon name="download" size={16} />
+              Descargar
+            </a>
+          ) : (
+            <button class="btn-primary download-card__btn" disabled>Próximamente</button>
+          )}
+          {item.platform === 'Android' && (
+            <p class="download-card__note">
+              En Android permití la instalación desde orígenes desconocidos (Configuración → Seguridad).
+            </p>
+          )}
+        </article>
+      ))}
+    </div>
+
+    <section class="downloads__selfhosted">
+      <h2 class="downloads__selfhosted-title">¿Preferís tener todo en tu propio servidor?</h2>
+      <p class="downloads__selfhosted-text">
+        La versión self-hosted es gratuita para siempre: instalala en tu infraestructura y tus datos son 100% tuyos.
+      </p>
+      <a
+        href="https://github.com/orlandotellez/cajora-pos"
+        target="_blank"
+        rel="noopener"
+        class="btn-secondary downloads__selfhosted-btn"
+      >
+        Ver instalación en GitHub
+      </a>
+    </section>
+  </main>
+</Layout>
+
+<style>
+  .downloads {
+    /* padding superior: header fijo (64px) + aire */
+    padding-top: calc(64px + 2rem);
+    padding-bottom: 5rem;
+  }
+
+  .downloads__title {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .downloads__lead {
+    color: var(--text-muted);
+    margin-bottom: 2.5rem;
+  }
+
+  .downloads__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .download-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+  }
+
+  .download-card__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    margin-bottom: 1.25rem;
+  }
+
+  .download-card__name {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .download-card__meta {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .download-card__btn {
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    width: 100%;
+    border: 0;
+    cursor: pointer;
+  }
+
+  .download-card__btn:disabled {
+    background: var(--surface-2);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    cursor: not-allowed;
+  }
+
+  .download-card__btn:disabled:hover {
+    opacity: 1;
+  }
+
+  .download-card__note {
+    margin-top: 1rem;
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+  }
+
+  .downloads__selfhosted {
+    margin-top: 3rem;
+    padding: 2.5rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    text-align: center;
+  }
+
+  .downloads__selfhosted-title {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .downloads__selfhosted-text {
+    color: var(--text-muted);
+    max-width: 36rem;
+    margin: 0 auto 1.5rem;
+  }
+
+  .downloads__selfhosted-btn {
+    padding: 0.75rem 1.5rem;
+  }
+
+  @media (min-width: 900px) {
+    .downloads__grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+</style>

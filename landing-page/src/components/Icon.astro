@@ -11,7 +11,11 @@ export interface Props {
     | 'printer'
     | 'check'
     | 'plus'
-    | 'layout-dashboard';
+    | 'layout-dashboard'
+    | 'download'
+    | 'android'
+    | 'windows'
+    | 'linux';
   size?: number;
   class?: string;
 }
@@ -121,5 +125,33 @@ const strokeW = Math.max(1.5, Math.min(2, s / 12));
     <rect x="14" y="3" width="7" height="5" />
     <rect x="14" y="12" width="7" height="9" />
     <rect x="3" y="16" width="7" height="5" />
+  </svg>
+)}
+
+{name === 'download' && (
+  <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width={strokeW} stroke-linecap="round" stroke-linejoin="round" class={className}>
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="7 10 12 15 17 10" />
+    <line x1="12" y1="15" x2="12" y2="3" />
+  </svg>
+)}
+
+{name === 'android' && (
+  <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor" stroke="none" class={className}>
+    <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 0 0-.1521-.5676.416.416 0 0 0-.5676.1521l-2.0223 3.503C15.5902 8.2439 13.8533 7.8508 12 7.8508s-3.5902.3931-5.1367 1.0989L4.841 5.4466a.416.416 0 0 0-.5676-.1521.4157.4157 0 0 0-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3435-4.1021-2.6892-7.5743-6.1185-9.4396" />
+  </svg>
+)}
+
+{name === 'windows' && (
+  <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor" stroke="none" class={className}>
+    <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-13.051-1.801" />
+  </svg>
+)}
+
+{name === 'linux' && (
+  <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width={strokeW} stroke-linecap="round" stroke-linejoin="round" class={className}>
+    <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+    <line x1="8" y1="21" x2="16" y2="21" />
+    <line x1="12" y1="17" x2="12" y2="21" />
   </svg>
 )}
