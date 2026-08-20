@@ -44,6 +44,8 @@ interface PosState {
   manualAmount: boolean;
   checkingOut: boolean;
   currency: CurrencyCode;
+  clientId: string | null;
+  clientName: string | null;
 
   addToCart: (
     item: Product | { id: string; service_id: string; name: string; base_price: number; products: ServiceProduct[] },
@@ -68,6 +70,8 @@ interface PosState {
   setManualAmount: (v: boolean) => void;
   setCheckingOut: (v: boolean) => void;
   setCurrency: (c: CurrencyCode) => void;
+  setClient: (id: string | null, name: string | null) => void;
+  clearClient: () => void;
 }
 
 function isProduct(item: Product | { id: string; service_id: string; name: string; base_price: number; products: ServiceProduct[] }): item is Product {
@@ -82,6 +86,8 @@ export const usePosStore = create<PosState>()((set) => ({
   manualAmount: false,
   checkingOut: false,
   currency: getStoredCurrency() as CurrencyCode,
+  clientId: null,
+  clientName: null,
 
   addToCart: (item, stocks) =>
     set((s) => {
@@ -203,7 +209,7 @@ export const usePosStore = create<PosState>()((set) => ({
       }),
     })),
 
-  clearCart: () => set({ cart: [], discountPct: 0, received: "", manualAmount: false, payment: "efectivo" }),
+  clearCart: () => set({ cart: [], discountPct: 0, received: "", manualAmount: false, payment: "efectivo", clientId: null, clientName: null }),
 
   setDiscountPct: (discountPct) => set({ discountPct }),
   setPayment: (payment) => set({ payment, manualAmount: false, received: "" }),
@@ -211,4 +217,6 @@ export const usePosStore = create<PosState>()((set) => ({
   setManualAmount: (manualAmount) => set({ manualAmount }),
   setCheckingOut: (checkingOut) => set({ checkingOut }),
   setCurrency: (currency) => set({ currency }),
+  setClient: (clientId, clientName) => set({ clientId, clientName }),
+  clearClient: () => set({ clientId: null, clientName: null }),
 }));
