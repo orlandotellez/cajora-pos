@@ -351,20 +351,30 @@ export function renderSaleReceipt(config: SaleReceiptConfig, data: SaleReceiptDa
   // Regular items
   for (const item of data.items) {
     if (chars >= 40 && COL_NAME_MAX >= 8) {
-      // 80mm: 4-column layout
+      // 80mm: 4-column layout with word wrap
       const unit = item.unit_price ?? item.line_total / item.quantity
-      const name = item.product_name.length > COL_NAME_MAX
-        ? item.product_name.slice(0, COL_NAME_MAX - 2) + ".."
-        : item.product_name
-      parts.push(enc(
-        String(item.quantity).padEnd(COL_QTY) +
-        " ".repeat(COL_GAP) +
-        name.padEnd(COL_NAME_MAX) +
-        " ".repeat(COL_GAP) +
-        fmt2(unit).padStart(COL_PRICE) +
-        " ".repeat(COL_GAP) +
-        fmt2(item.line_total).padStart(COL_SUB) + "\n"
-      ))
+      const prefix = String(item.quantity).padEnd(COL_QTY) + " ".repeat(COL_GAP)
+      const prefixCont = " ".repeat(COL_QTY + COL_GAP)
+      const priceLine = " ".repeat(COL_GAP) + fmt2(unit).padStart(COL_PRICE) + " ".repeat(COL_GAP) + fmt2(item.line_total).padStart(COL_SUB)
+      const name = item.product_name
+      if (name.length <= COL_NAME_MAX) {
+        // Name fits in one line
+        parts.push(enc(prefix + name.padEnd(COL_NAME_MAX) + priceLine + "\n"))
+      } else {
+        // Name is long: split into chunks, price only on first line
+        let remaining = name
+        let first = true
+        while (remaining.length > 0) {
+          const chunk = remaining.slice(0, COL_NAME_MAX)
+          remaining = remaining.slice(COL_NAME_MAX)
+          if (first) {
+            parts.push(enc(prefix + chunk.padEnd(COL_NAME_MAX) + priceLine + "\n"))
+            first = false
+          } else {
+            parts.push(enc(prefixCont + chunk.padEnd(COL_NAME_MAX) + "\n"))
+          }
+        }
+      }
     } else {
       // 58mm: simple 2-column
       const line = `${item.quantity}x ${item.product_name}`
