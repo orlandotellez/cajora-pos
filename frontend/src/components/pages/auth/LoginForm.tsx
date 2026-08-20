@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { Building2, Eye, EyeOff, ArrowUpRight } from "lucide-react";
+import { Building2, Eye, EyeOff, ArrowUpRight, Play } from "lucide-react";
 import { openCheckout } from "@/lib/checkout-url";
+import { isDemoMode } from "@/mocks/demo";
+import { DEMO_EMAIL, DEMO_PASSWORD } from "@/mocks/fixtures";
 import styles from "./LoginForm.module.css";
 import { useTheme } from "@/context/ThemeContext";
 import logoDark from "@/assets/logo_dark.svg";
@@ -25,6 +27,18 @@ export function LoginForm() {
       await login(email, password);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al conectar con el servidor");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function enterDemo() {
+    setError("");
+    setSubmitting(true);
+    try {
+      await login(DEMO_EMAIL, DEMO_PASSWORD);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al entrar a la demo");
     } finally {
       setSubmitting(false);
     }
@@ -94,6 +108,18 @@ export function LoginForm() {
         <span className={styles.dividerText}>o</span>
         <span className={styles.dividerLine} />
       </div>
+
+      {isDemoMode() && (
+        <button
+          type="button"
+          onClick={() => void enterDemo()}
+          className={styles.demoButton}
+          disabled={submitting}
+        >
+          <Play size={16} />
+          Entrar a la demo
+        </button>
+      )}
 
       <button
         type="button"

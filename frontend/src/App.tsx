@@ -7,6 +7,7 @@ import { SplashScreen } from "./context/AppBootstrap";
 import { useSelectAllNumberInputs } from "./hooks/useSelectAllNumberInputs";
 import { useKeyboardInputVisibility } from "./hooks/useKeyboardInputVisibility";
 import { installModalBackHandler, installNativeBackHandler } from "./lib/modal-back";
+import { isDemoMode } from "./mocks/demo";
 
 export default function App() {
   const { user, loading } = useAuth();
@@ -27,11 +28,33 @@ export default function App() {
   }
 
   return (
-    <AppShell>
-      {/* Suspense mantiene el shell visible mientras cargan las páginas lazy */}
-      <Suspense fallback={<PageLoader />}>
-        <Outlet />
-      </Suspense>
-    </AppShell>
+    <>
+      {isDemoMode() && (
+        <div
+          role="status"
+          style={{
+            position: "fixed",
+            bottom: 12,
+            left: 12,
+            zIndex: 9999,
+            background: "rgba(124, 58, 237, 0.92)",
+            color: "#ffffff",
+            padding: "6px 12px",
+            borderRadius: 999,
+            fontSize: 12,
+            fontWeight: 600,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.35)",
+          }}
+        >
+          Modo demo — datos de ejemplo, no se guardan
+        </div>
+      )}
+      <AppShell>
+        {/* Suspense mantiene el shell visible mientras cargan las páginas lazy */}
+        <Suspense fallback={<PageLoader />}>
+          <Outlet />
+        </Suspense>
+      </AppShell>
+    </>
   );
 }

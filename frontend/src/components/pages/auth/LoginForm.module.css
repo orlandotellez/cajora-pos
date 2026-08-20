@@ -176,6 +176,34 @@
   transition: all 0.15s;
 }
 
+.demoButton {
+  width: 100%;
+  height: 44px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  transition: opacity 0.15s;
+}
+
+.demoButton:hover {
+  opacity: 0.9;
+}
+
+.demoButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .secondaryButton:hover {
   background: var(--accent);
   color: var(--foreground);
