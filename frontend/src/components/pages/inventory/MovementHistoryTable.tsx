@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight, Loader2, ArrowDownRight, ArrowUpRight, RefreshCw, Eye } from "lucide-react";
 import type { InventoryMovement } from "@/api/inventory";
-import { MOVEMENT_TYPES } from "@/lib/constants";
+import { MOVEMENT_TYPES, UNIT_TYPE_LABELS, unitQuantitySuffix } from "@/lib/constants";
 import { RefreshBadge } from "@/components/common/RefreshBadge";
 import { getVisiblePages } from "@/lib/pagination";
 import styles from "./MovementHistoryTable.module.css";
@@ -51,6 +51,12 @@ export function MovementHistoryTable({ movements, page, totalPages, loading = fa
                   <td className={`${styles.tdRight} ${styles.movementQty}`}>
                     {m.movement_type === "entrada" || m.movement_type === "venta" ? "+" : m.movement_type === "salida" ? "−" : ""}
                     {m.quantity}
+                    {m.unit_type && (
+                      <span className={styles.unitTypeBadge}>
+                        {UNIT_TYPE_LABELS[m.unit_type] || m.unit_type}
+                        {unitQuantitySuffix(m.unit_type, m.unit_quantity)}
+                      </span>
+                    )}
                   </td>
                   <td className={styles.tdRightMuted}>
                     {new Date(m.created_at).toLocaleString("es-MX", {

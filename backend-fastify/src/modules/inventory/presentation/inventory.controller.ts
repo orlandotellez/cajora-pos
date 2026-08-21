@@ -2,11 +2,14 @@ import type { FastifyReply, FastifyRequest } from "fastify"
 import { createInventoryService } from "../application/inventory.service"
 import { InventoryRepository } from "../infrastructure/inventory.prisma.repository"
 import { ProductRepository } from "../../products/infrastructure/products.prisma.repository"
+import { createCashRegisterService } from "../../cash-register/application/cash-register.service"
+import { CashRegisterRepository } from "../../cash-register/infrastructure/cash-register.prisma.repository"
 import { CreateMovementDtoSchema, MovementQuerySchema } from "./inventory.dto"
 import { UnauthorizedError } from "@/core/errors/AppError"
 import { sseBroadcast } from "@/config/sse"
 
-const inventoryService = createInventoryService(InventoryRepository, ProductRepository)
+const cashRegisterService = createCashRegisterService(CashRegisterRepository)
+const inventoryService = createInventoryService(InventoryRepository, ProductRepository, cashRegisterService)
 
 export const inventoryController = {
   createMovement: async (request: FastifyRequest, reply: FastifyReply) => {

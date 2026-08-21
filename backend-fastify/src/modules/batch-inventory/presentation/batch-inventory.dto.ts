@@ -11,6 +11,7 @@ export const CreateBatchDtoSchema = z.object({
   movement_type: z.enum(["entrada", "salida", "ajuste"]),
   supplier_id: z.string().uuid().optional().nullable(),
   notes: z.string().optional().nullable(),
+  paid_cash: z.boolean().optional(),
   items: z.array(BatchItemSchema).min(1, "At least one item is required"),
 })
 

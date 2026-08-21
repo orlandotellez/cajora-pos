@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { ShoppingCart } from "lucide-react";
 import { money } from "@/lib/format";
-import { UNIT_TYPE_LABELS } from "@/lib/constants";
+import { UNIT_TYPE_LABELS, unitQuantitySuffix } from "@/lib/constants";
 import { DataTable, type Column } from "@/components/common/DataTable";
 import { usePosStore } from "@/store/posStore";
 import type { Product } from "@/api";
@@ -59,7 +59,7 @@ export function ProductTable({
                 <span>
                   {" · "}
                   {UNIT_TYPE_LABELS[p.unit_type] || p.unit_type}
-                  {p.unit_quantity ? ` ${p.unit_quantity}` : ""}
+                  {unitQuantitySuffix(p.unit_type, p.unit_quantity)}
                 </span>
               )}
             </div>

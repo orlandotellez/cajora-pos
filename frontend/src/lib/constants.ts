@@ -13,6 +13,23 @@ export const UNIT_TYPE_LABELS: Record<string, string> = {
   ristra: "Ristra",
 };
 
+export const LOOSE_UNIT_TYPES = new Set(["unidad", "botella", "lata", "sobre", "barra", "rollo", "galon"]);
+
+export function needsUnitQuantity(unitType?: string | null): boolean {
+  return !!unitType && !LOOSE_UNIT_TYPES.has(unitType);
+}
+
+export function unitQuantitySuffix(unitType?: string | null, unitQuantity?: number | null): string {
+  if (!needsUnitQuantity(unitType)) return "";
+  const q = Number(unitQuantity);
+  return Number.isFinite(q) && q >= 2 ? ` ×${q}` : "";
+}
+
+export const UNIT_TYPE_GROUPS: { label: string; types: string[] }[] = [
+  { label: "Venta suelta (sin cant. x empaque)", types: ["unidad", "botella", "lata", "sobre", "barra", "rollo", "galon"] },
+  { label: "Empaques (requieren cant. x empaque)", types: ["paquete", "caja", "bolsa", "ristra"] },
+];
+
 
 export const PAYMENT_METHODS = [
   { value: "efectivo", label: "Efectivo" },

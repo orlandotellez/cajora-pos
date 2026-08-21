@@ -195,3 +195,15 @@
     transform: rotate(360deg);
   }
 }
+
+.unitTypeBadge {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted-foreground, #6b7280);
+  background: var(--muted, rgba(0, 0, 0, 0.05));
+  border-radius: 4px;
+  padding: 1px 6px;
+  white-space: nowrap;
+}

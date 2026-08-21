@@ -1,5 +1,8 @@
 import { X, ArrowDownRight, ArrowUpRight, RefreshCw } from "lucide-react";
 import type { InventoryMovement } from "@/api/inventory";
+import { money } from "@/lib/format";
+import { UNIT_TYPE_LABELS, needsUnitQuantity } from "@/lib/constants";
+import { usePosStore } from "@/store/posStore";
 import styles from "./MovementDetailModal.module.css";
 import { useModalBack } from "@/hooks/useModalBack";
 
@@ -9,8 +12,11 @@ interface MovementDetailModalProps {
 }
 
 export function MovementDetailModal({ movement, onClose }: MovementDetailModalProps) {
+  const currency = usePosStore((s) => s.currency);
   // Botón de retroceso de Android / gesto de regreso cierra el modal.
   useModalBack(onClose);
+  const hasCost = movement.unit_cost != null && movement.unit_cost > 0;
+  const totalCost = hasCost ? Math.round(movement.unit_cost! * movement.quantity * 100) / 100 : null;
   return (
     <div className={styles.overlayCenter} onClick={onClose}>
       <div className={styles.detailModal} onClick={(e) => e.stopPropagation()}>
@@ -43,8 +49,27 @@ export function MovementDetailModal({ movement, onClose }: MovementDetailModalPr
             <span className={styles.detailValue}>
               {movement.movement_type === "entrada" || movement.movement_type === "venta" ? "+" : movement.movement_type === "salida" ? "−" : ""}
               {movement.quantity}
+              {movement.unit_type && (
+                <>
+                  {" · "}
+                  {UNIT_TYPE_LABELS[movement.unit_type] || movement.unit_type}
+                  {needsUnitQuantity(movement.unit_type) && movement.unit_quantity ? ` (×${movement.unit_quantity} por empaque)` : ""}
+                </>
+              )}
             </span>
           </div>
+          {hasCost && (
+            <>
+              <div className={styles.detailField}>
+                <span className={styles.detailLabel}>Costo unitario</span>
+                <span className={styles.detailValue}>{money(movement.unit_cost, currency)}</span>
+              </div>
+              <div className={styles.detailField}>
+                <span className={styles.detailLabel}>Costo total del movimiento</span>
+                <span className={styles.detailValue}>{money(totalCost, currency)}</span>
+              </div>
+            </>
+          )}
           <div className={styles.detailField}>
             <span className={styles.detailLabel}>Fecha</span>
             <span className={styles.detailValue}>

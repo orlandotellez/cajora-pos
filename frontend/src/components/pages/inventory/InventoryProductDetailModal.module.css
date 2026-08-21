@@ -1,0 +1,167 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  justify-content: flex-end;
+  z-index: 50;
+}
+
+.modal {
+  width: 100%;
+  max-width: 448px;
+  background: var(--background);
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  animation: slideIn 0.2s ease;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modalTitle {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.modalClose {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted-foreground, #6b7280);
+  padding: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.modalBody {
+  padding: 16px 24px 24px;
+  flex: 1;
+}
+
+.productHeader {
+  margin-bottom: 16px;
+}
+
+.productName {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.productBarcode {
+  font-size: 13px;
+  color: var(--muted-foreground, #6b7280);
+  font-family: monospace;
+  margin-top: 2px;
+}
+
+.section {
+  margin-bottom: 16px;
+}
+
+.sectionTitle {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted-foreground, #6b7280);
+  margin: 0 0 8px;
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 16px;
+}
+
+.detailItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.detailLabel {
+  font-size: 11px;
+  color: var(--muted-foreground, #6b7280);
+}
+
+.detailValue {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.moneyValue {
+  font-variant-numeric: tabular-nums;
+}
+
+.stockValue {
+  font-weight: 600;
+}
+
+.negative {
+  color: #ef4444;
+}
+
+.marginHint {
+  font-size: 12px;
+  color: #d97706;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin: 10px 0 0;
+}
+
+.modalActions {
+  display: flex;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+}
+
+.outlineBtn,
+.primaryBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 38px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  flex: 1;
+}
+
+.outlineBtn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--foreground);
+}
+
+.primaryBtn {
+  background: var(--primary, #111827);
+  border: 1px solid var(--primary, #111827);
+  color: var(--primary-foreground, #fff);
+}

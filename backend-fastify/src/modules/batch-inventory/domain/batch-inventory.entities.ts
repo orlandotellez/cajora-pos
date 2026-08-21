@@ -30,6 +30,7 @@ export type CreateBatchData = {
   movement_type: "entrada" | "salida" | "ajuste"
   supplier_id?: string | null
   notes?: string | null
+  paid_cash?: boolean
   user_id: string
   store_id?: string
   items: CreateBatchItemData[]

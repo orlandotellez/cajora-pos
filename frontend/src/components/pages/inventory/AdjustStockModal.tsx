@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { inventoryApi } from "@/api/inventory";
 import { useToast } from "@/components/common/ui/Toast";
-import { UNIT_TYPE_LABELS } from "@/lib/constants";
+import { useCashSessionStore } from "@/store/cashSessionStore";
+import { money } from "@/lib/format";
+import { UNIT_TYPE_LABELS, unitQuantitySuffix } from "@/lib/constants";
 import styles from "./AdjustStockModal.module.css";
 import { useModalBack } from "@/hooks/useModalBack";
 
@@ -20,12 +22,22 @@ interface AdjustStockModalProps {
 
 export function AdjustStockModal({ adjust, onClose, onApplied }: AdjustStockModalProps) {
   const { toast } = useToast();
+  const canSellCash = useCashSessionStore((s) => s.canSellCash);
   // Botón de retroceso de Android / gesto de regreso cierra el modal.
   useModalBack(onClose);
   const [type, setType] = useState<"entrada" | "salida" | "ajuste">("entrada");
   const [qty, setQty] = useState(0);
+  const [unitCost, setUnitCost] = useState("");
+  const [paidCash, setPaidCash] = useState(false);
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    useCashSessionStore.getState().fetchStatus();
+  }, []);
+
+  const costNumber = Number(unitCost) || 0;
+  const expenseTotal = Math.round(costNumber * qty * 100) / 100;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -36,6 +48,8 @@ export function AdjustStockModal({ adjust, onClose, onApplied }: AdjustStockModa
         product_id: adjust.id,
         movement_type: type,
         quantity: type === "ajuste" ? qty - adjust.stock : qty,
+        ...(type === "entrada" && costNumber > 0 && { unit_cost: costNumber }),
+        ...(type === "entrada" && paidCash && canSellCash && costNumber > 0 && { paid_cash: true }),
         note: note || undefined,
       });
       onApplied();
@@ -55,6 +69,10 @@ export function AdjustStockModal({ adjust, onClose, onApplied }: AdjustStockModa
       setQty(adjust.stock);
     } else {
       setQty(0);
+    }
+    if (t !== "entrada") {
+      setUnitCost("");
+      setPaidCash(false);
     }
   }
 
@@ -98,11 +116,44 @@ export function AdjustStockModal({ adjust, onClose, onApplied }: AdjustStockModa
               {adjust?.unit_type && (
                 <span className={styles.unitBadge}>
                   {UNIT_TYPE_LABELS[adjust.unit_type] || adjust.unit_type}
-                  {adjust.unit_quantity ? ` × ${adjust.unit_quantity}` : ""}
+                  {unitQuantitySuffix(adjust.unit_type, adjust.unit_quantity)}
                 </span>
               )}
             </div>
           </div>
+
+          {type === "entrada" && (
+            <>
+              <div className={styles.field}>
+                <label className={styles.fieldLabel}>Costo unitario (opcional)</label>
+                <input
+                  type="number" min={0} step="0.01"
+                  value={unitCost}
+                  onChange={(e) => setUnitCost(e.target.value)}
+                  placeholder="Cuánto te costó cada unidad"
+                  className={styles.input}
+                />
+              </div>
+
+              <label className={styles.paidCashLabel}>
+                <input
+                  type="checkbox"
+                  checked={paidCash && canSellCash}
+                  disabled={!canSellCash || costNumber <= 0}
+                  onChange={(e) => setPaidCash(e.target.checked)}
+                />
+                Pagado en efectivo desde la caja
+              </label>
+              {!canSellCash && (
+                <p className={styles.paidCashHint}>Abrí la caja para registrar esta compra en efectivo</p>
+              )}
+              {paidCash && canSellCash && expenseTotal > 0 && (
+                <p className={styles.paidCashHint}>
+                  Se restarán {money(expenseTotal)} de la caja abierta
+                </p>
+              )}
+            </>
+          )}
 
           <div className={styles.field}>
             <label className={styles.fieldLabel}>Nota (opcional)</label>

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { X, Camera } from "lucide-react";
 import { productsApi, type Product, type UpdateProductPayload } from "@/api/products";
 import { useToast } from "@/components/common/ui/Toast";
-import { UNIT_TYPE_LABELS } from "@/lib/constants";
+import { UNIT_TYPE_LABELS, UNIT_TYPE_GROUPS, needsUnitQuantity } from "@/lib/constants";
 import { money } from "@/lib/format";
 import { BarcodeScanner } from "@/components/common/BarcodeScanner";
 import type { Category, Supplier } from "@/api";
@@ -36,8 +36,14 @@ export function EditInventoryModal({ product, categories, suppliers, onClose, on
   const margin = price - cost;
   const marginPct = price > 0 ? (margin / price) * 100 : 0;
 
+  const needsQty = needsUnitQuantity(unitType);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (needsQty && (!unitQuantity || unitQuantity < 2)) {
+      toast("La cantidad por empaque debe ser un número entero mayor a 1", "error");
+      return;
+    }
     setSubmitting(true);
     try {
       // En edición los ids vacíos van como `null` (el server los desenlaza).
@@ -45,7 +51,7 @@ export function EditInventoryModal({ product, categories, suppliers, onClose, on
         name,
         barcode: barcode || null,
         unit_type: unitType || null,
-        unit_quantity: unitQuantity || null,
+        unit_quantity: needsQty ? unitQuantity : null,
         category_id: categoryId || null,
         supplier_id: supplierId || null,
         price,
@@ -108,22 +114,37 @@ export function EditInventoryModal({ product, categories, suppliers, onClose, on
             <div className={styles.formGrid}>
               <div className={styles.field}>
                 <label className={styles.fieldLabel}>Tipo de empaque</label>
-                <select value={unitType} onChange={(e) => setUnitType(e.target.value)} className={styles.select}>
+                <select
+                  value={unitType}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setUnitType(v);
+                    if (!needsUnitQuantity(v)) setUnitQuantity(0);
+                  }}
+                  className={styles.select}
+                >
                   <option value="">Sin empaque</option>
-                  {Object.entries(UNIT_TYPE_LABELS).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
+                  {UNIT_TYPE_GROUPS.map((group) => (
+                    <optgroup key={group.label} label={group.label}>
+                      {group.types.map((value) => (
+                        <option key={value} value={value}>{UNIT_TYPE_LABELS[value]}</option>
+                      ))}
+                    </optgroup>
                   ))}
                 </select>
               </div>
-              <div className={styles.field}>
-                <label className={styles.fieldLabel}>Cant. x empaque</label>
-                <input
-                  type="number" min="0"
-                  value={unitQuantity}
-                  onChange={(e) => setUnitQuantity(Number(e.target.value))}
-                  className={styles.input}
-                />
-              </div>
+              {needsQty && (
+                <div className={styles.field}>
+                  <label className={styles.fieldLabel}>Cant. x empaque *</label>
+                  <input
+                    type="number" min="2" step="1"
+                    value={unitQuantity || ""}
+                    onChange={(e) => setUnitQuantity(Number(e.target.value))}
+                    placeholder="¿Cuántas unidades trae?"
+                    className={styles.input} required
+                  />
+                </div>
+              )}
               <div className={styles.field}>
                 <label className={styles.fieldLabel}>Categoría</label>
                 <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className={styles.select}>
@@ -177,17 +198,24 @@ export function EditInventoryModal({ product, categories, suppliers, onClose, on
               </div>
             </div>
 
-            <div className={styles.marginBox}>
-              <span className={styles.marginLabel}>Margen estimado</span>
-              <div className={styles.marginValues}>
-                <span className={`${styles.marginMoney} ${margin < 0 ? styles.marginNegative : ""}`}>
-                  {money(margin)}
-                </span>
-                <span className={`${styles.marginPct} ${margin < 0 ? styles.marginNegative : ""}`}>
-                  {marginPct.toFixed(1)}%
-                </span>
+            {cost > 0 ? (
+              <div className={styles.marginBox}>
+                <span className={styles.marginLabel}>Margen estimado</span>
+                <div className={styles.marginValues}>
+                  <span className={`${styles.marginMoney} ${margin < 0 ? styles.marginNegative : ""}`}>
+                    {money(margin)}
+                  </span>
+                  <span className={`${styles.marginPct} ${margin < 0 ? styles.marginNegative : ""}`}>
+                    {marginPct.toFixed(1)}%
+                  </span>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className={styles.marginBox}>
+                <span className={styles.marginLabel}>Margen estimado</span>
+                <span className={styles.marginHintInline}>Cargá el costo para ver el margen</span>
+              </div>
+            )}
           </section>
 
           <button type="submit" className={styles.primaryBtn} disabled={submitting}>

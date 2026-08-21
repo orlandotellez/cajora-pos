@@ -18,6 +18,7 @@ import type { InventoryMovement, CreateMovementPayload, CreateBatchPayload, Batc
 import type { UserResponse } from "@/api/users";
 import type { Printer } from "@/api/printers";
 import type { Settings } from "@/api/settings";
+import type { CashSession } from "@/api/cash-register";
 
 // ============================================================================
 // Handlers del modo demo.
@@ -72,7 +73,65 @@ const movements = [...DEMO_FIXTURES.movements];
 const batches = [...DEMO_FIXTURES.batches];
 const users = [...DEMO_FIXTURES.users];
 const printers = [...DEMO_FIXTURES.printers];
+const cashSessions = [...DEMO_FIXTURES.cashSessions];
+const cashExpenses = [...DEMO_FIXTURES.cashExpenses];
 let settings: Settings = DEMO_FIXTURES.settings;
+
+// ---- Caja: helpers de arqueo -----------------------------------------------
+// El efectivo acumulado se calcula con las ventas demo en efectivo dentro
+// de la ventana [opened_at, ahora]. La demo no mockea cobros de crédito,
+// así que el arqueo solo considera ventas. Los gastos (compras pagadas en
+// efectivo) restan del esperado.
+const round2 = (v: number) => Math.round(v * 100) / 100;
+
+function cashSoFar(session: CashSession): number {
+  return round2(
+    sales
+      .filter((s) => s.payment_method === "efectivo" && s.created_at >= session.opened_at)
+      .reduce((acc, s) => acc + s.total, 0),
+  );
+}
+
+function expensesTotal(sessionId: string): number {
+  return round2(
+    cashExpenses
+      .filter((e) => e.session_id === sessionId)
+      .reduce((acc, e) => acc + e.amount, 0),
+  );
+}
+
+// Resolución de sesión para gastos: propia primero, si no la única abierta.
+function resolveExpenseSession(): CashSession | null {
+  const open = cashSessions.filter((s) => s.status === "abierto");
+  return open.find((s) => s.user_id === DEMO_USER.id) ?? (open.length === 1 ? open[0] : null);
+}
+
+function registerExpense(input: {
+  session: CashSession;
+  amount: number;
+  description: string;
+  source_type: string;
+  ref_id: string;
+}): void {
+  cashExpenses.push({
+    id: makeId("demo-cash-exp"),
+    session_id: input.session.id,
+    amount: round2(input.amount),
+    reason: "compra_inventario",
+    description: input.description,
+    source_type: input.source_type,
+    ref_id: input.ref_id,
+    user_id: DEMO_USER.id,
+    user_name: DEMO_USER.name,
+    created_at: new Date().toISOString(),
+  });
+}
+
+// Enriquece movimientos con el empaque del producto (unidad, caja, etc.)
+function withUnitInfo(m: InventoryMovement): InventoryMovement {
+  const p = products.find((prod) => prod.id === m.product_id);
+  return { ...m, unit_type: p?.unit_type ?? null, unit_quantity: p?.unit_quantity ?? null };
+}
 
 export const handlers = [
   // ==========================================================================
@@ -468,7 +527,8 @@ export const handlers = [
     const limit = getNumber(url.searchParams.get("limit"), 20);
     const filtered = [...movements]
       .sort((a, b) => b.created_at.localeCompare(a.created_at))
-      .filter((m) => !movementType || m.movement_type === movementType);
+      .filter((m) => !movementType || m.movement_type === movementType)
+      .map(withUnitInfo);
     const { items, total } = paginate(filtered, page, limit);
     return HttpResponse.json({ movements: items, total, page, limit });
   }),
@@ -477,7 +537,8 @@ export const handlers = [
     await delay(200);
     const byProduct = movements
       .filter((m) => m.product_id === params.productId)
-      .sort((a, b) => b.created_at.localeCompare(a.created_at));
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))
+      .map(withUnitInfo);
     return HttpResponse.json(byProduct);
   }),
 
@@ -496,11 +557,25 @@ export const handlers = [
       product_name: product?.name,
       movement_type: body.movement_type,
       quantity: body.quantity,
+      unit_cost: body.unit_cost ?? null,
       note: body.note,
       user_id: DEMO_USER.id,
       created_at: new Date().toISOString(),
     };
     movements.unshift(movement);
+    // Compra pagada en efectivo → gasto ligado a la caja abierta
+    if (body.paid_cash && movement.unit_cost && movement.unit_cost > 0 && movement.quantity > 0) {
+      const session = resolveExpenseSession();
+      if (session) {
+        registerExpense({
+          session,
+          amount: round2(movement.unit_cost * movement.quantity),
+          description: `Compra: ${product?.name ?? "producto"} x${movement.quantity}`,
+          source_type: "inventory_movement",
+          ref_id: movement.id,
+        });
+      }
+    }
     return HttpResponse.json(movement, { status: 201 });
   }),
 
@@ -545,6 +620,24 @@ export const handlers = [
       created_at: new Date().toISOString(),
     };
     batches.unshift(batch);
+    // Compra agrupada pagada en efectivo → gasto con el total de ítems con costo
+    if (body.paid_cash && body.movement_type === "entrada") {
+      const expenseTotal = round2(
+        body.items.reduce((acc, it) => acc + (it.unit_cost ?? 0) * it.quantity, 0),
+      );
+      if (expenseTotal > 0) {
+        const session = resolveExpenseSession();
+        if (session) {
+          registerExpense({
+            session,
+            amount: expenseTotal,
+            description: `Compra agrupada: ${batch.items?.length ?? 0} productos`,
+            source_type: "inventory_batch",
+            ref_id: batch.id,
+          });
+        }
+      }
+    }
     return HttpResponse.json(batch, { status: 201 });
   }),
 
@@ -711,6 +804,90 @@ export const handlers = [
     return new HttpResponse(stream, {
       headers: { "Content-Type": "text/event-stream" },
     });
+  }),
+
+  // ==========================================================================
+  // Caja — apertura / cierre / estado / historial
+  // ==========================================================================
+  http.get(`${API}/cash-register/status`, async () => {
+    await delay(200);
+    const open = cashSessions
+      .filter((s) => s.status === "abierto")
+      .map((s) => ({ ...s, cash_so_far: cashSoFar(s), expenses_total: expensesTotal(s.id) }));
+    return HttpResponse.json({ open_sessions: open, can_sell_cash: open.length > 0 });
+  }),
+
+  http.post(`${API}/cash-register/open`, async ({ request }) => {
+    await delay(300);
+    const body = (await request.json()) as { monto_inicial?: number; label?: string };
+    if (!body.monto_inicial || body.monto_inicial <= 0) {
+      return HttpResponse.json({ message: "El monto inicial debe ser mayor a cero" }, { status: 400 });
+    }
+    if (cashSessions.some((s) => s.status === "abierto" && s.user_id === DEMO_USER.id)) {
+      return HttpResponse.json(
+        { message: "Ya tenés una caja abierta. Cerrala antes de abrir otra." },
+        { status: 409 },
+      );
+    }
+    const session: CashSession = {
+      id: makeId("demo-cash"),
+      store_id: DEMO_STORE.id,
+      user_id: DEMO_USER.id,
+      user_name: DEMO_USER.name,
+      label: body.label?.trim() || undefined,
+      status: "abierto",
+      opening_amount: round2(body.monto_inicial),
+      opened_at: new Date().toISOString(),
+    };
+    cashSessions.unshift(session);
+    return HttpResponse.json(session, { status: 201 });
+  }),
+
+  http.post(`${API}/cash-register/close`, async ({ request }) => {
+    await delay(350);
+    const body = (await request.json()) as {
+      session_id?: string;
+      monto_contado?: number;
+      observaciones?: string;
+    };
+    const session = cashSessions.find((s) => s.id === body.session_id);
+    if (!session) {
+      return HttpResponse.json({ message: "Sesión de caja no encontrada" }, { status: 404 });
+    }
+    if (session.status === "cerrado") {
+      return HttpResponse.json({ message: "Esa caja ya está cerrada" }, { status: 409 });
+    }
+    if (body.monto_contado == null || body.monto_contado < 0) {
+      return HttpResponse.json({ message: "El monto contado no puede ser negativo" }, { status: 400 });
+    }
+    const expenses_total = expensesTotal(session.id);
+    const expected_amount = round2(session.opening_amount + cashSoFar(session) - expenses_total);
+    const difference = round2((body.monto_contado ?? 0) - expected_amount);
+    const closed: CashSession = {
+      ...session,
+      status: "cerrado",
+      closing_amount_counted: round2(body.monto_contado ?? 0),
+      expected_amount,
+      difference,
+      observations: body.observaciones?.trim() || undefined,
+      closed_at: new Date().toISOString(),
+    };
+    const idx = cashSessions.findIndex((s) => s.id === session.id);
+    cashSessions[idx] = closed;
+    return HttpResponse.json({
+      session: closed,
+      report: { expected_amount, difference, expenses_total },
+    });
+  }),
+
+  http.get(`${API}/cash-register/history`, async ({ request }) => {
+    await delay(250);
+    const url = new URL(request.url);
+    const page = getNumber(url.searchParams.get("page"), 1);
+    const limit = getNumber(url.searchParams.get("limit"), 10);
+    const sorted = [...cashSessions].sort((a, b) => b.opened_at.localeCompare(a.opened_at));
+    const { items, total } = paginate(sorted, page, limit);
+    return HttpResponse.json({ sessions: items, total, page, limit });
   }),
 
   // ==========================================================================

@@ -167,3 +167,34 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.paidCashLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--foreground);
+  margin-bottom: 4px;
+  cursor: pointer;
+}
+
+.paidCashLabel input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+}
+
+.paidCashLabel input[type="checkbox"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.paidCashHint {
+  font-size: 12px;
+  color: #d97706;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin: 0 0 12px;
+}

@@ -9,6 +9,7 @@ import { useCrudPagination } from "@/hooks/useCrudPagination";
 import { useToast } from "@/components/common/ui/Toast";
 import { AdjustStockModal } from "@/components/pages/inventory/AdjustStockModal";
 import { MovementDetailModal } from "@/components/pages/inventory/MovementDetailModal";
+import { InventoryProductDetailModal } from "@/components/pages/inventory/InventoryProductDetailModal";
 import { BatchMovementModal } from "@/components/pages/inventory/BatchMovementModal";
 import { BatchDetailModal } from "@/components/pages/inventory/BatchDetailModal";
 import { EditInventoryModal } from "@/components/pages/inventory/EditInventoryModal";
@@ -37,6 +38,15 @@ type AdjustState = {
   unit_quantity?: number | null;
 } | null;
 
+// Resuelve el empaque del producto EN EL CLIENTE: el backend puede no enviar
+// unit_type/unit_quantity (deploy viejo), así que lo completamos desde la
+// lista de productos ya cargada. Si el movimiento ya lo trae, no se toca.
+function withProductUnit(m: InventoryMovement, products: Product[]): InventoryMovement {
+  if (m.unit_type) return m;
+  const p = products.find((prod) => prod.id === m.product_id);
+  return p ? { ...m, unit_type: p.unit_type ?? null, unit_quantity: p.unit_quantity ?? null } : m;
+}
+
 export default function Inventory() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<InventoryTab>("inventory");
@@ -47,6 +57,7 @@ export default function Inventory() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [adjust, setAdjust] = useState<AdjustState>(null);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
+  const [detailProduct, setDetailProduct] = useState<Product | null>(null);
   const [selectedMovement, setSelectedMovement] = useState<InventoryMovement | null>(null);
   const [batchModalOpen, setBatchModalOpen] = useState(false);
   const [batchDetail, setBatchDetail] = useState<BatchResponse | null>(null);
@@ -176,6 +187,17 @@ export default function Inventory() {
 
   const handleEdit = useCallback((product: Product) => setEditProduct(product), []);
 
+  // Desde el detalle: cerrar el detalle y abrir la acción pedida.
+  const handleDetailEdit = useCallback((product: Product) => {
+    setDetailProduct(null);
+    setEditProduct(product);
+  }, []);
+
+  const handleDetailAdjust = useCallback((product: Product) => {
+    setDetailProduct(null);
+    handleAdjust(product);
+  }, [handleAdjust]);
+
   function handleBatchCreated() {
     refetchAll();
   }
@@ -249,6 +271,7 @@ export default function Inventory() {
             lowStockProducts={lowStockProducts}
             onEdit={handleEdit}
             onAdjust={handleAdjust}
+            onRowClick={setDetailProduct}
             refreshing={refreshingProducts}
           />
         )}
@@ -257,7 +280,7 @@ export default function Inventory() {
           <section className={styles.movementSection}>
             <h2 className={styles.movementSectionTitle}>Historial de movimientos</h2>
             <MovementHistoryTable
-              movements={movements}
+              movements={movements.map((m) => withProductUnit(m, products))}
               page={movementPage}
               totalPages={movementsTotalPages}
               loading={movementsLoading}
@@ -283,6 +306,15 @@ export default function Inventory() {
           </section>
         )}
       </div>
+
+      {detailProduct && (
+        <InventoryProductDetailModal
+          product={detailProduct}
+          onClose={() => setDetailProduct(null)}
+          onEdit={handleDetailEdit}
+          onAdjust={handleDetailAdjust}
+        />
+      )}
 
       {adjust && (
         <AdjustStockModal

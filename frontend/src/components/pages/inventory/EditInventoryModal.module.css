@@ -247,3 +247,9 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.marginHintInline {
+  font-size: 12px;
+  color: var(--muted-foreground, #6b7280);
+  font-style: italic;
+}

@@ -4,7 +4,7 @@ import { X, Pencil, Camera, ArrowRight } from "lucide-react";
 import { productsApi, type Product, type UpdateProductPayload } from "@/api/products";
 import { useToast } from "@/components/common/ui/Toast";
 import { money } from "@/lib/format";
-import { UNIT_TYPE_LABELS } from "@/lib/constants";
+import { UNIT_TYPE_LABELS, UNIT_TYPE_GROUPS, needsUnitQuantity } from "@/lib/constants";
 import { BarcodeScanner } from "@/components/common/BarcodeScanner";
 import { useModalBack } from "@/hooks/useModalBack";
 import type { Category, Supplier } from "@/api";
@@ -48,6 +48,9 @@ export function ProductDetailModal({ product, categories, suppliers, onClose, on
   const unitLabel = productData.unit_type
     ? UNIT_TYPE_LABELS[productData.unit_type] || productData.unit_type
     : "—";
+  // Regla: solo los empaques reales (caja, paquete…) muestran/editan cant. x empaque.
+  const needsQty = needsUnitQuantity(form.unit_type);
+  const showQty = needsUnitQuantity(productData.unit_type);
 
   function startEdit() {
     setForm({
@@ -66,6 +69,10 @@ export function ProductDetailModal({ product, categories, suppliers, onClose, on
       toast("El nombre es obligatorio", "error");
       return;
     }
+    if (needsQty && (!form.unit_quantity || form.unit_quantity < 2)) {
+      toast("La cantidad por empaque debe ser un número entero mayor a 1", "error");
+      return;
+    }
     setSaving(true);
     try {
       // En edición los ids vacíos van como `null` (el server los desenlaza).
@@ -73,7 +80,7 @@ export function ProductDetailModal({ product, categories, suppliers, onClose, on
         name: form.name,
         barcode: form.barcode || null,
         unit_type: form.unit_type || null,
-        unit_quantity: form.unit_quantity || null,
+        unit_quantity: needsQty ? form.unit_quantity : null,
         category_id: form.category_id || null,
         supplier_id: form.supplier_id || null,
       };
@@ -83,7 +90,7 @@ export function ProductDetailModal({ product, categories, suppliers, onClose, on
         name: form.name,
         barcode: form.barcode || undefined,
         unit_type: form.unit_type || undefined,
-        unit_quantity: form.unit_quantity || undefined,
+        unit_quantity: needsQty ? form.unit_quantity : undefined,
         category: form.category_id ? categories.find((c) => c.id === form.category_id) : undefined,
         supplier: form.supplier_id ? suppliers.find((s) => s.id === form.supplier_id) ?? null : null,
       });
@@ -139,10 +146,12 @@ export function ProductDetailModal({ product, categories, suppliers, onClose, on
                   <span className={styles.detailLabel}>Tipo de empaque</span>
                   <span className={styles.detailValue}>{unitLabel}</span>
                 </div>
-                <div className={styles.detailItem}>
-                  <span className={styles.detailLabel}>Cant. x empaque</span>
-                  <span className={styles.detailValue}>{productData.unit_quantity ?? "—"}</span>
-                </div>
+                {showQty && (
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Cant. x empaque</span>
+                    <span className={styles.detailValue}>{productData.unit_quantity ?? "—"}</span>
+                  </div>
+                )}
                 <div className={styles.detailItem}>
                   <span className={styles.detailLabel}>Categoría</span>
                   <span className={styles.detailValue}>{productData.category?.name || "—"}</span>
@@ -186,24 +195,34 @@ export function ProductDetailModal({ product, categories, suppliers, onClose, on
                     <label className={styles.fieldLabel}>Tipo de empaque</label>
                     <select
                       value={form.unit_type}
-                      onChange={(e) => setForm({ ...form, unit_type: e.target.value })}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setForm({ ...form, unit_type: v, unit_quantity: needsUnitQuantity(v) ? form.unit_quantity : 0 });
+                      }}
                       className={styles.select}
                     >
                       <option value="">Sin empaque</option>
-                      {Object.entries(UNIT_TYPE_LABELS).map(([value, label]) => (
-                        <option key={value} value={value}>{label}</option>
+                      {UNIT_TYPE_GROUPS.map((group) => (
+                        <optgroup key={group.label} label={group.label}>
+                          {group.types.map((value) => (
+                            <option key={value} value={value}>{UNIT_TYPE_LABELS[value]}</option>
+                          ))}
+                        </optgroup>
                       ))}
                     </select>
                   </div>
-                  <div className={styles.field}>
-                    <label className={styles.fieldLabel}>Cant. x empaque</label>
-                    <input
-                      type="number" min="0"
-                      value={form.unit_quantity}
-                      onChange={(e) => setForm({ ...form, unit_quantity: Number(e.target.value) })}
-                      className={styles.input}
-                    />
-                  </div>
+                  {needsQty && (
+                    <div className={styles.field}>
+                      <label className={styles.fieldLabel}>Cant. x empaque *</label>
+                      <input
+                        type="number" min="2" step="1"
+                        value={form.unit_quantity || ""}
+                        onChange={(e) => setForm({ ...form, unit_quantity: Number(e.target.value) })}
+                        placeholder="¿Cuántas unidades trae?"
+                        className={styles.input} required
+                      />
+                    </div>
+                  )}
                   <div className={styles.field}>
                     <label className={styles.fieldLabel}>Categoría</label>
                     <select

@@ -1,10 +1,13 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { X } from "lucide-react";
 import { inventoryApi } from "@/api/inventory";
 import { useToast } from "@/components/common/ui/Toast";
+import { useCashSessionStore } from "@/store/cashSessionStore";
+import { money } from "@/lib/format";
+import { usePosStore } from "@/store/posStore";
 import type { Supplier, Product } from "@/api";
 import type { CreateBatchPayload } from "@/api/inventory";
-import { UNIT_TYPE_LABELS } from "@/lib/constants";
+import { UNIT_TYPE_LABELS, unitQuantitySuffix } from "@/lib/constants";
 import styles from "./BatchMovementModal.module.css";
 import { useModalBack } from "@/hooks/useModalBack";
 
@@ -28,16 +31,28 @@ type BatchFormItem = {
 
 export function BatchMovementModal({ open, suppliers, products, onClose, onCreated }: BatchMovementModalProps) {
   const { toast } = useToast();
+  const currency = usePosStore((s) => s.currency);
+  const canSellCash = useCashSessionStore((s) => s.canSellCash);
   // Botón de retroceso de Android / gesto de regreso cierra el modal.
   useModalBack(onClose, open);
   const [batchType, setBatchType] = useState<"entrada" | "salida" | "ajuste">("entrada");
   const [batchSupplierId, setBatchSupplierId] = useState("");
   const [batchNotes, setBatchNotes] = useState("");
+  const [paidCash, setPaidCash] = useState(false);
   const [batchItems, setBatchItems] = useState<BatchFormItem[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const itemIdCounter = useRef(0);
 
+  useEffect(() => {
+    if (open) useCashSessionStore.getState().fetchStatus();
+  }, [open]);
+
   if (!open) return null;
+
+  // Total a pagar en efectivo: Σ costo unitario × cantidad (ítems con costo)
+  const expenseTotal = Math.round(
+    batchItems.reduce((sum, i) => sum + (i.unitCost ?? 0) * (i.quantity || 0), 0) * 100
+  ) / 100;
 
   function searchProducts(query: string): Product[] {
     if (!query.trim()) return [];
@@ -89,6 +104,7 @@ export function BatchMovementModal({ open, suppliers, products, onClose, onCreat
         movement_type: batchType,
         supplier_id: batchType === "entrada" && batchSupplierId ? batchSupplierId : null,
         notes: batchNotes || null,
+        ...(batchType === "entrada" && paidCash && canSellCash && expenseTotal > 0 && { paid_cash: true }),
         items: validItems.map(i => ({
           product_id: i.selectedProduct!.id,
           quantity: i.quantity,
@@ -112,6 +128,7 @@ export function BatchMovementModal({ open, suppliers, products, onClose, onCreat
     setBatchType("entrada");
     setBatchSupplierId("");
     setBatchNotes("");
+    setPaidCash(false);
     setBatchItems([]);
   }
 
@@ -152,6 +169,28 @@ export function BatchMovementModal({ open, suppliers, products, onClose, onCreat
                 ))}
               </select>
             </div>
+          )}
+
+          {batchType === "entrada" && (
+            <>
+              <label className={styles.paidCashLabel}>
+                <input
+                  type="checkbox"
+                  checked={paidCash && canSellCash}
+                  disabled={!canSellCash || expenseTotal <= 0}
+                  onChange={(e) => setPaidCash(e.target.checked)}
+                />
+                Pagado en efectivo desde la caja
+              </label>
+              {!canSellCash && (
+                <p className={styles.paidCashHint}>Abrí la caja para registrar esta compra en efectivo</p>
+              )}
+              {paidCash && canSellCash && expenseTotal > 0 && (
+                <p className={styles.paidCashHint}>
+                  Se restarán {money(expenseTotal, currency)} de la caja abierta
+                </p>
+              )}
+            </>
           )}
 
           <div className={styles.field}>
@@ -216,7 +255,7 @@ export function BatchMovementModal({ open, suppliers, products, onClose, onCreat
                     {item.selectedProduct?.unit_type && (
                       <span className={styles.batchFormUnitBadge}>
                         {UNIT_TYPE_LABELS[item.selectedProduct.unit_type] || item.selectedProduct.unit_type}
-                        {item.selectedProduct.unit_quantity ? ` × ${item.selectedProduct.unit_quantity}` : ""}
+                        {unitQuantitySuffix(item.selectedProduct.unit_type, item.selectedProduct.unit_quantity)}
                       </span>
                     )}
                   </div>

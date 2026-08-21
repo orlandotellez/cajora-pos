@@ -6,6 +6,9 @@ export interface InventoryMovement {
   product_name?: string;
   movement_type: string;
   quantity: number;
+  unit_cost?: number | null;
+  unit_type?: string | null;
+  unit_quantity?: number | null;
   note?: string;
   user_id: string;
   batch_id?: string;
@@ -65,6 +68,10 @@ export interface CreateMovementPayload {
   product_id: string;
   movement_type: "entrada" | "salida" | "ajuste";
   quantity: number;
+  /** Costo por unidad (solo entradas/compras) */
+  unit_cost?: number;
+  /** Si es true, registra la compra como salida de efectivo de la caja abierta */
+  paid_cash?: boolean;
   note?: string;
 }
 
@@ -79,6 +86,8 @@ export interface CreateBatchPayload {
   movement_type: "entrada" | "salida" | "ajuste";
   supplier_id?: string | null;
   notes?: string | null;
+  /** Registra el total de la compra como salida de efectivo de la caja abierta */
+  paid_cash?: boolean;
   items: CreateBatchItemPayload[];
 }
 

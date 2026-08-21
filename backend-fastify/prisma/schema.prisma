@@ -64,6 +64,8 @@ model store {
   services            service[]
   sales               sale[]
   credit_payments     credit_payment[]
+  cash_sessions       cash_session[]
+  cash_expenses       cash_expense[]
   inventory_movements inventory_movement[]
   inventory_batches   inventory_batch[]
   settings            settings?
@@ -94,6 +96,8 @@ model user {
   accounts            account[]
   sales               sale[]
   credit_payments     credit_payment[]
+  cash_sessions       cash_session[]
+  cash_expenses       cash_expense[]
   inventory_movements inventory_movement[]
   inventory_batches   inventory_batch[]
   subscription_events subscription_event[]
@@ -208,21 +212,21 @@ model supplier {
 }
 
 model client {
-  id         String  @id @default(uuid())
-  name       String
-  phone      String?
-  email      String?
-  address    String?
-  notes      String?
-  is_active  Boolean @default(true) @map("is_active")
-  store_id   String
+  id        String  @id @default(uuid())
+  name      String
+  phone     String?
+  email     String?
+  address   String?
+  notes     String?
+  is_active Boolean @default(true) @map("is_active")
+  store_id  String
 
   created_at DateTime  @default(now()) @db.Timestamptz
   updated_at DateTime  @updatedAt @db.Timestamptz
   deleted_at DateTime? @db.Timestamptz
 
-  store  store  @relation(fields: [store_id], references: [id])
-  sales  sale[]
+  store           store            @relation(fields: [store_id], references: [id])
+  sales           sale[]
   credit_payments credit_payment[]
 
   @@index([name])
@@ -320,37 +324,93 @@ model sale {
   amount_received Decimal? @db.Decimal(10, 2)
   change_given    Decimal? @db.Decimal(10, 2)
 
-  user_id    String
-  user_name  String?
-  client_id  String?
-  store_id   String
+  user_id         String
+  user_name       String?
+  client_id       String?
+  store_id        String
+  cash_session_id String?
 
   created_at DateTime @default(now()) @db.Timestamptz
   updated_at DateTime @updatedAt @db.Timestamptz
 
-  store   store   @relation(fields: [store_id], references: [id])
-  user    user    @relation(fields: [user_id], references: [id])
-  client  client? @relation(fields: [client_id], references: [id])
-  items              sale_item[]
-  service_items      sale_service[]
-  print_jobs         print_job[]
-  credit_payments    credit_payment[]
+  store           store            @relation(fields: [store_id], references: [id])
+  user            user             @relation(fields: [user_id], references: [id])
+  client          client?          @relation(fields: [client_id], references: [id])
+  cash_session    cash_session?    @relation(fields: [cash_session_id], references: [id])
+  items           sale_item[]
+  service_items   sale_service[]
+  print_jobs      print_job[]
+  credit_payments credit_payment[]
 
   @@index([user_id])
   @@index([client_id])
   @@index([store_id, created_at])
+  @@index([cash_session_id])
   @@map("sales")
 }
 
+model cash_session {
+  id                     String    @id @default(uuid())
+  store_id               String
+  user_id                String
+  user_name              String
+  label                  String?
+  status                 String    @default("abierto") // "abierto" | "cerrado"
+  opening_amount         Decimal   @db.Decimal(10, 2)
+  closing_amount_counted Decimal?  @db.Decimal(10, 2)
+  expected_amount        Decimal?  @db.Decimal(10, 2)
+  difference             Decimal?  @db.Decimal(10, 2)
+  observations           String?
+  opened_at              DateTime  @default(now()) @db.Timestamptz
+  closed_at              DateTime? @db.Timestamptz
+  deleted_at             DateTime? @db.Timestamptz
+
+  store store  @relation(fields: [store_id], references: [id])
+  user  user   @relation(fields: [user_id], references: [id])
+  sales sale[]
+  expenses cash_expense[]
+
+  @@index([store_id, status])
+  @@index([store_id, opened_at])
+  @@index([user_id, status])
+  @@map("cash_sessions")
+}
+
+/// Salidas de efectivo de una sesión de caja (compras de inventario pagadas
+/// en efectivo, gastos operativos, etc.). El arqueo las resta del esperado.
+model cash_expense {
+  id          String   @id @default(uuid())
+  session_id  String
+  amount      Decimal  @db.Decimal(10, 2)
+  reason      String // "compra_inventario" | "gasto_operativo" | ...
+  description String?
+  source_type String? // "inventory_movement" | "inventory_batch" | "manual"
+  ref_id      String?
+  user_id     String
+  user_name   String
+  store_id    String
+
+  created_at DateTime @default(now()) @db.Timestamptz
+  deleted_at DateTime? @db.Timestamptz
+
+  session cash_session @relation(fields: [session_id], references: [id])
+  store   store        @relation(fields: [store_id], references: [id])
+  user    user         @relation(fields: [user_id], references: [id])
+
+  @@index([session_id])
+  @@index([store_id, created_at])
+  @@map("cash_expenses")
+}
+
 model credit_payment {
-  id            String  @id @default(uuid())
-  sale_id       String
-  client_id     String
-  amount        Decimal @db.Decimal(10, 2)
+  id             String  @id @default(uuid())
+  sale_id        String
+  client_id      String
+  amount         Decimal @db.Decimal(10, 2)
   payment_method String // "efectivo" | "tarjeta" | "transferencia"
-  notes         String?
-  user_id       String
-  store_id      String
+  notes          String?
+  user_id        String
+  store_id       String
 
   created_at DateTime @default(now()) @db.Timestamptz
 
@@ -465,10 +525,11 @@ model inventory_batch_item {
 }
 
 model inventory_movement {
-  id            String  @id @default(uuid())
+  id            String   @id @default(uuid())
   product_id    String
   movement_type String // "entrada" | "salida" | "ajuste" | "venta"
   quantity      Int
+  unit_cost     Decimal? @db.Decimal(10, 2)
   note          String?
   batch_id      String?
 

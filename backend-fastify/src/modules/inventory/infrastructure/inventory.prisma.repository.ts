@@ -3,7 +3,7 @@ import type { IInventoryRepository } from "../domain/inventory.interface"
 import type { IInventoryMovementEntity, CreateMovementData } from "../domain/inventory.entities"
 import { Prisma } from "@prisma/client"
 
-type MovementRecord = Prisma.inventory_movementGetPayload<{ include: { product: { select: { name: true } } } }>
+type MovementRecord = Prisma.inventory_movementGetPayload<{ include: { product: { select: { name: true; unit_type: true; unit_quantity: true } } } }>
 
 function mapToEntity(movement: MovementRecord): IInventoryMovementEntity {
   return {
@@ -12,6 +12,9 @@ function mapToEntity(movement: MovementRecord): IInventoryMovementEntity {
     product_name: movement.product?.name || undefined,
     movement_type: movement.movement_type,
     quantity: movement.quantity,
+    unit_cost: movement.unit_cost != null ? Number(movement.unit_cost) : null,
+    unit_type: movement.product?.unit_type ?? null,
+    unit_quantity: movement.product?.unit_quantity ?? null,
     note: movement.note || undefined,
     batch_id: movement.batch_id || undefined,
     user_id: movement.user_id,
@@ -26,12 +29,13 @@ export const InventoryRepository: IInventoryRepository = {
         product_id: data.product_id,
         movement_type: data.movement_type,
         quantity: data.quantity,
+        unit_cost: data.unit_cost ?? null,
         note: data.note,
         batch_id: data.batch_id,
         user_id: data.user_id,
         store_id: data.store_id!,
       },
-      include: { product: { select: { name: true } } },
+      include: { product: { select: { name: true, unit_type: true, unit_quantity: true } } },
     })
     return mapToEntity(movement)
   },
@@ -41,7 +45,7 @@ export const InventoryRepository: IInventoryRepository = {
     if (params?.storeId) where.store_id = params.storeId
     const movements = await prisma.inventory_movement.findMany({
       where,
-      include: { product: { select: { name: true } } },
+      include: { product: { select: { name: true, unit_type: true, unit_quantity: true } } },
       orderBy: { created_at: "desc" },
       take: params?.limit || 50,
     })
@@ -61,7 +65,7 @@ export const InventoryRepository: IInventoryRepository = {
     const [rawMovements, total] = await Promise.all([
       prisma.inventory_movement.findMany({
         where,
-        include: { product: { select: { name: true } } },
+        include: { product: { select: { name: true, unit_type: true, unit_quantity: true } } },
         skip,
         take: limit,
         orderBy: { created_at: "desc" },

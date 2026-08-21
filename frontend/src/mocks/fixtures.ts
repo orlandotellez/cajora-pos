@@ -3,6 +3,7 @@ import type {
   Store,
 } from "@/api/auth";
 import type { Category } from "@/api/categories";
+import type { CashSession } from "@/api/cash-register";
 import type { InventoryMovement, BatchResponse, LowStockProduct } from "@/api/inventory";
 import type { Printer } from "@/api/printers";
 import type { Product } from "@/api/products";
@@ -768,6 +769,80 @@ const DEMO_REVENUE_BY_CATEGORY: RevenueByCategoryItem[] = [
   { category_name: "Snacks y Golosinas", revenue: 2450, quantity: 34 },
 ];
 
+// Sesiones de caja para el módulo Apertura/Cierre. Arranca con una sesión
+// abierta del usuario demo (para que el flujo de cierre sea probable) y dos
+// cierres históricos (uno cuadrado, uno con faltante).
+const DEMO_CASH_SESSIONS: CashSession[] = [
+  {
+    id: "demo-cash-open-1",
+    store_id: DEMO_STORE.id,
+    user_id: DEMO_USER.id,
+    user_name: DEMO_USER.name,
+    label: "Caja 1",
+    status: "abierto",
+    opening_amount: 1000,
+    opened_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "demo-cash-closed-2",
+    store_id: DEMO_STORE.id,
+    user_id: "demo-user-cashier-1",
+    user_name: "Carlos Ruiz",
+    label: "Caja 1",
+    status: "cerrado",
+    opening_amount: 800,
+    closing_amount_counted: 3250,
+    expected_amount: 3300,
+    difference: -50,
+    observations: "Faltante reportado, se revisa mañana",
+    opened_at: "2026-08-18T13:00:00.000Z",
+    closed_at: "2026-08-18T20:05:00.000Z",
+  },
+  {
+    id: "demo-cash-closed-1",
+    store_id: DEMO_STORE.id,
+    user_id: DEMO_USER.id,
+    user_name: DEMO_USER.name,
+    label: "Caja 1",
+    status: "cerrado",
+    opening_amount: 500,
+    closing_amount_counted: 4120.5,
+    expected_amount: 4120.5,
+    difference: 0,
+    opened_at: "2026-08-17T08:00:00.000Z",
+    closed_at: "2026-08-17T19:30:00.000Z",
+  },
+];
+
+export interface DemoCashExpense {
+  id: string;
+  session_id: string;
+  amount: number;
+  reason: string;
+  description?: string;
+  source_type?: string;
+  ref_id?: string;
+  user_id: string;
+  user_name: string;
+  created_at: string;
+}
+
+// Gastos de caja demo: una compra de inventario pagada en efectivo hoy.
+const DEMO_CASH_EXPENSES: DemoCashExpense[] = [
+  {
+    id: "demo-cash-exp-1",
+    session_id: "demo-cash-open-1",
+    amount: 450,
+    reason: "compra_inventario",
+    description: "Compra: Azúcar x25",
+    source_type: "inventory_movement",
+    ref_id: "demo-mov-exp-1",
+    user_id: DEMO_USER.id,
+    user_name: DEMO_USER.name,
+    created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+  },
+];
+
 export const DEMO_FIXTURES = {
   users: DEMO_USERS,
   categories: DEMO_CATEGORIES,
@@ -786,4 +861,6 @@ export const DEMO_FIXTURES = {
   revenueTrend: DEMO_REVENUE_TREND,
   revenueByHour: DEMO_REVENUE_BY_HOUR,
   revenueByCategory: DEMO_REVENUE_BY_CATEGORY,
+  cashSessions: DEMO_CASH_SESSIONS,
+  cashExpenses: DEMO_CASH_EXPENSES,
 };

@@ -1,6 +1,6 @@
 import { Camera, X } from "lucide-react"
 import styles from "./EditProductModal.module.css"
-import { UNIT_TYPE_LABELS } from "@/lib/constants"
+import { UNIT_TYPE_LABELS, UNIT_TYPE_GROUPS, needsUnitQuantity } from "@/lib/constants"
 import type { Category, Supplier } from "@/api";
 import { useModalBack } from "@/hooks/useModalBack";
 
@@ -64,17 +64,36 @@ export const EditProductModal = ({ setEditing, handleSave, form, setForm, submit
             <div className={styles.formGrid}>
               <div className={styles.field}>
                 <label className={styles.fieldLabel}>Tipo de empaque</label>
-                <select value={form.unit_type} onChange={(e) => setForm({ ...form, unit_type: e.target.value })} className={styles.select}>
+                <select
+                  value={form.unit_type}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setForm({ ...form, unit_type: v, unit_quantity: needsUnitQuantity(v) ? form.unit_quantity : 0 });
+                  }}
+                  className={styles.select}
+                >
                   <option value="">Sin empaque</option>
-                  {Object.entries(UNIT_TYPE_LABELS).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
+                  {UNIT_TYPE_GROUPS.map((group) => (
+                    <optgroup key={group.label} label={group.label}>
+                      {group.types.map((value) => (
+                        <option key={value} value={value}>{UNIT_TYPE_LABELS[value]}</option>
+                      ))}
+                    </optgroup>
                   ))}
                 </select>
               </div>
-              <div className={styles.field}>
-                <label className={styles.fieldLabel}>Cant. x empaque</label>
-                <input type="number" min="0" value={form.unit_quantity} onChange={(e) => setForm({ ...form, unit_quantity: Number(e.target.value) })} className={styles.input} />
-              </div>
+              {needsUnitQuantity(form.unit_type) && (
+                <div className={styles.field}>
+                  <label className={styles.fieldLabel}>Cant. x empaque *</label>
+                  <input
+                    type="number" min="2" step="1"
+                    value={form.unit_quantity || ""}
+                    onChange={(e) => setForm({ ...form, unit_quantity: Number(e.target.value) })}
+                    placeholder="¿Cuántas unidades trae?"
+                    className={styles.input} required
+                  />
+                </div>
+              )}
               <div className={styles.field}>
                 <label className={styles.fieldLabel}>Categoría</label>
                 <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} className={styles.select}>
