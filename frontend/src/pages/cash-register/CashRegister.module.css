@@ -1,0 +1,346 @@
+.page {
+  padding: 24px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.h1 {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--foreground);
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--muted-foreground);
+  margin: 4px 0 0;
+}
+
+.section {
+  margin-bottom: 24px;
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--foreground);
+  margin: 0 0 12px;
+}
+
+.primaryBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 6px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.primaryBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.closeBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.closeBtn:hover {
+  border-color: var(--destructive);
+  color: var(--destructive);
+}
+
+.dangerBtn {
+  height: 38px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 6px;
+  background: var(--destructive);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.dangerBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cancelBtn {
+  height: 38px;
+  padding: 0 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--background);
+  color: var(--muted-foreground);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.formCard {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.reportOk {
+  border-color: var(--success);
+}
+
+.reportDiff {
+  border-color: var(--warning);
+}
+
+.formRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.fieldLabel {
+  font-size: 13px;
+  color: var(--muted-foreground);
+}
+
+.input {
+  height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--input);
+  border-radius: 6px;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 14px;
+  outline: none;
+}
+
+.input:focus {
+  border-color: var(--ring);
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.reportGrid {
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: start;
+  column-gap: 24px;
+  row-gap: 8px;
+  font-size: 14px;
+  color: var(--muted-foreground);
+}
+
+.reportGrid strong {
+  color: var(--foreground);
+  text-align: right;
+}
+
+.diffZero {
+  color: var(--success);
+}
+
+.diffPlus {
+  color: var(--success);
+}
+
+.diffMinus {
+  color: var(--destructive);
+}
+
+.emptyCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 28px 16px;
+  background: var(--card);
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  color: var(--muted-foreground);
+  font-size: 14px;
+}
+
+.sessionCard {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.sessionMain {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.sessionLabel {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.sessionUser {
+  font-size: 13px;
+  color: var(--muted-foreground);
+}
+
+.sessionMeta {
+  font-size: 12px;
+  color: var(--muted-foreground);
+  margin-left: auto;
+}
+
+.sessionAmounts {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.amountItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.amountLabel {
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+.amountValue {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.sessionActions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.closeForm {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.historyTable {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.historyRow {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 1.3fr 1.3fr 1fr 1fr 1fr;
+  gap: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--foreground);
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.historyRow:last-child {
+  border-bottom: none;
+}
+
+.historyHead {
+  font-weight: 600;
+  color: var(--muted-foreground);
+  background: var(--muted);
+  font-size: 12px;
+}
+
+.statusOpen {
+  color: var(--warning);
+  font-weight: 600;
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.pageBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.pageBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pageInfo {
+  font-size: 13px;
+  color: var(--muted-foreground);
+}
+
+@media (max-width: 720px) {
+  .page {
+    padding: 16px;
+  }
+
+  .historyTable {
+    overflow-x: auto;
+  }
+
+  .historyRow {
+    grid-template-columns: repeat(7, minmax(90px, 1fr));
+    min-width: 700px;
+  }
+}

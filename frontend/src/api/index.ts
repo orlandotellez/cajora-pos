@@ -8,6 +8,7 @@ export { inventoryApi } from "./inventory";
 export { suppliersApi } from "./suppliers";
 export { clientsApi } from "./clients";
 export { creditsApi } from "./credits";
+export { cashRegisterApi } from "./cash-register";
 export { settingsApi } from "./settings";
 export { usersApi } from "./users";
 export { superAdminApi } from "./super-admin";
@@ -22,6 +23,7 @@ export type { InventoryMovement, MovementListResponse, LowStockProduct, LowStock
 export type { Supplier, SupplierListResponse, CreateSupplierPayload, UpdateSupplierPayload } from "./suppliers";
 export type { Client, ClientListResponse, ClientDetailResponse, ClientSaleSummary, CreateClientPayload, UpdateClientPayload } from "./clients";
 export type { ClientDebtSummary, CreditSaleDetail, CreditPayment, ClientDebtResponse, ClientsWithDebtResponse } from "./credits";
+export type { CashSession, CashStatusResponse, CashHistoryResponse, CashCloseReportResponse } from "./cash-register";
 export type { Settings } from "./settings";
 export type { UserResponse, UserListResponse, CreateUserPayload, UpdateUserPayload } from "./users";
 export type { SuperAdminStats, SuperAdminStoreRow, SuperAdminStoreUser } from "./super-admin";

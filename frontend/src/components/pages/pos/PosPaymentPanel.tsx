@@ -3,6 +3,7 @@ import { X, Search, UserCheck, UserPlus, Loader2 } from "lucide-react";
 import { money } from "@/lib/format";
 import { PAYMENT_METHODS } from "@/lib/constants";
 import { usePosStore } from "@/store/posStore";
+import { useCashSessionStore } from "@/store/cashSessionStore";
 import { clientsApi, type Client } from "@/api/clients";
 import { creditsApi } from "@/api/credits";
 import styles from "../../../pages/pos/Pos.module.css";
@@ -47,6 +48,14 @@ export function PosPaymentPanel({
   const clientName = usePosStore((s) => s.clientName);
   const setClient = usePosStore((s) => s.setClient);
   const clearClient = usePosStore((s) => s.clearClient);
+  const canSellCash = useCashSessionStore((s) => s.canSellCash);
+
+  // Refresca el estado de caja al montar el panel (stale-while-revalidate:
+  // solo dispara request si el último fetch es viejo).
+  useEffect(() => {
+    useCashSessionStore.getState().fetchStatus();
+  }, []);
+
   const [showClientSection, setShowClientSection] = useState(false);
   const [clientSearch, setClientSearch] = useState("");
   const [clientResults, setClientResults] = useState<Client[]>([]);
@@ -308,12 +317,21 @@ export function PosPaymentPanel({
             className={styles.select}
           >
             {PAYMENT_METHODS.map((pm) => (
-              <option key={pm.value} value={pm.value}>{pm.label}</option>
+              <option
+                key={pm.value}
+                value={pm.value}
+                disabled={pm.value === "efectivo" && !canSellCash}
+              >
+                {pm.label}{pm.value === "efectivo" && !canSellCash ? " (caja cerrada)" : ""}
+              </option>
             ))}
           </select>
         </div>
         {payment === "credito" && !clientId && (
           <p className={styles.creditHint}>Selecciona un cliente para vender a crédito</p>
+        )}
+        {payment === "efectivo" && !canSellCash && (
+          <p className={styles.creditHint}>Abrí la caja para cobrar en efectivo</p>
         )}
         {payment !== "credito" && (
           <>
@@ -361,6 +379,7 @@ export function PosPaymentPanel({
           cartLength === 0 ||
           checkingOut ||
           (payment === "credito" && !clientId) ||
+          (payment === "efectivo" && !canSellCash) ||
           ((payment === "efectivo" || manualAmount) && received !== "" && Number(received || 0) < totals.total)
         }
         className={styles.checkoutBtn}

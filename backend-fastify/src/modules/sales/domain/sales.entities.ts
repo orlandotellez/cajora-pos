@@ -88,6 +88,7 @@ export type CreateSaleData = {
   user_id: string
   user_name: string
   client_id?: string
+  cash_session_id?: string
   items: CreateSaleItemData[]
   service_items?: CreateSaleServiceItemData[]
 }

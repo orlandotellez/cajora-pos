@@ -19,6 +19,7 @@ import {
   Download,
   UserCheck,
   DollarSign,
+  Wallet,
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
@@ -64,6 +65,7 @@ const navGroups: NavGroup[] = [
     items: [
       { to: "/sales", label: "Ventas", icon: Receipt },
       { to: "/credits", label: "Cuentas por Cobrar", icon: DollarSign },
+      { to: "/cash-register", label: "Caja", icon: Wallet },
       { to: "/reports", label: "Reportes", icon: BarChart3 },
     ],
   },

@@ -35,6 +35,7 @@ export const SaleRepository: ISaleRepository = {
           user_id: data.user_id,
           user_name: data.user_name,
           ...(data.client_id && { client_id: data.client_id }),
+          ...(data.cash_session_id && { cash_session_id: data.cash_session_id }),
           items: {
             create: data.items.map((item) => ({
               product_id: item.product_id,

@@ -8,6 +8,7 @@ import { printReceiptBrowser } from "@/lib/browser-print";
 import { isTauriRuntime } from "@/lib/fetch";
 import { type PaymentMethod } from "@/lib/constants";
 import { usePosStore, type CartItem, type ProductCartItem, type ServiceCartItem } from "@/store/posStore";
+import { useCashSessionStore } from "@/store/cashSessionStore";
 
 export interface CheckoutTotals {
   subtotal: number;
@@ -188,7 +189,7 @@ export function useCheckout(opts: UseCheckoutOptions): UseCheckoutReturn {
         } else {
           showAlert(
             tcpResult.error ||
-              "No se pudo enviar el recibo a la impresora. Verificá que esté encendida y conectada."
+            "No se pudo enviar el recibo a la impresora. Verificá que esté encendida y conectada."
           );
         }
       } catch (err) {
@@ -210,6 +211,14 @@ export function useCheckout(opts: UseCheckoutOptions): UseCheckoutReturn {
         `El monto recibido (${money(Number.isFinite(rcvd) ? rcvd : 0, currency)}) es menor al total (${money(totals.total, currency)}).`,
       );
       return;
+    }
+
+    if (payment === "efectivo") {
+      await useCashSessionStore.getState().fetchStatus();
+      if (!useCashSessionStore.getState().canSellCash) {
+        showAlert("No hay una caja abierta. Abrí la caja para cobrar en efectivo.");
+        return;
+      }
     }
 
     setCheckingOut(true);

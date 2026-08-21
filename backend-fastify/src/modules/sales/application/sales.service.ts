@@ -1,4 +1,4 @@
-import { NotFoundError, BadRequestError } from "@/core/errors/AppError"
+import { NotFoundError, BadRequestError, ConflictError } from "@/core/errors/AppError"
 import { prisma } from "@/config/prisma"
 import type { ISaleRepository } from "../domain/sales.interface"
 import type {
@@ -195,7 +195,24 @@ export const createSaleService = (repository: ISaleRepository) => ({
       quantity,
     }))
 
-    const sale = await repository.create(data, storeId, serviceProductsToDeduct, customServiceProducts)
+    let cash_session_id: string | undefined
+    if (data.payment_method === "efectivo") {
+      const openSessions = await prisma.cash_session.findMany({
+        where: { store_id: storeId, status: "abierto", deleted_at: null },
+        select: { id: true, user_id: true },
+      })
+      if (openSessions.length === 0) {
+        throw new ConflictError("No hay una caja abierta. Abrí la caja para cobrar en efectivo")
+      }
+      const own = openSessions.filter((s) => s.user_id === data.user_id)
+      if (own.length === 1) {
+        cash_session_id = own[0].id
+      } else if (openSessions.length === 1) {
+        cash_session_id = openSessions[0].id
+      }
+    }
+
+    const sale = await repository.create({ ...data, ...(cash_session_id && { cash_session_id }) }, storeId, serviceProductsToDeduct, customServiceProducts)
     return mapSaleToResponse(sale)
   },
 

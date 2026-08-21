@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ChevronDown, Settings, CreditCard, LogOut } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useCashSessionStore } from "@/store/cashSessionStore";
 import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
 import styles from "./UserMenu.module.css";
 
@@ -9,6 +10,7 @@ export function UserMenu() {
   const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [cashOpenWarning, setCashOpenWarning] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
 
@@ -105,8 +107,18 @@ export function UserMenu() {
             className={`${styles.menuItem} ${styles.menuItemDanger}`}
             role="menuitem"
             type="button"
-            onClick={() => {
+            onClick={async () => {
               setOpen(false);
+              // Recordatorio de caja abierta: si el usuario tiene una sesión
+              // de caja abierta, el diálogo de confirmación lo advierte.
+              let hasOpen = false;
+              try {
+                await useCashSessionStore.getState().fetchStatus(true);
+                hasOpen = useCashSessionStore.getState().hasOpenSessionFor(user?.id ?? "");
+              } catch {
+                // Si falla la consulta, salimos con el diálogo normal.
+              }
+              setCashOpenWarning(hasOpen);
               setShowLogoutConfirm(true);
             }}
           >
@@ -120,7 +132,11 @@ export function UserMenu() {
       <ConfirmDialog
         open={showLogoutConfirm}
         title="Cerrar sesion"
-        message="Estas seguro de que queres cerrar sesion?"
+        message={
+          cashOpenWarning
+            ? "Tenés una caja abierta. Si cerrás sesión no vas a poder cobrar en efectivo hasta que se abra de nuevo. ¿Seguro que querés salir?"
+            : "Estas seguro de que queres cerrar sesion?"
+        }
         confirmLabel="Si, salir"
         cancelLabel="Cancelar"
         onConfirm={() => {
