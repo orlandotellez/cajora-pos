@@ -1,6 +1,6 @@
 import { X, Pencil, PackagePlus } from "lucide-react";
 import type { Product } from "@/api";
-import { UNIT_TYPE_LABELS, needsUnitQuantity } from "@/lib/constants";
+import { UNIT_TYPE_LABELS, needsUnitQuantity, costUnitNoun } from "@/lib/constants";
 import { money } from "@/lib/format";
 import styles from "./InventoryProductDetailModal.module.css";
 import { useModalBack } from "@/hooks/useModalBack";
@@ -73,7 +73,11 @@ export function InventoryProductDetailModal({ product, onClose, onEdit, onAdjust
                 <span className={`${styles.detailValue} ${styles.moneyValue}`}>{money(product.price)}</span>
               </div>
               <div className={styles.detailItem}>
-                <span className={styles.detailLabel}>Costo</span>
+                <span className={styles.detailLabel}>
+                  {costUnitNoun(product.unit_type) === "unidad"
+                    ? "Costo"
+                    : `Costo por ${costUnitNoun(product.unit_type)}`}
+                </span>
                 <span className={`${styles.detailValue} ${styles.moneyValue}`}>{money(product.cost)}</span>
               </div>
               <div className={styles.detailItem}>

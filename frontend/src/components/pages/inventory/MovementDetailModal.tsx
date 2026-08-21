@@ -1,7 +1,7 @@
 import { X, ArrowDownRight, ArrowUpRight, RefreshCw } from "lucide-react";
 import type { InventoryMovement } from "@/api/inventory";
 import { money } from "@/lib/format";
-import { UNIT_TYPE_LABELS, needsUnitQuantity } from "@/lib/constants";
+import { UNIT_TYPE_LABELS, needsUnitQuantity, costUnitNoun } from "@/lib/constants";
 import { usePosStore } from "@/store/posStore";
 import styles from "./MovementDetailModal.module.css";
 import { useModalBack } from "@/hooks/useModalBack";
@@ -61,7 +61,11 @@ export function MovementDetailModal({ movement, onClose }: MovementDetailModalPr
           {hasCost && (
             <>
               <div className={styles.detailField}>
-                <span className={styles.detailLabel}>Costo unitario</span>
+                <span className={styles.detailLabel}>
+                  {costUnitNoun(movement.unit_type) === "unidad"
+                    ? "Costo unitario"
+                    : `Costo por ${costUnitNoun(movement.unit_type)}`}
+                </span>
                 <span className={styles.detailValue}>{money(movement.unit_cost, currency)}</span>
               </div>
               <div className={styles.detailField}>

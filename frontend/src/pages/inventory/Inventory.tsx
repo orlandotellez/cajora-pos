@@ -34,6 +34,7 @@ type AdjustState = {
   id: string;
   name: string;
   stock: number;
+  cost?: number;
   unit_type?: string | null;
   unit_quantity?: number | null;
 } | null;
@@ -179,6 +180,7 @@ export default function Inventory() {
         id: product.id,
         name: product.name,
         stock: product.stock,
+        cost: product.cost,
         unit_type: product.unit_type,
         unit_quantity: product.unit_quantity,
       }),

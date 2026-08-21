@@ -7,7 +7,7 @@ import { money } from "@/lib/format";
 import { usePosStore } from "@/store/posStore";
 import type { Supplier, Product } from "@/api";
 import type { CreateBatchPayload } from "@/api/inventory";
-import { UNIT_TYPE_LABELS, unitQuantitySuffix } from "@/lib/constants";
+import { UNIT_TYPE_LABELS, unitQuantitySuffix, costUnitNoun } from "@/lib/constants";
 import styles from "./BatchMovementModal.module.css";
 import { useModalBack } from "@/hooks/useModalBack";
 
@@ -263,7 +263,11 @@ export function BatchMovementModal({ open, suppliers, products, onClose, onCreat
                     type="number" min={0} step={0.01}
                     value={item.unitCost ?? ""}
                     onChange={(e) => updateBatchItem(item.id, { unitCost: e.target.value ? Number(e.target.value) : null })}
-                    placeholder="Costo unitario"
+                    placeholder={
+                      costUnitNoun(item.selectedProduct?.unit_type) === "unidad"
+                        ? "Costo unitario"
+                        : `Costo por ${costUnitNoun(item.selectedProduct?.unit_type)}`
+                    }
                     className={styles.batchFormCostInput}
                   />
                   <input

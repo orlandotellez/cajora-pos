@@ -25,6 +25,12 @@ export function unitQuantitySuffix(unitType?: string | null, unitQuantity?: numb
   return Number.isFinite(q) && q >= 2 ? ` ×${q}` : "";
 }
 
+export function costUnitNoun(unitType?: string | null): string {
+  const t = unitType ?? "unidad";
+  if (!UNIT_TYPE_LABELS[t] || LOOSE_UNIT_TYPES.has(t)) return "unidad";
+  return UNIT_TYPE_LABELS[t].toLowerCase();
+}
+
 export const UNIT_TYPE_GROUPS: { label: string; types: string[] }[] = [
   { label: "Venta suelta (sin cant. x empaque)", types: ["unidad", "botella", "lata", "sobre", "barra", "rollo", "galon"] },
   { label: "Empaques (requieren cant. x empaque)", types: ["paquete", "caja", "bolsa", "ristra"] },

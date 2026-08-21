@@ -3,7 +3,10 @@ import { z } from "zod"
 export const CreateMovementDtoSchema = z.object({
   product_id: z.string().uuid(),
   movement_type: z.enum(["entrada", "salida", "ajuste"]),
-  quantity: z.number().int(),
+  quantity: z
+    .number()
+    .int()
+    .refine((q) => q !== 0, { message: "La cantidad no puede ser 0" }),
   unit_cost: z.number().positive().max(99_999_999).optional(),
   paid_cash: z.boolean().optional(),
   note: z.string().optional(),

@@ -4,7 +4,7 @@ import { inventoryApi } from "@/api/inventory";
 import { useToast } from "@/components/common/ui/Toast";
 import { useCashSessionStore } from "@/store/cashSessionStore";
 import { money } from "@/lib/format";
-import { UNIT_TYPE_LABELS, unitQuantitySuffix } from "@/lib/constants";
+import { UNIT_TYPE_LABELS, unitQuantitySuffix, costUnitNoun } from "@/lib/constants";
 import styles from "./AdjustStockModal.module.css";
 import { useModalBack } from "@/hooks/useModalBack";
 
@@ -13,6 +13,7 @@ interface AdjustStockModalProps {
     id: string;
     name: string;
     stock: number;
+    cost?: number;
     unit_type?: string | null;
     unit_quantity?: number | null;
   };
@@ -27,10 +28,13 @@ export function AdjustStockModal({ adjust, onClose, onApplied }: AdjustStockModa
   useModalBack(onClose);
   const [type, setType] = useState<"entrada" | "salida" | "ajuste">("entrada");
   const [qty, setQty] = useState(0);
-  const [unitCost, setUnitCost] = useState("");
+  const defaultCost = (adjust.cost ?? 0) > 0 ? String(adjust.cost) : "";
+  const [unitCost, setUnitCost] = useState(defaultCost);
   const [paidCash, setPaidCash] = useState(false);
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const costNoun = costUnitNoun(adjust.unit_type);
+  const qtyInvalid = type === "ajuste" ? qty === adjust.stock : qty < 1;
 
   useEffect(() => {
     useCashSessionStore.getState().fetchStatus();
@@ -70,7 +74,9 @@ export function AdjustStockModal({ adjust, onClose, onApplied }: AdjustStockModa
     } else {
       setQty(0);
     }
-    if (t !== "entrada") {
+    if (t === "entrada") {
+      setUnitCost(defaultCost);
+    } else {
       setUnitCost("");
       setPaidCash(false);
     }
@@ -109,7 +115,7 @@ export function AdjustStockModal({ adjust, onClose, onApplied }: AdjustStockModa
             </label>
             <div className={styles.inputWithUnit}>
               <input
-                type="number" min={0} value={qty}
+                type="number" min={type === "ajuste" ? 0 : 1} value={qty}
                 onChange={(e) => setQty(Number(e.target.value))}
                 className={styles.input} required
               />
@@ -120,17 +126,26 @@ export function AdjustStockModal({ adjust, onClose, onApplied }: AdjustStockModa
                 </span>
               )}
             </div>
+            {qtyInvalid && (
+              <p className={styles.paidCashHint}>
+                {type === "ajuste"
+                  ? "El nuevo stock es igual al actual, no hay nada que ajustar"
+                  : "La cantidad debe ser mayor a 0"}
+              </p>
+            )}
           </div>
 
           {type === "entrada" && (
             <>
               <div className={styles.field}>
-                <label className={styles.fieldLabel}>Costo unitario (opcional)</label>
+                <label className={styles.fieldLabel}>
+                  {costNoun === "unidad" ? "Costo unitario (opcional)" : `Costo por ${costNoun} (opcional)`}
+                </label>
                 <input
                   type="number" min={0} step="0.01"
                   value={unitCost}
                   onChange={(e) => setUnitCost(e.target.value)}
-                  placeholder="Cuánto te costó cada unidad"
+                  placeholder={`Cuánto te costó cada ${costNoun}`}
                   className={styles.input}
                 />
               </div>
@@ -164,7 +179,7 @@ export function AdjustStockModal({ adjust, onClose, onApplied }: AdjustStockModa
             />
           </div>
 
-          <button type="submit" className={styles.primaryBtn} disabled={submitting}>
+          <button type="submit" className={styles.primaryBtn} disabled={submitting || qtyInvalid}>
             {submitting ? "Aplicando…" : "Aplicar"}
           </button>
         </form>
