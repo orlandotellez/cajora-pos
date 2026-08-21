@@ -2,7 +2,7 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useAppVersion } from "@/hooks/useAppVersion";
-import { ShoppingCart, Package, BarChart3, Shield, Sun, Moon } from "lucide-react";
+import { ShoppingCart, Package, BarChart3, Shield, Sun, Moon, Globe, ExternalLink } from "lucide-react";
 import styles from "./Auth.module.css";
 import { LoginForm } from "@/components/pages/auth/LoginForm";
 
@@ -43,6 +43,17 @@ export default function Auth() {
               <span>Control de acceso por roles</span>
             </div>
           </div>
+
+          <a
+            href="https://cajorapos.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.websiteLink}
+          >
+            <Globe size={16} />
+            Visitar sitio web
+            <ExternalLink size={12} style={{ opacity: 0.5 }} />
+          </a>
         </div>
       </div>
 

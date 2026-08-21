@@ -20,6 +20,7 @@ import {
   UserCheck,
   DollarSign,
   Wallet,
+  ExternalLink,
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
@@ -193,6 +194,16 @@ export function AppShell({ children }: { children: ReactNode }) {
               Actualizar app
             </button>
           )}
+          <a
+            href="https://cajorapos.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.drawerThemeBtn}
+          >
+            <Globe size={16} />
+            Sitio web
+            <ExternalLink size={12} style={{ marginLeft: "auto", opacity: 0.5 }} />
+          </a>
           <button onClick={toggle} className={styles.drawerThemeBtn}>
             {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
             {theme === "dark" ? "Modo claro" : "Modo oscuro"}
@@ -258,6 +269,16 @@ export function AppShell({ children }: { children: ReactNode }) {
               Actualizar app
             </button>
           )}
+          <a
+            href="https://cajorapos.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.drawerThemeBtn}
+          >
+            <Globe size={16} />
+            Sitio web
+            <ExternalLink size={12} style={{ marginLeft: "auto", opacity: 0.5 }} />
+          </a>
           <button onClick={toggle} className={styles.drawerThemeBtn}>
             {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
             {theme === "dark" ? "Modo claro" : "Modo oscuro"}

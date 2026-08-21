@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ChevronDown, Settings, CreditCard, LogOut } from "lucide-react";
+import { ChevronDown, Settings, CreditCard, LogOut, Globe, ExternalLink } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useCashSessionStore } from "@/store/cashSessionStore";
 import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
@@ -98,6 +98,18 @@ export function UserMenu() {
                 <CreditCard className={styles.menuItemIcon} />
                 Suscripción
               </Link>
+              <a
+                href="https://cajorapos.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.menuItem}
+                role="menuitem"
+                onClick={() => setOpen(false)}
+              >
+                <Globe className={styles.menuItemIcon} />
+                Sitio web
+                <ExternalLink size={11} style={{ marginLeft: "auto", opacity: 0.4 }} />
+              </a>
             </>
           )}
 
