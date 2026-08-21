@@ -7,6 +7,7 @@ import { cacheClear } from "@/lib/simple-cache";
 import { useCrudPagination } from "@/hooks/useCrudPagination";
 import { useToast } from "@/components/common/ui/Toast";
 import { usePosStore } from "@/store/posStore";
+import { usePermissions } from "@/hooks/usePermissions";
 import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
 import { ProductTable } from "@/components/pages/products/ProductTable";
 import { BarcodeScanner } from "@/components/common/BarcodeScanner";
@@ -32,6 +33,8 @@ const emptyForm = {
 export default function Products() {
   const { toast } = useToast();
   const addToCart = usePosStore((s) => s.addToCart);
+  const { has } = usePermissions();
+  const canWrite = has("catalog_write");
   const [categoryId, setCategoryId] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -138,7 +141,7 @@ export default function Products() {
 
   return (
     <div className={styles.page}>
-      <Header total={total} setEditing={openCreate} loading={loading} />
+      <Header total={total} setEditing={openCreate} loading={loading} showCreateButton={canWrite} />
 
       <Filter
         q={q}
@@ -156,8 +159,9 @@ export default function Products() {
         page={page}
         totalPages={totalPages}
         onPageChange={setPage}
-        onEdit={(p) => setEditing(p)}
-        onDelete={(p) => setDeleteTarget(p.id)}
+        onEdit={canWrite ? (p) => setEditing(p) : undefined!}
+        onDelete={canWrite ? (p) => setDeleteTarget(p.id) : undefined!}
+        onRowClick={canWrite ? undefined : (p) => setEditing(p)}
         onAddToCart={(p) => {
           const inCart = usePosStore
             .getState()
@@ -204,6 +208,7 @@ export default function Products() {
             cacheClear("products");
             refreshImmediate();
           }}
+          readOnly={!canWrite}
         />
       )}
 

@@ -2,6 +2,27 @@ import { api } from "./client";
 
 export type Role = "admin" | "cajero" | "super_admin";
 
+export type Permission =
+  | "catalog_read"
+  | "catalog_create"
+  | "catalog_write"
+  | "inventory_read"
+  | "inventory_write"
+  | "reports"
+  | "settings"
+  | "users"
+
+export const ALL_PERMISSIONS: { key: Permission; label: string; description: string }[] = [
+  { key: "catalog_read", label: "Ver catálogo", description: "Ver productos, servicios, proveedores, categorías y clientes" },
+  { key: "catalog_create", label: "Crear productos y servicios", description: "Agregar nuevos productos y servicios al catálogo" },
+  { key: "catalog_write", label: "Editar catálogo completo", description: "Editar y eliminar productos, servicios, proveedores y categorías" },
+  { key: "inventory_read", label: "Ver inventario", description: "Ver movimientos de inventario y lotes" },
+  { key: "inventory_write", label: "Registrar inventario", description: "Registrar entradas, salidas y ajustes de inventario" },
+  { key: "reports", label: "Ver reportes", description: "Acceder a reportes de ventas, ingresos y dashboard" },
+  { key: "settings", label: "Ajustes del negocio", description: "Configurar nombre, dirección, moneda y tickets" },
+  { key: "users", label: "Gestionar usuarios", description: "Crear, editar y eliminar usuarios" },
+]
+
 export interface Store {
   id: string;
   name: string;
@@ -15,6 +36,7 @@ export interface AuthUser {
   email: string;
   email_verified: boolean;
   role: Role;
+  permissions: Permission[];
   phone?: string;
   image?: string;
   store_id?: string | null;

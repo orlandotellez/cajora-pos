@@ -1,5 +1,14 @@
 import type { Role } from "@/types/auth"
 
+export type Permission =
+  | "catalog_read"
+  | "catalog_write"
+  | "inventory_read"
+  | "inventory_write"
+  | "reports"
+  | "settings"
+  | "users"
+
 export interface IUserEntity {
   id: string
   name: string
@@ -8,6 +17,7 @@ export interface IUserEntity {
   phone?: string
   image?: string
   role: Role
+  permissions: Permission[]
   store_id: string | null
   created_at: Date
   updated_at: Date

@@ -1,5 +1,5 @@
 import { api } from "./client";
-import type { Role } from "@/api/auth";
+import type { Role, Permission } from "@/api/auth";
 
 export interface UserResponse {
   id: string;
@@ -7,6 +7,7 @@ export interface UserResponse {
   email: string;
   email_verified: boolean;
   role: Role;
+  permissions: Permission[];
   phone?: string;
   image?: string;
   created_at: string;
@@ -25,6 +26,7 @@ export interface CreateUserPayload {
   email: string;
   password: string;
   role?: Role;
+  permissions?: Permission[];
   phone?: string;
 }
 
@@ -32,6 +34,7 @@ export interface UpdateUserPayload {
   name?: string;
   email?: string;
   role?: Role;
+  permissions?: Permission[];
   phone?: string;
 }
 

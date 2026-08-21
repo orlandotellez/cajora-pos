@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyPluginOptions } from "fastify"
 import { productsController } from "./products.controller"
 import { authGuard } from "@/core/guard/auth.guard"
 import { storeGuard } from "@/core/guard/store.guard"
+import { permissionGuard } from "@/core/guard/permission.guard"
 import { toJsonSchema } from "@/http/swagger-schema"
 import { CreateProductDtoSchema, UpdateProductDtoSchema, ProductQuerySchema } from "./products.dto"
 
@@ -32,16 +33,16 @@ export const productsRoutes = async (fastify: FastifyInstance, _opts: FastifyPlu
 
   fastify.post("/", {
     schema: { tags: TAGS, body: toJsonSchema(CreateProductDtoSchema) },
-    preHandler: [authGuard, storeGuard],
+    preHandler: [authGuard, storeGuard, permissionGuard("catalog_write")],
   }, productsController.create)
 
   fastify.put("/:id", {
     schema: { tags: TAGS, body: toJsonSchema(UpdateProductDtoSchema) },
-    preHandler: [authGuard, storeGuard],
+    preHandler: [authGuard, storeGuard, permissionGuard("catalog_write")],
   }, productsController.update)
 
   fastify.delete("/:id", {
     schema: { tags: TAGS },
-    preHandler: [authGuard, storeGuard],
+    preHandler: [authGuard, storeGuard, permissionGuard("catalog_write")],
   }, productsController.delete)
 }

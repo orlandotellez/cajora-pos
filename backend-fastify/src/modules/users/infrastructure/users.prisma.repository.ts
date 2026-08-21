@@ -1,6 +1,6 @@
 import { prisma } from "@/config/prisma"
 import type { IUserRepository } from "../domain/users.interface"
-import type { IUserEntity, CreateUserData, UpdateUserData } from "../domain/users.entities"
+import type { IUserEntity, CreateUserData, UpdateUserData, Permission } from "../domain/users.entities"
 import { Prisma } from "@prisma/client"
 
 const userSelect = {
@@ -9,6 +9,7 @@ const userSelect = {
   email: true,
   email_verified: true,
   role: true,
+  permissions: true,
   phone: true,
   image: true,
   store_id: true,
@@ -26,6 +27,7 @@ function mapToEntity(user: UserRecord): IUserEntity {
     email: user.email,
     email_verified: user.email_verified,
     role: user.role,
+    permissions: Array.isArray(user.permissions) ? (user.permissions as Permission[]) : [],
     phone: user.phone ?? null,
     image: user.image ?? null,
     store_id: user.store_id ?? null,
@@ -115,6 +117,7 @@ export const UserRepository: IUserRepository = {
         ...(data.name !== undefined && { name: data.name }),
         ...(data.email !== undefined && { email: data.email }),
         ...(data.role !== undefined && { role: data.role }),
+        ...(data.permissions !== undefined && { permissions: data.permissions }),
         ...(data.phone !== undefined && { phone: data.phone }),
       },
       select: userSelect,

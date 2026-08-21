@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { usersApi, type CreateUserPayload, type UpdateUserPayload } from "@/api/users";
 import type { UserResponse } from "@/api";
+import type { Permission } from "@/api/auth";
 import { useAuth } from "@/context/AuthContext";
 import { useAdminGuard } from "@/hooks/useAdminGuard";
 import { useCrudPagination } from "@/hooks/useCrudPagination";
@@ -12,7 +13,7 @@ import { Header } from "@/components/pages/users/Header";
 import { Filter } from "@/components/pages/users/Filter";
 import styles from "./Users.module.css";
 
-const emptyForm = { name: "", email: "", password: "", role: "cajero" as string, phone: "" };
+const emptyForm = { name: "", email: "", password: "", role: "cajero" as string, phone: "", permissions: [] as Permission[] };
 
 export default function Users() {
   const { user: currentUser } = useAuth();
@@ -49,7 +50,7 @@ export default function Users() {
   useEffect(() => {
     if (!editing) return;
     if (isNew) { setForm(emptyForm); return; }
-    setForm({ name: editing.name, email: editing.email, password: "", role: editing.role, phone: editing.phone ?? "" });
+    setForm({ name: editing.name, email: editing.email, password: "", role: editing.role, phone: editing.phone ?? "", permissions: editing.permissions ?? [] });
   }, [editing, isNew]);
 
   async function handleSave(e: React.FormEvent) {
@@ -62,6 +63,7 @@ export default function Users() {
           email: form.email,
           password: form.password,
           role: form.role as "admin" | "cajero",
+          permissions: form.role === "cajero" ? form.permissions : undefined,
           phone: form.phone || undefined,
         };
         await usersApi.create(payload);
@@ -71,6 +73,7 @@ export default function Users() {
           email: form.email,
           phone: form.phone || undefined,
           role: form.role as "admin" | "cajero",
+          permissions: form.role === "cajero" ? form.permissions : undefined,
         };
         await usersApi.update(editing.id, payload);
       }

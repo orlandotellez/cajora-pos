@@ -16,6 +16,8 @@ interface ProductDetailModalProps {
   suppliers: Supplier[];
   onClose: () => void;
   onSaved: () => void;
+  /** Si es true, oculta el botón de editar (modo solo lectura para cajeros). */
+  readOnly?: boolean;
 }
 
 type Form = {
@@ -27,7 +29,7 @@ type Form = {
   supplier_id: string;
 };
 
-export function ProductDetailModal({ product, categories, suppliers, onClose, onSaved }: ProductDetailModalProps) {
+export function ProductDetailModal({ product, categories, suppliers, onClose, onSaved, readOnly }: ProductDetailModalProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
   // Botón de retroceso de Android / gesto de regreso cierra el modal.
@@ -126,7 +128,7 @@ export function ProductDetailModal({ product, categories, suppliers, onClose, on
           <section className={styles.section}>
             <div className={styles.sectionHeader}>
               <h3 className={styles.sectionTitle}>Datos generales</h3>
-              {!editing && (
+              {!editing && !readOnly && (
                 <button onClick={startEdit} className={styles.editBtn}>
                   <Pencil size={13} />
                   Editar

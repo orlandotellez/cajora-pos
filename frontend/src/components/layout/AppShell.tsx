@@ -31,10 +31,15 @@ import logoDark from "@/assets/logo_dark.svg";
 import logoLight from "@/assets/logo_light.svg";
 import styles from "./AppShell.module.css";
 
+import type { Permission } from "@/api/auth";
+import { usePermissions } from "@/hooks/usePermissions";
+
 interface NavItem {
   to: string;
   label: string;
   icon: React.ComponentType<{ className?: string; size?: number }>;
+  /** Si se especifica, el usuario necesita este permiso para ver el ítem. */
+  permission?: Permission;
 }
 
 interface NavGroup {
@@ -54,10 +59,10 @@ const navGroups: NavGroup[] = [
     items: [
       { to: "/products", label: "Productos", icon: Package },
       { to: "/services", label: "Servicios", icon: Wrench },
-      { to: "/suppliers", label: "Proveedores", icon: Truck },
-      { to: "/categories", label: "Categorías", icon: Tag },
+      { to: "/suppliers", label: "Proveedores", icon: Truck, permission: "catalog_write" },
+      { to: "/categories", label: "Categorías", icon: Tag, permission: "catalog_write" },
       { to: "/clients", label: "Clientes", icon: UserCheck },
-      { to: "/inventory", label: "Inventario", icon: Boxes },
+      { to: "/inventory", label: "Inventario", icon: Boxes, permission: "inventory_write" },
     ],
   },
   {
@@ -66,7 +71,7 @@ const navGroups: NavGroup[] = [
       { to: "/sales", label: "Ventas", icon: Receipt },
       { to: "/credits", label: "Cuentas por Cobrar", icon: DollarSign },
       { to: "/cash-register", label: "Caja", icon: Wallet },
-      { to: "/reports", label: "Reportes", icon: BarChart3 },
+      { to: "/reports", label: "Reportes", icon: BarChart3, permission: "reports" },
     ],
   },
   {
@@ -88,6 +93,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { theme, toggle } = useTheme();
   const { user } = useAuth();
   const { hasUpdate, openUpdatePrompt } = useUpdate();
+  const { has } = usePermissions();
   const appVersion = useAppVersion();
   const navigate = useNavigate();
   const location = useLocation();
@@ -142,25 +148,30 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   const renderNav = (navItemClass: string, iconClass: string) =>
-    visibleGroups.map((group) => (
-      <div key={group.label} className={styles.navGroup}>
-        <span className={styles.navSectionLabel}>{group.label}</span>
-        {group.items.map((it) => {
-          const Icon = it.icon;
-          const active = pathname.startsWith(it.to);
-          return (
-            <Link
-              key={it.to}
-              to={it.to}
-              className={`${navItemClass} ${active ? styles.navItemActive : ""}`}
-            >
-              <Icon className={iconClass} />
-              {it.label}
-            </Link>
-          );
-        })}
-      </div>
-    ));
+    visibleGroups.map((group) => {
+      // Filtrar ítems que el usuario no tiene permiso para ver
+      const visibleItems = group.items.filter((it) => !it.permission || has(it.permission));
+      if (visibleItems.length === 0) return null;
+      return (
+        <div key={group.label} className={styles.navGroup}>
+          <span className={styles.navSectionLabel}>{group.label}</span>
+          {visibleItems.map((it) => {
+            const Icon = it.icon;
+            const active = pathname.startsWith(it.to);
+            return (
+              <Link
+                key={it.to}
+                to={it.to}
+                className={`${navItemClass} ${active ? styles.navItemActive : ""}`}
+              >
+                <Icon className={iconClass} />
+                {it.label}
+              </Link>
+            );
+          })}
+        </div>
+      );
+    });
 
   return (
     <div className={styles.shell}>

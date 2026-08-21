@@ -680,13 +680,14 @@ export const handlers = [
 
   http.post(`${API}/users`, async ({ request }) => {
     await delay(250);
-    const body = (await request.json()) as Partial<UserResponse> & { name: string; email: string; role: string };
+    const body = (await request.json()) as Partial<UserResponse> & { name: string; email: string; role: string; permissions?: string[] };
     const user: UserResponse = {
       id: makeId("demo-user"),
       name: body.name,
       email: body.email,
       email_verified: true,
       role: (body.role as UserResponse["role"]) ?? "cajero",
+      permissions: body.permissions ?? [],
       phone: body.phone,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),

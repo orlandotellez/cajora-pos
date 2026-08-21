@@ -17,6 +17,8 @@ interface ProductTableProps {
   onEdit: (product: Product) => void;
   onDelete: (product: Product) => void;
   onAddToCart?: (product: Product) => void;
+  /** Si se define, se usa para el click en la fila (separado de onEdit). */
+  onRowClick?: (product: Product) => void;
   dimmed?: boolean;
   refreshing?: boolean;
 }
@@ -31,6 +33,7 @@ export function ProductTable({
   onEdit,
   onDelete,
   onAddToCart,
+  onRowClick,
   dimmed,
   refreshing,
 }: ProductTableProps) {
@@ -139,7 +142,7 @@ export function ProductTable({
       page={page}
       totalPages={totalPages}
       onPageChange={onPageChange}
-      onRowClick={onEdit}
+      onRowClick={onRowClick ?? onEdit}
       onEdit={onEdit}
       onDelete={onDelete}
       emptyMessage="Sin productos"

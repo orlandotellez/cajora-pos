@@ -6,6 +6,7 @@ import { cacheClear } from "@/lib/simple-cache";
 import { useCrudPagination } from "@/hooks/useCrudPagination";
 import { useToast } from "@/components/common/ui/Toast";
 import { usePosStore } from "@/store/posStore";
+import { usePermissions } from "@/hooks/usePermissions";
 import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
 import { ServiceTable } from "@/components/pages/services/ServiceTable";
 import styles from "./Services.module.css";
@@ -16,6 +17,8 @@ import { Filter } from "@/components/pages/services/Filter";
 export default function Services() {
   const { toast } = useToast();
   const addToCart = usePosStore((s) => s.addToCart);
+  const { has } = usePermissions();
+  const canWrite = has("catalog_write");
 
   const {
     items: services,
@@ -153,7 +156,7 @@ export default function Services() {
 
   return (
     <div className={styles.page}>
-      <Header total={total} setEditing={() => setEditing("new")} loading={loading} />
+      <Header total={total} setEditing={() => setEditing("new")} loading={loading} showCreateButton={canWrite} />
 
       <Filter q={q} setSearch={setSearch} />
 
@@ -164,20 +167,23 @@ export default function Services() {
         page={page}
         totalPages={totalPages}
         onPageChange={setPage}
-        onEdit={(s) => setEditing(s)}
-        onDelete={(s) => setDeleteTarget(s.id)}
+        onEdit={canWrite ? (s) => setEditing(s) : undefined!}
+        onDelete={canWrite ? (s) => setDeleteTarget(s.id) : undefined!}
+        onRowClick={undefined}
         onAddToCart={handleAddToCart}
         blockedIds={blockedServiceIds}
         dimmed={false}
         refreshing={refreshing}
       />
 
-      <ServiceFormModal
-        editing={editing}
-        products={products}
-        onClose={() => setEditing(null)}
-        onSave={handleSave}
-      />
+      {canWrite && (
+        <ServiceFormModal
+          editing={editing}
+          products={products}
+          onClose={() => setEditing(null)}
+          onSave={handleSave}
+        />
+      )}
 
       <ConfirmDialog
         open={deleteTarget !== null}

@@ -1,4 +1,5 @@
 import type { Role } from "@/types/auth"
+import type { Permission } from "./users.entities"
 
 export interface IUserResponse {
   id: string
@@ -6,6 +7,7 @@ export interface IUserResponse {
   email: string
   email_verified: boolean
   role: Role
+  permissions: Permission[]
   phone?: string
   image?: string
   created_at: Date

@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyPluginOptions } from "fastify"
 import { servicesController } from "./services.controller"
 import { authGuard } from "@/core/guard/auth.guard"
 import { storeGuard } from "@/core/guard/store.guard"
+import { permissionGuard } from "@/core/guard/permission.guard"
 import { toJsonSchema } from "@/http/swagger-schema"
 import { CreateServiceDtoSchema, UpdateServiceDtoSchema, ServiceQuerySchema } from "./services.dto"
 
@@ -20,16 +21,16 @@ export const servicesRoutes = async (fastify: FastifyInstance, _opts: FastifyPlu
 
   fastify.post("/", {
     schema: { tags: TAGS, body: toJsonSchema(CreateServiceDtoSchema) },
-    preHandler: [authGuard, storeGuard],
+    preHandler: [authGuard, storeGuard, permissionGuard("catalog_write")],
   }, servicesController.create)
 
   fastify.put("/:id", {
     schema: { tags: TAGS, body: toJsonSchema(UpdateServiceDtoSchema) },
-    preHandler: [authGuard, storeGuard],
+    preHandler: [authGuard, storeGuard, permissionGuard("catalog_write")],
   }, servicesController.update)
 
   fastify.delete("/:id", {
     schema: { tags: TAGS },
-    preHandler: [authGuard, storeGuard],
+    preHandler: [authGuard, storeGuard, permissionGuard("catalog_write")],
   }, servicesController.delete)
 }

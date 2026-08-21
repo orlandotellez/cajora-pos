@@ -15,6 +15,8 @@ interface ServiceTableProps {
   onEdit: (service: Service) => void;
   onDelete: (service: Service) => void;
   onAddToCart?: (service: Service) => void;
+  /** Si se define, se usa para el click en la fila (separado de onEdit). */
+  onRowClick?: (service: Service) => void;
   blockedIds?: Set<string>;
   dimmed?: boolean;
   refreshing?: boolean;
@@ -30,6 +32,7 @@ export function ServiceTable({
   onEdit,
   onDelete,
   onAddToCart,
+  onRowClick,
   blockedIds,
   dimmed,
   refreshing,
@@ -131,7 +134,7 @@ export function ServiceTable({
       page={page}
       totalPages={totalPages}
       onPageChange={onPageChange}
-      onRowClick={onEdit}
+      onRowClick={onRowClick ?? onEdit}
       onEdit={onEdit}
       onDelete={onDelete}
       emptyMessage="Sin servicios"

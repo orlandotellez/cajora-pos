@@ -12,6 +12,7 @@ function mapUserToResponse(user: IUserEntity): IUserResponse {
     email: user.email,
     email_verified: user.email_verified,
     role: user.role,
+    permissions: user.permissions ?? [],
     phone: user.phone || undefined,
     image: user.image || undefined,
     created_at: user.created_at instanceof Date ? user.created_at : new Date(user.created_at),

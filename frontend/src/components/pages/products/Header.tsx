@@ -6,9 +6,11 @@ interface HeaderProps {
   total: number
   setEditing: () => void
   loading?: boolean
+  /** Si es false, oculta el botón "Nuevo" (cajeros sin permiso). */
+  showCreateButton?: boolean
 }
 
-export const Header = ({ total, setEditing, loading = false }: HeaderProps) => {
+export const Header = ({ total, setEditing, loading = false, showCreateButton = true }: HeaderProps) => {
   return (
     <>
       <header className={styles.header}>
@@ -24,9 +26,11 @@ export const Header = ({ total, setEditing, loading = false }: HeaderProps) => {
         </div>
         <div className={styles.headerActions}>
           <CartIndicator />
-          <button onClick={setEditing} className={styles.primaryBtn}>
-            <Plus size={16} /> Nuevo
-          </button>
+          {showCreateButton && (
+            <button onClick={setEditing} className={styles.primaryBtn}>
+              <Plus size={16} /> Nuevo
+            </button>
+          )}
         </div>
       </header>
     </>
