@@ -4,8 +4,8 @@ import Logo from '../components/Logo.astro';
 const base = import.meta.env.BASE_URL;
 
 const legalLinks = [
-  { label: 'Privacidad', href: base + 'privacidad' },
-  { label: 'Términos', href: base + 'terminos' },
+  { label: 'Política de Privacidad', href: base + 'privacidad' },
+  { label: 'Términos y Condiciones', href: base + 'terminos' },
   { label: 'Descargas', href: base + 'descargar' },
   { label: 'Contacto', href: 'mailto:payments@cajorapos.com' },
   { label: 'GitHub', href: 'https://github.com/orlandotellez/cajora-pos', external: true },
@@ -70,6 +70,8 @@ const legalLinks = [
   .footer__list {
     display: flex;
     gap: 2rem;
+
+      flex-direction: column;
   }
 
   .footer__link {
@@ -84,6 +86,10 @@ const legalLinks = [
     .footer__row {
       flex-direction: row;
       text-align: left;
+    }
+
+    .footer__list {
+      flex-direction: row;
     }
   }
 </style>
