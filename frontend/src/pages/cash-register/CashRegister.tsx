@@ -24,14 +24,18 @@ export default function CashRegister() {
   const currency = usePosStore((s) => s.currency);
   const { user } = useAuth();
   const { toast } = useToast();
-  const { openSessions, canSellCash, fetchStatus } = useCashSessionStore();
+  const { openSessions, canSellCash, fetchStatus, hasOpenSessionFor } = useCashSessionStore();
 
   const isAdmin = user?.role === "admin" || user?.role === "super_admin";
+  // El botón de abrir solo tiene sentido si YO no tengo caja abierta:
+  // la de otro empleado no me habilita a abrir la mía dos veces.
+  const mySessionOpen = hasOpenSessionFor(user?.id ?? "");
 
   // Formulario de apertura
   const [showOpenForm, setShowOpenForm] = useState(false);
   const [montoInicial, setMontoInicial] = useState("");
   const [label, setLabel] = useState("");
+  const [creatingLabel, setCreatingLabel] = useState(false);
   const [opening, setOpening] = useState(false);
 
   // Formulario de cierre (session_id en curso)
@@ -72,6 +76,10 @@ export default function CashRegister() {
       toast("Ingresá un monto inicial válido", "error");
       return;
     }
+    if (!label.trim()) {
+      toast("Elegí o creá un nombre para la caja", "error");
+      return;
+    }
     setOpening(true);
     try {
       await cashRegisterApi.open({ monto_inicial: amount, label: label.trim() || undefined });
@@ -79,6 +87,7 @@ export default function CashRegister() {
       setShowOpenForm(false);
       setMontoInicial("");
       setLabel("");
+      setCreatingLabel(false);
       await fetchStatus(true);
       fetchHistory(1);
     } catch (err: any) {
@@ -116,6 +125,16 @@ export default function CashRegister() {
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
+  // Cajas ya usadas (abiertas + historial): al abrir una nueva sesión se
+  // sugieren como clasificador, así "Caja principal" se escribe una sola vez.
+  const knownLabels = Array.from(
+    new Set(
+      [...openSessions, ...history]
+        .map((s) => s.label)
+        .filter((l): l is string => !!l)
+    )
+  );
+
   return (
     <div className={styles.page}>
       <header className={styles.header}>
@@ -127,7 +146,7 @@ export default function CashRegister() {
               : "No hay caja abierta. Abrí la caja para cobrar en efectivo."}
           </p>
         </div>
-        {!showOpenForm && (
+        {!showOpenForm && !mySessionOpen && (
           <button className={styles.primaryBtn} onClick={() => { setShowOpenForm(true); setReport(null); }}>
             <Plus size={15} /> Abrir caja
           </button>
@@ -150,20 +169,55 @@ export default function CashRegister() {
             />
           </div>
           <div className={styles.formRow}>
-            <label className={styles.fieldLabel}>Etiqueta (opcional)</label>
-            <input
-              type="text"
-              placeholder="Ej: Caja 1"
-              value={label}
-              onChange={(e) => setLabel(e.target.value)}
-              className={styles.input}
-            />
+            <label className={styles.fieldLabel}>Caja *</label>
+            {creatingLabel ? (
+              <>
+                <input
+                  type="text"
+                  placeholder="Nombre de la nueva caja (ej: Caja principal)"
+                  value={label}
+                  onChange={(e) => setLabel(e.target.value)}
+                  maxLength={50}
+                  className={styles.input}
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  className={styles.linkBtn}
+                  onClick={() => { setCreatingLabel(false); setLabel(""); }}
+                >
+                  ← Elegir una caja existente
+                </button>
+              </>
+            ) : (
+              <select
+                value={label}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v === "__new__") {
+                    setCreatingLabel(true);
+                    setLabel("");
+                  } else {
+                    setLabel(v);
+                  }
+                }}
+                className={styles.select}
+              >
+                <option value="" disabled>
+                  {knownLabels.length > 0 ? "Elegí una caja…" : "Todavía no hay cajas creadas"}
+                </option>
+                {knownLabels.map((l) => (
+                  <option key={l} value={l}>{l}</option>
+                ))}
+                <option value="__new__">+ Crear nueva caja…</option>
+              </select>
+            )}
           </div>
           <div className={styles.formActions}>
-            <button className={styles.cancelBtn} onClick={() => { setShowOpenForm(false); setMontoInicial(""); setLabel(""); }}>
+            <button className={styles.cancelBtn} onClick={() => { setShowOpenForm(false); setMontoInicial(""); setLabel(""); setCreatingLabel(false); }}>
               Cancelar
             </button>
-            <button className={styles.primaryBtn} disabled={opening} onClick={handleOpen}>
+            <button className={styles.primaryBtn} disabled={opening || !label.trim()} onClick={handleOpen}>
               {opening ? "Abriendo..." : "Abrir caja"}
             </button>
           </div>
@@ -208,7 +262,7 @@ export default function CashRegister() {
           openSessions.map((s) => (
             <div key={s.id} className={styles.sessionCard}>
               <div className={styles.sessionMain}>
-                <span className={styles.sessionLabel}>{s.label || "Caja"}</span>
+                <span className={styles.sessionLabel}>{s.label || `Caja de ${s.user_name}`}</span>
                 <span className={styles.sessionUser}>{s.user_name}</span>
                 <span className={styles.sessionMeta}>Abierta {formatDateTime(s.opened_at)}</span>
               </div>
@@ -300,7 +354,7 @@ export default function CashRegister() {
               </div>
               {history.map((s) => (
                 <div key={s.id} className={styles.historyRow}>
-                  <span>{s.label || "Caja"}</span>
+                  <span>{s.label || `Caja de ${s.user_name}`}</span>
                   <span>{s.user_name}</span>
                   <span>{formatDateTime(s.opened_at)}</span>
                   <span>{formatDateTime(s.closed_at)}</span>

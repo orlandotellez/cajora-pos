@@ -2,7 +2,8 @@ import { z } from "zod"
 
 export const OpenCashSessionDtoSchema = z.object({
   monto_inicial: z.number().nonnegative(),
-  label: z.string().trim().min(1).max(50).optional(),
+  // El nombre de la caja es obligatorio: toda sesión se clasifica.
+  label: z.string().trim().min(1, "El nombre de la caja es obligatorio").max(50),
 })
 
 export const CloseCashSessionDtoSchema = z.object({
