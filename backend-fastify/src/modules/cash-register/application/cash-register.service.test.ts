@@ -41,6 +41,7 @@ function makeFakeRepo(overrides: Partial<ICashRegisterRepository> = {}): ICashRe
       }),
     findById: async () => makeSession(),
     listOpen: async () => [],
+    listOpenByUser: async () => [],
     listHistory: async ({ page, limit }) => ({ sessions: [], total: 0, page, limit }),
     getCashIn: async () => 0,
     getExpensesTotal: async () => 0,

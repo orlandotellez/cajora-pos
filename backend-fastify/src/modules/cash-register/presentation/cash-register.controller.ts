@@ -38,7 +38,9 @@ export async function cashRegisterRoutes(fastify: FastifyInstance) {
     preHandler: [authGuard, storeGuard],
   }, async (req: FastifyRequest, reply: FastifyReply) => {
     const storeId = (req as any).storeId as string
-    const result = await service.status(storeId)
+    const userId = (req as any).userId as string
+    const userRole = (req as any).userRole as string | undefined
+    const result = await service.status(storeId, userId, userRole)
     return reply.send(result)
   })
 
@@ -46,8 +48,10 @@ export async function cashRegisterRoutes(fastify: FastifyInstance) {
     preHandler: [authGuard, storeGuard],
   }, async (req: FastifyRequest, reply: FastifyReply) => {
     const storeId = (req as any).storeId as string
+    const userId = (req as any).userId as string
+    const userRole = (req as any).userRole as string | undefined
     const query = CashHistoryQuerySchema.parse(req.query ?? {})
-    const result = await service.history({ ...query, storeId })
+    const result = await service.history({ ...query, storeId, userId, role: userRole })
     return reply.send(result)
   })
 }

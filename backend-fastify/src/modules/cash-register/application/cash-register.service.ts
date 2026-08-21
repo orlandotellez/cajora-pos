@@ -77,8 +77,11 @@ export const createCashRegisterService = (repository: ICashRegisterRepository) =
       report: result.report,
     }
   },
-  status: async (storeId: string): Promise<{ open_sessions: ICashSessionWithLive[]; can_sell_cash: boolean }> => {
-    const sessions = await repository.listOpen(storeId)
+  status: async (storeId: string, userId?: string, role?: string): Promise<{ open_sessions: ICashSessionWithLive[]; can_sell_cash: boolean }> => {
+    const isAdmin = role === "admin" || role === "super_admin"
+    const sessions = isAdmin
+      ? await repository.listOpen(storeId)
+      : await repository.listOpenByUser(userId!, storeId)
     const now = new Date()
     const enriched = await Promise.all(
       sessions.map(async (s) => {
@@ -138,9 +141,11 @@ export const createCashRegisterService = (repository: ICashRegisterRepository) =
     })
   },
 
-  history: async (params?: { page?: number; limit?: number; storeId?: string }) => {
+  history: async (params?: { page?: number; limit?: number; storeId?: string; userId?: string; role?: string }) => {
+    const isAdmin = params?.role === "admin" || params?.role === "super_admin"
     const result = await repository.listHistory({
       storeId: params?.storeId!,
+      userId: isAdmin ? undefined : params?.userId,
       page: params?.page || 1,
       limit: params?.limit || 20,
     })

@@ -92,16 +92,27 @@ export const CashRegisterRepository: ICashRegisterRepository = {
     return sessions.map(mapRow)
   },
 
-  async listHistory({ storeId, page, limit }) {
+  async listOpenByUser(userId, storeId) {
+    const sessions = await prisma.cash_session.findMany({
+      where: { user_id: userId, store_id: storeId, status: "abierto", deleted_at: null },
+      orderBy: { opened_at: "asc" },
+    })
+    return sessions.map(mapRow)
+  },
+
+  async listHistory({ storeId, userId, page, limit }) {
     const skip = (page - 1) * limit
+    const where = userId
+      ? { store_id: storeId, user_id: userId, deleted_at: null }
+      : { store_id: storeId, deleted_at: null }
     const [sessions, total] = await Promise.all([
       prisma.cash_session.findMany({
-        where: { store_id: storeId, deleted_at: null },
+        where,
         orderBy: { opened_at: "desc" },
         take: limit,
         skip,
       }),
-      prisma.cash_session.count({ where: { store_id: storeId, deleted_at: null } }),
+      prisma.cash_session.count({ where }),
     ])
     return { sessions: sessions.map(mapRow), total, page, limit }
   },

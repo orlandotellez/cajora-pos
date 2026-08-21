@@ -29,7 +29,9 @@ export interface ICashRegisterRepository {
 
   listOpen(storeId: string): Promise<ICashSessionEntity[]>
 
-  listHistory(params: { storeId: string; page: number; limit: number }): Promise<{
+  listOpenByUser(userId: string, storeId: string): Promise<ICashSessionEntity[]>
+
+  listHistory(params: { storeId: string; userId?: string; page: number; limit: number }): Promise<{
     sessions: ICashSessionEntity[]
     total: number
     page: number
