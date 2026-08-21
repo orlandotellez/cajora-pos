@@ -4,6 +4,8 @@ import type {
 } from "@/api/auth";
 import type { Category } from "@/api/categories";
 import type { CashSession } from "@/api/cash-register";
+import type { Client, ClientDetailResponse } from "@/api/clients";
+import type { ClientDebtSummary, CreditSaleDetail, CreditPayment, ClientDebtResponse } from "@/api/credits";
 import type { InventoryMovement, BatchResponse, LowStockProduct } from "@/api/inventory";
 import type { Printer } from "@/api/printers";
 import type { Product } from "@/api/products";
@@ -63,6 +65,143 @@ const DEMO_USERS: UserResponse[] = [
     phone: "+505 8888 2222",
     created_at: "2026-03-02T10:00:00.000Z",
     updated_at: "2026-07-20T10:00:00.000Z",
+  },
+];
+
+const DEMO_CLIENTS: Client[] = [
+  {
+    id: "demo-client-1",
+    name: "Roberto García",
+    phone: "+505 8888 3333",
+    email: "roberto@email.com",
+    address: "Managua, Nicaragua",
+    notes: "Cliente frecuente",
+    is_active: true,
+    sale_count: 5,
+    total_spent: 2850,
+    created_at: "2026-01-15T09:00:00.000Z",
+    updated_at: "2026-08-18T09:00:00.000Z",
+  },
+  {
+    id: "demo-client-2",
+    name: "María Fernández",
+    phone: "+505 8888 4444",
+    email: "maria.f@email.com",
+    address: "León, Nicaragua",
+    notes: undefined,
+    is_active: true,
+    sale_count: 3,
+    total_spent: 1200,
+    created_at: "2026-02-20T10:00:00.000Z",
+    updated_at: "2026-08-15T10:00:00.000Z",
+  },
+  {
+    id: "demo-client-3",
+    name: "Carlos Mendoza",
+    phone: "+505 8888 5555",
+    email: undefined,
+    address: "Masaya, Nicaragua",
+    notes: "Compra al por mayor",
+    is_active: true,
+    sale_count: 8,
+    total_spent: 5400,
+    created_at: "2026-03-10T11:00:00.000Z",
+    updated_at: "2026-08-19T11:00:00.000Z",
+  },
+  {
+    id: "demo-client-4",
+    name: "Ana Lucía Torres",
+    phone: "+505 8888 6666",
+    email: "ana.torres@email.com",
+    address: undefined,
+    notes: undefined,
+    is_active: false,
+    sale_count: 1,
+    total_spent: 350,
+    created_at: "2026-04-05T09:00:00.000Z",
+    updated_at: "2026-06-01T09:00:00.000Z",
+  },
+  {
+    id: "demo-client-5",
+    name: "Pedro López",
+    phone: "+505 8888 7777",
+    email: "pedro@email.com",
+    address: "Estelí, Nicaragua",
+    notes: "Entrega a domicilio",
+    is_active: true,
+    sale_count: 12,
+    total_spent: 8900,
+    created_at: "2026-01-20T09:00:00.000Z",
+    updated_at: "2026-08-19T08:00:00.000Z",
+  },
+];
+
+const DEMO_CREDIT_DEBTS: ClientDebtSummary[] = [
+  {
+    client_id: "demo-client-1",
+    client_name: "Roberto García",
+    client_phone: "+505 8888 3333",
+    total_debt: 450,
+    sale_count: 2,
+    oldest_pending_days: 15,
+  },
+  {
+    client_id: "demo-client-3",
+    client_name: "Carlos Mendoza",
+    client_phone: "+505 8888 5555",
+    total_debt: 1200,
+    sale_count: 3,
+    oldest_pending_days: 42,
+  },
+];
+
+const DEMO_CREDIT_SALES: CreditSaleDetail[] = [
+  {
+    id: "demo-sale-7",
+    total: 760,
+    paid: 310,
+    pending: 450,
+    created_at: "2026-08-16T13:20:00.000Z",
+    items: [
+      { name: "Coca-Cola 1.5 L", quantity: 5, line_total: 375 },
+      { name: "Arroz 1 lb", quantity: 10, line_total: 200 },
+      { name: "Frijoles rojos 1 lb", quantity: 8, line_total: 256 },
+    ],
+  },
+  {
+    id: "demo-sale-credit-2",
+    total: 850,
+    paid: 0,
+    pending: 850,
+    created_at: "2026-07-28T10:00:00.000Z",
+    items: [
+      { name: "Detergente Ariel 1 kg", quantity: 5, line_total: 550 },
+      { name: "Cloro 1 L", quantity: 12, line_total: 300 },
+    ],
+  },
+  {
+    id: "demo-sale-credit-3",
+    total: 350,
+    paid: 0,
+    pending: 350,
+    created_at: "2026-08-05T14:30:00.000Z",
+    items: [
+      { name: "Aceite 1 L", quantity: 2, line_total: 170 },
+      { name: "Leche Parmalat 1 L", quantity: 3, line_total: 174 },
+    ],
+  },
+];
+
+const DEMO_CREDIT_PAYMENTS: CreditPayment[] = [
+  {
+    id: "demo-credit-pay-1",
+    sale_id: "demo-sale-7",
+    client_id: "demo-client-1",
+    amount: 310,
+    payment_method: "efectivo",
+    notes: "Abono parcial",
+    user_name: "Ana Martínez",
+    created_at: "2026-08-18T09:00:00.000Z",
   },
 ];
 
@@ -863,4 +1002,8 @@ export const DEMO_FIXTURES = {
   revenueByCategory: DEMO_REVENUE_BY_CATEGORY,
   cashSessions: DEMO_CASH_SESSIONS,
   cashExpenses: DEMO_CASH_EXPENSES,
+  clients: DEMO_CLIENTS,
+  creditDebts: DEMO_CREDIT_DEBTS,
+  creditSales: DEMO_CREDIT_SALES,
+  creditPayments: DEMO_CREDIT_PAYMENTS,
 };

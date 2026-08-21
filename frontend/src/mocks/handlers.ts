@@ -13,6 +13,8 @@ import type { Product, CreateProductPayload } from "@/api/products";
 import type { Category } from "@/api/categories";
 import type { Supplier } from "@/api/suppliers";
 import type { Service } from "@/api/services";
+import type { Client } from "@/api/clients";
+import type { ClientDetailResponse, ClientDebtResponse, CreditPayment } from "@/api/credits";
 import type { Sale, CreateSalePayload } from "@/api/sales";
 import type { InventoryMovement, CreateMovementPayload, CreateBatchPayload, BatchResponse } from "@/api/inventory";
 import type { UserResponse } from "@/api/users";
@@ -75,6 +77,10 @@ const users = [...DEMO_FIXTURES.users];
 const printers = [...DEMO_FIXTURES.printers];
 const cashSessions = [...DEMO_FIXTURES.cashSessions];
 const cashExpenses = [...DEMO_FIXTURES.cashExpenses];
+const clients = [...DEMO_FIXTURES.clients];
+const creditDebts = [...DEMO_FIXTURES.creditDebts];
+const creditSales = [...DEMO_FIXTURES.creditSales];
+const creditPayments = [...DEMO_FIXTURES.creditPayments];
 let settings: Settings = DEMO_FIXTURES.settings;
 
 // ---- Caja: helpers de arqueo -----------------------------------------------
@@ -813,7 +819,7 @@ export const handlers = [
     await delay(200);
     const open = cashSessions
       .filter((s) => s.status === "abierto")
-      .map((s) => ({ ...s, cash_so_far: cashSoFar(s), expenses_total: expensesTotal(s.id) }));
+      .map((s) => ({ session: s, cash_so_far: cashSoFar(s), expenses_total: expensesTotal(s.id) }));
     return HttpResponse.json({ open_sessions: open, can_sell_cash: open.length > 0 });
   }),
 
@@ -888,6 +894,161 @@ export const handlers = [
     const sorted = [...cashSessions].sort((a, b) => b.opened_at.localeCompare(a.opened_at));
     const { items, total } = paginate(sorted, page, limit);
     return HttpResponse.json({ sessions: items, total, page, limit });
+  }),
+
+  // ==========================================================================
+  // Clients
+  // ==========================================================================
+  http.get(`${API}/clients`, async ({ request }) => {
+    await delay(200);
+    const url = new URL(request.url);
+    const search = (url.searchParams.get("search") ?? "").toLowerCase();
+    const isActive = url.searchParams.get("is_active");
+    const page = getNumber(url.searchParams.get("page"), 1);
+    const limit = getNumber(url.searchParams.get("limit"), 20);
+    const filtered = clients.filter((c) => {
+      if (search && !c.name.toLowerCase().includes(search) && !(c.phone ?? "").includes(search)) return false;
+      if (isActive !== null && c.is_active !== (isActive === "true")) return false;
+      return true;
+    });
+    const { items, total } = paginate(filtered, page, limit);
+    return HttpResponse.json({ clients: items, total, page, limit });
+  }),
+
+  http.get(`${API}/clients/by-phone`, async ({ request }) => {
+    await delay(150);
+    const url = new URL(request.url);
+    const phone = url.searchParams.get("phone") ?? "";
+    const client = clients.find((c) => c.phone === phone) ?? null;
+    return HttpResponse.json(client);
+  }),
+
+  http.get(`${API}/clients/:id`, async ({ params }) => {
+    await delay(200);
+    const client = clients.find((c) => c.id === params.id);
+    if (!client) return HttpResponse.json({ message: "Cliente no encontrado" }, { status: 404 });
+    // Ventas recientes del cliente (las de crédito)
+    const recentSales = sales
+      .filter((s) => s.payment_method === "credito")
+      .slice(0, 5)
+      .map((s) => ({
+        id: s.id,
+        total: s.total,
+        payment_method: s.payment_method,
+        created_at: s.created_at,
+        items: s.items.map((i) => ({ name: i.product_name, quantity: i.quantity, line_total: i.line_total })),
+        service_items: [],
+      }));
+    const detail: ClientDetailResponse = { ...client, recent_sales: recentSales };
+    return HttpResponse.json(detail);
+  }),
+
+  http.post(`${API}/clients`, async ({ request }) => {
+    await delay(250);
+    const body = (await request.json()) as { name: string; phone?: string; email?: string; address?: string; notes?: string; is_active?: boolean };
+    const client: Client = {
+      id: makeId("demo-client"),
+      name: body.name,
+      phone: body.phone,
+      email: body.email,
+      address: body.address,
+      notes: body.notes,
+      is_active: body.is_active ?? true,
+      sale_count: 0,
+      total_spent: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    clients.unshift(client);
+    return HttpResponse.json(client, { status: 201 });
+  }),
+
+  http.put(`${API}/clients/:id`, async ({ request, params }) => {
+    await delay(200);
+    const body = (await request.json()) as Partial<Client>;
+    const idx = clients.findIndex((c) => c.id === params.id);
+    if (idx === -1) return HttpResponse.json({ message: "Cliente no encontrado" }, { status: 404 });
+    clients[idx] = { ...clients[idx], ...body, updated_at: new Date().toISOString() };
+    return HttpResponse.json(clients[idx]);
+  }),
+
+  http.delete(`${API}/clients/:id`, async ({ params }) => {
+    await delay(200);
+    const idx = clients.findIndex((c) => c.id === params.id);
+    if (idx === -1) return HttpResponse.json({ message: "Cliente no encontrado" }, { status: 404 });
+    clients.splice(idx, 1);
+    return HttpResponse.json({ message: "Cliente eliminado" });
+  }),
+
+  // ==========================================================================
+  // Credits (cuentas por cobrar)
+  // ==========================================================================
+  http.get(`${API}/credits/total`, async () => {
+    await delay(150);
+    const total = creditDebts.reduce((acc, c) => acc + c.total_debt, 0);
+    return HttpResponse.json({ total });
+  }),
+
+  http.get(`${API}/credits`, async ({ request }) => {
+    await delay(250);
+    const url = new URL(request.url);
+    const search = (url.searchParams.get("search") ?? "").toLowerCase();
+    const filter = url.searchParams.get("filter") ?? "todos";
+    const page = getNumber(url.searchParams.get("page"), 1);
+    const limit = getNumber(url.searchParams.get("limit"), 100);
+    let filtered = [...creditDebts];
+    if (search) {
+      filtered = filtered.filter((c) => c.client_name.toLowerCase().includes(search));
+    }
+    if (filter === "morosos") {
+      filtered = filtered.filter((c) => c.oldest_pending_days != null && c.oldest_pending_days > 30);
+    } else if (filter === "saldados") {
+      filtered = filtered.filter((c) => c.total_debt === 0);
+    }
+    const { items, total } = paginate(filtered, page, limit);
+    return HttpResponse.json({ clients: items, total, page, limit });
+  }),
+
+  http.get(`${API}/credits/:clientId`, async ({ params }) => {
+    await delay(200);
+    const summary = creditDebts.find((c) => c.client_id === params.clientId);
+    if (!summary) return HttpResponse.json({ message: "Cliente no encontrado" }, { status: 404 });
+    const clientSales = creditSales.filter((s) => {
+      // En la demo, las ventas de crédito van al cliente 1 o 3
+      if (summary.client_id === "demo-client-1") return s.id === "demo-sale-7" || s.id === "demo-sale-credit-2";
+      return s.id === "demo-sale-credit-3";
+    });
+    const clientPayments = creditPayments.filter((p) => p.client_id === params.clientId);
+    const resp: ClientDebtResponse = { client: summary, sales: clientSales, payments: clientPayments };
+    return HttpResponse.json(resp);
+  }),
+
+  http.post(`${API}/credits/payments`, async ({ request }) => {
+    await delay(300);
+    const body = (await request.json()) as { sale_id: string; client_id: string; amount: number; payment_method: string; notes?: string };
+    const payment: CreditPayment = {
+      id: makeId("demo-credit-pay"),
+      sale_id: body.sale_id,
+      client_id: body.client_id,
+      amount: body.amount,
+      payment_method: body.payment_method,
+      notes: body.notes,
+      user_name: DEMO_USER.name,
+      created_at: new Date().toISOString(),
+    };
+    creditPayments.unshift(payment);
+    // Actualizar la deuda del cliente
+    const debt = creditDebts.find((c) => c.client_id === body.client_id);
+    if (debt) {
+      debt.total_debt = Math.max(0, debt.total_debt - body.amount);
+    }
+    // Actualizar la venta
+    const sale = creditSales.find((s) => s.id === body.sale_id);
+    if (sale) {
+      sale.paid += body.amount;
+      sale.pending = Math.max(0, sale.total - sale.paid);
+    }
+    return HttpResponse.json(payment, { status: 201 });
   }),
 
   // ==========================================================================
