@@ -11,6 +11,7 @@ export interface ICashIntegrationPort {
 
   registerExpense(data: {
     session_id: string
+    store_id: string
     user_id: string
     amount: number
     reason: string

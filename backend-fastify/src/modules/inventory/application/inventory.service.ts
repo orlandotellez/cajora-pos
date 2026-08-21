@@ -62,6 +62,7 @@ export const createInventoryService = (
     if (expenseSessionId && cashPort) {
       await cashPort.registerExpense({
         session_id: expenseSessionId,
+        store_id: data.store_id!,
         user_id: data.user_id,
         amount: Math.round(data.unit_cost! * data.quantity * 100) / 100,
         reason: "compra_inventario",
