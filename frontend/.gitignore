@@ -28,6 +28,8 @@ dist-ssr
 *.apk.idsig
 *.keystore
 *.tsbuildinfo
+*.deb 
+*.AppImage
 
 .env
 .env.production
