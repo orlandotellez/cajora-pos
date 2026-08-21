@@ -2,35 +2,24 @@
 import Layout from '../layouts/Layout.astro';
 import Icon from '../components/Icon.astro';
 
-const downloads = [
-  {
-    platform: 'Android',
-    icon: 'android',
-    available: true,
-    file: 'APK universal',
-    size: '~50 MB',
-    version: 'v2.0.6',
-    url: 'https://pub-17156739f1d5412cb62a579bb0ccbc35.r2.dev/versions/apk/pos-system-v2.0.6-universal.apk',
-  },
-  {
-    platform: 'Windows',
-    icon: 'windows',
-    available: false,
-    file: '.exe',
-    size: '',
-    version: '',
-    url: '', 
-  },
-  {
-    platform: 'Linux',
-    icon: 'linux',
-    available: false,
-    file: '.AppImage',
-    size: '',
-    version: '',
-    url: '', 
-  },
-];
+const CONFIG_URL =
+  import.meta.env.PUBLIC_CONFIG_API_URL ??
+  'https://pub-17156739f1d5412cb62a579bb0ccbc35.r2.dev/config-api.json';
+
+interface DownloadConfig {
+  app_version?: string;
+  apk_url?: string;
+  exe_url?: string;
+  deb_url?: string;
+  app_image_url?: string;
+}
+
+let buildSnapshot: Partial<DownloadConfig> = {};
+try {
+  const res = await fetch(CONFIG_URL, { signal: AbortSignal.timeout(8000) });
+  if (res.ok) buildSnapshot = await res.json();
+} catch {}
+const SNAPSHOT_JSON = JSON.stringify(buildSnapshot).replace(/</g, '\\u003c');
 ---
 
 <Layout
@@ -44,34 +33,53 @@ const downloads = [
     </p>
 
     <div class="downloads__grid">
-      {downloads.map((item) => (
-        <article class="download-card">
-          <div class="download-card__icon">
-            <Icon name={item.icon} size={28} />
-          </div>
-          <h2 class="download-card__name">{item.platform}</h2>
-          {item.available ? (
-            <p class="download-card__meta">
-              {item.file} · {item.size} · {item.version}
-            </p>
-          ) : (
-            <p class="download-card__meta">—</p>
-          )}
-          {item.available ? (
-            <a href={item.url} class="btn-primary download-card__btn">
-              <Icon name="download" size={16} />
-              Descargar
-            </a>
-          ) : (
-            <button class="btn-primary download-card__btn" disabled>Próximamente</button>
-          )}
-          {item.platform === 'Android' && (
-            <p class="download-card__note">
-              En Android permití la instalación desde orígenes desconocidos (Configuración → Seguridad).
-            </p>
-          )}
-        </article>
-      ))}
+      <article class="download-card" data-card>
+        <div class="download-card__icon">
+          <Icon name="android" size={28} />
+        </div>
+        <h2 class="download-card__name">Android</h2>
+        <p class="download-card__meta" data-meta>Cargando…</p>
+        <a class="btn-primary download-card__btn" data-dl="apk_url" data-file="APK universal" hidden>
+          <Icon name="download" size={16} />
+          Descargar APK
+        </a>
+        <button class="btn-primary download-card__btn" data-soon disabled>Próximamente</button>
+        <p class="download-card__note">
+          En Android permití la instalación desde orígenes desconocidos (Configuración → Seguridad).
+        </p>
+      </article>
+
+      <article class="download-card" data-card>
+        <div class="download-card__icon">
+          <Icon name="windows" size={28} />
+        </div>
+        <h2 class="download-card__name">Windows</h2>
+        <p class="download-card__meta" data-meta>Cargando…</p>
+        <a class="btn-primary download-card__btn" data-dl="exe_url" data-file=".exe" hidden>
+          <Icon name="download" size={16} />
+          Descargar .exe
+        </a>
+        <button class="btn-primary download-card__btn" data-soon disabled>Próximamente</button>
+      </article>
+
+      <article class="download-card" data-card>
+        <div class="download-card__icon">
+          <Icon name="linux" size={28} />
+        </div>
+        <h2 class="download-card__name">Linux</h2>
+        <p class="download-card__meta" data-meta>Cargando…</p>
+        <div class="download-card__actions" data-actions hidden>
+          <a class="btn-primary download-card__btn" data-dl="deb_url" data-file=".deb" hidden>
+            <Icon name="download" size={16} />
+            .deb
+          </a>
+          <a class="btn-secondary download-card__btn" data-dl="app_image_url" data-file=".AppImage" hidden>
+            <Icon name="download" size={16} />
+            .AppImage
+          </a>
+        </div>
+        <button class="btn-primary download-card__btn" data-soon disabled>Próximamente</button>
+      </article>
     </div>
 
     <section class="downloads__selfhosted">
@@ -90,6 +98,85 @@ const downloads = [
     </section>
   </main>
 </Layout>
+
+<script>
+  const CONFIG_URL =
+    import.meta.env.PUBLIC_CONFIG_API_URL ??
+    'https://pub-17156739f1d5412cb62a579bb0ccbc35.r2.dev/config-api.json';
+
+  interface DownloadConfig {
+    app_version?: string;
+    apk_url?: string;
+    exe_url?: string;
+    deb_url?: string;
+    app_image_url?: string;
+  }
+
+  function markUnavailable(): void {
+    document.querySelectorAll<HTMLElement>('[data-meta]').forEach((meta) => {
+      meta.textContent = '—';
+    });
+  }
+
+  function readSnapshot(): DownloadConfig | null {
+    const el = document.getElementById('downloads-config');
+    if (!el?.textContent) return null;
+    try {
+      return JSON.parse(el.textContent) as DownloadConfig;
+    } catch {
+      return null;
+    }
+  }
+
+  function applyConfig(cfg: DownloadConfig): void {
+    const version = cfg.app_version ? `v${cfg.app_version}` : '';
+
+    document.querySelectorAll<HTMLAnchorElement>('[data-dl]').forEach((link) => {
+      const url = cfg[(link.dataset.dl ?? '') as keyof DownloadConfig];
+      if (!url) return;
+      link.href = url;
+      link.hidden = false;
+    });
+
+    document.querySelectorAll<HTMLElement>('[data-card]').forEach((card) => {
+      const links = [...card.querySelectorAll<HTMLAnchorElement>('[data-dl]:not([hidden])')];
+      if (links.length === 0) {
+        const meta = card.querySelector<HTMLElement>('[data-meta]');
+        if (meta) meta.textContent = '—';
+        return;
+      }
+
+      const soon = card.querySelector<HTMLElement>('[data-soon]');
+      if (soon) soon.hidden = true;
+
+      const actions = card.querySelector<HTMLElement>('[data-actions]');
+      if (actions) actions.hidden = false;
+
+      const files = [...new Set(links.map((l) => l.dataset.file ?? '').filter(Boolean))];
+      const meta = card.querySelector<HTMLElement>('[data-meta]');
+      if (meta) meta.textContent = [files.join(' / '), version].filter(Boolean).join(' · ');
+    });
+  }
+
+  async function initDownloads(): Promise<void> {
+    let cfg = readSnapshot();
+
+    try {
+      const res = await fetch(CONFIG_URL, { cache: 'no-store' });
+      if (res.ok) cfg = { ...cfg, ...((await res.json()) as DownloadConfig) };
+    } catch {}
+
+    if (!cfg || Object.keys(cfg).length === 0) {
+      markUnavailable();
+      return;
+    }
+    applyConfig(cfg);
+  }
+
+  initDownloads();
+</script>
+
+<script type="application/json" id="downloads-config" set:html={SNAPSHOT_JSON} />
 
 <style>
   .downloads {
@@ -145,6 +232,17 @@ const downloads = [
     color: var(--text-muted);
     font-size: 0.875rem;
     margin-bottom: 1.5rem;
+  }
+
+  /* btn/btn-secondary definen display propio: sin esto, [hidden] no oculta */
+  .download-card [hidden] {
+    display: none !important;
+  }
+
+  .download-card__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
   }
 
   .download-card__btn {
