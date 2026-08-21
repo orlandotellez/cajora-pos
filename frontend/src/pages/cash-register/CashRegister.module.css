@@ -110,7 +110,7 @@
 .formCard {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 5px;
   padding: 20px;
   margin-bottom: 24px;
 }
@@ -228,7 +228,7 @@
   padding: 28px 16px;
   background: var(--card);
   border: 1px dashed var(--border);
-  border-radius: 10px;
+  border-radius: 5px;
   color: var(--muted-foreground);
   font-size: 14px;
 }
@@ -303,7 +303,7 @@
 .historyTable {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 5px;
   overflow: hidden;
 }
 
