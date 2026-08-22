@@ -1,4 +1,4 @@
-package com.dev_espada.frontend
+package com.dev_espada.cajorapos
 
 import android.app.Activity
 import android.content.Intent

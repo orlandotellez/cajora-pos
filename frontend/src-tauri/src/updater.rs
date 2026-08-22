@@ -160,7 +160,7 @@ pub fn init<R: Runtime>() -> tauri::plugin::TauriPlugin<R> {
             #[cfg(target_os = "android")]
             let handle = Some(
                 _api
-                    .register_android_plugin("com.dev_espada.frontend", "UpdaterPlugin")?,
+                    .register_android_plugin("com.dev_espada.cajorapos", "UpdaterPlugin")?,
             );
             #[cfg(not(target_os = "android"))]
             let handle: Option<tauri::plugin::PluginHandle<R>> = None;

@@ -1,4 +1,4 @@
-package com.dev_espada.frontend
+package com.dev_espada.cajorapos
 
 import android.Manifest
 import android.content.pm.PackageManager

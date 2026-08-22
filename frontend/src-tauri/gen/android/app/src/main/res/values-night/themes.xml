@@ -1,8 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Theme.frontend" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <style name="Theme.cajorapos" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <!-- Customize your theme here. -->
-        <item name="android:statusBarColor">#FF000000</item>
-        <item name="android:windowLightStatusBar">false</item>
     </style>
 </resources>
