@@ -27,6 +27,10 @@ export const UpdateUserDtoSchema = z.object({
   phone: z.string().optional(),
 })
 
+export const ToggleActiveDtoSchema = z.object({
+  is_active: z.boolean(),
+})
+
 export const UserQuerySchema = z.object({
   search: z.string().optional(),
   page: z.coerce.number().int().positive().optional().default(1),

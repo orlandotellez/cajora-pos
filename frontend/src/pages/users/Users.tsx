@@ -13,7 +13,7 @@ import { Header } from "@/components/pages/users/Header";
 import { Filter } from "@/components/pages/users/Filter";
 import styles from "./Users.module.css";
 
-const emptyForm = { name: "", email: "", password: "", role: "cajero" as string, phone: "", permissions: [] as Permission[] };
+const emptyForm = { name: "", email: "", password: "", role: "cajero" as string, phone: "", permissions: [] as Permission[], is_active: true };
 
 export default function Users() {
   const { user: currentUser } = useAuth();
@@ -50,7 +50,7 @@ export default function Users() {
   useEffect(() => {
     if (!editing) return;
     if (isNew) { setForm(emptyForm); return; }
-    setForm({ name: editing.name, email: editing.email, password: "", role: editing.role, phone: editing.phone ?? "", permissions: editing.permissions ?? [] });
+    setForm({ name: editing.name, email: editing.email, password: "", role: editing.role, phone: editing.phone ?? "", permissions: editing.permissions ?? [], is_active: editing.is_active });
   }, [editing, isNew]);
 
   async function handleSave(e: React.FormEvent) {
@@ -76,6 +76,10 @@ export default function Users() {
           permissions: form.role === "cajero" ? form.permissions : undefined,
         };
         await usersApi.update(editing.id, payload);
+        // Si el estado cambió, llamamos al endpoint dedicado
+        if (editing.is_active !== form.is_active) {
+          await usersApi.toggleActive(editing.id, form.is_active);
+        }
       }
       setEditing(null);
       refreshImmediate();
@@ -97,6 +101,21 @@ export default function Users() {
     }
   }
 
+  async function handleToggleActive(u: UserResponse) {
+    try {
+      const newStatus = !u.is_active;
+      await usersApi.toggleActive(u.id, newStatus);
+      refreshImmediate();
+      toast(
+        newStatus ? `${u.name} activado` : `${u.name} desactivado`,
+        "success",
+      );
+    } catch (err) {
+      console.error("Error al cambiar estado:", err);
+      toast((err as Error)?.message || "Error al cambiar estado del usuario", "error");
+    }
+  }
+
   return (
     <div className={styles.page}>
       <Header total={total} onNew={() => setEditing("new")} loading={loading} />
@@ -113,6 +132,7 @@ export default function Users() {
         onPageChange={setPage}
         onEdit={(u) => setEditing(u)}
         onDelete={(u) => setDeleteTarget(u.id)}
+        onToggleActive={handleToggleActive}
         dimmed={false}
         refreshing={refreshing}
       />
@@ -120,6 +140,7 @@ export default function Users() {
       {editing &&
         <EditUserModal
           isNew={isNew}
+          isOwner={typeof editing === "object" && editing?.is_owner}
           setEditing={() => setEditing(null)}
           handleSave={handleSave}
           form={form}

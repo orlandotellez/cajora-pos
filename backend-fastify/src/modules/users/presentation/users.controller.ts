@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify"
 import { createUserService } from "../application/users.service"
 import { UserRepository } from "../infrastructure/users.prisma.repository"
-import { CreateUserDtoSchema, UpdateUserDtoSchema, UserQuerySchema } from "./users.dto"
+import { CreateUserDtoSchema, UpdateUserDtoSchema, ToggleActiveDtoSchema, UserQuerySchema } from "./users.dto"
 import { BadRequestError } from "@/core/errors/AppError"
 import { sseBroadcast } from "@/config/sse"
 
@@ -46,5 +46,13 @@ export const usersController = {
     await userService.delete(id)
     sseBroadcast(request.storeId!, "user.deleted", { id })
     return reply.status(200).send({ message: "User deleted successfully" })
+  },
+
+  toggleActive: async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: string }
+    const { is_active } = ToggleActiveDtoSchema.parse(request.body)
+    const result = await userService.toggleActive(id, is_active)
+    sseBroadcast(request.storeId!, "user.updated", { id })
+    return reply.status(200).send(result)
   },
 }

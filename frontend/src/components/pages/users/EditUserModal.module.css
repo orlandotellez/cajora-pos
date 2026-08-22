@@ -255,3 +255,20 @@
   cursor: pointer;
   height: 40px;
 }
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--accent);
+  cursor: pointer;
+}
+
+.checkbox-row:has(input:disabled) {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

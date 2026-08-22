@@ -11,10 +11,12 @@ type Form = {
   role: string
   phone: string
   permissions: Permission[]
+  is_active: boolean
 }
 
 interface EditUserModalProps {
   isNew: boolean
+  isOwner?: boolean
   setEditing: () => void
   handleSave: (e: React.FormEvent) => Promise<void>
   form: Form
@@ -24,6 +26,7 @@ interface EditUserModalProps {
 
 export const EditUserModal = ({
   isNew,
+  isOwner,
   setEditing,
   handleSave,
   form,
@@ -88,6 +91,23 @@ export const EditUserModal = ({
               <label className={styles.fieldLabel}>Teléfono</label>
               <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={styles.input} />
             </div>
+
+            {!isNew && (
+              <label className={styles["checkbox-row"]}>
+                <div className={styles.permissionInfo}>
+                  <span className={styles.permissionLabel}>Activo</span>
+                  <span className={styles.permissionDesc}>Si está desactivado, el usuario no podrá iniciar sesión</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={form.is_active}
+                  onChange={() => !isOwner && setForm({ ...form, is_active: !form.is_active })}
+                  disabled={isOwner}
+                  className={styles.checkbox}
+                  title={isOwner ? "No se puede desactivar al propietario" : undefined}
+                />
+              </label>
+            )}
 
             {form.role === "cajero" && (
               <div className={styles.permissionsSection}>

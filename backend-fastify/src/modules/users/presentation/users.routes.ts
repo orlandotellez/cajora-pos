@@ -3,7 +3,7 @@ import { usersController } from "./users.controller"
 import { authGuard, adminGuard } from "@/core/guard/auth.guard"
 import { storeGuard } from "@/core/guard/store.guard"
 import { toJsonSchema } from "@/http/swagger-schema"
-import { CreateUserDtoSchema, UpdateUserDtoSchema, UserQuerySchema } from "./users.dto"
+import { CreateUserDtoSchema, UpdateUserDtoSchema, ToggleActiveDtoSchema, UserQuerySchema } from "./users.dto"
 
 const TAGS = ["Users"]
 
@@ -32,4 +32,9 @@ export const usersRoutes = async (fastify: FastifyInstance, _opts: FastifyPlugin
     schema: { tags: TAGS },
     preHandler: [authGuard, adminGuard, storeGuard],
   }, usersController.delete)
+
+  fastify.patch("/:id/active", {
+    schema: { tags: TAGS, body: toJsonSchema(ToggleActiveDtoSchema) },
+    preHandler: [authGuard, adminGuard, storeGuard],
+  }, usersController.toggleActive)
 }
