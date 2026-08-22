@@ -140,6 +140,7 @@ export const superAdminService = {
         email: true,
         email_verified: true,
         role: true,
+        is_owner: true,
         phone: true,
         created_at: true,
         deleted_at: true,

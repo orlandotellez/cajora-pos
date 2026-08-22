@@ -13,7 +13,7 @@ export interface LoginResponse {
   refreshToken?: string;
   message?: string;
   store?: { name?: string } | null;
-  user?: { email?: string; email_verified?: boolean } | null;
+  user?: { email?: string; email_verified?: boolean; is_owner?: boolean; role?: string } | null;
 }
 
 export async function loginUser(email: string, password: string): Promise<LoginResponse> {
@@ -73,6 +73,12 @@ export function initLoginForm(): void {
 
     try {
       const data = await loginUser(payload.email, payload.password);
+
+      // Solo el propietario (owner) de la tienda puede iniciar sesión desde la landing page.
+      if (data?.user && !data.user.is_owner && data.user.role !== "super_admin") {
+        throw new Error("Solo el propietario de la tienda puede iniciar sesión desde aquí.");
+      }
+
       saveSession({
         accessToken: data?.accessToken,
         refreshToken: data?.refreshToken,

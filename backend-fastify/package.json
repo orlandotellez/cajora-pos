@@ -12,6 +12,7 @@
     "migrate:deploy": "prisma migrate deploy",
     "seed": "tsx src/scripts/seed.ts",
     "create-super-admin": "tsx src/scripts/create-super-admin.ts",
+    "set-store-owner": "tsx src/scripts/set-store-owner.ts",
     "plan:create": "tsx src/scripts/create-paypal-plan.ts",
     "reconcile": "tsx src/scripts/reconcile-subscriptions.ts",
     "test": "node --import tsx --experimental-test-module-mocks --test \"src/**/*.test.ts\"",

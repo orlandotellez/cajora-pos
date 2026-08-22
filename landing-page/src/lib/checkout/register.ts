@@ -9,7 +9,7 @@ interface RegisterResponse {
   refreshToken?: string;
   message?: string;
   store?: { name?: string } | null;
-  user?: { email?: string; email_verified?: boolean } | null;
+  user?: { email?: string; email_verified?: boolean; is_owner?: boolean; role?: string } | null;
 }
 
 function showError(el: HTMLElement, msg: string): void {
@@ -173,6 +173,12 @@ export function initCheckoutLogin(opts: {
 
     try {
       const data = await loginUser(email, password);
+
+      // Solo el propietario (owner) de la tienda puede iniciar sesión desde la landing page.
+      if (data?.user && !data.user.is_owner && data.user.role !== "super_admin") {
+        throw new Error("Solo el propietario de la tienda puede iniciar sesión desde aquí.");
+      }
+
       const emailVerified = data.user?.email_verified ?? false;
       saveSession({
         accessToken: data.accessToken,

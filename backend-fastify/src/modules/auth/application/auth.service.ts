@@ -1,4 +1,4 @@
-import { ConflictError, NotFoundError, UnauthorizedError } from "@/core/errors/AppError"
+import { ConflictError, NotFoundError, UnauthorizedError, PaymentRequiredError } from "@/core/errors/AppError"
 import { comparePassword, hashPassword, generateVerificationCode } from "@/core/utils/crypto.utils"
 import { generateTokens, verifyToken } from "@/core/utils/token.utils"
 import { sendVerificationCodeEmail } from "../infrastructure/email-sender"
@@ -43,6 +43,8 @@ function mapUserToResponse(user: IUserEntity): IUserResponse {
     email: user.email,
     email_verified: user.email_verified,
     role: user.role as Role,
+    is_owner: user.is_owner ?? false,
+    is_active: user.is_active ?? true,
     permissions: user.permissions ?? [],
     phone: user.phone,
     image: user.image,
@@ -162,6 +164,7 @@ export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISs
           name: adminName,
           email: adminEmail,
           role: "admin",
+          is_owner: true,
           email_verified: false,
           store_id: store.id,
         },
@@ -225,6 +228,8 @@ export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISs
         email: result.user.email,
         email_verified: false,
         role: "admin",
+        is_owner: true,
+        is_active: true,
         permissions: [],
         phone: undefined,
         image: undefined,
@@ -261,6 +266,10 @@ export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISs
 
     if (user.deleted_at) {
       throw new UnauthorizedError("Account has been deactivated")
+    }
+
+    if (!user.is_active) {
+      throw new PaymentRequiredError("Tu usuario está desactivado. Contacta al administrador de la tienda.")
     }
 
     const store = await getStoreInfo(user.store_id)
@@ -310,6 +319,10 @@ export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISs
 
     if (user.deleted_at) {
       throw new UnauthorizedError("Account has been deactivated")
+    }
+
+    if (!user.is_active) {
+      throw new PaymentRequiredError("Tu usuario está desactivado. Contacta al administrador de la tienda.")
     }
 
     const store = await getStoreInfo(user.store_id)

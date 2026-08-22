@@ -40,6 +40,8 @@ export interface IUserResponse {
   email: string
   email_verified: boolean
   role: Role
+  is_owner: boolean
+  is_active: boolean
   permissions: string[]
   phone?: string
   image?: string

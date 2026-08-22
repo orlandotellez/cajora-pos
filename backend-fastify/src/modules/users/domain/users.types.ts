@@ -7,6 +7,8 @@ export interface IUserResponse {
   email: string
   email_verified: boolean
   role: Role
+  is_owner: boolean
+  is_active: boolean
   permissions: Permission[]
   phone?: string
   image?: string

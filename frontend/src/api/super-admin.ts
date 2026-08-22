@@ -24,6 +24,7 @@ export interface SuperAdminStoreUser {
   email: string;
   email_verified: boolean;
   role: string;
+  is_owner: boolean;
   phone?: string | null;
   created_at: string;
   deleted_at: string | null;

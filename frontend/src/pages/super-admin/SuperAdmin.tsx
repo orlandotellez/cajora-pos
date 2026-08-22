@@ -8,6 +8,7 @@ import {
   Shield,
   ShieldOff,
   Crown,
+  Star,
   Loader2,
   AlertTriangle,
   UserX,
@@ -377,7 +378,14 @@ function StoreRows({
                             {initials(u.name)}
                           </span>
                           <div className={styles.userText}>
-                            <div className={styles.userName}>{u.name}</div>
+                            <div className={styles.userName}>
+                              {u.name}
+                              {u.is_owner && (
+                                <span className={styles.ownerBadge}>
+                                  <Star size={10} fill="currentColor" /> Propietario
+                                </span>
+                              )}
+                            </div>
                             <div className={styles.userEmail}>{u.email}</div>
                           </div>
                           <RoleBadge role={u.role} />

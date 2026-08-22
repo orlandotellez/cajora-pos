@@ -7,6 +7,8 @@ export interface UserResponse {
   email: string;
   email_verified: boolean;
   role: Role;
+  is_owner: boolean;
+  is_active: boolean;
   permissions: Permission[];
   phone?: string;
   image?: string;
@@ -53,4 +55,7 @@ export const usersApi = {
 
   delete: (id: string) =>
     api.delete<{ message: string }>(`/users/${id}`),
+
+  toggleActive: (id: string, is_active: boolean) =>
+    api.patch<UserResponse>(`/users/${id}/active`, { is_active }),
 };

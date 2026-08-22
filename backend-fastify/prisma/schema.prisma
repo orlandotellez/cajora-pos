@@ -85,6 +85,8 @@ model user {
   phone          String?
   image          String?
   role           ROLE    @default(cajero)
+  is_owner       Boolean @default(false)
+  is_active      Boolean @default(true)
   permissions    Json    @default("[]")
   store_id       String?
 

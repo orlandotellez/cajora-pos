@@ -54,6 +54,8 @@ function makeUser(overrides: Partial<IUserEntity> = {}): IUserEntity {
     email: "ana@cajorapos.com",
     email_verified: true,
     role: "admin",
+    is_owner: false,
+    is_active: true,
     permissions: [],
     store_id: "store-1",
     created_at: now,

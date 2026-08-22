@@ -605,6 +605,23 @@
   border: 1px solid color-mix(in srgb, var(--warning) 25%, transparent);
 }
 
+.ownerBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: color-mix(in srgb, #f59e0b 12%, transparent);
+  color: #d97706;
+  border: 1px solid color-mix(in srgb, #f59e0b 25%, transparent);
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
 .userDate {
   font-size: 12px;
   color: var(--muted-foreground);

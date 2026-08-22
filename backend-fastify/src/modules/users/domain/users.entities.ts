@@ -15,6 +15,8 @@ export interface IUserEntity {
   email: string
   email_verified: boolean
   role: ROLE
+  is_owner: boolean
+  is_active: boolean
   permissions: Permission[]
   phone?: string | null
   image?: string | null
@@ -40,4 +42,5 @@ export interface UpdateUserData {
   role?: ROLE
   permissions?: Permission[]
   phone?: string
+  is_active?: boolean
 }

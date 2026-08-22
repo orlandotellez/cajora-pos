@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Shield, ShieldOff } from "lucide-react";
+import { Shield, ShieldOff, Crown, UserCheck, UserX } from "lucide-react";
 import { DataTable, type Column } from "@/components/common/DataTable";
 import type { UserResponse } from "@/api";
 import styles from "./UserTable.module.css";
@@ -14,16 +14,18 @@ interface UserTableProps {
   onPageChange: (page: number) => void;
   onEdit: (user: UserResponse) => void;
   onDelete: (user: UserResponse) => void;
+  onToggleActive: (user: UserResponse) => void;
   dimmed?: boolean;
   refreshing?: boolean;
 }
 
-export function UserTable({ users, currentUserId, loading, total, page, totalPages, onPageChange, onEdit, onDelete, dimmed, refreshing }: UserTableProps) {
+export function UserTable({ users, currentUserId, loading, total, page, totalPages, onPageChange, onEdit, onDelete, onToggleActive, dimmed, refreshing }: UserTableProps) {
   const columns: Column<UserResponse>[] = useMemo(() => [
     {
       key: "name", label: "Nombre", render: (u) => (
         <div className={styles["user-cell"]}>
           <span className={styles["user-name"]}>{u.name}</span>
+          {u.is_owner && <span className={styles["owner-badge"]}><Crown size={10} /> Propietario</span>}
           {u.id === currentUserId && <span className={styles["user-badge"]}>Tú</span>}
         </div>
       ),
@@ -37,8 +39,20 @@ export function UserTable({ users, currentUserId, loading, total, page, totalPag
         </span>
       ),
     },
+    {
+      key: "is_active", label: "Estado", align: "center", render: (u) => (
+        <button
+          className={`${styles["status-toggle"]} ${u.is_active ? styles["status-active"] : styles["status-inactive"]}`}
+          onClick={(e) => { e.stopPropagation(); onToggleActive(u); }}
+          title={u.is_active ? "Desactivar usuario" : "Activar usuario"}
+        >
+          {u.is_active ? <UserCheck size={13} /> : <UserX size={13} />}
+          {u.is_active ? "Activo" : "Inactivo"}
+        </button>
+      ),
+    },
     { key: "created_at", label: "Creado", align: "right", render: (u) => <span className={styles["user-date"]}>{new Date(u.created_at).toLocaleDateString()}</span> },
-  ], [currentUserId]);
+  ], [currentUserId, onToggleActive]);
 
   return (
     <DataTable

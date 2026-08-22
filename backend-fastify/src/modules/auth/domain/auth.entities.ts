@@ -17,6 +17,8 @@ export interface IUserEntity {
   phone?: string
   image?: string
   role: Role
+  is_owner: boolean
+  is_active: boolean
   permissions: Permission[]
   store_id: string | null
   created_at: Date
@@ -64,6 +66,7 @@ export type CreateUserData = Pick<IUserEntity, "name" | "email" | "role" | "stor
   phone?: string
   image?: string
   email_verified?: boolean
+  is_owner?: boolean
 }
 
 export type UpdateUserData = Partial<Pick<IUserEntity, "name" | "phone" | "image" | "role" | "email_verified">>

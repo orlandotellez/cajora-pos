@@ -12,6 +12,8 @@ function mapUserToResponse(user: IUserEntity): IUserResponse {
     email: user.email,
     email_verified: user.email_verified,
     role: user.role,
+    is_owner: user.is_owner ?? false,
+    is_active: user.is_active ?? true,
     permissions: user.permissions ?? [],
     phone: user.phone || undefined,
     image: user.image || undefined,
@@ -68,5 +70,12 @@ export const createUserService = (repository: IUserRepository) => ({
     const existing = await repository.findById(id)
     if (!existing) throw new NotFoundError("User not found")
     await repository.softDelete(id)
+  },
+
+  toggleActive: async (id: string, isActive: boolean): Promise<IUserResponse> => {
+    const existing = await repository.findById(id)
+    if (!existing) throw new NotFoundError("User not found")
+    const user = await repository.update(id, { is_active: isActive } as UpdateUserData)
+    return mapUserToResponse(user)
   },
 })
