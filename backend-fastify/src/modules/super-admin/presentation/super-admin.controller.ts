@@ -33,4 +33,9 @@ export const superAdminController = {
     })
     return reply.status(200).send(result)
   },
+
+  subscriptionHealth: async (_request: FastifyRequest, reply: FastifyReply) => {
+    const result = await superAdminService.getSubscriptionHealth()
+    return reply.status(200).send(result)
+  },
 }

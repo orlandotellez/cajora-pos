@@ -13,12 +13,19 @@ import {
   AlertTriangle,
   UserX,
   CheckCircle2,
+  CreditCard,
+  Clock,
+  XCircle,
+  AlertCircle,
+  PauseCircle,
+  TrendingDown,
 } from "lucide-react";
 import {
   superAdminApi,
   type SuperAdminStats,
   type SuperAdminStoreRow,
   type SuperAdminStoreUser,
+  type SubscriptionHealthResponse,
 } from "@/api/super-admin";
 import { useSuperAdminGuard } from "@/hooks/useSuperAdminGuard";
 import styles from "./SuperAdmin.module.css";
@@ -90,6 +97,9 @@ export default function SuperAdmin() {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
+  // Salud de suscripciones
+  const [subHealth, setSubHealth] = useState<SubscriptionHealthResponse | null>(null);
+
   // Usuarios por tienda (expansión lazy)
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [usersByStore, setUsersByStore] = useState<Record<string, SuperAdminStoreUser[]>>({});
@@ -100,12 +110,14 @@ export default function SuperAdmin() {
     else setRefreshing(true);
     setError(null);
     try {
-      const [statsRes, storesRes] = await Promise.all([
+      const [statsRes, storesRes, healthRes] = await Promise.all([
         superAdminApi.getStats(),
         superAdminApi.getStores(),
+        superAdminApi.getSubscriptionHealth(),
       ]);
       setStats(statsRes);
       setStores(storesRes.stores);
+      setSubHealth(healthRes);
       setLastUpdated(new Date());
     } catch (err) {
       console.error("Error al cargar el panel super admin:", err);
@@ -234,6 +246,184 @@ export default function SuperAdmin() {
             </div>
           ))}
       </div>
+
+      {/* KPIs de salud de suscripciones */}
+      {subHealth && (
+        <>
+          <div className={styles.kpiGrid}>
+            {[
+              {
+                label: "Activas",
+                value: String(subHealth.summary.active),
+                icon: CheckCircle2,
+                sub: `${subHealth.summary.cloud_total} cloud · ${subHealth.summary.self_hosted_total} self-hosted`,
+                tone: styles.kpiToneGreen,
+                warn: false,
+              },
+              {
+                label: "Pago fallido",
+                value: String(subHealth.summary.past_due),
+                icon: AlertCircle,
+                sub: "Requieren atención",
+                tone: styles.kpiToneRed,
+                warn: subHealth.summary.past_due > 0,
+              },
+              {
+                label: "Canceladas",
+                value: String(subHealth.summary.canceled),
+                icon: XCircle,
+                sub: undefined,
+                tone: styles.kpiToneGray,
+                warn: false,
+              },
+              {
+                label: "Expiradas",
+                value: String(subHealth.summary.expired),
+                icon: PauseCircle,
+                sub: undefined,
+                tone: styles.kpiToneOrange,
+                warn: subHealth.summary.expired > 0,
+              },
+            ].map((k) => {
+              const Icon = k.icon;
+              return (
+                <div key={k.label} className={`${styles.kpiCard} ${k.warn ? styles.kpiCardWarn : ""}`}>
+                  <div className={`${styles.kpiIconChip} ${k.tone}`}>
+                    <Icon size={18} strokeWidth={2.2} />
+                  </div>
+                  <div className={styles.kpiLabel}>{k.label}</div>
+                  <div className={styles.kpiValue}>{k.value}</div>
+                  {k.sub && <div className={styles.kpiSub}>{k.sub}</div>}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Tiendas con problemas de suscripción */}
+          {subHealth.problem_stores.length > 0 && (
+            <div className={`${styles.card} ${styles.alertCard}`}>
+              <div className={styles.cardHeader}>
+                <div className={styles.cardHeading}>
+                  <span className={`${styles.cardIcon} ${styles.cardIconDanger}`}>
+                    <TrendingDown size={15} />
+                  </span>
+                  <h2 className={styles.cardTitle}>Suscripciones con problemas</h2>
+                </div>
+                <span className={`${styles.cardCount} ${styles.cardCountDanger}`}>
+                  {subHealth.problem_stores.length} tienda{subHealth.problem_stores.length !== 1 ? "s" : ""}
+                </span>
+              </div>
+              <div className={styles.tableWrapper}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>Tienda</th>
+                      <th>Propietario</th>
+                      <th>Estado</th>
+                      <th>Último evento</th>
+                      <th className={styles.thNum}>Días para expirar</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {subHealth.problem_stores.map((ps) => (
+                      <tr key={ps.store_id}>
+                        <td>
+                          <div className={styles.storeCell}>
+                            <span
+                              className={styles.storeAvatar}
+                              style={{
+                                background: `oklch(0.72 0.1 ${hueFromString(ps.store_name)})`,
+                                color: `oklch(0.22 0.03 ${hueFromString(ps.store_name)})`,
+                              }}>
+                              {initials(ps.store_name)}
+                            </span>
+                            <div className={styles.storeText}>
+                              <div className={styles.storeName}>{ps.store_name}</div>
+                              <div className={styles.storeSub}>{ps.mode} · {ps.plan}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <div className={styles.userText}>
+                            <div className={styles.userName}>{ps.owner_name ?? "—"}</div>
+                            <div className={styles.userEmail}>{ps.owner_email ?? "—"}</div>
+                          </div>
+                        </td>
+                        <td>
+                          <SubStatusBadge status={ps.status} />
+                        </td>
+                        <td>
+                          {ps.last_event_action ? (
+                            <div className={styles.userText}>
+                              <div className={styles.userName}>{formatEventAction(ps.last_event_action)}</div>
+                              {ps.last_event_at && (
+                                <div className={styles.userDate}>
+                                  {new Date(ps.last_event_at).toLocaleDateString("es-MX", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className={styles.userDate}>Sin eventos</span>
+                          )}
+                        </td>
+                        <td className={styles.tdNum}>
+                          {ps.days_until_expiry !== null ? (
+                            <span className={ps.days_until_expiry <= 0 ? styles.expiryExpired : ps.days_until_expiry <= 3 ? styles.expiryUrgent : styles.expiryOk}>
+                              {ps.days_until_expiry <= 0 ? "Expirado" : `${ps.days_until_expiry}d`}
+                            </span>
+                          ) : (
+                            <span className={styles.userDate}>—</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Eventos fallidos recientes */}
+          {subHealth.recent_events.length > 0 && (
+            <div className={styles.card}>
+              <div className={styles.cardHeader}>
+                <div className={styles.cardHeading}>
+                  <span className={styles.cardIcon}>
+                    <Clock size={15} />
+                  </span>
+                  <h2 className={styles.cardTitle}>Eventos fallidos recientes</h2>
+                </div>
+                <span className={styles.cardCount}>{subHealth.recent_events.length} eventos</span>
+              </div>
+              <div className={styles.tableWrapper}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>Tienda</th>
+                      <th>Evento</th>
+                      <th>Fecha</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {subHealth.recent_events.map((ev) => (
+                      <tr key={ev.id}>
+                        <td>{ev.store_name ?? ev.store_id ?? "—"}</td>
+                        <td>
+                          <SubStatusBadge status={ev.action.includes("payment_failed") ? "past_due" : ev.action.includes("cancelled") ? "canceled" : ev.action.includes("expired") ? "expired" : "past_due"} />
+                          <span className={styles.userDate} style={{ marginLeft: 8 }}>{formatEventAction(ev.action)}</span>
+                        </td>
+                        <td className={styles.userDate}>
+                          {new Date(ev.created_at).toLocaleDateString("es-MX", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </>
+      )}
 
       {/* Tabla de tiendas */}
       <div className={styles.card}>
@@ -407,4 +597,38 @@ function StoreRows({
       )}
     </>
   );
+}
+
+function SubStatusBadge({ status }: { status: string }) {
+  const map: Record<string, { label: string; cls: string; icon: typeof CheckCircle2 }> = {
+    active: { label: "Activa", cls: styles.subActive, icon: CheckCircle2 },
+    past_due: { label: "Pago fallido", cls: styles.subPastDue, icon: AlertTriangle },
+    canceled: { label: "Cancelada", cls: styles.subCanceled, icon: XCircle },
+    expired: { label: "Expirada", cls: styles.subExpired, icon: PauseCircle },
+    pending: { label: "Pendiente", cls: styles.subPending, icon: Clock },
+  };
+  const def = map[status] ?? { label: status, cls: "", icon: AlertCircle };
+  const Icon = def.icon;
+  return (
+    <span className={`${styles.subBadge} ${def.cls}`}>
+      <Icon size={11} />
+      {def.label}
+    </span>
+  );
+}
+
+function formatEventAction(action: string): string {
+  const map: Record<string, string> = {
+    webhook_payment_failed: "Pago fallido",
+    webhook_suspended: "Suspendida",
+    webhook_cancelled: "Cancelada",
+    webhook_expired: "Expirada",
+    webhook_activated: "Activada",
+    webhook_sale_completed: "Pago completado",
+    checkout: "Checkout",
+    activate: "Activación",
+    cancel: "Cancelación",
+    reactivate: "Reactivación",
+  };
+  return map[action] ?? action;
 }

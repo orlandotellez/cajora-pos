@@ -30,6 +30,51 @@ export interface SuperAdminStoreUser {
   deleted_at: string | null;
 }
 
+export interface SubscriptionHealthSummary {
+  total: number
+  active: number
+  past_due: number
+  canceled: number
+  expired: number
+  pending: number
+  cloud_total: number
+  self_hosted_total: number
+}
+
+export interface SubscriptionHealthStore {
+  store_id: string
+  store_name: string
+  owner_name: string | null
+  owner_email: string | null
+  status: string
+  plan: string
+  mode: string
+  current_period_end: string | null
+  cancel_at_period_end: boolean
+  last_event_action: string | null
+  last_event_at: string | null
+  days_until_expiry: number | null
+}
+
+export interface SubscriptionHealthEvent {
+  id: string
+  store_id: string | null
+  store_name: string | null
+  user_id: string | null
+  user_name: string | null
+  user_email: string | null
+  action: string
+  paypal_subscription_id: string | null
+  metadata: unknown
+  created_at: string
+}
+
+export interface SubscriptionHealthResponse {
+  summary: SubscriptionHealthSummary
+  problem_stores: SubscriptionHealthStore[]
+  recent_events: SubscriptionHealthEvent[]
+}
+
 export const superAdminApi = {
   getStats: () => api.get<SuperAdminStats>("/super-admin/stats"),
 
@@ -37,4 +82,7 @@ export const superAdminApi = {
 
   getStoreUsers: (storeId: string) =>
     api.get<{ users: SuperAdminStoreUser[]; total: number }>(`/super-admin/stores/${storeId}/users`),
+
+  getSubscriptionHealth: () =>
+    api.get<SubscriptionHealthResponse>("/super-admin/subscription-health"),
 };

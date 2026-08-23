@@ -80,3 +80,37 @@ export interface ISubscriptionEventsFilters {
   limit: number
   offset: number
 }
+
+// --- Salud de suscripciones (panel de alertas) ---
+
+export interface ISubscriptionHealthSummary {
+  total: number
+  active: number
+  past_due: number
+  canceled: number
+  expired: number
+  pending: number
+  cloud_total: number
+  self_hosted_total: number
+}
+
+export interface ISubscriptionHealthStore {
+  store_id: string
+  store_name: string
+  owner_name: string | null
+  owner_email: string | null
+  status: string
+  plan: string
+  mode: string
+  current_period_end: string | null
+  cancel_at_period_end: boolean
+  last_event_action: string | null
+  last_event_at: string | null
+  days_until_expiry: number | null
+}
+
+export interface ISubscriptionHealthResponse {
+  summary: ISubscriptionHealthSummary
+  problem_stores: ISubscriptionHealthStore[]
+  recent_events: ISubscriptionEventRow[]
+}

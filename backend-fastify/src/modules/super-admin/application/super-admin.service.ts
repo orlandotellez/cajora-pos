@@ -6,6 +6,7 @@ import type {
   IStoresListResponse,
   ISubscriptionEventsFilters,
   ISubscriptionEventsResponse,
+  ISubscriptionHealthResponse,
   IStoreUsersResponse,
 } from "../domain/super-admin.types"
 
@@ -195,5 +196,141 @@ export const superAdminService = {
       })),
       total,
     }
+  },
+
+  async getSubscriptionHealth(): Promise<ISubscriptionHealthResponse> {
+    // Conteo de suscripciones por estado
+    const [statusCounts, modeCounts] = await Promise.all([
+      prisma.subscription.groupBy({
+        by: ["status"],
+        _count: { _all: true },
+      }),
+      prisma.subscription.groupBy({
+        by: ["mode"],
+        _count: { _all: true },
+      }),
+    ])
+
+    const countByStatus = (status: string) =>
+      statusCounts.find((r) => r.status === status)?._count._all ?? 0
+    const countByMode = (mode: string) =>
+      modeCounts.find((r) => r.mode === mode)?._count._all ?? 0
+
+    const total = statusCounts.reduce((acc, r) => acc + r._count._all, 0)
+
+    const summary = {
+      total,
+      active: countByStatus("active"),
+      past_due: countByStatus("past_due"),
+      canceled: countByStatus("canceled"),
+      expired: countByStatus("expired"),
+      pending: countByStatus("pending"),
+      cloud_total: countByMode("cloud"),
+      self_hosted_total: countByMode("self_hosted"),
+    }
+
+    // Tiendas con suscripciones problemáticas
+    const problemSubs = await prisma.subscription.findMany({
+      where: { status: { in: ["past_due", "canceled", "expired"] } },
+      include: {
+        store: { select: { name: true } },
+      },
+      orderBy: { updated_at: "desc" },
+    })
+
+    // Owner de cada tienda problemática
+    const storeIds = problemSubs.map((s) => s.store_id)
+    const owners = storeIds.length > 0
+      ? await prisma.user.findMany({
+        where: { store_id: { in: storeIds }, is_owner: true, deleted_at: null },
+        select: { store_id: true, name: true, email: true },
+      })
+      : []
+    const ownerMap = new Map(owners.map((o) => [o.store_id, o]))
+
+    // Último evento fallido de cada tienda problemática
+    const lastEvents = storeIds.length > 0
+      ? await prisma.subscription_event.findMany({
+        where: {
+          store_id: { in: storeIds },
+          action: {
+            in: [
+              "webhook_payment_failed",
+              "webhook_suspended",
+              "webhook_cancelled",
+              "webhook_expired",
+            ],
+          },
+        },
+        orderBy: { created_at: "desc" },
+        take: storeIds.length,
+        distinct: ["store_id"],
+        select: {
+          store_id: true,
+          action: true,
+          created_at: true,
+        },
+      })
+      : []
+    const lastEventMap = new Map(lastEvents.map((e) => [e.store_id, e]))
+
+    const problem_stores = problemSubs.map((sub) => {
+      const owner = ownerMap.get(sub.store_id)
+      const lastEvent = lastEventMap.get(sub.store_id)
+      const periodEnd = sub.current_period_end
+      const daysUntilExpiry = periodEnd
+        ? Math.ceil((periodEnd.getTime() - Date.now()) / 86_400_000)
+        : null
+
+      return {
+        store_id: sub.store_id,
+        store_name: sub.store?.name ?? "Desconocida",
+        owner_name: owner?.name ?? null,
+        owner_email: owner?.email ?? null,
+        status: sub.status,
+        plan: sub.plan,
+        mode: sub.mode,
+        current_period_end: periodEnd?.toISOString() ?? null,
+        cancel_at_period_end: sub.cancel_at_period_end,
+        last_event_action: lastEvent?.action ?? null,
+        last_event_at: lastEvent?.created_at?.toISOString() ?? null,
+        days_until_expiry: daysUntilExpiry,
+      }
+    })
+
+    // Eventos fallidos recientes
+    const recentEvents = await prisma.subscription_event.findMany({
+      where: {
+        action: {
+          in: [
+            "webhook_payment_failed",
+            "webhook_suspended",
+            "webhook_cancelled",
+            "webhook_expired",
+          ],
+        },
+      },
+      orderBy: { created_at: "desc" },
+      take: 50,
+      include: {
+        store: { select: { name: true } },
+        user: { select: { name: true, email: true } },
+      },
+    })
+
+    const recent_events = recentEvents.map((e) => ({
+      id: e.id,
+      store_id: e.store_id,
+      store_name: e.store?.name ?? null,
+      user_id: e.user_id,
+      user_name: e.user?.name ?? null,
+      user_email: e.user?.email ?? null,
+      action: e.action,
+      paypal_subscription_id: e.paypal_subscription_id,
+      metadata: e.metadata,
+      created_at: e.created_at,
+    }))
+
+    return { summary, problem_stores, recent_events }
   },
 }

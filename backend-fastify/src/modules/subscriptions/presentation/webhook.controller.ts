@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client"
 import type { paypal_webhook_event } from "@prisma/client"
 import type { FastifyReply, FastifyRequest } from "fastify"
+import { prisma } from "@/config/prisma"
 import { verifyPayPalWebhook } from "../infrastructure/paypal.webhook-verifier"
 import { SubscriptionRepository } from "../infrastructure/subscription.prisma.repository"
 import { PayPalWebhookEventRepository } from "../infrastructure/paypal-webhook-event.prisma.repository"
@@ -8,8 +9,56 @@ import { SubscriptionEventRepository } from "../infrastructure/subscription-even
 import { SUBSCRIPTION_EVENT_ACTIONS } from "../domain/subscription-event.interface"
 import type { SubscriptionEventAction } from "../domain/subscription-event.interface"
 import type { UpdateSubscriptionInput } from "../domain/subscription.entities"
+import { NotificationRepository } from "@/modules/notifications/infrastructure/notification.prisma.repository"
+import { createNotificationService } from "@/modules/notifications/application/notification.service"
 
+const notificationService = createNotificationService(NotificationRepository)
 const PERIOD_DAYS = 30
+
+const STATUS_LABELS: Record<string, string> = {
+  past_due: "Pago fallido",
+  canceled: "Cancelada",
+  expired: "Expirada",
+}
+
+const EVENT_LABELS: Record<string, string> = {
+  webhook_payment_failed: "El pago de tu suscripción falló. Por favor, actualiza tu método de pago.",
+  webhook_suspended: "Tu suscripción ha sido suspendida por falta de pago.",
+  webhook_cancelled: "Tu suscripción ha sido cancelada.",
+  webhook_expired: "Tu suscripción ha expirado.",
+}
+
+async function createSubscriptionNotification(
+  log: FastifyRequest["log"],
+  storeId: string,
+  action: string,
+  status: string,
+): Promise<void> {
+  try {
+    // Find the store owner
+    const owner = await prisma.user.findFirst({
+      where: { store_id: storeId, is_owner: true, deleted_at: null },
+      select: { id: true },
+    })
+    if (!owner) return
+
+    const statusLabel = STATUS_LABELS[status] ?? status
+    const detail = EVENT_LABELS[action] ?? `Estado de suscripción cambiado a: ${statusLabel}`
+
+    await notificationService.create({
+      user_id: owner.id,
+      store_id: storeId,
+      type: action === "webhook_cancelled" ? "subscription_canceled"
+        : action === "webhook_expired" ? "subscription_expired"
+        : "payment_failed",
+      title: `Suscripción: ${statusLabel}`,
+      message: detail,
+      metadata: { action, status },
+    })
+  } catch (err) {
+    log.warn({ err, storeId }, "No se pudo crear notificación de suscripción")
+  }
+}
 
 interface PayPalWebhookPayload {
   id?: string
@@ -149,29 +198,54 @@ async function dispatch(request: FastifyRequest, ev: paypal_webhook_event): Prom
       break
     }
 
-    case "BILLING.SUBSCRIPTION.CANCELLED":
+    case "BILLING.SUBSCRIPTION.CANCELLED": {
       // PayPal confirmó el corte al fin del período
+      const cancelResourceId = ev.resource_id
       await applyByResource(log, ev, {
         status: "canceled",
         cancel_at_period_end: true,
       }, SUBSCRIPTION_EVENT_ACTIONS.WEBHOOK_CANCELLED)
+      // Notificar al owner
+      if (cancelResourceId) {
+        const cancelSub = await SubscriptionRepository.getByPaypalSubscriptionId(cancelResourceId)
+        if (cancelSub) await createSubscriptionNotification(log, cancelSub.store_id, "webhook_cancelled", "canceled")
+      }
       break
+    }
 
-    case "BILLING.SUBSCRIPTION.SUSPENDED":
+    case "BILLING.SUBSCRIPTION.SUSPENDED": {
       // Pago fallido → entra el grace period del licenseGuard
+      const suspResourceId = ev.resource_id
       await applyByResource(log, ev, { status: "past_due" }, SUBSCRIPTION_EVENT_ACTIONS.WEBHOOK_SUSPENDED)
+      if (suspResourceId) {
+        const suspSub = await SubscriptionRepository.getByPaypalSubscriptionId(suspResourceId)
+        if (suspSub) await createSubscriptionNotification(log, suspSub.store_id, "webhook_suspended", "past_due")
+      }
       break
+    }
 
-    case "PAYMENT.SALE.PAYMENT.FAILED":
+    case "PAYMENT.SALE.PAYMENT.FAILED": {
+      const failResourceId = subscriptionIdFromEvent(ev as unknown as PayPalWebhookPayload)
       await applyByResource(log, ev, { status: "past_due" }, SUBSCRIPTION_EVENT_ACTIONS.WEBHOOK_PAYMENT_FAILED)
+      if (failResourceId) {
+        const failSub = await SubscriptionRepository.getByPaypalSubscriptionId(failResourceId)
+        if (failSub) await createSubscriptionNotification(log, failSub.store_id, "webhook_payment_failed", "past_due")
+      }
       break
+    }
 
-    case "BILLING.SUBSCRIPTION.EXPIRED":
+    case "BILLING.SUBSCRIPTION.EXPIRED": {
+      const expResourceId = ev.resource_id
       await applyByResource(log, ev, {
         status: "expired",
         cancel_at_period_end: true,
       }, SUBSCRIPTION_EVENT_ACTIONS.WEBHOOK_EXPIRED)
+      if (expResourceId) {
+        const expSub = await SubscriptionRepository.getByPaypalSubscriptionId(expResourceId)
+        if (expSub) await createSubscriptionNotification(log, expSub.store_id, "webhook_expired", "expired")
+      }
       break
+    }
 
     default:
       log.info({ eventType: ev.event_type }, "Evento PayPal no manejado (ignorado).")

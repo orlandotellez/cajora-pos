@@ -17,6 +17,7 @@ import { type FastifyInstance, type FastifyPluginOptions } from "fastify";
 import { printersRoutes } from "@/modules/printers/presentation/printers.router";
 import { subscriptionRoutes } from "@/modules/subscriptions/presentation/subscription.routes";
 import { webhookRoutes } from "@/modules/subscriptions/presentation/webhook.routes";
+import { notificationRoutes } from "@/modules/notifications/presentation/notification.routes";
 import { licenseGuard } from "@/core/guard/license.guard";
 import { activeUserGuard } from "@/core/guard/active-user.guard";
 
@@ -44,5 +45,6 @@ export const routes = async (fastify: FastifyInstance, _opts: FastifyPluginOptio
 
   fastify.register(superAdminRoutes, { prefix: "/super-admin" })
   fastify.register(subscriptionRoutes, { prefix: "/subscriptions" })
+  fastify.register(notificationRoutes, { prefix: "/notifications" })
   fastify.register(webhookRoutes, { prefix: "/webhooks/paypal" })
 }
