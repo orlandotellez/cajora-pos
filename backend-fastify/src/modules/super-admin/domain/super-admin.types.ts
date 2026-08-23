@@ -114,3 +114,36 @@ export interface ISubscriptionHealthResponse {
   problem_stores: ISubscriptionHealthStore[]
   recent_events: ISubscriptionEventRow[]
 }
+
+// --- Tabla completa de suscripciones ---
+
+export interface ISubscriptionRow {
+  id: string
+  store_id: string
+  store_name: string
+  owner_name: string | null
+  owner_email: string | null
+  mode: string
+  plan: string
+  status: string
+  paypal_subscription_id: string | null
+  current_period_start: string | null
+  current_period_end: string | null
+  cancel_at_period_end: boolean
+  days_until_expiry: number | null
+  created_at: string
+  updated_at: string
+}
+
+export interface ISubscriptionsListResponse {
+  subscriptions: ISubscriptionRow[]
+  total: number
+}
+
+export interface ISubscriptionsListFilters {
+  status?: string
+  mode?: string
+  search?: string
+  limit: number
+  offset: number
+}

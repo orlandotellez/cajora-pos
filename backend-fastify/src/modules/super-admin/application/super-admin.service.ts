@@ -1,12 +1,16 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/config/prisma"
 import { NotFoundError } from "@/core/errors/AppError"
+import { SubscriptionRepository } from "@/modules/subscriptions/infrastructure/subscription.prisma.repository"
+import { SubscriptionEventRepository } from "@/modules/subscriptions/infrastructure/subscription-event.prisma.repository"
 import type {
   IGlobalStats,
   IStoresListResponse,
   ISubscriptionEventsFilters,
   ISubscriptionEventsResponse,
   ISubscriptionHealthResponse,
+  ISubscriptionsListFilters,
+  ISubscriptionsListResponse,
   IStoreUsersResponse,
 } from "../domain/super-admin.types"
 
@@ -332,5 +336,96 @@ export const superAdminService = {
     }))
 
     return { summary, problem_stores, recent_events }
+  },
+
+  async getSubscriptionsList(
+    filters: ISubscriptionsListFilters,
+  ): Promise<ISubscriptionsListResponse> {
+    const where: Prisma.subscriptionWhereInput = {}
+    if (filters.status) where.status = filters.status as any
+    if (filters.mode) where.mode = filters.mode as any
+    if (filters.search) {
+      where.OR = [
+        { store: { name: { contains: filters.search, mode: "insensitive" } } },
+        { store: { users: { some: { name: { contains: filters.search, mode: "insensitive" }, is_owner: true, deleted_at: null } } } },
+        { store: { users: { some: { email: { contains: filters.search, mode: "insensitive" }, is_owner: true, deleted_at: null } } } },
+      ]
+    }
+
+    const [subs, total] = await Promise.all([
+      prisma.subscription.findMany({
+        where,
+        orderBy: { updated_at: "desc" },
+        skip: filters.offset,
+        take: filters.limit,
+        include: {
+          store: {
+            select: {
+              name: true,
+              users: {
+                where: { is_owner: true, deleted_at: null },
+                select: { name: true, email: true },
+                take: 1,
+              },
+            },
+          },
+        },
+      }),
+      prisma.subscription.count({ where }),
+    ])
+
+    const subscriptions = subs.map((sub) => {
+      const owner = sub.store?.users?.[0] ?? null
+      const periodEnd = sub.current_period_end
+      const daysUntilExpiry = periodEnd
+        ? Math.ceil((periodEnd.getTime() - Date.now()) / 86_400_000)
+        : null
+
+      return {
+        id: sub.id,
+        store_id: sub.store_id,
+        store_name: sub.store?.name ?? "Desconocida",
+        owner_name: owner?.name ?? null,
+        owner_email: owner?.email ?? null,
+        mode: sub.mode,
+        plan: sub.plan,
+        status: sub.status,
+        paypal_subscription_id: sub.paypal_subscription_id,
+        current_period_start: sub.current_period_start?.toISOString() ?? null,
+        current_period_end: periodEnd?.toISOString() ?? null,
+        cancel_at_period_end: sub.cancel_at_period_end,
+        days_until_expiry: daysUntilExpiry,
+        created_at: sub.created_at.toISOString(),
+        updated_at: sub.updated_at.toISOString(),
+      }
+    })
+
+    return { subscriptions, total }
+  },
+
+  async updateSubscriptionStatus(
+    storeId: string,
+    status: string,
+  ): Promise<Record<string, unknown> | null> {
+    const sub = await SubscriptionRepository.update(storeId, {
+      status: status as any,
+    })
+    if (!sub) return null
+
+    // Registrar evento de auditoría
+    await SubscriptionEventRepository.create({
+      store_id: storeId,
+      user_id: null,
+      action: "admin_status_change",
+      paypal_subscription_id: sub.paypal_subscription_id,
+      metadata: { new_status: status, source: "super_admin_panel" },
+    })
+
+    return {
+      id: sub.id,
+      store_id: sub.store_id,
+      status: sub.status,
+      updated_at: sub.updated_at,
+    }
   },
 }

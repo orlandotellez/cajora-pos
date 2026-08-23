@@ -75,6 +75,29 @@ export interface SubscriptionHealthResponse {
   recent_events: SubscriptionHealthEvent[]
 }
 
+export interface SubscriptionRow {
+  id: string
+  store_id: string
+  store_name: string
+  owner_name: string | null
+  owner_email: string | null
+  mode: string
+  plan: string
+  status: string
+  paypal_subscription_id: string | null
+  current_period_start: string | null
+  current_period_end: string | null
+  cancel_at_period_end: boolean
+  days_until_expiry: number | null
+  created_at: string
+  updated_at: string
+}
+
+export interface SubscriptionsListResponse {
+  subscriptions: SubscriptionRow[]
+  total: number
+}
+
 export const superAdminApi = {
   getStats: () => api.get<SuperAdminStats>("/super-admin/stats"),
 
@@ -85,4 +108,21 @@ export const superAdminApi = {
 
   getSubscriptionHealth: () =>
     api.get<SubscriptionHealthResponse>("/super-admin/subscription-health"),
+
+  getSubscriptionsList: (params?: { status?: string; mode?: string; search?: string; limit?: number; offset?: number }) => {
+    const qs = new URLSearchParams();
+    if (params?.status) qs.set("status", params.status);
+    if (params?.mode) qs.set("mode", params.mode);
+    if (params?.search) qs.set("search", params.search);
+    if (params?.limit) qs.set("limit", String(params.limit));
+    if (params?.offset) qs.set("offset", String(params.offset));
+    const q = qs.toString();
+    return api.get<SubscriptionsListResponse>(`/super-admin/subscriptions-list${q ? `?${q}` : ""}`);
+  },
+
+  updateSubscriptionStatus: (storeId: string, status: string) =>
+    api.patch<{ id: string; store_id: string; status: string; updated_at: string }>(
+      `/super-admin/subscriptions/${storeId}/status`,
+      { status },
+    ),
 };

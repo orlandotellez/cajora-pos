@@ -34,4 +34,16 @@ export const superAdminRoutes = async (fastify: FastifyInstance, _opts: FastifyP
     schema: { tags: TAGS, description: "Salud global de suscripciones: resumen, tiendas con problemas y eventos fallidos recientes" },
     preHandler: [authGuard, superAdminGuard],
   }, superAdminController.subscriptionHealth)
+
+  // Lista completa de suscripciones con filtros.
+  fastify.get("/subscriptions-list", {
+    schema: { tags: TAGS, description: "Lista de todas las suscripciones con estado, tienda, owner" },
+    preHandler: [authGuard, superAdminGuard],
+  }, superAdminController.subscriptionsList)
+
+  // Cambiar estado de una suscripción desde el panel super admin.
+  fastify.patch("/subscriptions/:storeId/status", {
+    schema: { tags: TAGS, description: "Cambiar estado de la suscripción de una tienda" },
+    preHandler: [authGuard, superAdminGuard],
+  }, superAdminController.updateSubscriptionStatus)
 }

@@ -1,8 +1,8 @@
 -- CreateTable
 CREATE TABLE "notifications" (
-    "id" UUID NOT NULL DEFAULT gen_random_uuid(),
-    "user_id" UUID NOT NULL,
-    "store_id" UUID,
+    "id" TEXT NOT NULL DEFAULT gen_random_uuid(),
+    "user_id" TEXT NOT NULL,
+    "store_id" TEXT,
     "type" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "message" TEXT NOT NULL,

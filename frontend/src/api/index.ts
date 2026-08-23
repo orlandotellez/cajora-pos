@@ -27,6 +27,6 @@ export type { ClientDebtSummary, CreditSaleDetail, CreditPayment, ClientDebtResp
 export type { CashSession, CashStatusResponse, CashHistoryResponse, CashCloseReportResponse } from "./cash-register";
 export type { Settings } from "./settings";
 export type { UserResponse, UserListResponse, CreateUserPayload, UpdateUserPayload } from "./users";
-export type { SuperAdminStats, SuperAdminStoreRow, SuperAdminStoreUser, SubscriptionHealthSummary, SubscriptionHealthStore, SubscriptionHealthEvent, SubscriptionHealthResponse } from "./super-admin";
+export type { SuperAdminStats, SuperAdminStoreRow, SuperAdminStoreUser, SubscriptionHealthSummary, SubscriptionHealthStore, SubscriptionHealthEvent, SubscriptionHealthResponse, SubscriptionRow, SubscriptionsListResponse } from "./super-admin";
 export type { Printer, PrintJobResult, CreatePrinterPayload, UpdatePrinterPayload, TestPrintPayload, SetDefaultRole, PrinterConnType, PrinterProfile, PrinterRole, PrinterCutType } from "./printers";
 export type { Notification, NotificationType } from "./notifications";

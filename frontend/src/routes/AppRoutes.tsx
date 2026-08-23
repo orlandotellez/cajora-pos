@@ -19,7 +19,12 @@ const Categories = lazy(() => import("@/pages/categories/Categories"));
 const Clients = lazy(() => import("@/pages/clients/Clients"));
 const Credits = lazy(() => import("@/pages/credits/Credits"));
 const CashRegister = lazy(() => import("@/pages/cash-register/CashRegister"));
-const SuperAdmin = lazy(() => import("@/pages/super-admin/SuperAdmin"));
+const SuperAdminLayout = lazy(() => import("@/pages/super-admin/SuperAdminLayout"));
+const SuperAdminOverview = lazy(() => import("@/pages/super-admin/Overview"));
+const SuperAdminSubscriptions = lazy(() => import("@/pages/super-admin/Subscriptions"));
+const SuperAdminStores = lazy(() => import("@/pages/super-admin/Stores"));
+const SuperAdminUsers = lazy(() => import("@/pages/super-admin/AllUsers"));
+const SuperAdminEvents = lazy(() => import("@/pages/super-admin/Events"));
 const Subscription = lazy(() => import("@/pages/subscription/Subscription"));
 
 function HomeRedirect() {
@@ -48,7 +53,13 @@ export function AppRoutes() {
         <Route path="/settings" element={<Settings />} />
         <Route path="/subscription" element={<Subscription />} />
         <Route path="/users" element={<Users />} />
-        <Route path="/super-admin" element={<SuperAdmin />} />
+        <Route path="/super-admin" element={<SuperAdminLayout />}>
+          <Route index element={<SuperAdminOverview />} />
+          <Route path="subscriptions" element={<SuperAdminSubscriptions />} />
+          <Route path="stores" element={<SuperAdminStores />} />
+          <Route path="users" element={<SuperAdminUsers />} />
+          <Route path="events" element={<SuperAdminEvents />} />
+        </Route>
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

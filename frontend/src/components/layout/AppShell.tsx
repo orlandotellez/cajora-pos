@@ -20,6 +20,9 @@ import {
   UserCheck,
   DollarSign,
   Wallet,
+  CreditCard,
+  Store,
+  Clock,
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
@@ -85,7 +88,13 @@ const navGroups: NavGroup[] = [
   {
     label: "SUPER ADMIN",
     superAdminOnly: true,
-    items: [{ to: "/super-admin", label: "Panel Global", icon: Globe }],
+    items: [
+      { to: "/super-admin", label: "Panel Global", icon: Globe },
+      { to: "/super-admin/subscriptions", label: "Suscripciones", icon: CreditCard },
+      { to: "/super-admin/stores", label: "Tiendas", icon: Store },
+      { to: "/super-admin/users", label: "Usuarios", icon: Users },
+      { to: "/super-admin/events", label: "Eventos", icon: Clock },
+    ],
   },
 ];
 
@@ -111,9 +120,9 @@ export function AppShell({ children }: { children: ReactNode }) {
     return (!g.adminOnly || isAdmin) && !g.superAdminOnly;
   });
 
-  // Super admin: cualquier ruta distinta al panel global → panel global.
+  // Super admin: cualquier ruta distinta al super-admin → super-admin.
   useEffect(() => {
-    if (isSuperAdmin && pathname !== "/super-admin") {
+    if (isSuperAdmin && !pathname.startsWith("/super-admin")) {
       navigate("/super-admin", { replace: true });
     }
   }, [isSuperAdmin, pathname, navigate]);
@@ -143,7 +152,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const closeDrawer = () => setMobileMenuOpen(false);
 
-  if (isSuperAdmin && pathname !== "/super-admin") {
+  if (isSuperAdmin && !pathname.startsWith("/super-admin")) {
     return null;
   }
 
