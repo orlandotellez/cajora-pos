@@ -134,7 +134,26 @@ const {
           fetchOpts.credentials = 'include';
         }
 
-        fetch(`${apiUrl}/subscriptions/mine`, {
+        // Helper: on web, retry with refresh token on 401
+        async function fetchWithRefresh(url, opts) {
+          const first = await fetch(url, opts);
+          if (isNativeApp || first.status !== 401) return first;
+          try {
+            const refreshRes = await fetch(`${apiUrl}/auth/refresh`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+            });
+            if (refreshRes.ok) return fetch(url, opts);
+          } catch {}
+          return first;
+        }
+
+        const fetcher = isNativeApp
+          ? (url, opts) => fetch(url, opts)
+          : (url, opts) => fetchWithRefresh(url, opts);
+
+        fetcher(`${apiUrl}/subscriptions/mine`, {
           ...fetchOpts,
           headers: fetchHeaders,
         })

@@ -36,6 +36,7 @@ import ProfileDangerZone from '../sections/perfil/ProfileDangerZone.astro';
 <script>
   import { goToPosWithSso } from "../lib/sso";
   import { readSession, clearSession } from "../lib/session";
+  import { fetchWithRefresh } from "../lib/fetch-with-refresh";
   import { renderSub, initSubscriptionActions } from "../lib/profile/subscription";
   import { renderBilling } from "../lib/profile/billing";
   import { initStoreForm } from "../lib/profile/store";
@@ -116,9 +117,13 @@ import ProfileDangerZone from '../sections/perfil/ProfileDangerZone.astro';
     // -------- Carga inicial --------
     (async () => {
       try {
+        const fetcher = isNativeApp
+          ? (url: string, opts: RequestInit) => fetch(url, opts)
+          : (url: string, opts: RequestInit) => fetchWithRefresh(url, opts);
+
         const [subRes, settingsRes] = await Promise.all([
-          fetch(`${apiUrl}/subscriptions/mine`, { ...fetchOpts, headers: authHeaders }),
-          fetch(`${apiUrl}/settings`, { ...fetchOpts, headers: authHeaders }).catch(() => null),
+          fetcher(`${apiUrl}/subscriptions/mine`, { ...fetchOpts, headers: authHeaders }),
+          fetcher(`${apiUrl}/settings`, { ...fetchOpts, headers: authHeaders }).catch(() => null),
         ]);
 
         if (subRes.status === 401 || subRes.status === 403) {

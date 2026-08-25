@@ -83,7 +83,14 @@ export const authController = {
     const result = await authService.login(data)
 
     if (currentUserId && currentUserId === result.user.id) {
-      throw new ConflictError("Already logged in with this user. Please logout first.")
+      setAuthCookies(reply, result.accessToken, result.refreshToken, env.NODE_ENV === "production")
+      return reply.status(200).send({
+        message: result.message,
+        user: result.user,
+        store: result.store,
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken
+      })
     }
 
     if (currentUserId && currentUserId !== result.user.id) {
