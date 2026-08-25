@@ -151,7 +151,18 @@ function viewFor(mine: SubscriptionMine): SubView {
 
 export default function Subscription() {
   useAdminGuard();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
+
+  if (user && !user.is_owner) {
+    return (
+      <div className={styles.page}>
+        <h1 className={styles.title}>Suscripción</h1>
+        <div className={styles.errorBox}>
+          <p className={styles.errorText}>Solo el propietario de la tienda puede gestionar la suscripción.</p>
+        </div>
+      </div>
+    );
+  }
 
   const [mine, setMine] = useState<SubscriptionMine | null>(null);
   const [billing, setBilling] = useState<SubscriptionBilling | null>(null);

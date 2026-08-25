@@ -89,15 +89,17 @@ export function UserMenu() {
                 <Settings className={styles.menuItemIcon} />
                 Ajustes
               </Link>
-              <Link
-                to="/subscription"
-                className={styles.menuItem}
-                role="menuitem"
-                onClick={() => setOpen(false)}
-              >
-                <CreditCard className={styles.menuItemIcon} />
-                Suscripción
-              </Link>
+              {user?.is_owner && (
+                <Link
+                  to="/subscription"
+                  className={styles.menuItem}
+                  role="menuitem"
+                  onClick={() => setOpen(false)}
+                >
+                  <CreditCard className={styles.menuItemIcon} />
+                  Suscripción
+                </Link>
+              )}
               <a
                 href="https://cajorapos.com"
                 target="_blank"
