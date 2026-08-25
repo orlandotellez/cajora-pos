@@ -1,4 +1,5 @@
 import { saveSession } from '../session';
+import { useCookiesForAuth } from '../env';
 
 const apiUrl = import.meta.env.PUBLIC_API_URL;
 const perfilUrl = import.meta.env.BASE_URL + 'perfil';
@@ -21,6 +22,7 @@ export async function loginUser(email: string, password: string): Promise<LoginR
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
+    credentials: useCookiesForAuth() ? "include" : undefined,
   });
   const data = (await res.json().catch(() => null)) as LoginResponse | null;
 

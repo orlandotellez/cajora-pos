@@ -62,16 +62,24 @@ export function createPaypal(opts: {
   const payLoading = $("[data-pay-loading]")!;
   const payError = $("[data-pay-error]")!;
 
+  const isNativeApp = "__TAURI__" in window;
+
   async function activate(subscriptionID: string): Promise<void> {
     hideError(payError);
+
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    const fetchOpts: RequestInit = {};
+    if (isNativeApp && opts.getToken()) {
+      headers.Authorization = `Bearer ${opts.getToken()}`;
+    } else if (!isNativeApp) {
+      fetchOpts.credentials = "include";
+    }
 
     try {
       const res = await fetch(`${opts.apiUrl}/subscriptions/activate`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${opts.getToken()}`,
-        },
+        ...fetchOpts,
+        headers,
         body: JSON.stringify({ paypal_subscription_id: subscriptionID }),
       });
       const data = (await res.json().catch(() => null)) as { message?: string } | null;
@@ -104,12 +112,18 @@ export function createPaypal(opts: {
     }
 
     try {
+      const checkoutHeaders: Record<string, string> = { "Content-Type": "application/json" };
+      const checkoutFetchOpts: RequestInit = {};
+      if (isNativeApp && opts.getToken()) {
+        checkoutHeaders.Authorization = `Bearer ${opts.getToken()}`;
+      } else if (!isNativeApp) {
+        checkoutFetchOpts.credentials = "include";
+      }
+
       const checkoutRes = await fetch(`${opts.apiUrl}/subscriptions/checkout`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${opts.getToken()}`,
-        },
+        ...checkoutFetchOpts,
+        headers: checkoutHeaders,
         body: JSON.stringify({
           return_url: window.location.href,
           cancel_url: window.location.href,

@@ -42,9 +42,11 @@ import ProfileDangerZone from '../sections/perfil/ProfileDangerZone.astro';
   (() => {
     const $ = (sel) => document.querySelector(sel);
 
+    const isNativeApp = '__TAURI__' in window;
     const apiUrl = import.meta.env.PUBLIC_API_URL;
     const posUrl = import.meta.env.PUBLIC_POS_URL;
     const homeUrl = import.meta.env.BASE_URL;
+    const loginUrl = import.meta.env.BASE_URL + 'login';
 
     const loading = $("[data-profile-loading]");
     const empty = $("[data-profile-empty]");
@@ -59,16 +61,35 @@ import ProfileDangerZone from '../sections/perfil/ProfileDangerZone.astro';
     };
 
     const session = readSession();
-    if (!session?.accessToken) {
-      showEmpty("No estás logueado", "Creá tu tienda o iniciá sesión para ver tu perfil y el estado de tu suscripción.");
+    const hasToken = isNativeApp ? !!session?.accessToken : !!session?.email;
+    if (!hasToken) {
+      window.location.href = loginUrl;
       return;
     }
 
-    const authHeaders = { Authorization: `Bearer ${session.accessToken}` };
+    const authHeaders = {};
+    const fetchOpts = {};
+    if (isNativeApp && session?.accessToken) {
+      authHeaders['Authorization'] = `Bearer ${session.accessToken}`;
+    } else if (!isNativeApp) {
+      fetchOpts.credentials = 'include';
+    }
 
     // -------- Cerrar sesión --------
     $("[data-logout]").addEventListener("click", async () => {
-      if (session.refreshToken) {
+      if (!isNativeApp) {
+        // Web: logout via cookies
+        try {
+          await fetch(`${apiUrl}/auth/logout`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+          });
+        } catch {
+          /* best effort */
+        }
+      } else if (session?.refreshToken) {
+        // Native app: logout via Bearer token
         try {
           await fetch(`${apiUrl}/auth/logout`, {
             method: "POST",
@@ -76,7 +97,7 @@ import ProfileDangerZone from '../sections/perfil/ProfileDangerZone.astro';
             body: JSON.stringify({ refreshToken: session.refreshToken }),
           });
         } catch {
-          /* best effort: la sesión local se limpia igual */
+          /* best effort */
         }
       }
       clearSession();
@@ -96,15 +117,13 @@ import ProfileDangerZone from '../sections/perfil/ProfileDangerZone.astro';
     (async () => {
       try {
         const [subRes, settingsRes] = await Promise.all([
-          fetch(`${apiUrl}/subscriptions/mine`, { headers: authHeaders }),
-          fetch(`${apiUrl}/settings`, { headers: authHeaders }).catch(() => null),
+          fetch(`${apiUrl}/subscriptions/mine`, { ...fetchOpts, headers: authHeaders }),
+          fetch(`${apiUrl}/settings`, { ...fetchOpts, headers: authHeaders }).catch(() => null),
         ]);
 
-        if (subRes.status === 401) {
-          showEmpty(
-            "Tu sesión expiró",
-            "Iniciá sesión de nuevo para ver tu perfil y el estado de tu suscripción.",
-          );
+        if (subRes.status === 401 || subRes.status === 403) {
+          clearSession();
+          window.location.href = loginUrl;
           return;
         }
         if (!subRes.ok) throw new Error("No se pudo cargar la suscripción.");
@@ -125,9 +144,9 @@ import ProfileDangerZone from '../sections/perfil/ProfileDangerZone.astro';
         $("[data-store-email]").value = session.email ?? "";
 
         renderSub(sub);
-        void renderBilling(authHeaders);
-        initStoreForm(authHeaders);
-        initSubscriptionActions(authHeaders);
+        void renderBilling({ ...fetchOpts, headers: authHeaders });
+        initStoreForm({ ...fetchOpts, headers: authHeaders });
+        initSubscriptionActions({ ...fetchOpts, headers: authHeaders });
       } catch (err) {
         showEmpty(
           "No se pudo cargar tu perfil",
@@ -147,25 +166,24 @@ import ProfileDangerZone from '../sections/perfil/ProfileDangerZone.astro';
 
   .profile__title {
     font-size: 1.5rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
   }
 
   .profile__lead {
     color: var(--text-muted);
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
   }
 
   .profile__grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 2rem;
-    align-items: start;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
   }
 
-  @media (min-width: 900px) {
+  @media (min-width: 640px) {
     .profile__grid {
       grid-template-columns: 1fr 1fr;
-      gap: 2.5rem;
     }
   }
 </style>

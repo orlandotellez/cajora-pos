@@ -90,11 +90,14 @@ export function initRegister(opts: {
       adminPassword: String(fd.get("adminPassword") ?? ""),
     };
 
+    const isNativeApp = "__TAURI__" in window;
+
     try {
       const res = await fetch(`${opts.apiUrl}/auth/register-store`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
+        credentials: isNativeApp ? undefined : "include",
       });
       const data = (await res.json().catch(() => null)) as RegisterResponse | null;
 

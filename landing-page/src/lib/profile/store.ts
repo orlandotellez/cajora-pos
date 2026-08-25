@@ -6,7 +6,7 @@ interface SettingsResponse {
   message?: string;
 }
 
-export function initStoreForm(authHeaders: Record<string, string>): void {
+export function initStoreForm(fetchOpts: { headers?: Record<string, string>; credentials?: RequestCredentials }): void {
   const storeForm = document.querySelector<HTMLFormElement>('[data-store-form]')!;
   const storeMsg = document.querySelector<HTMLElement>('[data-store-msg]')!;
   const storeSave = document.querySelector<HTMLButtonElement>('[data-store-save]')!;
@@ -27,7 +27,8 @@ export function initStoreForm(authHeaders: Record<string, string>): void {
     try {
       const res = await fetch(`${apiUrl}/settings`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...authHeaders },
+        headers: { 'Content-Type': 'application/json', ...fetchOpts.headers },
+        credentials: fetchOpts.credentials,
         body: JSON.stringify(payload),
       });
       if (!res.ok) {

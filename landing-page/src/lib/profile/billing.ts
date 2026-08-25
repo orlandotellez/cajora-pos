@@ -15,7 +15,7 @@ interface BillingData {
   currency?: string;
 }
 
-export async function renderBilling(authHeaders: Record<string, string>): Promise<void> {
+export async function renderBilling(fetchOpts: { headers?: Record<string, string>; credentials?: RequestCredentials }): Promise<void> {
   const billingNext = document.querySelector<HTMLElement>('[data-billing-next]')!;
   const billingNextDate = document.querySelector<HTMLElement>('[data-billing-next-date]')!;
   const billingLoading = document.querySelector<HTMLElement>('[data-billing-loading]')!;
@@ -26,7 +26,7 @@ export async function renderBilling(authHeaders: Record<string, string>): Promis
   const billingTotalAmount = document.querySelector<HTMLElement>('[data-billing-total-amount]')!;
 
   try {
-    const res = await fetch(`${apiUrl}/subscriptions/billing`, { headers: authHeaders });
+    const res = await fetch(`${apiUrl}/subscriptions/billing`, fetchOpts);
     if (!res.ok) throw new Error('No se pudo cargar la facturación.');
     const data = (await res.json()) as BillingData;
 

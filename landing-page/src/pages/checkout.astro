@@ -53,6 +53,7 @@ import PlansModal from '../sections/checkout/PlansModal.astro';
     const paypalClientId = import.meta.env.PUBLIC_PAYPAL_CLIENT_ID;
     const posUrl = import.meta.env.PUBLIC_POS_URL;
     const paypalSandbox = import.meta.env.PUBLIC_PAYPAL_SANDBOX === "true";
+    const isNativeApp = "__TAURI__" in window;
 
     const hideError = (el: HTMLElement): void => { el.hidden = true; };
 
@@ -157,18 +158,28 @@ import PlansModal from '../sections/checkout/PlansModal.astro';
 
     initCheckoutLogin({ onAuth: afterAuth, onToken: (t) => { accessToken = t; } });
 
-    // Reanudar sesión guardada en sessionStorage.
+    // Reanudar sesión guardada (cookies en web, localStorage en desktop).
     async function resumeFlow(): Promise<void> {
       const session = readSession();
-      if (!session?.accessToken) {
+      const hasToken = isNativeApp ? !!session?.accessToken : !!session?.email;
+      if (!hasToken) {
         setStep(1, null);
         return;
       }
-      accessToken = session.accessToken;
+      accessToken = session?.accessToken ?? null;
+
+      const fetchHeaders: Record<string, string> = {};
+      const fetchOpts: RequestInit = {};
+      if (isNativeApp && accessToken) {
+        fetchHeaders.Authorization = `Bearer ${accessToken}`;
+      } else if (!isNativeApp) {
+        fetchOpts.credentials = 'include';
+      }
 
       try {
         const res = await fetch(`${apiUrl}/subscriptions/mine`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
+          ...fetchOpts,
+          headers: fetchHeaders,
         });
         const data = (await res.json().catch(() => null)) as { status?: string; mode?: string } | null;
 

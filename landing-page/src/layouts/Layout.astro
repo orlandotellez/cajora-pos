@@ -53,24 +53,23 @@ const {
     <script>
       import { goToPosWithSso } from "../lib/sso";
       (() => {
+        const isNativeApp = '__TAURI__' in window;
         const readSession = () => {
           try {
-            return JSON.parse(sessionStorage.getItem('caja_checkout'));
+            return JSON.parse(localStorage.getItem('caja_checkout'));
           } catch {
             return null;
           }
         };
-        const saveSession = (data) => sessionStorage.setItem('caja_checkout', JSON.stringify(data));
+        const saveSession = (data) => localStorage.setItem('caja_checkout', JSON.stringify(data));
         const checkoutUrl = import.meta.env.BASE_URL + 'checkout';
         const loginUrl = import.meta.env.BASE_URL + 'login';
         const perfilUrl = import.meta.env.BASE_URL + 'perfil';
         const pricingUrl = import.meta.env.BASE_URL + '#pricing';
         const posUrl = import.meta.env.PUBLIC_POS_URL;
+        const apiUrl = import.meta.env.PUBLIC_API_URL;
 
-        const applyAuth = (paid) => {
-          const session = readSession();
-          const hasSession = !!session?.accessToken;
-
+        const applyAuth = (paid, hasSession) => {
           document.querySelectorAll('[data-auth-paid]').forEach((el) => {
             const tag = el.querySelector('[data-auth-tag]');
             if (tag) tag.textContent = paid ? 'Tu plan actual' : 'Recomendado';
@@ -112,7 +111,8 @@ const {
         };
 
         const session = readSession();
-        applyAuth(!!session?.paid);
+        const hasToken = isNativeApp ? !!session?.accessToken : !!session?.email;
+        applyAuth(!!session?.paid, hasToken);
 
         document.querySelectorAll('[data-auth-cta="content"]').forEach((el) => {
           el.addEventListener('click', (e) => {
@@ -123,23 +123,43 @@ const {
           });
         });
 
-        if (session?.accessToken) {
-          const apiUrl = import.meta.env.PUBLIC_API_URL;
-          fetch(`${apiUrl}/subscriptions/mine`, {
-            headers: { Authorization: `Bearer ${session.accessToken}` },
-          })
-            .then((r) => r.json().catch(() => null))
-            .then((data) => {
-              const paid = data?.status === 'active' && data?.mode === 'cloud';
-              const current = readSession();
-              if (current?.accessToken && !!current.paid !== paid) {
-                saveSession({ ...current, paid });
-              }
-              applyAuth(paid);
-            })
-            .catch(() => {
-            });
+        // Verify session against the backend.
+        // Web: uses httpOnly cookies (credentials: 'include')
+        // Native app: uses Bearer token from localStorage
+        const fetchHeaders = {};
+        const fetchOpts = {};
+        if (isNativeApp && session?.accessToken) {
+          fetchHeaders['Authorization'] = `Bearer ${session.accessToken}`;
+        } else if (!isNativeApp) {
+          fetchOpts.credentials = 'include';
         }
+
+        fetch(`${apiUrl}/subscriptions/mine`, {
+          ...fetchOpts,
+          headers: fetchHeaders,
+        })
+          .then((r) => {
+            if (r.status === 401 || r.status === 403) {
+              if (!isNativeApp) {
+                localStorage.removeItem('caja_checkout');
+              }
+              applyAuth(false, false);
+              return null;
+            }
+            return r.json().catch(() => null);
+          })
+          .then((data) => {
+            if (!data) return;
+            const paid = data?.status === 'active' && data?.mode === 'cloud';
+            const current = readSession();
+            if (current?.accessToken && !!current.paid !== paid) {
+              saveSession({ ...current, paid });
+            }
+            applyAuth(paid, true);
+          })
+          .catch(() => {
+            applyAuth(!!session?.paid, hasToken);
+          });
       })();
     </script>
   </body>

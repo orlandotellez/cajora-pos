@@ -51,10 +51,6 @@ export function renderSub(sub: Subscription): void {
       break;
     }
     case 'active': {
-      // Sin fila de suscripción el backend devuelve un default
-      // { mode: "self_hosted", status: "active" } (subscription.service
-      // getByStore) — NO es una suscripción real. Distinguirlo evita
-      // mostrar un falso "Activa" a una tienda que nunca pagó.
       if (sub.mode === 'self_hosted') {
         rowPeriodEl.hidden = true;
         setBadge('Sin suscripción Cloud', 'is-self-hosted');
@@ -111,7 +107,7 @@ export function renderSub(sub: Subscription): void {
   }
 }
 
-export function initSubscriptionActions(authHeaders: Record<string, string>): void {
+export function initSubscriptionActions(fetchOpts: { headers?: Record<string, string>; credentials?: RequestCredentials }): void {
   const cancelBtn = document.querySelector<HTMLElement>('[data-profile-cancel]')!;
   cancelBtn.addEventListener('click', async () => {
     if (
@@ -124,7 +120,7 @@ export function initSubscriptionActions(authHeaders: Record<string, string>): vo
     try {
       const res = await fetch(`${apiUrl}/subscriptions/cancel`, {
         method: 'POST',
-        headers: authHeaders,
+        ...fetchOpts,
       });
       if (!res.ok) throw new Error('No se pudo cancelar la suscripción.');
       renderSub((await res.json()) as Subscription);
@@ -138,7 +134,7 @@ export function initSubscriptionActions(authHeaders: Record<string, string>): vo
     try {
       const res = await fetch(`${apiUrl}/subscriptions/reactivate`, {
         method: 'POST',
-        headers: authHeaders,
+        ...fetchOpts,
       });
       if (!res.ok) throw new Error('No se pudo reactivar la suscripción.');
       renderSub((await res.json()) as Subscription);

@@ -28,10 +28,12 @@ async function sendCode(): Promise<void> {
   if (!session?.email) return;
   const errorEl = $("[data-verify-error]");
   if (errorEl) hideError(errorEl);
+  const isNativeApp = "__TAURI__" in window;
   const res = await fetch(`${apiUrl}/auth/resend-verification`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email: session.email }),
+    credentials: isNativeApp ? undefined : "include",
   });
   if (!res.ok) {
     const data = (await res.json().catch(() => null)) as { message?: string } | null;
@@ -125,6 +127,8 @@ export function initVerify(opts: {
       return;
     }
 
+    const isNativeApp = "__TAURI__" in window;
+
     try {
       const res = await fetch(`${opts.apiUrl}/auth/verify-email`, {
         method: "POST",
@@ -133,6 +137,7 @@ export function initVerify(opts: {
           identifier: session.email,
           code: verifyInput.value.trim(),
         }),
+        credentials: isNativeApp ? undefined : "include",
       });
       const data = (await res.json().catch(() => null)) as {
         accessToken?: string;
