@@ -86,8 +86,12 @@ export default function Settings() {
         aria-labelledby={TAB_ID(activeTab)}
         className={styles.tabPanel}
       >
-        {activeTab === "general" && <GeneralSettings />}
-        {activeTab === "printers" && <PrintersPanel />}
+        <div hidden={activeTab !== "general"}>
+          <GeneralSettings />
+        </div>
+        <div hidden={activeTab !== "printers"}>
+          <PrintersPanel />
+        </div>
       </div>
     </div>
   );
