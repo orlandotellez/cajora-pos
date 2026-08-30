@@ -3,6 +3,7 @@ import { creditsApi, type ClientDebtSummary, type ClientDebtResponse } from "@/a
 import { money } from "@/lib/format"
 import { usePosStore } from "@/store/posStore"
 import { useToast } from "@/components/common/ui/Toast"
+import { CreditsSkeleton } from "./CreditsSkeleton"
 import styles from "./Credits.module.css"
 
 type FilterTab = "todos" | "morosos" | "saldados"
@@ -97,13 +98,22 @@ export default function Credits() {
     return new Date(iso).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" })
   }
 
+  // Resumen derivado de la lista cargada (hasta 100 clientes).
+  const overdueCount = clients.filter((c) => c.oldest_pending_days != null && c.oldest_pending_days > 30).length
+  const creditSalesCount = clients.reduce((acc, c) => acc + c.sale_count, 0)
+  const initialLoading = loading && clients.length === 0
+
   return (
     <div className={styles.page}>
       <header className={styles.header}>
         <div>
           <h1 className={styles.h1}>Cuentas por Cobrar</h1>
           <p className={styles.subtitle}>
-            Total pendiente: <strong>{money(totalPending, currency)}</strong>
+            {initialLoading ? (
+              <span className={styles.headerSkeleton} aria-hidden="true" />
+            ) : (
+              <>Total pendiente: <strong>{money(totalPending, currency)}</strong></>
+            )}
           </p>
         </div>
         <input
@@ -114,6 +124,25 @@ export default function Credits() {
           className={styles.searchInput}
         />
       </header>
+
+      <div className={styles.statsGrid}>
+        <div className={styles.statCard}>
+          <span className={styles.statLabel}>Total pendiente</span>
+          <span className={styles.statValue}>{initialLoading ? <span className={styles.skeleton} aria-hidden="true" /> : money(totalPending, currency)}</span>
+        </div>
+        <div className={styles.statCard}>
+          <span className={styles.statLabel}>Clientes adeudando</span>
+          <span className={styles.statValue}>{initialLoading ? <span className={styles.skeleton} aria-hidden="true" /> : clients.length}</span>
+        </div>
+        <div className={styles.statCard}>
+          <span className={styles.statLabel}>Morosos (+30 días)</span>
+          <span className={`${styles.statValue} ${overdueCount > 0 && !initialLoading ? styles.statDanger : ""}`}>{initialLoading ? <span className={styles.skeleton} aria-hidden="true" /> : overdueCount}</span>
+        </div>
+        <div className={styles.statCard}>
+          <span className={styles.statLabel}>Ventas a crédito</span>
+          <span className={styles.statValue}>{initialLoading ? <span className={styles.skeleton} aria-hidden="true" /> : creditSalesCount}</span>
+        </div>
+      </div>
 
       {!selected && (
         <div className={styles.tabs}>
@@ -225,8 +254,8 @@ export default function Credits() {
         </div>
       ) : (
         <div className={styles.clientsList}>
-          {loading ? (
-            <div className={styles.loading}>Cargando...</div>
+          {initialLoading ? (
+            <CreditsSkeleton />
           ) : clients.length === 0 ? (
             <div className={styles.empty}>No hay cuentas por cobrar</div>
           ) : (
