@@ -14,6 +14,7 @@ export const settingsController = {
       return reply.status(200).send({
         name: "",
         low_stock_threshold: 5,
+        cash_register_enabled: true,
         updated_at: new Date().toISOString(),
       })
     }

@@ -2,6 +2,7 @@ import { lazy } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import App from "@/App";
 import { useAuth } from "@/context/AuthContext";
+import { useSettingsStore } from "@/store/settingsStore";
 import Auth from "@/pages/auth/Auth";
 import Pos from "@/pages/pos/Pos";
 import Products from "@/pages/products/Products";
@@ -33,6 +34,12 @@ function HomeRedirect() {
   return <Navigate to={user?.role === "super_admin" ? "/super-admin" : "/pos"} replace />;
 }
 
+function CashRegisterRoute() {
+  const cashRegisterEnabled = useSettingsStore((s) => s.cashRegisterEnabled);
+  if (!cashRegisterEnabled) return <Navigate to="/pos" replace />;
+  return <CashRegister />;
+}
+
 export function AppRoutes() {
   return (
     <Routes>
@@ -46,7 +53,7 @@ export function AppRoutes() {
         <Route path="/categories" element={<Categories />} />
         <Route path="/clients" element={<Clients />} />
         <Route path="/credits" element={<Credits />} />
-        <Route path="/cash-register" element={<CashRegister />} />
+        <Route path="/cash-register" element={<CashRegisterRoute />} />
         <Route path="/inventory" element={<Inventory />} />
         <Route path="/sales" element={<Sales />} />
         <Route path="/reports" element={<Reports />} />

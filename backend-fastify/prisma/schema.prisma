@@ -560,9 +560,10 @@ model settings {
   name                String  @default("Mi Negocio")
   address             String?
   phone               String?
-  low_stock_threshold Int     @default(5)
-  ticket_footer       String?
-  store_id            String  @unique
+  low_stock_threshold     Int      @default(5)
+  ticket_footer           String?
+  cash_register_enabled   Boolean  @default(true)
+  store_id                String   @unique
 
   updated_at DateTime @updatedAt @db.Timestamptz
 

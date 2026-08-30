@@ -11,6 +11,7 @@ function mapToEntity(settings: settings): ISettingsEntity {
     phone: settings.phone || undefined,
     low_stock_threshold: settings.low_stock_threshold,
     ticket_footer: settings.ticket_footer || undefined,
+    cash_register_enabled: settings.cash_register_enabled,
     updated_at: settings.updated_at,
   }
 }
@@ -38,6 +39,7 @@ export const SettingsRepository: ISettingsRepository = {
           ...(data.phone !== undefined && { phone: data.phone }),
           ...(data.low_stock_threshold !== undefined && { low_stock_threshold: data.low_stock_threshold }),
           ...(data.ticket_footer !== undefined && { ticket_footer: data.ticket_footer }),
+          ...(data.cash_register_enabled !== undefined && { cash_register_enabled: data.cash_register_enabled }),
         },
       })
       return mapToEntity(updated)
@@ -51,6 +53,7 @@ export const SettingsRepository: ISettingsRepository = {
         phone: data.phone,
         low_stock_threshold: data.low_stock_threshold ?? 5,
         ticket_footer: data.ticket_footer,
+        cash_register_enabled: data.cash_register_enabled ?? true,
       },
     })
     return mapToEntity(created)

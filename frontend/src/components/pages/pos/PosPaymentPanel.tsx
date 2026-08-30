@@ -4,6 +4,7 @@ import { money } from "@/lib/format";
 import { PAYMENT_METHODS } from "@/lib/constants";
 import { usePosStore } from "@/store/posStore";
 import { useCashSessionStore } from "@/store/cashSessionStore";
+import { useSettingsStore } from "@/store/settingsStore";
 import { clientsApi, type Client } from "@/api/clients";
 import { creditsApi } from "@/api/credits";
 import styles from "../../../pages/pos/Pos.module.css";
@@ -49,6 +50,9 @@ export function PosPaymentPanel({
   const setClient = usePosStore((s) => s.setClient);
   const clearClient = usePosStore((s) => s.clearClient);
   const canSellCash = useCashSessionStore((s) => s.canSellCash);
+
+  const cashRegisterEnabled = useSettingsStore((s) => s.cashRegisterEnabled);
+  const sellCashAllowed = cashRegisterEnabled ? canSellCash : true;
 
   // Refresca el estado de caja al montar el panel (stale-while-revalidate:
   // solo dispara request si el último fetch es viejo).
@@ -320,9 +324,9 @@ export function PosPaymentPanel({
               <option
                 key={pm.value}
                 value={pm.value}
-                disabled={pm.value === "efectivo" && !canSellCash}
+                disabled={pm.value === "efectivo" && !sellCashAllowed}
               >
-                {pm.label}{pm.value === "efectivo" && !canSellCash ? " (caja cerrada)" : ""}
+                {pm.label}{pm.value === "efectivo" && !sellCashAllowed ? " (caja cerrada)" : ""}
               </option>
             ))}
           </select>
@@ -330,7 +334,7 @@ export function PosPaymentPanel({
         {payment === "credito" && !clientId && (
           <p className={styles.creditHint}>Selecciona un cliente para vender a crédito</p>
         )}
-        {payment === "efectivo" && !canSellCash && (
+        {payment === "efectivo" && !sellCashAllowed && (
           <p className={styles.creditHint}>Abrí la caja para cobrar en efectivo</p>
         )}
         {payment !== "credito" && (
@@ -379,7 +383,7 @@ export function PosPaymentPanel({
           cartLength === 0 ||
           checkingOut ||
           (payment === "credito" && !clientId) ||
-          (payment === "efectivo" && !canSellCash) ||
+          (payment === "efectivo" && !sellCashAllowed) ||
           ((payment === "efectivo" || manualAmount) && received !== "" && Number(received || 0) < totals.total)
         }
         className={styles.checkoutBtn}

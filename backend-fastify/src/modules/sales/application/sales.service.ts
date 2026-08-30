@@ -1,6 +1,8 @@
 import { NotFoundError, BadRequestError, ConflictError } from "@/core/errors/AppError"
 import { prisma } from "@/config/prisma"
 import type { ISaleRepository } from "../domain/sales.interface"
+import { createSettingsService } from "@/modules/settings/application/settings.service"
+import { SettingsRepository } from "@/modules/settings/infrastructure/settings.prisma.repository"
 import type {
   ISaleResponse,
   ISaleListResponse,
@@ -63,6 +65,8 @@ function mapSaleToResponse(sale: RichSale): ISaleResponse {
     })),
   }
 }
+
+const settingsService = createSettingsService(SettingsRepository)
 
 export const createSaleService = (repository: ISaleRepository) => ({
   create: async (data: CreateSaleData, storeId: string): Promise<ISaleResponse> => {
@@ -197,18 +201,22 @@ export const createSaleService = (repository: ISaleRepository) => ({
 
     let cash_session_id: string | undefined
     if (data.payment_method === "efectivo") {
-      const openSessions = await prisma.cash_session.findMany({
-        where: { store_id: storeId, status: "abierto", deleted_at: null },
-        select: { id: true, user_id: true },
-      })
-      if (openSessions.length === 0) {
-        throw new ConflictError("No hay una caja abierta. Abrí la caja para cobrar en efectivo")
-      }
-      const own = openSessions.filter((s) => s.user_id === data.user_id)
-      if (own.length === 1) {
-        cash_session_id = own[0].id
-      } else if (openSessions.length === 1) {
-        cash_session_id = openSessions[0].id
+      // Si el módulo de caja opcional está desactivado, el efectivo no depende
+      // de una caja abierta: se cobra sin restricción y sin asociar sesión.
+      if (await settingsService.isCashRegisterEnabled(storeId)) {
+        const openSessions = await prisma.cash_session.findMany({
+          where: { store_id: storeId, status: "abierto", deleted_at: null },
+          select: { id: true, user_id: true },
+        })
+        if (openSessions.length === 0) {
+          throw new ConflictError("No hay una caja abierta. Abrí la caja para cobrar en efectivo")
+        }
+        const own = openSessions.filter((s) => s.user_id === data.user_id)
+        if (own.length === 1) {
+          cash_session_id = own[0].id
+        } else if (openSessions.length === 1) {
+          cash_session_id = openSessions[0].id
+        }
       }
     }
 

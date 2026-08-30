@@ -36,6 +36,7 @@ import styles from "./AppShell.module.css";
 
 import type { Permission } from "@/api/auth";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useSettingsStore } from "@/store/settingsStore";
 
 interface NavItem {
   to: string;
@@ -103,6 +104,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const { hasUpdate, openUpdatePrompt } = useUpdate();
   const { has } = usePermissions();
+  const cashRegisterEnabled = useSettingsStore((s) => s.cashRegisterEnabled);
+  const loadSettings = useSettingsStore((s) => s.load);
   const appVersion = useAppVersion();
   const navigate = useNavigate();
   const location = useLocation();
@@ -113,6 +116,11 @@ export function AppShell({ children }: { children: ReactNode }) {
     user?.role === "super_admin" ? "Super Admin" : user?.role === "admin" ? "Administrador" : "Cajero";
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Cargar la configuración del negocio (modulo de caja opcional) al montar.
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
 
   const visibleGroups = navGroups.filter((g) => {
     // Super admin: solo el panel global. No opera ninguna tienda.
@@ -158,8 +166,12 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const renderNav = (navItemClass: string, iconClass: string) =>
     visibleGroups.map((group) => {
-      // Filtrar ítems que el usuario no tiene permiso para ver
-      const visibleItems = group.items.filter((it) => !it.permission || has(it.permission));
+      // Filtrar ítems que el usuario no tiene permiso para ver, y ocultar el
+      // módulo de caja si está desactivado desde Ajustes.
+      const visibleItems = group.items.filter((it) =>
+        (!it.permission || has(it.permission)) &&
+        (it.to !== "/cash-register" || cashRegisterEnabled)
+      );
       if (visibleItems.length === 0) return null;
       return (
         <div key={group.label} className={styles.navGroup}>

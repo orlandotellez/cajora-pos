@@ -6,6 +6,7 @@ export const UpdateSettingsDtoSchema = z.object({
   phone: z.string().optional().nullable(),
   low_stock_threshold: z.number().int().min(0).optional(),
   ticket_footer: z.string().optional().nullable(),
+  cash_register_enabled: z.boolean().optional(),
 })
 
 export type UpdateSettingsDto = z.infer<typeof UpdateSettingsDtoSchema>

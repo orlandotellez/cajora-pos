@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { Wallet } from "lucide-react";
 import { settingsApi, type UpdateSettingsPayload } from "@/api/settings";
 import { useAdminGuard } from "@/hooks/useAdminGuard";
+import { useSettingsStore } from "@/store/settingsStore";
 import PrintersPanel from "@/components/pages/settings/PrintersPanel";
 import { CURRENCIES } from "@/lib/constants";
 import type { CurrencyCode } from "@/lib/constants";
@@ -150,7 +152,8 @@ function GeneralSettings() {
   }
 
   return (
-    <form onSubmit={save} className={styles.form}>
+    <>
+      <form onSubmit={save} className={styles.form}>
       <div className={styles.field}>
         <label className={styles.label}>Nombre del negocio</label>
         <input
@@ -210,5 +213,54 @@ function GeneralSettings() {
         {saving ? "Guardando…" : "Guardar cambios"}
       </button>
     </form>
+
+    <CashRegisterCard />
+    </>
+  );
+}
+
+function CashRegisterCard() {
+  const enabled = useSettingsStore((s) => s.cashRegisterEnabled);
+  const setEnabled = useSettingsStore((s) => s.setCashRegisterEnabled);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  async function toggle() {
+    setSaving(true);
+    setError("");
+    try {
+      await setEnabled(!enabled);
+    } catch (err: any) {
+      setError(err?.message || "No se pudo guardar el cambio");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className={styles.moduleCard}>
+      <div className={styles.moduleInfo}>
+        <div className={styles.moduleTitle}>
+          <Wallet size={18} />
+          Activar caja
+        </div>
+        <p className={styles.moduleDesc}>
+          Controlá el efectivo de cada turno: abrí y cerrá caja, registrá entradas
+          y gastos en efectivo, y cuadrá las diferencias al cierre del día.
+        </p>
+        {error && <p className={styles.moduleError}>{error}</p>}
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={enabled}
+        aria-label="Activar módulo de caja"
+        disabled={saving}
+        onClick={toggle}
+        className={`${styles.switch}${enabled ? ` ${styles.switchOn}` : ""}`}
+      >
+        <span className={styles.switchThumb} />
+      </button>
+    </div>
   );
 }

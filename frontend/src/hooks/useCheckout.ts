@@ -9,6 +9,7 @@ import { isTauriRuntime } from "@/lib/fetch";
 import { type PaymentMethod } from "@/lib/constants";
 import { usePosStore, type CartItem, type ProductCartItem, type ServiceCartItem } from "@/store/posStore";
 import { useCashSessionStore } from "@/store/cashSessionStore";
+import { useSettingsStore } from "@/store/settingsStore";
 
 export interface CheckoutTotals {
   subtotal: number;
@@ -214,10 +215,12 @@ export function useCheckout(opts: UseCheckoutOptions): UseCheckoutReturn {
     }
 
     if (payment === "efectivo") {
-      await useCashSessionStore.getState().fetchStatus();
-      if (!useCashSessionStore.getState().canSellCash) {
-        showAlert("No hay una caja abierta. Abrí la caja para cobrar en efectivo.");
-        return;
+      if (useSettingsStore.getState().cashRegisterEnabled) {
+        await useCashSessionStore.getState().fetchStatus();
+        if (!useCashSessionStore.getState().canSellCash) {
+          showAlert("No hay una caja abierta. Abrí la caja para cobrar en efectivo.");
+          return;
+        }
       }
     }
 

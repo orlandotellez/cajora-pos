@@ -800,6 +800,7 @@ const DEMO_SETTINGS: Settings = {
   phone: "+505 8888 0000",
   low_stock_threshold: 10,
   ticket_footer: "¡Gracias por su compra!",
+  cash_register_enabled: true,
   updated_at: "2026-08-01T09:00:00.000Z",
 };
 
