@@ -38,6 +38,7 @@ import type { Permission } from "@/api/auth";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useSettingsStore } from "@/store/settingsStore";
 import { useCatalogoStore } from "@/store/catalogoStore";
+import { subscribeCatalogRealtime } from "@/lib/catalog-realtime";
 
 interface NavItem {
   to: string;
@@ -128,6 +129,11 @@ export function AppShell({ children }: { children: ReactNode }) {
     if (isSuperAdmin) return;
     hydrateCatalogo();
   }, [isSuperAdmin, hydrateCatalogo]);
+
+  useEffect(() => {
+    if (isSuperAdmin) return;
+    return subscribeCatalogRealtime();
+  }, [isSuperAdmin]);
 
   const visibleGroups = navGroups.filter((g) => {
     // Super admin: solo el panel global. No opera ninguna tienda.
