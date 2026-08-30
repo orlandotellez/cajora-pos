@@ -18,7 +18,7 @@ export const inventoryController = {
 
     const data = CreateMovementDtoSchema.parse(request.body)
     const result = await inventoryService.create({ ...data, user_id: userId, store_id: request.storeId })
-    sseBroadcast(request.storeId!, "inventory.movement.created", { id: result.id })
+    sseBroadcast(request.storeId!, "inventory.movement.created", { id: result.id, product_id: result.product_id })
     return reply.status(201).send(result)
   },
 
