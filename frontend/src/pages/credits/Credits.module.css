@@ -1,6 +1,6 @@
 .page {
-  padding: 24px;
-  max-width: 800px;
+  padding: 40px;
+  max-width: 1152px;
   margin: 0 auto;
 }
 
@@ -86,10 +86,12 @@
 }
 
 @keyframes skeletonPulse {
+
   0%,
   100% {
     opacity: 0.25;
   }
+
   50% {
     opacity: 0.6;
   }
@@ -217,7 +219,8 @@
   border-radius: 4px;
 }
 
-.loading, .empty {
+.loading,
+.empty {
   text-align: center;
   padding: 48px;
   color: var(--muted-foreground);
