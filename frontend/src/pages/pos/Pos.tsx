@@ -28,7 +28,8 @@ export default function Pos() {
   const scanRef = useRef<HTMLInputElement>(null);
   const searchWrapperRef = useRef<HTMLDivElement>(null);
   const [scan, setScan] = useState("");
-  const [products, setProducts] = useState<Product[]>([]);
+  const catalogoProducts = useCatalogoStore((s) => s.products);
+  const products = useMemo(() => Object.values(catalogoProducts), [catalogoProducts]);
   const { storeName, storeAddress, storePhone, storeFooter } = useStoreSettings();
   const [showResults, setShowResults] = useState(false);
   const [addingToService, setAddingToService] = useState<string | null>(null);
@@ -129,15 +130,6 @@ export default function Pos() {
   const searchLoading = usingCatalog
     ? Boolean(scan.trim()) && catalogoLoading
     : remoteLoading;
-
-  // Cargar productos solo cuando se abre el modal de agregar a servicio
-  useEffect(() => {
-    if (addingToService && products.length === 0) {
-      productsApi.list({ active: true, limit: 100 })
-        .then((res) => setProducts(res.products))
-        .catch(() => { });
-    }
-  }, [addingToService]);
 
   // Tiempo real: cuando otro terminal vende, ajusta stock o edita/elimina un
   // producto, refrescar el stock del carrito y los resultados visibles.
@@ -259,7 +251,6 @@ export default function Pos() {
         try {
           const res = await productsApi.list({ active: true, limit: 100 });
           productsList = res.products;
-          setProducts(res.products);
         } catch {
           showAlert("No se pudo verificar el stock de los productos del servicio");
           return;
