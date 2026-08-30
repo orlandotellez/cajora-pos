@@ -7,6 +7,8 @@ import { useDialog } from "@/hooks/useDialog";
 import { useCheckout } from "@/hooks/useCheckout";
 import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 import { usePosStore, type CartItem, type ProductCartItem, type ServiceCartItem } from "@/store/posStore";
+import { useCatalogoStore } from "@/store/catalogoStore";
+import { searchCatalog, findProductByBarcode } from "@/lib/catalog";
 import { subscribeRealtime } from "@/lib/realtime";
 import { money } from "@/lib/format";
 import { PosSearchBar, type SearchResult } from "@/components/pages/pos/PosSearchBar";
@@ -45,15 +47,19 @@ export default function Pos() {
   } = usePosScanner({
     onScan: async (decodedText) => {
       try {
-        const product = await productsApi.getByBarcode(decodedText);          const result: SearchResult = {
-            _type: "product",
-            id: product.id,
-            name: product.name,
-            barcode: product.barcode,
-            unit_type: product.unit_type,
-            price: product.price,
-            data: product,
-          };
+        let product = findProductByBarcode(useCatalogoStore.getState().products, decodedText);
+        if (!product) {
+          product = await productsApi.getByBarcode(decodedText);
+        }
+        const result: SearchResult = {
+          _type: "product",
+          id: product.id,
+          name: product.name,
+          barcode: product.barcode,
+          unit_type: product.unit_type,
+          price: product.price,
+          data: product,
+        };
         addToCart(result);
         setScan("");
         setShowResults(false);
@@ -90,8 +96,16 @@ export default function Pos() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const { results: searchResults, loading: searchLoading } = useDebouncedSearch<SearchResult>({
-    query: scan,
+  const catalogoLoaded = useCatalogoStore((s) => s.loaded);
+  const catalogoLoading = useCatalogoStore((s) => s.loading);
+
+  const localResults = useMemo<SearchResult[]>(() => {
+    const { products, services } = useCatalogoStore.getState();
+    return searchCatalog(products, services, scan, 15);
+  }, [scan, searchRefreshKey]);
+
+  const { results: remoteResults, loading: remoteLoading } = useDebouncedSearch<SearchResult>({
+    query: catalogoLoaded ? "" : scan,
     refreshKey: searchRefreshKey,
     fetcher: async (term) => {
       const [prodRes, svcRes] = await Promise.all([
@@ -109,6 +123,12 @@ export default function Pos() {
       return results;
     },
   });
+
+  const usingCatalog = catalogoLoaded;
+  const searchResults = usingCatalog ? localResults : remoteResults;
+  const searchLoading = usingCatalog
+    ? Boolean(scan.trim()) && catalogoLoading
+    : remoteLoading;
 
   // Cargar productos solo cuando se abre el modal de agregar a servicio
   useEffect(() => {
