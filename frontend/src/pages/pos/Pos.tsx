@@ -29,6 +29,7 @@ export default function Pos() {
   const searchWrapperRef = useRef<HTMLDivElement>(null);
   const [scan, setScan] = useState("");
   const catalogoProducts = useCatalogoStore((s) => s.products);
+  const catalogoServices = useCatalogoStore((s) => s.services);
   const products = useMemo(() => Object.values(catalogoProducts), [catalogoProducts]);
   const { storeName, storeAddress, storePhone, storeFooter } = useStoreSettings();
   const [showResults, setShowResults] = useState(false);
@@ -101,9 +102,8 @@ export default function Pos() {
   const catalogoLoading = useCatalogoStore((s) => s.loading);
 
   const localResults = useMemo<SearchResult[]>(() => {
-    const { products, services } = useCatalogoStore.getState();
-    return searchCatalog(products, services, scan, 15);
-  }, [scan, searchRefreshKey]);
+    return searchCatalog(catalogoProducts, catalogoServices, scan, 15);
+  }, [catalogoProducts, catalogoServices, scan]);
 
   const { results: remoteResults, loading: remoteLoading } = useDebouncedSearch<SearchResult>({
     query: catalogoLoaded ? "" : scan,
