@@ -4,9 +4,9 @@
   "version": "2.1.1",
   "identifier": "com.dev-espada.cajorapos",
   "build": {
-    "beforeDevCommand": "bun dev",
+    "beforeDevCommand": "bun run dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "bun build",
+    "beforeBuildCommand": "bun run build",
     "frontendDist": "../dist"
   },
   "app": {
