@@ -473,4 +473,50 @@ export const SaleRepository: ISaleRepository = {
       quantity: Number(r.quantity),
     }))
   },
+
+  async getProductPerformance(params) {
+    const rows = await prisma.$queryRawUnsafe<Array<{
+      product_id: string
+      product_name: string
+      quantity: number
+      revenue: number
+      last_sale_date: Date
+    }>>(
+      `SELECT x.product_id,
+              COALESCE(p.name, 'Producto eliminado') as product_name,
+              CAST(SUM(x.quantity) AS INTEGER) as quantity,
+              CAST(SUM(x.line_total) AS DECIMAL(10,2)) as revenue,
+              MAX(s.created_at) as last_sale_date
+       FROM (
+         SELECT si.product_id, si.line_total, si.quantity, si.sale_id
+         FROM sales s
+         JOIN sale_items si ON s.id = si.sale_id
+         WHERE s.store_id = $1::text AND s.created_at >= $2::timestamptz AND s.created_at <= $3::timestamptz
+         UNION ALL
+         SELECT ssp.product_id, ssp.line_total, ssp.quantity, ss.sale_id
+         FROM sales s
+         JOIN sale_services ss ON s.id = ss.sale_id
+         JOIN sale_service_products ssp ON ssp.sale_service_id = ss.id
+         WHERE s.store_id = $4::text AND s.created_at >= $5::timestamptz AND s.created_at <= $6::timestamptz
+       ) x
+       JOIN sales s ON s.id = x.sale_id
+       LEFT JOIN products p ON p.id = x.product_id
+       GROUP BY x.product_id, p.name
+       ORDER BY revenue DESC`,
+      params.storeId,
+      params.startDate,
+      params.endDate,
+      params.storeId,
+      params.startDate,
+      params.endDate,
+    )
+
+    return rows.map((r) => ({
+      product_id: r.product_id,
+      product_name: r.product_name,
+      quantity: Number(r.quantity),
+      revenue: Number(r.revenue),
+      last_sale_date: r.last_sale_date instanceof Date ? r.last_sale_date.toISOString() : String(r.last_sale_date),
+    }))
+  },
 }

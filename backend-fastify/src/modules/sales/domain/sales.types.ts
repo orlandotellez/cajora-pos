@@ -105,3 +105,17 @@ export interface IRevenueByCategoryQuery {
   end_date: string
   store_id: string
 }
+
+export interface IProductPerformanceItem {
+  product_id: string
+  product_name: string
+  quantity: number
+  revenue: number
+  last_sale_date: string
+}
+
+export interface IProductPerformanceQuery {
+  start_date: string
+  end_date: string
+  store_id: string
+}

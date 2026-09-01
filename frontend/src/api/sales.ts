@@ -78,6 +78,14 @@ export interface RevenueByCategoryItem {
   quantity: number;
 }
 
+export interface ProductPerformanceItem {
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  revenue: number;
+  last_sale_date: string;
+}
+
 export interface CreateSaleItemPayload {
   product_id: string;
   product_name: string;
@@ -146,4 +154,7 @@ export const salesApi = {
 
   revenueByCategory: (params: { start_date: string; end_date: string }) =>
     api.get<RevenueByCategoryItem[]>("/sales/revenue-by-category", params as Record<string, string | number | boolean | undefined>),
+
+  productPerformance: (params: { start_date: string; end_date: string }) =>
+    api.get<ProductPerformanceItem[]>("/sales/product-performance", params as Record<string, string | number | boolean | undefined>),
 };

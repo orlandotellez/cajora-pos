@@ -13,6 +13,8 @@ import type {
   IRevenueByHourQuery,
   IRevenueByCategoryItem,
   IRevenueByCategoryQuery,
+  IProductPerformanceItem,
+  IProductPerformanceQuery,
 } from "../domain/sales.types"
 import type { CreateSaleData, ISaleEntity, ISaleItemEntity, ISaleServiceEntity, ISaleServiceProductEntity } from "../domain/sales.entities"
 
@@ -296,6 +298,15 @@ export const createSaleService = (repository: ISaleRepository) => ({
 
   getRevenueByCategory: async (params: IRevenueByCategoryQuery): Promise<IRevenueByCategoryItem[]> => {
     const items = await repository.getRevenueByCategory({
+      startDate: new Date(params.start_date),
+      endDate: new Date(params.end_date),
+      storeId: params.store_id,
+    })
+    return items
+  },
+
+  getProductPerformance: async (params: IProductPerformanceQuery): Promise<IProductPerformanceItem[]> => {
+    const items = await repository.getProductPerformance({
       startDate: new Date(params.start_date),
       endDate: new Date(params.end_date),
       storeId: params.store_id,

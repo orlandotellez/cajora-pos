@@ -6,6 +6,8 @@ import { rangeStart, rangeEnd, rangeLabel, toLocalISOString, type Range } from "
 import { Header } from "@/components/pages/reports/Header";
 import { ReportStats } from "@/components/pages/reports/ReportStats";
 import { ChartsSection } from "@/components/pages/reports/ChartsSection";
+import { TopProducts } from "@/components/pages/reports/TopProducts";
+import { ProductPerformance } from "@/components/pages/reports/ProductPerformance";
 import { ReportsSkeleton } from "@/components/pages/reports/ReportsSkeleton";
 import styles from "./Reports.module.css";
 
@@ -126,6 +128,12 @@ export default function Reports() {
       <ReportStats report={report} prevReport={prevReport} />
 
       <ChartsSection report={report} range={range} />
+
+      <div style={{ marginBottom: 24 }}>
+        <TopProducts report={report} />
+      </div>
+
+      <ProductPerformance range={range} />
     </div>
   );
 }

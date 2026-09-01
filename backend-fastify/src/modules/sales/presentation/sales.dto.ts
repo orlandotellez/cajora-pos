@@ -74,6 +74,11 @@ export const RevenueByCategoryQuerySchema = z.object({
   end_date: z.string(),
 })
 
+export const ProductPerformanceQuerySchema = z.object({
+  start_date: z.string(),
+  end_date: z.string(),
+})
+
 export type CreateSaleDto = z.infer<typeof CreateSaleDtoSchema>
 export type CreateSaleItemDto = z.infer<typeof CreateSaleItemDtoSchema>
 export type CreateSaleServiceItemProductDto = z.infer<typeof CreateSaleServiceItemProductDtoSchema>
@@ -83,3 +88,4 @@ export type ReportQueryDto = z.infer<typeof ReportQuerySchema>
 export type RevenueTrendQueryDto = z.infer<typeof RevenueTrendQuerySchema>
 export type RevenueByHourQueryDto = z.infer<typeof RevenueByHourQuerySchema>
 export type RevenueByCategoryQueryDto = z.infer<typeof RevenueByCategoryQuerySchema>
+export type ProductPerformanceQueryDto = z.infer<typeof ProductPerformanceQuerySchema>

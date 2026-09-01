@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify"
 import { createSaleService } from "../application/sales.service"
 import { SaleRepository } from "../infrastructure/sales.prisma.repository"
-import { CreateSaleDtoSchema, SaleQuerySchema, ReportQuerySchema, RevenueTrendQuerySchema, RevenueByHourQuerySchema, RevenueByCategoryQuerySchema } from "./sales.dto"
+import { CreateSaleDtoSchema, SaleQuerySchema, ReportQuerySchema, RevenueTrendQuerySchema, RevenueByHourQuerySchema, RevenueByCategoryQuerySchema, ProductPerformanceQuerySchema } from "./sales.dto"
 import { UnauthorizedError } from "@/core/errors/AppError"
 import { handleSseConnection, sseBroadcast } from "@/config/sse"
 
@@ -74,6 +74,13 @@ export const salesController = {
     const storeId = request.storeId
     const query = RevenueByCategoryQuerySchema.parse(request.query)
     const result = await saleService.getRevenueByCategory({ ...query, store_id: storeId! })
+    return reply.status(200).send(result)
+  },
+
+  productPerformance: async (request: FastifyRequest, reply: FastifyReply) => {
+    const storeId = request.storeId
+    const query = ProductPerformanceQuerySchema.parse(request.query)
+    const result = await saleService.getProductPerformance({ ...query, store_id: storeId! })
     return reply.status(200).send(result)
   },
 }
