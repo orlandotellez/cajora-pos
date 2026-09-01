@@ -44,6 +44,11 @@
 }
 
 @media (min-width: 768px) {
+  .page {
+    padding: 40px;
+  }
+
+
   .statsGrid {
     grid-template-columns: repeat(4, 1fr);
   }
