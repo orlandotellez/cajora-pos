@@ -39,4 +39,7 @@ export const categoriesApi = {
 
   delete: (id: string) =>
     api.delete<{ message: string }>(`/categories/${id}`),
+
+  bulkDelete: (ids: string[]) =>
+    api.post<{ deleted: number }>("/categories/bulk-delete", { ids }),
 };

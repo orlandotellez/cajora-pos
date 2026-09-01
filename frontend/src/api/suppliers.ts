@@ -52,4 +52,7 @@ export const suppliersApi = {
 
   delete: (id: string) =>
     api.delete<{ message: string }>(`/suppliers/${id}`),
+
+  bulkDelete: (ids: string[]) =>
+    api.post<{ deleted: number }>("/suppliers/bulk-delete", { ids }),
 };

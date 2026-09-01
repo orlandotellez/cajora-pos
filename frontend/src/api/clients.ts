@@ -83,4 +83,7 @@ export const clientsApi = {
 
   delete: (id: string) =>
     api.delete<DeleteResponse>(`/clients/${id}`),
+
+  bulkDelete: (ids: string[]) =>
+    api.post<{ deleted: number }>("/clients/bulk-delete", { ids }),
 }

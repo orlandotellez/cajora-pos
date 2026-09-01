@@ -56,6 +56,9 @@ export const usersApi = {
   delete: (id: string) =>
     api.delete<{ message: string }>(`/users/${id}`),
 
+  bulkDelete: (ids: string[]) =>
+    api.post<{ deleted: number }>("/users/bulk-delete", { ids }),
+
   toggleActive: (id: string, is_active: boolean) =>
     api.patch<UserResponse>(`/users/${id}/active`, { is_active }),
 };
