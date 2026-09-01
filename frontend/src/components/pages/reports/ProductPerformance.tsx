@@ -3,6 +3,7 @@ import { salesApi, type ProductPerformanceItem } from "@/api/sales";
 import { money } from "@/lib/format";
 import { toLocalISOString, type Range } from "@/lib/date-range";
 import { rangeStart, rangeEnd } from "@/lib/date-range";
+import { getVisiblePages } from "@/lib/pagination";
 import styles from "./ChartsSection.module.css";
 
 type SortKey = "revenue" | "quantity" | "product_name" | "last_sale_date";
@@ -168,42 +169,30 @@ export function ProductPerformance({ range }: { range: Range }) {
                 >
                   Anterior
                 </button>
-                {Array.from({ length: totalPages }, (_, i) => i)
-                  .filter((i) => {
-                    if (totalPages <= 7) return true;
-                    if (i === 0 || i === totalPages - 1) return true;
-                    if (Math.abs(i - page) <= 1) return true;
-                    return false;
-                  })
-                  .reduce<(number | "dots")[]>((acc, i, idx, arr) => {
-                    if (idx > 0 && i - (arr[idx - 1] as number) > 1) acc.push("dots");
-                    acc.push(i);
-                    return acc;
-                  }, [])
-                  .map((item, idx) =>
-                    item === "dots" ? (
-                      <span key={`dots-${idx}`} style={{ padding: "4px 6px", color: "var(--muted-foreground)" }}>…</span>
-                    ) : (
-                      <button
-                        key={item}
-                        type="button"
-                        onClick={() => setPage(item)}
-                        style={{
-                          padding: "4px 8px",
-                          border: "1px solid var(--border)",
-                          borderRadius: 5,
-                          background: item === page ? "var(--foreground)" : "transparent",
-                          color: item === page ? "var(--background)" : "var(--foreground)",
-                          cursor: "pointer",
-                          fontSize: 12,
-                          fontWeight: item === page ? 600 : 400,
-                          minWidth: 28,
-                        }}
-                      >
-                        {item + 1}
-                      </button>
-                    ),
-                  )}
+                {getVisiblePages(page + 1, totalPages).map((item, idx) =>
+                  item === "dots" ? (
+                    <span key={`dots-${idx}`} style={{ padding: "4px 6px", color: "var(--muted-foreground)" }}>…</span>
+                  ) : (
+                    <button
+                      key={item}
+                      type="button"
+                      onClick={() => setPage(item - 1)}
+                      style={{
+                        padding: "4px 8px",
+                        border: "1px solid var(--border)",
+                        borderRadius: 5,
+                        background: item === page + 1 ? "var(--foreground)" : "transparent",
+                        color: item === page + 1 ? "var(--background)" : "var(--foreground)",
+                        cursor: "pointer",
+                        fontSize: 12,
+                        fontWeight: item === page + 1 ? 600 : 400,
+                        minWidth: 28,
+                      }}
+                    >
+                      {item}
+                    </button>
+                  ),
+                )}
                 <button
                   type="button"
                   disabled={page >= totalPages - 1}

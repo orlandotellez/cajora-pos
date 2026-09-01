@@ -1,5 +1,5 @@
 import { type ReactNode } from "react";
-import { ChevronLeft, ChevronRight, Loader2, Pencil, Trash2 } from "lucide-react";
+import { Loader2, Pencil, Trash2 } from "lucide-react";
 import TableSkeleton, { type SkeletonCol } from "@/components/common/TableSkeleton";
 import { RefreshBadge } from "@/components/common/RefreshBadge";
 import { getVisiblePages } from "@/lib/pagination";
@@ -183,29 +183,38 @@ export function DataTable<T extends { id: string }>({
 
       {totalPages > 1 && (
         <div className={styles.pagination}>
-          <button
-            onClick={() => onPageChange(page - 1)}
-            disabled={page <= 1}
-            className={styles.pageBtn}
-          >
-            <ChevronLeft size={16} />
-          </button>
-          {getVisiblePages(page, totalPages).map((n) => (
+          <span className={styles.paginationInfo}>
+            {total} registro{total !== 1 ? "s" : ""} · Página {page} de {totalPages}
+          </span>
+          <div className={styles.paginationButtons}>
             <button
-              key={n}
-              onClick={() => onPageChange(n)}
-              className={`${styles.pageBtn} ${n === page ? styles.pageActive : ""}`}
+              onClick={() => onPageChange(page - 1)}
+              disabled={page <= 1}
+              className={styles.pageBtn}
             >
-              {n}
+              Anterior
             </button>
-          ))}
-          <button
-            onClick={() => onPageChange(page + 1)}
-            disabled={page >= totalPages}
-            className={styles.pageBtn}
-          >
-            <ChevronRight size={16} />
-          </button>
+            {getVisiblePages(page, totalPages).map((item, idx) =>
+              item === "dots" ? (
+                <span key={`dots-${idx}`} className={styles.paginationDots}>…</span>
+              ) : (
+                <button
+                  key={item}
+                  onClick={() => onPageChange(item)}
+                  className={`${styles.pageBtn} ${item === page ? styles.pageActive : ""}`}
+                >
+                  {item}
+                </button>
+              ),
+            )}
+            <button
+              onClick={() => onPageChange(page + 1)}
+              disabled={page >= totalPages}
+              className={styles.pageBtn}
+            >
+              Siguiente
+            </button>
+          </div>
           {loading && (
             <Loader2
               size={14}

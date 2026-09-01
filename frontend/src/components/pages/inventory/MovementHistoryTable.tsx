@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Loader2, ArrowDownRight, ArrowUpRight, RefreshCw, Eye } from "lucide-react";
+import { Loader2, ArrowDownRight, ArrowUpRight, RefreshCw, Eye } from "lucide-react";
 import type { InventoryMovement } from "@/api/inventory";
 import { MOVEMENT_TYPES, UNIT_TYPE_LABELS, unitQuantitySuffix } from "@/lib/constants";
 import { RefreshBadge } from "@/components/common/RefreshBadge";
@@ -77,29 +77,38 @@ export function MovementHistoryTable({ movements, page, totalPages, loading = fa
 
       {totalPages > 1 && (
         <div className={styles.pagination}>
-          <button
-            onClick={() => onPageChange(Math.max(1, page - 1))}
-            disabled={page <= 1}
-            className={styles.pageBtn}
-          >
-            <ChevronLeft size={16} />
-          </button>
-          {getVisiblePages(page, totalPages).map((n) => (
+          <span className={styles.paginationInfo}>
+            Página {page} de {totalPages}
+          </span>
+          <div className={styles.paginationButtons}>
             <button
-              key={n}
-              onClick={() => onPageChange(n)}
-              className={`${styles.pageBtn} ${n === page ? styles.pageActive : ""}`}
+              onClick={() => onPageChange(Math.max(1, page - 1))}
+              disabled={page <= 1}
+              className={styles.pageBtn}
             >
-              {n}
+              Anterior
             </button>
-          ))}
-          <button
-            onClick={() => onPageChange(Math.min(totalPages, page + 1))}
-            disabled={page >= totalPages}
-            className={styles.pageBtn}
-          >
-            <ChevronRight size={16} />
-          </button>
+            {getVisiblePages(page, totalPages).map((item, idx) =>
+              item === "dots" ? (
+                <span key={`dots-${idx}`} className={styles.paginationDots}>…</span>
+              ) : (
+                <button
+                  key={item}
+                  onClick={() => onPageChange(item)}
+                  className={`${styles.pageBtn} ${item === page ? styles.pageActive : ""}`}
+                >
+                  {item}
+                </button>
+              ),
+            )}
+            <button
+              onClick={() => onPageChange(Math.min(totalPages, page + 1))}
+              disabled={page >= totalPages}
+              className={styles.pageBtn}
+            >
+              Siguiente
+            </button>
+          </div>
           {loading && (
             <Loader2
               size={14}
