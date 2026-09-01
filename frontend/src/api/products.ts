@@ -85,6 +85,7 @@ export const productsApi = {
   list: (params?: {
     search?: string;
     category_id?: string;
+    unit_type?: string;
     active?: boolean;
     low_stock?: boolean;
     out_of_stock?: boolean;

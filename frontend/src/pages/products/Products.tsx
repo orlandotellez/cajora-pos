@@ -44,6 +44,7 @@ export default function Products() {
   const [deleteAllConfirm, setDeleteAllConfirm] = useState(false);
   const [deleteAllDeleting, setDeleteAllDeleting] = useState(false);
   const [categoryId, setCategoryId] = useState("");
+  const [unitType, setUnitType] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [editing, setEditing] = useState<Product | null | "new">(null);
@@ -72,6 +73,7 @@ export default function Products() {
           limit,
           search: search || undefined,
           category_id: extraFilters.categoryId || undefined,
+          unit_type: extraFilters.unitType || undefined,
         })
         .then((res) => ({ items: res.products, total: res.total })),
     cacheNamespace: "products",
@@ -88,7 +90,7 @@ export default function Products() {
       "supplier.updated",
       "supplier.deleted",
     ],
-    extraFilters: { categoryId },
+    extraFilters: { categoryId, unitType },
   });
 
   // Cargar categorías y proveedores una vez para los dropdowns del modal.
@@ -202,6 +204,8 @@ export default function Products() {
         setSearch={setSearch}
         categoryId={categoryId}
         setCategoryId={setCategoryId}
+        unitType={unitType}
+        setUnitType={setUnitType}
         setPage={setPage}
         categories={categories}
       />

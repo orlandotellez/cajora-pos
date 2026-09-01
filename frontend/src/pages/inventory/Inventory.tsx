@@ -53,6 +53,7 @@ export default function Inventory() {
   const [activeTab, setActiveTab] = useState<InventoryTab>("inventory");
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryId, setCategoryId] = useState("");
+  const [unitType, setUnitType] = useState("");
   const [stockFilter, setStockFilter] = useState<"" | "low" | "out">("");
   const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -85,7 +86,7 @@ export default function Inventory() {
       "inventory.batch.created",
       "sale.created",
     ],
-    extraFilters: { categoryId, stockFilter },
+    extraFilters: { categoryId, unitType, stockFilter },
     fetcher: async ({ page, limit, search, extraFilters }) => {
       const [productRes, lowStockRes, cats, sups] = await Promise.all([
         productsApi.list({
@@ -94,6 +95,7 @@ export default function Inventory() {
           active: true,
           search: search || undefined,
           category_id: extraFilters.categoryId || undefined,
+          unit_type: extraFilters.unitType || undefined,
           low_stock: extraFilters.stockFilter === "low" || undefined,
           out_of_stock: extraFilters.stockFilter === "out" || undefined,
         }),
@@ -268,6 +270,8 @@ export default function Inventory() {
             categories={categories}
             categoryId={categoryId}
             setCategoryId={setCategoryId}
+            unitType={unitType}
+            setUnitType={setUnitType}
             stockFilter={stockFilter}
             setStockFilter={setStockFilter}
             lowStockProducts={lowStockProducts}

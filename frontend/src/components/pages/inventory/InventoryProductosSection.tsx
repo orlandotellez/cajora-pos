@@ -1,6 +1,7 @@
 import { Search, AlertTriangle } from "lucide-react";
 import type { Product, Category } from "@/api";
 import type { LowStockProduct } from "@/api/inventory";
+import { UNIT_TYPE_LABELS } from "@/lib/constants";
 import { InventoryTable } from "./InventoryTable";
 import styles from "./InventoryProductosSection.module.css";
 
@@ -19,6 +20,8 @@ interface Props {
   categories: Category[];
   categoryId: string;
   setCategoryId: (value: string) => void;
+  unitType: string;
+  setUnitType: (value: string) => void;
   stockFilter: StockFilter;
   setStockFilter: (value: StockFilter) => void;
 
@@ -42,6 +45,8 @@ export function InventoryProductosSection(props: Props) {
     categories,
     categoryId,
     setCategoryId,
+    unitType,
+    setUnitType,
     stockFilter,
     setStockFilter,
     lowStockProducts,
@@ -94,6 +99,19 @@ export function InventoryProductosSection(props: Props) {
           <option value="">Todas las categorías</option>
           {categories.map((c) => (
             <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
+        </select>
+        <select
+          value={unitType}
+          onChange={(e) => {
+            setUnitType(e.target.value);
+            setPage(1);
+          }}
+          className={styles.filterSelect}
+        >
+          <option value="">Todos los tipos</option>
+          {Object.entries(UNIT_TYPE_LABELS).map(([value, label]) => (
+            <option key={value} value={value}>{label}</option>
           ))}
         </select>
         <div className={styles.stockFilters}>

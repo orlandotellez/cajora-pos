@@ -92,6 +92,10 @@ export const ProductRepository: IProductRepository = {
       where.stock = { lte: 0 }
     }
 
+    if (params?.unitType) {
+      where.unit_type = params.unitType
+    }
+
     const page = params?.page || 1
     const limit = params?.limit || 50
     const skip = (page - 1) * limit

@@ -1,7 +1,7 @@
 import type { IProductEntity, CreateProductData, UpdateProductData } from "./products.entities"
 
 export interface IProductRepository {
-  findAll(params?: { search?: string; category_id?: string; active?: boolean; lowStock?: boolean; outOfStock?: boolean; page?: number; limit?: number; storeId?: string }): Promise<{ products: IProductEntity[]; total: number; page: number; limit: number }>
+  findAll(params?: { search?: string; category_id?: string; active?: boolean; lowStock?: boolean; outOfStock?: boolean; unitType?: string; page?: number; limit?: number; storeId?: string }): Promise<{ products: IProductEntity[]; total: number; page: number; limit: number }>
   findById(id: string, storeId?: string): Promise<IProductEntity | null>
   findByBarcode(barcode: string, storeId?: string): Promise<IProductEntity | null>
   findByBarcodes(barcodes: string[], storeId?: string): Promise<{ barcode: string }[]>

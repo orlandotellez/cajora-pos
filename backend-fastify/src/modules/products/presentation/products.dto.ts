@@ -63,6 +63,7 @@ export const BulkDeleteProductsDtoSchema = z.object({
 export const ProductQuerySchema = z.object({
   search: z.string().optional(),
   category_id: z.string().optional(),
+  unit_type: z.string().optional(),
   active: z.coerce.boolean().optional(),
   low_stock: z.coerce.boolean().optional(),
   out_of_stock: z.coerce.boolean().optional(),

@@ -14,6 +14,7 @@ export const productsController = {
     const result = await productService.list({
       search: query.search,
       category_id: query.category_id,
+      unitType: query.unit_type,
       active: query.active,
       lowStock: query.low_stock,
       outOfStock: query.out_of_stock,
