@@ -151,42 +151,58 @@ export const ProductRepository: IProductRepository = {
   async resolveCategoryNames(names: string[], storeId?: string) {
     if (names.length === 0) return []
     const existing = await prisma.category.findMany({
-      where: { store_id: storeId, deleted_at: null, name: { in: names } },
-      select: { id: true, name: true },
+      where: { store_id: storeId, name: { in: names } },
+      select: { id: true, name: true, deleted_at: true },
     })
     const map = new Map(existing.map((c) => [c.name, c.id]))
     const missing = names.filter((n) => !map.has(n))
     if (missing.length > 0) {
       await prisma.category.createMany({
         data: missing.map((name) => ({ name, store_id: storeId ?? "" })),
+        skipDuplicates: true,
       })
-      const fresh = await prisma.category.findMany({
-        where: { store_id: storeId, name: { in: missing } },
-        select: { id: true, name: true },
-      })
-      fresh.forEach((c) => map.set(c.name, c.id))
     }
+    const toReactivate = existing.filter((c) => c.deleted_at !== null).map((c) => c.id)
+    if (toReactivate.length > 0) {
+      await prisma.category.updateMany({
+        where: { id: { in: toReactivate }, store_id: storeId },
+        data: { deleted_at: null },
+      })
+    }
+    const fresh = await prisma.category.findMany({
+      where: { store_id: storeId, name: { in: names } },
+      select: { id: true, name: true },
+    })
+    fresh.forEach((c) => map.set(c.name, c.id))
     return [...map.entries()].map(([name, id]) => ({ name, id }))
   },
 
   async resolveSupplierNames(names: string[], storeId?: string) {
     if (names.length === 0) return []
     const existing = await prisma.supplier.findMany({
-      where: { store_id: storeId, deleted_at: null, name: { in: names } },
-      select: { id: true, name: true },
+      where: { store_id: storeId, name: { in: names } },
+      select: { id: true, name: true, deleted_at: true },
     })
-    const map = new Map(existing.map((s) => [s.name, s.id]))
+    const map = new Map(existing.map((c) => [c.name, c.id]))
     const missing = names.filter((n) => !map.has(n))
     if (missing.length > 0) {
       await prisma.supplier.createMany({
         data: missing.map((name) => ({ name, store_id: storeId ?? "", is_active: true })),
+        skipDuplicates: true,
       })
-      const fresh = await prisma.supplier.findMany({
-        where: { store_id: storeId, name: { in: missing } },
-        select: { id: true, name: true },
-      })
-      fresh.forEach((s) => map.set(s.name, s.id))
     }
+    const toReactivate = existing.filter((c) => c.deleted_at !== null).map((c) => c.id)
+    if (toReactivate.length > 0) {
+      await prisma.supplier.updateMany({
+        where: { id: { in: toReactivate }, store_id: storeId },
+        data: { deleted_at: null },
+      })
+    }
+    const fresh = await prisma.supplier.findMany({
+      where: { store_id: storeId, name: { in: names } },
+      select: { id: true, name: true },
+    })
+    fresh.forEach((c) => map.set(c.name, c.id))
     return [...map.entries()].map(([name, id]) => ({ name, id }))
   },
 
