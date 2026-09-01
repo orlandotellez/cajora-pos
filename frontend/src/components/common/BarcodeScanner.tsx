@@ -107,9 +107,8 @@ export function BarcodeScanner({ open, onScan, onClose }: BarcodeScannerProps) {
         style={{
           position: "relative",
           width: "min(90vw, 400px)",
-          borderRadius: 16,
+          height: 350,
           overflow: "hidden",
-          background: "#000",
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -119,10 +118,13 @@ export function BarcodeScanner({ open, onScan, onClose }: BarcodeScannerProps) {
           ref={containerRef}
           style={{
             width: "100%",
-            aspectRatio: "1 / 1",
+            height: "100%",
             position: "relative",
           }}
         />
+
+        {/* Hide html5-qrcode's built-in corner brackets */}
+        <style>{`#${SCANNER_ID} #qr-shaded-region { display: none !important; }`}</style>
 
         {/* Corner brackets */}
         <div
@@ -132,11 +134,12 @@ export function BarcodeScanner({ open, onScan, onClose }: BarcodeScannerProps) {
             left: "50%",
             transform: "translate(-50%, -50%)",
             width: 260,
-            height: 100,
+            height: 200,
             border: "2px solid rgba(255,255,255,0.6)",
             borderRadius: 12,
             pointerEvents: "none",
             boxShadow: "0 0 0 9999px rgba(0,0,0,0.4)",
+            zIndex: 2,
           }}
         />
 
