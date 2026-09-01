@@ -14,6 +14,9 @@ interface ClientTableProps {
   onDelete: (client: Client) => void;
   dimmed?: boolean;
   refreshing?: boolean;
+  selectable?: boolean;
+  selectedIds?: Set<string>;
+  onSelectionChange?: (ids: Set<string>) => void;
 }
 
 export function ClientTable({
@@ -27,6 +30,9 @@ export function ClientTable({
   onDelete,
   dimmed,
   refreshing,
+  selectable = false,
+  selectedIds,
+  onSelectionChange,
 }: ClientTableProps) {
   const columns: Column<Client>[] = useMemo(
     () => [
@@ -93,6 +99,9 @@ export function ClientTable({
       ]}
       dimmed={dimmed}
       refreshing={refreshing}
+      selectable={selectable}
+      selectedIds={selectedIds}
+      onSelectionChange={onSelectionChange}
     />
   );
 }

@@ -20,6 +20,9 @@ interface ServiceTableProps {
   blockedIds?: Set<string>;
   dimmed?: boolean;
   refreshing?: boolean;
+  selectable?: boolean;
+  selectedIds?: Set<string>;
+  onSelectionChange?: (ids: Set<string>) => void;
 }
 
 export function ServiceTable({
@@ -36,6 +39,9 @@ export function ServiceTable({
   blockedIds,
   dimmed,
   refreshing,
+  selectable = false,
+  selectedIds,
+  onSelectionChange,
 }: ServiceTableProps) {
   const columns: Column<Service>[] = useMemo(
     () => [
@@ -148,6 +154,9 @@ export function ServiceTable({
       ]}
       dimmed={dimmed}
       refreshing={refreshing}
+      selectable={selectable}
+      selectedIds={selectedIds}
+      onSelectionChange={onSelectionChange}
     />
   );
 }

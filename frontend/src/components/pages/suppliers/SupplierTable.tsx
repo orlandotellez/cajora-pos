@@ -14,9 +14,12 @@ interface SupplierTableProps {
   onDelete: (supplier: Supplier) => void;
   dimmed?: boolean;
   refreshing?: boolean;
+  selectable?: boolean;
+  selectedIds?: Set<string>;
+  onSelectionChange?: (ids: Set<string>) => void;
 }
 
-export function SupplierTable({ suppliers, loading, total, page, totalPages, onPageChange, onEdit, onDelete, dimmed, refreshing }: SupplierTableProps) {
+export function SupplierTable({ suppliers, loading, total, page, totalPages, onPageChange, onEdit, onDelete, dimmed, refreshing, selectable = false, selectedIds, onSelectionChange }: SupplierTableProps) {
   const columns: Column<Supplier>[] = useMemo(() => [
     { key: "name", label: "Nombre", render: (s) => <span className={styles["supplier-name"]}>{s.name}</span> },
     { key: "contact", label: "Contacto", render: (s) => <>{s.contact_name ?? "—"}</> },
@@ -47,6 +50,9 @@ export function SupplierTable({ suppliers, loading, total, page, totalPages, onP
       skeletonCols={[{ width: "30%" }, { width: "20%" }, { width: "15%" }, { width: "20%" }, { width: "10%" }, { width: "80px" }]}
       dimmed={dimmed}
       refreshing={refreshing}
+      selectable={selectable}
+      selectedIds={selectedIds}
+      onSelectionChange={onSelectionChange}
     />
   );
 }

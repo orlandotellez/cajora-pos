@@ -17,9 +17,12 @@ interface UserTableProps {
   onToggleActive: (user: UserResponse) => void;
   dimmed?: boolean;
   refreshing?: boolean;
+  selectable?: boolean;
+  selectedIds?: Set<string>;
+  onSelectionChange?: (ids: Set<string>) => void;
 }
 
-export function UserTable({ users, currentUserId, loading, total, page, totalPages, onPageChange, onEdit, onDelete, onToggleActive, dimmed, refreshing }: UserTableProps) {
+export function UserTable({ users, currentUserId, loading, total, page, totalPages, onPageChange, onEdit, onDelete, onToggleActive, dimmed, refreshing, selectable = false, selectedIds, onSelectionChange }: UserTableProps) {
   const columns: Column<UserResponse>[] = useMemo(() => [
     {
       key: "name", label: "Nombre", render: (u) => (
@@ -70,6 +73,9 @@ export function UserTable({ users, currentUserId, loading, total, page, totalPag
       skeletonCols={[{ width: "35%" }, { width: "35%" }, { width: "15%" }, { width: "10%", align: "right" }, { width: "80px" }]}
       dimmed={dimmed}
       refreshing={refreshing}
+      selectable={selectable}
+      selectedIds={selectedIds}
+      onSelectionChange={onSelectionChange}
     />
   );
 }

@@ -14,6 +14,9 @@ interface CategoryTableProps {
   onDelete: (category: Category) => void;
   dimmed?: boolean;
   refreshing?: boolean;
+  selectable?: boolean;
+  selectedIds?: Set<string>;
+  onSelectionChange?: (ids: Set<string>) => void;
 }
 
 export function CategoryTable({
@@ -27,6 +30,9 @@ export function CategoryTable({
   onDelete,
   dimmed,
   refreshing,
+  selectable = false,
+  selectedIds,
+  onSelectionChange,
 }: CategoryTableProps) {
   const columns: Column<Category>[] = useMemo(
     () => [
@@ -69,6 +75,9 @@ export function CategoryTable({
       skeletonCols={[{ width: "30%" }, { width: "50%" }, { width: "80px" }]}
       dimmed={dimmed}
       refreshing={refreshing}
+      selectable={selectable}
+      selectedIds={selectedIds}
+      onSelectionChange={onSelectionChange}
     />
   );
 }
