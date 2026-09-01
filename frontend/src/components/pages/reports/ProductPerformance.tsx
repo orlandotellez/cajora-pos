@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { salesApi, type ProductPerformanceItem } from "@/api/sales";
 import { money } from "@/lib/format";
 import { toLocalISOString, type Range } from "@/lib/date-range";
@@ -7,12 +7,15 @@ import styles from "./ChartsSection.module.css";
 
 type SortKey = "revenue" | "quantity" | "product_name" | "last_sale_date";
 
+const ROWS_PER_PAGE = 15;
+
 export function ProductPerformance({ range }: { range: Range }) {
   const [data, setData] = useState<ProductPerformanceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortKey, setSortKey] = useState<SortKey>("revenue");
   const [sortAsc, setSortAsc] = useState(false);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
 
   useEffect(() => {
     const startIso = toLocalISOString(rangeStart(range));
@@ -25,23 +28,29 @@ export function ProductPerformance({ range }: { range: Range }) {
       .finally(() => setLoading(false));
   }, [range]);
 
-  const filtered = data.filter((p) =>
-    p.product_name.toLowerCase().includes(search.toLowerCase()),
+  const filtered = useMemo(
+    () => data.filter((p) => p.product_name.toLowerCase().includes(search.toLowerCase())),
+    [data, search],
   );
 
-  const sorted = [...filtered].sort((a, b) => {
-    if (sortKey === "product_name") {
-      return sortAsc
-        ? a.product_name.localeCompare(b.product_name)
-        : b.product_name.localeCompare(a.product_name);
-    }
-    if (sortKey === "last_sale_date") {
-      const cmp = new Date(a.last_sale_date).getTime() - new Date(b.last_sale_date).getTime();
+  const sorted = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      if (sortKey === "product_name") {
+        return sortAsc
+          ? a.product_name.localeCompare(b.product_name)
+          : b.product_name.localeCompare(a.product_name);
+      }
+      if (sortKey === "last_sale_date") {
+        const cmp = new Date(a.last_sale_date).getTime() - new Date(b.last_sale_date).getTime();
+        return sortAsc ? cmp : -cmp;
+      }
+      const cmp = a[sortKey] - b[sortKey];
       return sortAsc ? cmp : -cmp;
-    }
-    const cmp = a[sortKey] - b[sortKey];
-    return sortAsc ? cmp : -cmp;
-  });
+    });
+  }, [filtered, sortKey, sortAsc]);
+
+  const totalPages = Math.ceil(sorted.length / ROWS_PER_PAGE);
+  const pageData = sorted.slice(page * ROWS_PER_PAGE, (page + 1) * ROWS_PER_PAGE);
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) setSortAsc(!sortAsc);
@@ -58,6 +67,11 @@ export function ProductPerformance({ range }: { range: Range }) {
     return d.toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" });
   }
 
+  function handleSearch(e: React.ChangeEvent<HTMLInputElement>) {
+    setSearch(e.target.value);
+    setPage(0);
+  }
+
   return (
     <div className={styles.chartCard}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
@@ -66,7 +80,7 @@ export function ProductPerformance({ range }: { range: Range }) {
           type="text"
           placeholder="Buscar producto..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={handleSearch}
           style={{
             padding: "6px 10px",
             border: "1px solid var(--border)",
@@ -84,50 +98,133 @@ export function ProductPerformance({ range }: { range: Range }) {
       ) : sorted.length === 0 ? (
         <div className={styles.chartEmpty}>Sin datos en este periodo</div>
       ) : (
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", minWidth: 580, borderCollapse: "collapse", fontSize: 13 }}>
-            <thead>
-              <tr style={{ borderBottom: "1px solid var(--border)", color: "var(--muted-foreground)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                <th style={{ padding: "8px 12px", textAlign: "left" }}>#</th>
-                <th
-                  style={{ padding: "8px 12px", textAlign: "left", cursor: "pointer", userSelect: "none" }}
-                  onClick={() => toggleSort("product_name")}
-                >
-                  Producto{sortIcon("product_name")}
-                </th>
-                <th
-                  style={{ padding: "8px 12px", textAlign: "right", cursor: "pointer", userSelect: "none", whiteSpace: "nowrap" }}
-                  onClick={() => toggleSort("quantity")}
-                >
-                  Unidades{sortIcon("quantity")}
-                </th>
-                <th
-                  style={{ padding: "8px 12px", textAlign: "right", cursor: "pointer", userSelect: "none", whiteSpace: "nowrap" }}
-                  onClick={() => toggleSort("revenue")}
-                >
-                  Ingresos{sortIcon("revenue")}
-                </th>
-                <th
-                  style={{ padding: "8px 12px", textAlign: "right", cursor: "pointer", userSelect: "none", whiteSpace: "nowrap" }}
-                  onClick={() => toggleSort("last_sale_date")}
-                >
-                  Última venta{sortIcon("last_sale_date")}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {sorted.map((p, i) => (
-                <tr key={p.product_id} style={{ borderBottom: "1px solid var(--border)" }}>
-                  <td style={{ padding: "8px 12px", color: "var(--muted-foreground)" }}>{i + 1}</td>
-                  <td style={{ padding: "8px 12px", fontWeight: 500 }}>{p.product_name}</td>
-                  <td style={{ padding: "8px 12px", textAlign: "right", whiteSpace: "nowrap" }}>{p.quantity}</td>
-                  <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 600, whiteSpace: "nowrap" }}>{money(p.revenue)}</td>
-                  <td style={{ padding: "8px 12px", textAlign: "right", whiteSpace: "nowrap" }}>{formatDate(p.last_sale_date)}</td>
+        <>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", minWidth: 580, borderCollapse: "collapse", fontSize: 13 }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid var(--border)", color: "var(--muted-foreground)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  <th style={{ padding: "8px 12px", textAlign: "left" }}>#</th>
+                  <th
+                    style={{ padding: "8px 12px", textAlign: "left", cursor: "pointer", userSelect: "none" }}
+                    onClick={() => toggleSort("product_name")}
+                  >
+                    Producto{sortIcon("product_name")}
+                  </th>
+                  <th
+                    style={{ padding: "8px 12px", textAlign: "right", cursor: "pointer", userSelect: "none", whiteSpace: "nowrap" }}
+                    onClick={() => toggleSort("quantity")}
+                  >
+                    Unidades{sortIcon("quantity")}
+                  </th>
+                  <th
+                    style={{ padding: "8px 12px", textAlign: "right", cursor: "pointer", userSelect: "none", whiteSpace: "nowrap" }}
+                    onClick={() => toggleSort("revenue")}
+                  >
+                    Ingresos{sortIcon("revenue")}
+                  </th>
+                  <th
+                    style={{ padding: "8px 12px", textAlign: "right", cursor: "pointer", userSelect: "none", whiteSpace: "nowrap" }}
+                    onClick={() => toggleSort("last_sale_date")}
+                  >
+                    Última venta{sortIcon("last_sale_date")}
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {pageData.map((p, i) => (
+                  <tr key={p.product_id} style={{ borderBottom: "1px solid var(--border)" }}>
+                    <td style={{ padding: "8px 12px", color: "var(--muted-foreground)" }}>{page * ROWS_PER_PAGE + i + 1}</td>
+                    <td style={{ padding: "8px 12px", fontWeight: 500 }}>{p.product_name}</td>
+                    <td style={{ padding: "8px 12px", textAlign: "right", whiteSpace: "nowrap" }}>{p.quantity}</td>
+                    <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 600, whiteSpace: "nowrap" }}>{money(p.revenue)}</td>
+                    <td style={{ padding: "8px 12px", textAlign: "right", whiteSpace: "nowrap" }}>{formatDate(p.last_sale_date)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Paginación */}
+          {totalPages > 1 && (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--border)", fontSize: 13 }}>
+              <span style={{ color: "var(--muted-foreground)" }}>
+                {sorted.length} producto{sorted.length !== 1 ? "s" : ""} · Página {page + 1} de {totalPages}
+              </span>
+              <div style={{ display: "flex", gap: 4 }}>
+                <button
+                  type="button"
+                  disabled={page === 0}
+                  onClick={() => setPage(page - 1)}
+                  style={{
+                    padding: "4px 10px",
+                    border: "1px solid var(--border)",
+                    borderRadius: 5,
+                    background: page === 0 ? "transparent" : "var(--background)",
+                    color: page === 0 ? "var(--muted-foreground)" : "var(--foreground)",
+                    cursor: page === 0 ? "default" : "pointer",
+                    fontSize: 12,
+                    opacity: page === 0 ? 0.5 : 1,
+                  }}
+                >
+                  Anterior
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i)
+                  .filter((i) => {
+                    if (totalPages <= 7) return true;
+                    if (i === 0 || i === totalPages - 1) return true;
+                    if (Math.abs(i - page) <= 1) return true;
+                    return false;
+                  })
+                  .reduce<(number | "dots")[]>((acc, i, idx, arr) => {
+                    if (idx > 0 && i - (arr[idx - 1] as number) > 1) acc.push("dots");
+                    acc.push(i);
+                    return acc;
+                  }, [])
+                  .map((item, idx) =>
+                    item === "dots" ? (
+                      <span key={`dots-${idx}`} style={{ padding: "4px 6px", color: "var(--muted-foreground)" }}>…</span>
+                    ) : (
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => setPage(item)}
+                        style={{
+                          padding: "4px 8px",
+                          border: "1px solid var(--border)",
+                          borderRadius: 5,
+                          background: item === page ? "var(--foreground)" : "transparent",
+                          color: item === page ? "var(--background)" : "var(--foreground)",
+                          cursor: "pointer",
+                          fontSize: 12,
+                          fontWeight: item === page ? 600 : 400,
+                          minWidth: 28,
+                        }}
+                      >
+                        {item + 1}
+                      </button>
+                    ),
+                  )}
+                <button
+                  type="button"
+                  disabled={page >= totalPages - 1}
+                  onClick={() => setPage(page + 1)}
+                  style={{
+                    padding: "4px 10px",
+                    border: "1px solid var(--border)",
+                    borderRadius: 5,
+                    background: page >= totalPages - 1 ? "transparent" : "var(--background)",
+                    color: page >= totalPages - 1 ? "var(--muted-foreground)" : "var(--foreground)",
+                    cursor: page >= totalPages - 1 ? "default" : "pointer",
+                    fontSize: 12,
+                    opacity: page >= totalPages - 1 ? 0.5 : 1,
+                  }}
+                >
+                  Siguiente
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
