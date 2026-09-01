@@ -11,7 +11,7 @@
 .modal {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 5px;
   padding: 24px;
   width: 90%;
   max-width: 380px;
@@ -34,7 +34,7 @@
 
 .btn {
   padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: 5px;
   font-size: 13px;
   font-weight: 500;
   font-family: inherit;

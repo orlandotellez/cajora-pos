@@ -171,7 +171,7 @@
 .spQtyBtn {
   padding: 2px;
   border: none;
-  border-radius: 3px;
+  border-radius: 5px;
   background: none;
   cursor: pointer;
   color: var(--muted-foreground);
@@ -223,7 +223,7 @@
 .spRemoveBtn {
   padding: 2px;
   border: none;
-  border-radius: 3px;
+  border-radius: 5px;
   background: none;
   cursor: pointer;
   color: var(--muted-foreground);
@@ -239,7 +239,7 @@
 .spPriceToggle {
   padding: 1px 4px;
   border: 1px solid var(--border);
-  border-radius: 3px;
+  border-radius: 5px;
   background: none;
   cursor: pointer;
   color: var(--muted-foreground);
@@ -270,7 +270,7 @@
   gap: 4px;
   padding: 3px 8px;
   border: 1px dashed var(--border);
-  border-radius: 4px;
+  border-radius: 5px;
   background: none;
   cursor: pointer;
   font-size: 11px;
@@ -293,7 +293,7 @@
   width: 100%;
   padding: 4px 8px;
   border: 1px solid var(--input);
-  border-radius: 4px;
+  border-radius: 5px;
   background: var(--background);
   color: var(--foreground);
   font-size: 12px;
@@ -317,7 +317,7 @@
   width: 100%;
   padding: 4px 8px;
   border: none;
-  border-radius: 3px;
+  border-radius: 5px;
   background: none;
   cursor: pointer;
   text-align: left;
@@ -338,7 +338,7 @@
 .spAddCancel {
   padding: 2px 8px;
   border: none;
-  border-radius: 3px;
+  border-radius: 5px;
   background: none;
   cursor: pointer;
   font-size: 10px;
@@ -363,7 +363,7 @@
 
 .qtyBtn {
   padding: 6px;
-  border-radius: 6px;
+  border-radius: 5px;
   border: none;
   background: none;
   cursor: pointer;
@@ -427,7 +427,7 @@
 
 .deleteBtn {
   padding: 6px;
-  border-radius: 6px;
+  border-radius: 5px;
   border: none;
   background: none;
   cursor: pointer;
@@ -498,7 +498,7 @@
 .mobile-bottom-checkout-btn {
   padding: 12px 24px;
   border: none;
-  border-radius: 8px;
+  border-radius: 5px;
   background: var(--foreground);
   color: var(--background);
   font-size: 15px;
@@ -549,7 +549,7 @@
   height: 32px;
   padding: 4px 8px;
   border: 1px solid var(--input);
-  border-radius: 6px;
+  border-radius: 5px;
   background: var(--background);
   color: var(--foreground);
   font-size: 14px;
@@ -608,7 +608,7 @@
   height: 40px;
   padding: 8px 36px 8px 12px;
   border: 1px solid var(--input);
-  border-radius: 6px;
+  border-radius: 5px;
   background: var(--background);
   color: var(--foreground);
   font-size: 14px;
@@ -628,7 +628,7 @@
   height: 40px;
   padding: 8px 12px;
   border: 1px solid var(--input);
-  border-radius: 6px;
+  border-radius: 5px;
   background: var(--background);
   color: var(--foreground);
   font-size: 14px;
@@ -669,7 +669,7 @@
   height: 56px;
   padding: 8px 16px;
   border: none;
-  border-radius: 6px;
+  border-radius: 5px;
   background: var(--foreground);
   color: var(--background);
   font-size: 16px;
@@ -745,7 +745,7 @@
   gap: 8px;
   padding: 8px 12px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 5px;
   background: var(--accent);
 }
 
@@ -767,7 +767,7 @@
 .clearClientBtn {
   padding: 4px;
   border: none;
-  border-radius: 4px;
+  border-radius: 5px;
   background: none;
   cursor: pointer;
   color: var(--muted-foreground);
@@ -784,7 +784,7 @@
   color: #dc2626;
   background: rgba(220, 38, 38, 0.1);
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: 5px;
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -808,7 +808,7 @@
   height: 36px;
   padding: 6px 10px 6px 32px;
   border: 1px solid var(--input);
-  border-radius: 6px;
+  border-radius: 5px;
   background: var(--background);
   color: var(--foreground);
   font-size: 13px;
@@ -832,7 +832,7 @@
   margin-top: 4px;
   background: var(--background);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 5px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   z-index: 40;
   max-height: 200px;
@@ -893,7 +893,7 @@
   color: #d97706;
   background: rgba(245, 158, 11, 0.1);
   border: 1px solid rgba(245, 158, 11, 0.3);
-  border-radius: 6px;
+  border-radius: 5px;
   padding: 6px 10px;
   margin: 0;
 }
@@ -992,7 +992,7 @@
   gap: 6px;
   padding: 8px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 5px;
   background: var(--accent);
   animation: fadeIn 0.15s ease;
 }
@@ -1002,7 +1002,7 @@
   height: 32px;
   padding: 4px 8px;
   border: 1px solid var(--input);
-  border-radius: 4px;
+  border-radius: 5px;
   background: var(--background);
   color: var(--foreground);
   font-size: 13px;
@@ -1028,7 +1028,7 @@
 .createClientCancel {
   padding: 4px 10px;
   border: none;
-  border-radius: 4px;
+  border-radius: 5px;
   background: none;
   cursor: pointer;
   font-size: 12px;
@@ -1045,7 +1045,7 @@
   gap: 4px;
   padding: 4px 12px;
   border: none;
-  border-radius: 4px;
+  border-radius: 5px;
   background: var(--foreground);
   color: var(--background);
   font-size: 12px;
@@ -1061,7 +1061,7 @@
 .unitTag {
   display: inline-block;
   padding: 1px 6px;
-  border-radius: 4px;
+  border-radius: 5px;
   background: var(--foreground);
   color: var(--background);
   font-size: 10px;

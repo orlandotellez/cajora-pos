@@ -102,7 +102,7 @@
   gap: 12px;
   padding: 8px 12px;
   margin-bottom: 2px;
-  border-radius: 6px;
+  border-radius: 5px;
   font-size: 14px;
   color: var(--muted-foreground);
   text-decoration: none;
@@ -138,7 +138,7 @@
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
-  border-radius: 8px;
+  border-radius: 5px;
   border: none;
   background: transparent;
   color: var(--muted-foreground);
@@ -162,7 +162,7 @@
   justify-content: flex-start;
   gap: 10px;
   padding: 10px 12px;
-  border-radius: 8px;
+  border-radius: 5px;
   border: none;
   background: var(--primary);
   color: var(--primary-foreground);
@@ -186,7 +186,7 @@
   z-index: 25;
   width: 40px;
   height: 40px;
-  border-radius: 8px;
+  border-radius: 5px;
   border: 1px solid var(--border);
   background: var(--card);
   color: var(--foreground);
@@ -252,7 +252,7 @@
 .drawerCloseBtn {
   width: 36px;
   height: 36px;
-  border-radius: 8px;
+  border-radius: 5px;
   border: none;
   background: transparent;
   color: var(--muted-foreground);
@@ -296,7 +296,7 @@
   gap: 12px;
   padding: 10px 12px;
   margin-bottom: 2px;
-  border-radius: 8px;
+  border-radius: 5px;
   font-size: 15px;
   color: var(--muted-foreground);
   text-decoration: none;

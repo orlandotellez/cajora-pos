@@ -40,7 +40,7 @@
 .mobile-checkout-back {
   padding: 8px 12px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 5px;
   background: var(--card);
   color: var(--foreground);
   font-size: 14px;

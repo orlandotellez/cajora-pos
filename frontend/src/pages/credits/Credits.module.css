@@ -1,5 +1,5 @@
 .page {
-  padding: 40px;
+  padding: 16px 24px 0px 24px;
   max-width: 1152px;
   margin: 0 auto;
 }
@@ -30,7 +30,7 @@
   display: inline-block;
   width: 14em;
   height: 1em;
-  border-radius: 4px;
+  border-radius: 5px;
   background: var(--border);
   vertical-align: middle;
   animation: skeletonPulse 1.6s ease-in-out infinite;
@@ -51,7 +51,7 @@
 
 .statCard {
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 5px;
   background: var(--card);
   padding: 16px;
 }
@@ -79,7 +79,7 @@
   display: inline-block;
   width: 60px;
   height: 20px;
-  border-radius: 4px;
+  border-radius: 5px;
   background: var(--border);
   vertical-align: middle;
   animation: skeletonPulse 1.6s ease-in-out infinite;
@@ -101,7 +101,7 @@
   height: 40px;
   padding: 8px 12px;
   border: 1px solid var(--input);
-  border-radius: 6px;
+  border-radius: 5px;
   background: var(--background);
   color: var(--foreground);
   font-size: 14px;
@@ -142,84 +142,11 @@
   font-weight: 500;
 }
 
-.clientsList {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.clientCard {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--background);
-  cursor: pointer;
-  text-align: left;
-  width: 100%;
-  transition: background 0.15s;
-}
-
-.clientCard:hover {
-  background: var(--accent);
-}
-
-.clientInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.clientCardName {
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--foreground);
-}
-
-.clientCardPhone {
-  font-size: 13px;
-  color: var(--muted-foreground);
-}
-
-.clientDebt {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-}
-
-.debtBadge {
-  font-size: 15px;
-  font-weight: 600;
-  color: #dc2626;
-}
-
-.saleCount {
-  font-size: 12px;
-  color: var(--muted-foreground);
-}
-
-.clientCardOverdue {
-  border-color: rgba(220, 38, 38, 0.3);
+.rowOverdue {
+  border-left: 3px solid rgba(220, 38, 38, 0.4);
   background: rgba(220, 38, 38, 0.02);
 }
 
-.clientCardOverdue:hover {
-  background: rgba(220, 38, 38, 0.05);
-}
-
-.overdueTag {
-  font-size: 11px;
-  font-weight: 600;
-  color: #dc2626;
-  background: rgba(220, 38, 38, 0.1);
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-.loading,
 .empty {
   text-align: center;
   padding: 48px;
@@ -227,7 +154,6 @@
   font-size: 14px;
 }
 
-/* Detail view */
 .detailView {
   display: flex;
   flex-direction: column;
@@ -238,7 +164,7 @@
   align-self: flex-start;
   padding: 6px 12px;
   border: none;
-  border-radius: 6px;
+  border-radius: 5px;
   background: none;
   cursor: pointer;
   font-size: 14px;
@@ -308,7 +234,7 @@
 
 .saleCard {
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 5px;
   padding: 12px;
   display: flex;
   flex-direction: column;
@@ -355,7 +281,7 @@
   margin-top: 4px;
   padding: 6px 12px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 5px;
   background: none;
   cursor: pointer;
   font-size: 13px;
@@ -373,7 +299,7 @@
   margin-top: 4px;
   padding: 12px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 5px;
   background: var(--accent);
 }
 
@@ -381,7 +307,7 @@
   height: 36px;
   padding: 6px 10px;
   border: 1px solid var(--input);
-  border-radius: 4px;
+  border-radius: 5px;
   background: var(--background);
   color: var(--foreground);
   font-size: 13px;
@@ -396,7 +322,7 @@
   height: 36px;
   padding: 6px 10px;
   border: 1px solid var(--input);
-  border-radius: 4px;
+  border-radius: 5px;
   background: var(--background);
   color: var(--foreground);
   font-size: 13px;
@@ -412,7 +338,7 @@
 .cancelBtn {
   padding: 6px 12px;
   border: none;
-  border-radius: 4px;
+  border-radius: 5px;
   background: none;
   cursor: pointer;
   font-size: 13px;
@@ -426,7 +352,7 @@
 .payBtn {
   padding: 6px 14px;
   border: none;
-  border-radius: 4px;
+  border-radius: 5px;
   background: var(--foreground);
   color: var(--background);
   font-size: 13px;
@@ -451,7 +377,7 @@
   gap: 12px;
   padding: 8px 12px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 5px;
   font-size: 13px;
   color: var(--muted-foreground);
 }

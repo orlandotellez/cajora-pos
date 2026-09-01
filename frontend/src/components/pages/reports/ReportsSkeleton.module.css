@@ -45,14 +45,14 @@
 
 .card {
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 5px;
   background: var(--card);
   padding: 20px;
 }
 
 .skeletonBar {
   background: var(--border);
-  border-radius: 6px;
+  border-radius: 5px;
   animation: pulse 1.6s ease-in-out infinite;
   display: inline-block;
   min-height: 12px;

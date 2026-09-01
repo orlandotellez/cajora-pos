@@ -56,7 +56,7 @@ export function ClientTable({
               fontSize: 11,
               fontWeight: 600,
               padding: "2px 8px",
-              borderRadius: 4,
+              borderRadius: 5,
               background: c.is_active
                 ? "rgba(34,197,94,0.1)"
                 : "rgba(239,68,68,0.1)",

@@ -104,7 +104,7 @@ function ManualConfigForm({
           width: "100%",
           background: "var(--card, #1e293b)",
           padding: 24,
-          borderRadius: 12,
+          borderRadius: 5,
           boxShadow: "0 10px 40px rgba(0,0,0,0.4)",
           display: "flex",
           flexDirection: "column",
@@ -138,7 +138,7 @@ function ManualConfigForm({
           }}
           style={{
             padding: "10px 12px",
-            borderRadius: 8,
+            borderRadius: 5,
             border: `1px solid ${showError ? "#ef4444" : "var(--border, #334155)"}`,
             background: "var(--bg-input, #0f172a)",
             color: "var(--fg-app, #e2e8f0)",
@@ -160,7 +160,7 @@ function ManualConfigForm({
           aria-busy={retrying}
           style={{
             padding: "10px 14px",
-            borderRadius: 8,
+            borderRadius: 5,
             border: "none",
             background: "var(--foreground, #2563eb)",
             color: "var(--background)",
@@ -178,7 +178,7 @@ function ManualConfigForm({
           disabled={retrying}
           style={{
             padding: "8px 12px",
-            borderRadius: 8,
+            borderRadius: 5,
             border: "1px solid var(--border, #334155)",
             background: "transparent",
             color: "var(--foreground, #e2e8f0)",

@@ -1,7 +1,7 @@
 .tableCard {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 5px;
   overflow: hidden;
   /* Ancla para el RefreshBadge (píldora "Actualizando…") absoluto. */
   position: relative;
@@ -9,7 +9,7 @@
 
 @media (max-width: 768px) {
   .tableCard {
-    border-radius: 0px;
+    border-radius: 0;
   }
 }
 
@@ -126,7 +126,7 @@
   border: none;
   cursor: pointer;
   padding: 6px;
-  border-radius: 6px;
+  border-radius: 5px;
   color: var(--muted-foreground, #6b7280);
   transition: all 0.15s;
   vertical-align: middle;
@@ -156,7 +156,7 @@
   border: 1px solid transparent;
   cursor: pointer;
   padding: 6px 10px;
-  border-radius: 6px;
+  border-radius: 5px;
   font-size: 13px;
   color: var(--muted-foreground, #6b7280);
   transition: all 0.15s;

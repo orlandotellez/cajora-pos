@@ -44,7 +44,7 @@
 .modalClose {
   padding: 4px;
   border: none;
-  border-radius: 4px;
+  border-radius: 5px;
   background: none;
   cursor: pointer;
   color: var(--muted-foreground);
@@ -63,7 +63,7 @@
 
 .currentStock {
   padding: 8px 12px;
-  border-radius: 6px;
+  border-radius: 5px;
   background: var(--muted);
   font-size: 14px;
 }
@@ -95,7 +95,7 @@
   height: 40px;
   padding: 8px 12px;
   border: 1px solid var(--input);
-  border-radius: 6px;
+  border-radius: 5px;
   background: var(--background);
   color: var(--foreground);
   font-size: 14px;
@@ -111,7 +111,7 @@
   height: 40px;
   padding: 8px 36px 8px 12px;
   border: 1px solid var(--input);
-  border-radius: 6px;
+  border-radius: 5px;
   background: var(--background);
   color: var(--foreground);
   font-size: 14px;
@@ -147,7 +147,7 @@
   display: inline-flex;
   align-items: center;
   background: var(--muted);
-  border-radius: 6px;
+  border-radius: 5px;
 }
 
 .primaryBtn {
@@ -155,7 +155,7 @@
   height: 40px;
   padding: 8px 16px;
   border: none;
-  border-radius: 6px;
+  border-radius: 5px;
   background: var(--foreground);
   color: var(--background);
   font-size: 14px;
@@ -194,7 +194,7 @@
   color: #d97706;
   background: rgba(245, 158, 11, 0.1);
   border: 1px solid rgba(245, 158, 11, 0.3);
-  border-radius: 6px;
+  border-radius: 5px;
   padding: 6px 10px;
   margin: 0 0 12px;
 }

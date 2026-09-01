@@ -47,7 +47,7 @@
   height: 38px;
   padding: 0 16px;
   border: none;
-  border-radius: 6px;
+  border-radius: 5px;
   background: var(--primary);
   color: var(--primary-foreground);
   font-size: 14px;
@@ -67,7 +67,7 @@
   height: 32px;
   padding: 0 12px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 5px;
   background: var(--background);
   color: var(--foreground);
   font-size: 13px;
@@ -83,7 +83,7 @@
   height: 38px;
   padding: 0 16px;
   border: none;
-  border-radius: 6px;
+  border-radius: 5px;
   background: var(--destructive);
   color: #fff;
   font-size: 14px;
@@ -100,7 +100,7 @@
   height: 38px;
   padding: 0 16px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 5px;
   background: var(--background);
   color: var(--muted-foreground);
   font-size: 14px;
@@ -135,7 +135,7 @@
   height: 40px;
   padding: 8px 36px 8px 12px;
   border: 1px solid var(--input);
-  border-radius: 6px;
+  border-radius: 5px;
   background: var(--background);
   color: var(--foreground);
   font-size: 14px;
@@ -175,7 +175,7 @@
   height: 40px;
   padding: 8px 12px;
   border: 1px solid var(--input);
-  border-radius: 6px;
+  border-radius: 5px;
   background: var(--background);
   color: var(--foreground);
   font-size: 14px;
@@ -236,7 +236,7 @@
 .sessionCard {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 5px;
   padding: 16px;
   margin-bottom: 12px;
 }
@@ -349,7 +349,7 @@
   height: 32px;
   padding: 0 12px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 5px;
   background: var(--background);
   color: var(--foreground);
   font-size: 13px;

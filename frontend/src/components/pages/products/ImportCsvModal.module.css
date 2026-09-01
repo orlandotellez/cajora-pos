@@ -48,7 +48,7 @@
 .modalClose {
   padding: 4px;
   border: none;
-  border-radius: 4px;
+  border-radius: 5px;
   background: none;
   cursor: pointer;
   color: var(--muted-foreground);
@@ -72,7 +72,7 @@
   align-self: flex-start;
   padding: 8px 12px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 5px;
   background: transparent;
   color: var(--foreground);
   font-size: 14px;
@@ -94,7 +94,7 @@
   gap: 6px;
   padding: 32px 20px;
   border: 2px dashed var(--border);
-  border-radius: 10px;
+  border-radius: 5px;
   background: var(--accent, #fafafa);
   color: var(--muted-foreground);
   cursor: pointer;
@@ -159,7 +159,7 @@
   font-weight: 700;
   background: var(--accent, #f3f4f6);
   padding: 1px 5px;
-  border-radius: 4px;
+  border-radius: 5px;
 }
 
 .unitGroup {
@@ -238,7 +238,7 @@
   max-height: 320px;
   overflow-y: auto;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 5px;
 }
 
 .table {
@@ -290,7 +290,7 @@
   gap: 4px;
   padding: 8px 16px;
   border: none;
-  border-radius: 6px;
+  border-radius: 5px;
   background: var(--foreground);
   color: var(--background);
   font-size: 14px;
@@ -350,7 +350,7 @@
   flex-direction: column;
   gap: 6px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 5px;
   padding: 10px;
 }
 

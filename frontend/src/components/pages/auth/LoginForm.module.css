@@ -7,7 +7,7 @@
 .formIcon {
   width: 48px;
   height: 48px;
-  border-radius: 12px;
+  border-radius: 5px;
   background: var(--accent);
   display: flex;
   align-items: center;
@@ -53,7 +53,7 @@
   height: 44px;
   padding: 10px 14px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 5px;
   background: var(--input);
   color: var(--foreground);
   font-size: 14px;
@@ -89,7 +89,7 @@
   width: 32px;
   height: 32px;
   border: none;
-  border-radius: 6px;
+  border-radius: 5px;
   background: transparent;
   color: var(--muted-foreground);
   cursor: pointer;
@@ -110,7 +110,7 @@
   height: 44px;
   padding: 10px 16px;
   border: none;
-  border-radius: 8px;
+  border-radius: 5px;
   background: var(--foreground);
   color: var(--background);
   font-size: 15px;
@@ -136,7 +136,7 @@
   padding: 10px 14px;
   background: color-mix(in srgb, var(--destructive) 10%, transparent);
   border: 1px solid color-mix(in srgb, var(--destructive) 20%, transparent);
-  border-radius: 8px;
+  border-radius: 5px;
 }
 
 .divider {
@@ -163,7 +163,7 @@
   height: 44px;
   padding: 10px 16px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 5px;
   background: transparent;
   color: var(--foreground);
   font-size: 14px;
@@ -181,7 +181,7 @@
   height: 44px;
   padding: 10px 16px;
   border: none;
-  border-radius: 8px;
+  border-radius: 5px;
   background: linear-gradient(135deg, #7c3aed, #a855f7);
   color: #ffffff;
   font-size: 14px;

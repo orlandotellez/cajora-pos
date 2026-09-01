@@ -79,7 +79,7 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: number) =
     <div
       style={{
         padding: "10px 16px",
-        borderRadius: 8,
+        borderRadius: 5,
         background: bgColor,
         color: "#fff",
         fontSize: 13,

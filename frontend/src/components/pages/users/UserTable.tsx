@@ -33,7 +33,7 @@ export function UserTable({ users, currentUserId, loading, total, page, totalPag
     { key: "email", label: "Email", render: (u) => <span className={styles["user-email"]}>{u.email}</span> },
     {
       key: "role", label: "Rol", render: (u) => (
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 4, background: u.role === "admin" ? "rgba(139,92,246,0.1)" : "rgba(59,130,246,0.1)", color: u.role === "admin" ? "#8b5cf6" : "#3b82f6" }}>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 5, background: u.role === "admin" ? "rgba(139,92,246,0.1)" : "rgba(59,130,246,0.1)", color: u.role === "admin" ? "#8b5cf6" : "#3b82f6" }}>
           {u.role === "admin" ? <Shield size={12} /> : <ShieldOff size={12} />}
           {u.role === "admin" ? "Admin" : "Cajero"}
         </span>

@@ -22,7 +22,7 @@
   padding: 6px 12px;
   font-size: 12px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 5px;
   background: none;
   cursor: pointer;
   color: var(--foreground);
@@ -47,7 +47,7 @@
   font-weight: 500;
   color: var(--muted-foreground, #6b7280);
   background: var(--muted, rgba(0, 0, 0, 0.05));
-  border-radius: 4px;
+  border-radius: 5px;
   padding: 1px 6px;
   white-space: nowrap;
 }

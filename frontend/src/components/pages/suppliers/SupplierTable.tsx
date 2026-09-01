@@ -24,7 +24,7 @@ export function SupplierTable({ suppliers, loading, total, page, totalPages, onP
     { key: "email", label: "Email", render: (s) => <span className={styles["supplier-email"]}>{s.email ?? "—"}</span> },
     {
       key: "status", label: "Estado", render: (s) => (
-        <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 4, background: s.is_active ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)", color: s.is_active ? "#16a34a" : "#dc2626" }}>
+        <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 5, background: s.is_active ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)", color: s.is_active ? "#16a34a" : "#dc2626" }}>
           {s.is_active ? "Activo" : "Inactivo"}
         </span>
       ),

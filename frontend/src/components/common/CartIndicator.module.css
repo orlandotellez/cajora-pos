@@ -5,7 +5,7 @@
   padding: 0 14px;
   height: 40px;
   border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--border));
-  border-radius: 6px;
+  border-radius: 5px;
   background: color-mix(in srgb, var(--primary) 6%, var(--card));
   color: var(--foreground);
   font-size: 14px;

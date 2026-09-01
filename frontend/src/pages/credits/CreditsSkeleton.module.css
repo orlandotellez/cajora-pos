@@ -13,7 +13,7 @@
 
 .statCard {
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 5px;
   background: var(--card);
   padding: 16px;
   display: flex;
@@ -51,7 +51,7 @@
   justify-content: space-between;
   padding: 16px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 5px;
   background: var(--background);
 }
 
@@ -71,7 +71,7 @@
 
 .skeleton {
   display: inline-block;
-  border-radius: 6px;
+  border-radius: 5px;
   background: var(--border);
   vertical-align: middle;
   animation: skeletonPulse 1.6s ease-in-out infinite;

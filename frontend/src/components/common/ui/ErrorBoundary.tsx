@@ -58,7 +58,7 @@ export class ErrorBoundary extends Component<Props, State> {
               overflow: "auto",
               padding: 12,
               background: "var(--surface)",
-              borderRadius: 8,
+              borderRadius: 5,
             }}
           >
             {this.state.error?.message}
@@ -67,7 +67,7 @@ export class ErrorBoundary extends Component<Props, State> {
             onClick={() => window.location.reload()}
             style={{
               padding: "8px 24px",
-              borderRadius: 8,
+              borderRadius: 5,
               border: "1px solid var(--border)",
               background: "var(--accent)",
               color: "var(--accent-foreground)",

@@ -13,6 +13,6 @@
 .bar {
   height: 20px;
   background: var(--border);
-  border-radius: 6px;
+  border-radius: 5px;
   animation: pulse 1.6s ease-in-out infinite;
 }

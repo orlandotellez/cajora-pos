@@ -12,7 +12,7 @@
   z-index: 100;
   width: 36px;
   height: 36px;
-  border-radius: 8px;
+  border-radius: 5px;
   border: 1px solid var(--border);
   background: var(--card);
   color: var(--foreground);
@@ -100,7 +100,7 @@
   gap: 8px;
   margin-top: 40px;
   padding: 10px 16px;
-  border-radius: 8px;
+  border-radius: 5px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.06);
   color: var(--muted-foreground);

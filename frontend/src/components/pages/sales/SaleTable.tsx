@@ -60,7 +60,7 @@ export function SaleTable({ sales, loading, total, page, totalPages, onPageChang
         };
         const c = colors[s.payment_method] ?? { bg: "rgba(107,114,128,0.1)", fg: "#6b7280" };
         return (
-          <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 4, background: c.bg, color: c.fg }}>
+          <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 5, background: c.bg, color: c.fg }}>
             {s.payment_method}
           </span>
         );
