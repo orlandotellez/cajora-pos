@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 import { inventoryApi } from "@/api/inventory";
 import { useToast } from "@/components/common/ui/Toast";
 import { useCashSessionStore } from "@/store/cashSessionStore";
+import { useSettingsStore } from "@/store/settingsStore";
 import { money } from "@/lib/format";
 import { UNIT_TYPE_LABELS, unitQuantitySuffix, costUnitNoun } from "@/lib/constants";
 import styles from "./AdjustStockModal.module.css";
@@ -23,7 +24,9 @@ interface AdjustStockModalProps {
 
 export function AdjustStockModal({ adjust, onClose, onApplied }: AdjustStockModalProps) {
   const { toast } = useToast();
-  const canSellCash = useCashSessionStore((s) => s.canSellCash);
+  const canSellCashRaw = useCashSessionStore((s) => s.canSellCash);
+  const cashRegisterEnabled = useSettingsStore((s) => s.cashRegisterEnabled);
+  const canSellCash = cashRegisterEnabled ? canSellCashRaw : true;
   // Botón de retroceso de Android / gesto de regreso cierra el modal.
   useModalBack(onClose);
   const [type, setType] = useState<"entrada" | "salida" | "ajuste">("entrada");
@@ -150,22 +153,26 @@ export function AdjustStockModal({ adjust, onClose, onApplied }: AdjustStockModa
                 />
               </div>
 
-              <label className={styles.paidCashLabel}>
-                <input
-                  type="checkbox"
-                  checked={paidCash && canSellCash}
-                  disabled={!canSellCash || costNumber <= 0}
-                  onChange={(e) => setPaidCash(e.target.checked)}
-                />
-                Pagado en efectivo desde la caja
-              </label>
-              {!canSellCash && (
-                <p className={styles.paidCashHint}>Abrí la caja para registrar esta compra en efectivo</p>
-              )}
-              {paidCash && canSellCash && expenseTotal > 0 && (
-                <p className={styles.paidCashHint}>
-                  Se restarán {money(expenseTotal)} de la caja abierta
-                </p>
+              {cashRegisterEnabled && (
+                <>
+                  <label className={styles.paidCashLabel}>
+                    <input
+                      type="checkbox"
+                      checked={paidCash && canSellCash}
+                      disabled={!canSellCash || costNumber <= 0}
+                      onChange={(e) => setPaidCash(e.target.checked)}
+                    />
+                    Pagado en efectivo desde la caja
+                  </label>
+                  {!canSellCash && (
+                    <p className={styles.paidCashHint}>Abrí la caja para registrar esta compra en efectivo</p>
+                  )}
+                  {paidCash && canSellCash && expenseTotal > 0 && (
+                    <p className={styles.paidCashHint}>
+                      Se restarán {money(expenseTotal)} de la caja abierta
+                    </p>
+                  )}
+                </>
               )}
             </>
           )}

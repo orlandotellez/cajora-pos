@@ -3,6 +3,7 @@ import { X, Trash2, PackageSearch } from "lucide-react";
 import { inventoryApi } from "@/api/inventory";
 import { useToast } from "@/components/common/ui/Toast";
 import { useCashSessionStore } from "@/store/cashSessionStore";
+import { useSettingsStore } from "@/store/settingsStore";
 import { money } from "@/lib/format";
 import { usePosStore } from "@/store/posStore";
 import type { Supplier, Product } from "@/api";
@@ -31,7 +32,9 @@ type BatchFormItem = {
 export function BatchMovementModal({ open, suppliers, products, onClose, onCreated }: BatchMovementModalProps) {
   const { toast } = useToast();
   const currency = usePosStore((s) => s.currency);
-  const canSellCash = useCashSessionStore((s) => s.canSellCash);
+  const canSellCashRaw = useCashSessionStore((s) => s.canSellCash);
+  const cashRegisterEnabled = useSettingsStore((s) => s.cashRegisterEnabled);
+  const canSellCash = cashRegisterEnabled ? canSellCashRaw : true;
   // Botón de retroceso de Android / gesto de regreso cierra el modal.
   useModalBack(onClose, open);
   const [batchType, setBatchType] = useState<"entrada" | "salida" | "ajuste">("entrada");
@@ -325,7 +328,7 @@ export function BatchMovementModal({ open, suppliers, products, onClose, onCreat
           </div>
 
           <div className={styles.formFooter}>
-            {batchType === "entrada" && (
+            {batchType === "entrada" && cashRegisterEnabled && (
               <>
                 <label className={styles.paidCashLabel}>
                   <input
