@@ -9,6 +9,8 @@ export interface IProductEntity {
   category_id?: string
   category_name?: string
   supplier_id?: string
+  category?: { id: string; name: string } | null
+  supplier?: { id: string; name: string } | null
   price: Decimal
   cost: Decimal
   stock: number

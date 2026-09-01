@@ -15,6 +15,7 @@ enum ROLE {
 
 enum UNIT_TYPE {
   unidad
+  libra
   paquete
   caja
   bolsa

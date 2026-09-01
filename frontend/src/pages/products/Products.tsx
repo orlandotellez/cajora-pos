@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Trash2 } from "lucide-react";
 import { productsApi, type CreateProductPayload } from "@/api/products";
 import { categoriesApi } from "@/api/categories";
 import { suppliersApi } from "@/api/suppliers";
@@ -16,6 +17,7 @@ import { Header } from "@/components/pages/products/Header";
 import { Filter } from "@/components/pages/products/Filter";
 import { EditProductModal } from "@/components/pages/products/EditProductModal";
 import { ProductDetailModal } from "@/components/pages/products/ProductDetailModal";
+import { ImportCsvModal } from "@/components/pages/products/ImportCsvModal";
 
 const emptyForm = {
   name: "",
@@ -33,8 +35,14 @@ const emptyForm = {
 export default function Products() {
   const { toast } = useToast();
   const addToCart = usePosStore((s) => s.addToCart);
-  const { has } = usePermissions();
+  const { has, isAdmin } = usePermissions();
   const canWrite = has("catalog_write");
+  const [editMode, setEditMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [deleteAllConfirm, setDeleteAllConfirm] = useState(false);
+  const [deleteAllDeleting, setDeleteAllDeleting] = useState(false);
   const [categoryId, setCategoryId] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -43,6 +51,7 @@ export default function Products() {
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [barcodeScannerOpen, setBarcodeScannerOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   const {
     items: products,
@@ -139,9 +148,54 @@ export default function Products() {
     }
   }
 
+  function toggleEditMode() {
+    setEditMode((prev) => !prev);
+    setSelectedIds(new Set());
+  }
+
+  async function handleBulkDelete() {
+    if (selectedIds.size === 0) return;
+    setBulkDeleting(true);
+    try {
+      await productsApi.bulkDelete([...selectedIds]);
+      cacheClear("products");
+      refreshImmediate();
+      setEditMode(false);
+      setSelectedIds(new Set());
+      setBulkDeleteConfirm(false);
+      toast("Productos eliminados correctamente", "success");
+    } catch (err) {
+      console.error("Error al eliminar productos:", err);
+      toast((err as Error)?.message || "Error al eliminar productos", "error");
+    } finally {
+      setBulkDeleting(false);
+    }
+  }
+
+  async function handleDeleteAll() {
+    setDeleteAllDeleting(true);
+    try {
+      const result = await productsApi.bulkDeleteAll({
+        ...(q ? { search: q } : {}),
+        ...(categoryId ? { category_id: categoryId } : {}),
+      });
+      cacheClear("products");
+      refreshImmediate();
+      setEditMode(false);
+      setSelectedIds(new Set());
+      setDeleteAllConfirm(false);
+      toast(`Se eliminaron ${result.deleted} productos`, "success");
+    } catch (err) {
+      console.error("Error al eliminar productos:", err);
+      toast((err as Error)?.message || "Error al eliminar productos", "error");
+    } finally {
+      setDeleteAllDeleting(false);
+    }
+  }
+
   return (
     <div className={styles.page}>
-      <Header total={total} setEditing={openCreate} loading={loading} showCreateButton={canWrite} />
+      <Header total={total} setEditing={openCreate} loading={loading} showCreateButton={canWrite} onImport={canWrite ? () => setImportOpen(true) : undefined} showEditMode={isAdmin} editMode={editMode} onToggleEditMode={toggleEditMode} />
 
       <Filter
         q={q}
@@ -151,6 +205,35 @@ export default function Products() {
         setPage={setPage}
         categories={categories}
       />
+
+      {editMode && (
+        <div className={styles.bulkBar}>
+          <span className={styles.bulkCount}>
+            {selectedIds.size > 0
+              ? `${selectedIds.size} ${selectedIds.size === 1 ? "producto seleccionado" : "productos seleccionados"}`
+              : `Modo edición activo`}
+          </span>
+          <div className={styles.bulkActions}>
+            <button
+              className={styles.bulkDeleteAllBtn}
+              onClick={() => setDeleteAllConfirm(true)}
+              disabled={deleteAllDeleting}
+              title="Elimina todos los productos del catálogo actual (respeta el filtro aplicado)"
+            >
+              <Trash2 size={14} /> Eliminar todos ({total})
+            </button>
+            {selectedIds.size > 0 && (
+              <button
+                className={styles.bulkDeleteBtn}
+                onClick={() => setBulkDeleteConfirm(true)}
+                disabled={bulkDeleting}
+              >
+                <Trash2 size={14} /> Eliminar {selectedIds.size}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       <ProductTable
         products={products}
@@ -183,6 +266,9 @@ export default function Products() {
         }}
         dimmed={false}
         refreshing={refreshing}
+        selectable={editMode && isAdmin}
+        selectedIds={selectedIds}
+        onSelectionChange={setSelectedIds}
       />
 
       {editing === "new" && (
@@ -230,6 +316,37 @@ export default function Products() {
         onConfirm={() => { if (deleteTarget) remove(deleteTarget); setDeleteTarget(null); }}
         onCancel={() => setDeleteTarget(null)}
       />
+
+      <ConfirmDialog
+        open={bulkDeleteConfirm}
+        title="Eliminar productos"
+        message={`¿Estás seguro de que querés eliminar ${selectedIds.size} ${selectedIds.size === 1 ? "producto" : "productos"}? Esta acción no se puede deshacer.`}
+        confirmLabel={bulkDeleting ? "Eliminando…" : "Sí, eliminar"}
+        cancelLabel="Cancelar"
+        onConfirm={() => handleBulkDelete()}
+        onCancel={() => { if (!bulkDeleting) setBulkDeleteConfirm(false); }}
+      />
+
+      <ConfirmDialog
+        open={deleteAllConfirm}
+        title="Eliminar todos los productos"
+        message={`¿Estás seguro de que querés eliminar los ${total} productos${q ? ` que coinciden con "${q}"` : ""}? Esta acción no se puede deshacer.`}
+        confirmLabel={deleteAllDeleting ? "Eliminando…" : "Sí, eliminar todos"}
+        cancelLabel="Cancelar"
+        onConfirm={() => handleDeleteAll()}
+        onCancel={() => { if (!deleteAllDeleting) setDeleteAllConfirm(false); }}
+      />
+
+      {importOpen && (
+        <ImportCsvModal
+          setOpen={() => setImportOpen(false)}
+          onImported={() => {
+            cacheClear("products");
+            refreshImmediate();
+            toast("Productos importados correctamente", "success");
+          }}
+        />
+      )}
     </div>
   );
 }

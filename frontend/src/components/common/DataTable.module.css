@@ -91,6 +91,29 @@
   width: 80px;
 }
 
+.thCheck {
+  width: 44px;
+  text-align: center;
+  padding: 10px 8px;
+}
+
+.tdCheck {
+  padding: 10px 8px;
+  text-align: center;
+}
+
+.tdCheck input,
+.thCheck input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--primary, #3b82f6);
+  cursor: pointer;
+}
+
+.trSelected {
+  background: color-mix(in srgb, var(--primary, #3b82f6) 8%, transparent);
+}
+
 .empty {
   padding: 40px 16px;
   text-align: center;

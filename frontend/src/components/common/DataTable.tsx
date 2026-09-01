@@ -29,6 +29,9 @@ interface DataTableProps<T> {
   rowClassName?: (item: T) => string | undefined;
   dimmed?: boolean;
   refreshing?: boolean;
+  selectable?: boolean;
+  selectedIds?: Set<string>;
+  onSelectionChange?: (ids: Set<string>) => void;
 }
 
 export function DataTable<T extends { id: string }>({
@@ -47,8 +50,33 @@ export function DataTable<T extends { id: string }>({
   rowClassName,
   dimmed,
   refreshing,
+  selectable = false,
+  selectedIds,
+  onSelectionChange,
 }: DataTableProps<T>) {
   const hasEditDelete = onEdit || onDelete;
+
+  const pageIds = data.map((d) => d.id);
+  const allPageSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds?.has(id));
+
+  function toggleSelectAll() {
+    if (!onSelectionChange) return;
+    const next = new Set(selectedIds ?? []);
+    if (allPageSelected) {
+      pageIds.forEach((id) => next.delete(id));
+    } else {
+      pageIds.forEach((id) => next.add(id));
+    }
+    onSelectionChange(next);
+  }
+
+  function toggleSelect(id: string) {
+    if (!onSelectionChange) return;
+    const next = new Set(selectedIds ?? []);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    onSelectionChange(next);
+  }
 
   return (
     <div className={styles.tableCard}>
@@ -57,6 +85,16 @@ export function DataTable<T extends { id: string }>({
         <table className={styles.table}>
           <thead>
             <tr>
+              {selectable && (
+                <th className={styles.thCheck}>
+                  <input
+                    type="checkbox"
+                    checked={allPageSelected}
+                    onChange={toggleSelectAll}
+                    aria-label="Seleccionar todo"
+                  />
+                </th>
+              )}
               {columns.map((col) => (
                 <th
                   key={col.key}
@@ -80,9 +118,22 @@ export function DataTable<T extends { id: string }>({
               data.map((item) => (
                 <tr
                   key={item.id}
-                  className={`${onRowClick ? styles.trClickable : ""} ${dimmed ? styles.trDim : ""} ${rowClassName?.(item) ?? ""}`}
-                  onClick={() => onRowClick?.(item)}
+                  className={`${onRowClick && !selectable ? styles.trClickable : ""} ${dimmed ? styles.trDim : ""} ${selectedIds?.has(item.id) ? styles.trSelected : ""} ${rowClassName?.(item) ?? ""}`}
+                  onClick={() => {
+                    if (!selectable) onRowClick?.(item);
+                  }}
                 >
+                  {selectable && (
+                    <td className={styles.tdCheck}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds?.has(item.id) ?? false}
+                        onChange={() => toggleSelect(item.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        aria-label={`Seleccionar ${item.id}`}
+                      />
+                    </td>
+                  )}
                   {columns.map((col) => (
                     <td
                       key={col.key}
@@ -121,7 +172,7 @@ export function DataTable<T extends { id: string }>({
               ))
             ) : (
               <tr>
-                <td colSpan={columns.length + (hasEditDelete ? 1 : 0)} className={styles.empty}>
+                <td colSpan={columns.length + (hasEditDelete ? 1 : 0) + (selectable ? 1 : 0)} className={styles.empty}>
                   {emptyMessage}
                 </td>
               </tr>

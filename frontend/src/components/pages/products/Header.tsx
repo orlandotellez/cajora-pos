@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react"
+import { Plus, Upload, Pencil } from "lucide-react"
 import { CartIndicator } from "@/components/common/CartIndicator"
 import styles from "./Header.module.css"
 
@@ -6,11 +6,14 @@ interface HeaderProps {
   total: number
   setEditing: () => void
   loading?: boolean
-  /** Si es false, oculta el botón "Nuevo" (cajeros sin permiso). */
   showCreateButton?: boolean
+  onImport?: () => void
+  showEditMode?: boolean
+  editMode?: boolean
+  onToggleEditMode?: () => void
 }
 
-export const Header = ({ total, setEditing, loading = false, showCreateButton = true }: HeaderProps) => {
+export const Header = ({ total, setEditing, loading = false, showCreateButton = true, onImport, showEditMode = false, editMode = false, onToggleEditMode }: HeaderProps) => {
   return (
     <>
       <header className={styles.header}>
@@ -26,6 +29,20 @@ export const Header = ({ total, setEditing, loading = false, showCreateButton = 
         </div>
         <div className={styles.headerActions}>
           <CartIndicator />
+          {showEditMode && (
+            <button
+              onClick={onToggleEditMode}
+              className={`${styles.editModeBtn} ${editMode ? styles.editModeBtnActive : ""}`}
+              title="Activar o desactivar la selección múltiple (solo admin)"
+            >
+              <Pencil size={14} /> Modo edición
+            </button>
+          )}
+          {showCreateButton && onImport && (
+            <button onClick={onImport} className={styles.secondaryBtn}>
+              <Upload size={16} /> Importar
+            </button>
+          )}
           {showCreateButton && (
             <button onClick={setEditing} className={styles.primaryBtn}>
               <Plus size={16} /> Nuevo

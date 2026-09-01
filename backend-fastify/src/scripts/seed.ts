@@ -13,7 +13,7 @@ type ServiceSeed = {
 
 type ProductSeed = {
   name: string
-  unit_type: "unidad" | "paquete" | "caja" | "bolsa" | "botella" | "lata" | "sobre" | "barra" | "rollo" | "galon" | "ristra"
+  unit_type: "unidad" | "libra" | "paquete" | "caja" | "bolsa" | "botella" | "lata" | "sobre" | "barra" | "rollo" | "galon" | "ristra"
   unit_quantity?: number
   category_name: string
   supplier_name: string

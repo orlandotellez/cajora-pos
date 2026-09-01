@@ -21,6 +21,9 @@ interface ProductTableProps {
   onRowClick?: (product: Product) => void;
   dimmed?: boolean;
   refreshing?: boolean;
+  selectable?: boolean;
+  selectedIds?: Set<string>;
+  onSelectionChange?: (ids: Set<string>) => void;
 }
 
 export function ProductTable({
@@ -36,6 +39,9 @@ export function ProductTable({
   onRowClick,
   dimmed,
   refreshing,
+  selectable = false,
+  selectedIds,
+  onSelectionChange,
 }: ProductTableProps) {
   const cart = usePosStore((s) => s.cart);
 
@@ -49,88 +55,90 @@ export function ProductTable({
   }, [cart]);
 
   const columns: Column<Product>[] = useMemo(
-    () => [
-      {
-        key: "name",
-        label: "Producto",
-        render: (p) => (
-          <div>
-            <div className={styles["product-name"]}>{p.name}</div>
-            <div className={styles["product-meta"]}>
-              {p.category && <span>{p.category.name}</span>}
+    () => {
+      const cols: Column<Product>[] = [
+        {
+          key: "name",
+          label: "Producto",
+          render: (p) => (
+            <div>
+              <div className={styles["product-name"]}>{p.name}</div>
+              <div className={styles["product-meta"]}>
+                {p.category && <span>{p.category.name}</span>}
+                {p.unit_type && (
+                  <span>
+                    {" · "}
+                    {UNIT_TYPE_LABELS[p.unit_type] || p.unit_type}
+                    {unitQuantitySuffix(p.unit_type, p.unit_quantity)}
+                  </span>
+                )}
+              </div>
+            </div>
+          ),
+        },
+        {
+          key: "price",
+          label: "Precio",
+          align: "right",
+          render: (p) => <span className={styles["product-price"]}>{money(p.price)}</span>,
+        },
+        {
+          key: "stock",
+          label: "Stock",
+          align: "right",
+          render: (p) => (
+            <span
+              style={{
+                color:
+                  p.stock <= 0
+                    ? "#ef4444"
+                    : p.stock <= p.low_stock_threshold
+                      ? "#f59e0b"
+                      : "var(--foreground, #111827)",
+                fontWeight: p.stock <= p.low_stock_threshold ? 600 : 400,
+              }}
+            >
+              {p.stock}
               {p.unit_type && (
-                <span>
-                  {" · "}
+                <span className={styles.unitTag}>
                   {UNIT_TYPE_LABELS[p.unit_type] || p.unit_type}
-                  {unitQuantitySuffix(p.unit_type, p.unit_quantity)}
                 </span>
               )}
-            </div>
-          </div>
-        ),
-      },
-      {
-        key: "price",
-        label: "Precio",
-        align: "right",
-        render: (p) => <span className={styles["product-price"]}>{money(p.price)}</span>,
-      },
-      {
-        key: "stock",
-        label: "Stock",
-        align: "right",
-        render: (p) => (
-          <span
-            style={{
-              color:
-                p.stock <= 0
-                  ? "#ef4444"
-                  : p.stock <= p.low_stock_threshold
-                    ? "#f59e0b"
-                    : "var(--foreground, #111827)",
-              fontWeight: p.stock <= p.low_stock_threshold ? 600 : 400,
-            }}
-          >
-            {p.stock}
-            {p.unit_type && (
-              <span className={styles.unitTag}>
-                {UNIT_TYPE_LABELS[p.unit_type] || p.unit_type}
-              </span>
-            )}
-          </span>
-        ),
-      },
-      {
-        key: "add",
-        label: "Agregar",
-        align: "right",
-        width: "110px",
-        render: (p) => {
-          // Bloqueado (visual) cuando no queda stock para una unidad más:
-          // sin existencias o la cantidad en lista ya alcanzó el stock.
-          // Se mantiene clickeable a propósito para mostrar el toast de error.
-          const inCartQty = cartQty[p.id] ?? 0;
-          const blocked = p.stock <= 0 || inCartQty >= p.stock;
-          return (
-            <button
-              className={[
-                styles["add-btn"],
-                blocked ? styles["add-btn-blocked"] : "",
-              ].join(" ")}
-              onClick={(e) => {
-                e.stopPropagation();
-                onAddToCart?.(p);
-              }}
-              title={blocked ? "Stock insuficiente" : "Agregar a la lista de venta"}
-            >
-              <ShoppingCart size={13} />
-              Agregar
-            </button>
-          );
+            </span>
+          ),
         },
-      },
-    ],
-    [cartQty],
+      ];
+      if (!selectable) {
+        cols.push({
+          key: "add",
+          label: "Agregar",
+          align: "right",
+          width: "110px",
+          render: (p) => {
+            const inCartQty = cartQty[p.id] ?? 0;
+            const blocked = p.stock <= 0 || inCartQty >= p.stock;
+            return (
+              <button
+                className={[
+                  styles["add-btn"],
+                  blocked ? styles["add-btn-blocked"] : "",
+                ].join(" ")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddToCart?.(p);
+                }}
+                title={blocked ? "Stock insuficiente" : "Agregar a la lista de venta"}
+              >
+                <ShoppingCart size={13} />
+                Agregar
+              </button>
+            );
+          },
+        });
+      }
+      return cols;
+    },
+    [cartQty, selectable],
   );
 
   return (
@@ -142,11 +150,15 @@ export function ProductTable({
       page={page}
       totalPages={totalPages}
       onPageChange={onPageChange}
-      onRowClick={onRowClick ?? onEdit}
-      onEdit={onEdit}
-      onDelete={onDelete}
+      onRowClick={selectable ? undefined : (onRowClick ?? onEdit)}
+      onEdit={selectable ? undefined : onEdit}
+      onDelete={selectable ? undefined : onDelete}
+      selectable={selectable}
+      selectedIds={selectedIds}
+      onSelectionChange={onSelectionChange}
       emptyMessage="Sin productos"
       skeletonCols={[
+        ...(selectable ? [{ width: "44px" }] : []),
         { width: "50%" },
         { width: "18%", align: "right" },
         { width: "18%", align: "right" },

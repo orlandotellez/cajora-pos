@@ -4,7 +4,7 @@ import { authGuard } from "@/core/guard/auth.guard"
 import { storeGuard } from "@/core/guard/store.guard"
 import { permissionGuard } from "@/core/guard/permission.guard"
 import { toJsonSchema } from "@/http/swagger-schema"
-import { CreateProductDtoSchema, UpdateProductDtoSchema, ProductQuerySchema } from "./products.dto"
+import { CreateProductDtoSchema, UpdateProductDtoSchema, ProductQuerySchema, ImportProductsDtoSchema, BulkDeleteProductsDtoSchema, DeleteAllProductsQuerySchema } from "./products.dto"
 
 const TAGS = ["Products"]
 
@@ -35,6 +35,21 @@ export const productsRoutes = async (fastify: FastifyInstance, _opts: FastifyPlu
     schema: { tags: TAGS, body: toJsonSchema(CreateProductDtoSchema) },
     preHandler: [authGuard, storeGuard, permissionGuard("catalog_write")],
   }, productsController.create)
+
+  fastify.post("/import", {
+    schema: { tags: TAGS, body: toJsonSchema(ImportProductsDtoSchema) },
+    preHandler: [authGuard, storeGuard, permissionGuard("catalog_write")],
+  }, productsController.importMany)
+
+  fastify.post("/bulk-delete", {
+    schema: { tags: TAGS, body: toJsonSchema(BulkDeleteProductsDtoSchema) },
+    preHandler: [authGuard, storeGuard, permissionGuard("catalog_write")],
+  }, productsController.deleteMany)
+
+  fastify.delete("/all", {
+    schema: { tags: TAGS, querystring: toJsonSchema(DeleteAllProductsQuerySchema) },
+    preHandler: [authGuard, storeGuard, permissionGuard("catalog_write")],
+  }, productsController.deleteAll)
 
   fastify.put("/:id", {
     schema: { tags: TAGS, body: toJsonSchema(UpdateProductDtoSchema) },

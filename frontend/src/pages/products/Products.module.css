@@ -8,3 +8,77 @@
     padding: 40px 40px;
   }
 }
+
+.bulkBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  margin-bottom: 12px;
+  background: color-mix(in srgb, var(--primary, #3b82f6) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary, #3b82f6) 30%, var(--border, #e5e7eb));
+  border-radius: 8px;
+  flex-wrap: wrap;
+}
+
+.bulkCount {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.bulkActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.bulkDeleteAllBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1px solid #ef4444;
+  border-radius: 6px;
+  background: transparent;
+  color: #ef4444;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.bulkDeleteAllBtn:hover:not(:disabled) {
+  background: color-mix(in srgb, #ef4444 8%, transparent);
+}
+
+.bulkDeleteAllBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.bulkDeleteBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: none;
+  border-radius: 6px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.bulkDeleteBtn:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.bulkDeleteBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

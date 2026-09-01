@@ -62,9 +62,24 @@ export interface CreateProductPayload {
 
 export interface UpdateProductPayload extends Partial<CreateProductPayload> { }
 
+export interface ImportProductRow {
+  barcode?: string | null;
+  name: string;
+  unit_type?: string | null;
+  unit_quantity?: number | null;
+  price: number;
+  cost?: number;
+  stock?: number;
+  low_stock_threshold?: number;
+  active?: boolean;
+  category_name?: string;
+  supplier_name?: string;
+}
 
-
-
+export interface ImportResult {
+  imported: number;
+  errors: { row: number; message: string }[];
+}
 
 export const productsApi = {
   list: (params?: {
@@ -91,4 +106,18 @@ export const productsApi = {
 
   delete: (id: string) =>
     api.delete<DeleteResponse>(`/products/${id}`),
+
+  bulkDelete: (ids: string[]) =>
+    api.post<{ deleted: number }>("/products/bulk-delete", { ids }),
+
+  bulkDeleteAll: async (filters?: { search?: string; category_id?: string }) => {
+    const qs = new URLSearchParams();
+    if (filters?.search) qs.set("search", filters.search);
+    if (filters?.category_id) qs.set("category_id", filters.category_id);
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+    return api.delete<{ deleted: number }>(`/products/all${suffix}`);
+  },
+
+  importCsv: (rows: ImportProductRow[]) =>
+    api.post<ImportResult>("/products/import", { rows }),
 };
