@@ -1,5 +1,10 @@
 import type { Product, Service } from "@/api"
 
+/** Quita acentos/diacríticos para búsquedas sin importar tildes. */
+function stripAccents(s: string): string {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+}
+
 export interface CatalogSearchResult {
   _type: "product" | "service"
   id: string
@@ -16,14 +21,14 @@ export function searchCatalog(
   term: string,
   limit = 15,
 ): CatalogSearchResult[] {
-  const q = term.trim().toLowerCase()
+  const q = stripAccents(term.trim().toLowerCase())
   if (!q) return []
 
   const results: CatalogSearchResult[] = []
 
   for (const p of Object.values(products)) {
     if (
-      p.name.toLowerCase().includes(q) ||
+      stripAccents(p.name.toLowerCase()).includes(q) ||
       (p.barcode && p.barcode.toLowerCase().includes(q))
     ) {
       results.push({
@@ -40,7 +45,7 @@ export function searchCatalog(
   }
 
   for (const s of Object.values(services)) {
-    if (s.name.toLowerCase().includes(q)) {
+    if (stripAccents(s.name.toLowerCase()).includes(q)) {
       results.push({
         _type: "service",
         id: s.id,
