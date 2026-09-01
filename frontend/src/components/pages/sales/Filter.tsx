@@ -15,9 +15,6 @@ interface FilterProps {
   userNameFilter: string
   setUserNameFilter: (value: string) => void
 
-  minQtyFilter: string
-  setMinQtyFilter: (value: string) => void
-
   minItemsFilter: string
   setMinItemsFilter: (value: string) => void
 
@@ -37,8 +34,6 @@ export const Filter = ({
   setUserNameFilter,
   minItemsFilter,
   setMinItemsFilter,
-  minQtyFilter,
-  setMinQtyFilter,
   hasActiveFilters,
   clearFilters
 }: FilterProps) => {
@@ -71,23 +66,6 @@ export const Filter = ({
           ))}
         </select>
         <input
-          type="text"
-          value={userNameFilter}
-          onChange={(e) => setUserNameFilter(e.target.value)}
-          placeholder="Usuario"
-          aria-label="Filtrar por usuario"
-          className={styles.filterInput}
-        />
-        <input
-          type="number"
-          min="1"
-          value={minQtyFilter}
-          onChange={(e) => setMinQtyFilter(e.target.value)}
-          placeholder="Cantidad mín."
-          aria-label="Cantidad mínima (suma de unidades en la venta)"
-          className={`${styles.filterInput} ${styles.filterInputNarrow}`}
-        />
-        <input
           type="number"
           min="1"
           value={minItemsFilter}
@@ -95,6 +73,14 @@ export const Filter = ({
           placeholder="Arts. mín."
           aria-label="Artículos mínimos (líneas distintas en la venta)"
           className={`${styles.filterInput} ${styles.filterInputNarrow}`}
+        />
+        <input
+          type="text"
+          value={userNameFilter}
+          onChange={(e) => setUserNameFilter(e.target.value)}
+          placeholder="Usuario"
+          aria-label="Filtrar por usuario"
+          className={styles.filterInput}
         />
         {hasActiveFilters && (
           <button type="button" onClick={clearFilters} className={styles.clearBtn} title="Limpiar todos los filtros">

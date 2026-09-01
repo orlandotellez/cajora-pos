@@ -141,7 +141,7 @@ export const salesApi = {
   revenueTrend: (params: { start_date: string; end_date: string; group_by: "day" | "week" | "month" }) =>
     api.get<RevenueTrendItem[]>("/sales/revenue-trend", params as Record<string, string | number | boolean | undefined>),
 
-  revenueByHour: (params: { start_date: string; end_date: string }) =>
+  revenueByHour: (params: { start_date: string; end_date: string; timezone_offset?: number }) =>
     api.get<RevenueByHourItem[]>("/sales/revenue-by-hour", params as Record<string, string | number | boolean | undefined>),
 
   revenueByCategory: (params: { start_date: string; end_date: string }) =>

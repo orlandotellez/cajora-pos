@@ -2,11 +2,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { salesApi, type SaleReport } from "@/api/sales";
 import { cacheClear, cacheGet, cacheSet, cacheKey } from "@/lib/simple-cache";
 import { subscribeRealtime } from "@/lib/realtime";
-import { rangeStart, rangeEnd, rangeLabel, type Range } from "@/lib/date-range";
+import { rangeStart, rangeEnd, rangeLabel, toLocalISOString, type Range } from "@/lib/date-range";
 import { Header } from "@/components/pages/reports/Header";
 import { ReportStats } from "@/components/pages/reports/ReportStats";
-import { CashCloseCard } from "@/components/pages/reports/CashCloseCard";
-import { TopProductsCard } from "@/components/pages/reports/TopProductsCard";
 import { ChartsSection } from "@/components/pages/reports/ChartsSection";
 import { ReportsSkeleton } from "@/components/pages/reports/ReportsSkeleton";
 import styles from "./Reports.module.css";
@@ -44,8 +42,8 @@ export default function Reports() {
   const loadSeqRef = useRef(0);
 
   const loadData = useCallback(async (r: Range, silent = false) => {
-    const start = rangeStart(r).toISOString();
-    const end = rangeEnd(r).toISOString();
+    const start = toLocalISOString(rangeStart(r));
+    const end = toLocalISOString(rangeEnd(r));
     const prev = prevRange(r);
     const key = cacheKey("reports", r);
     const seq = ++loadSeqRef.current;
@@ -61,7 +59,7 @@ export default function Reports() {
     try {
       const [rep, prevRep] = await Promise.all([
         salesApi.report({ start_date: start, end_date: end }),
-        salesApi.report({ start_date: prev.start.toISOString(), end_date: prev.end.toISOString() }),
+        salesApi.report({ start_date: toLocalISOString(prev.start), end_date: toLocalISOString(prev.end) }),
       ]);
       if (seq !== loadSeqRef.current) return; // respuesta obsoleta
       setReport(rep);
@@ -128,11 +126,6 @@ export default function Reports() {
       <ReportStats report={report} prevReport={prevReport} />
 
       <ChartsSection report={report} range={range} />
-
-      <div className={styles.twoCol}>
-        <CashCloseCard report={report} rangeLabel={rangeLabel(range)} />
-        <TopProductsCard report={report} />
-      </div>
     </div>
   );
 }

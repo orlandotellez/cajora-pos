@@ -16,7 +16,6 @@ export default function Sales() {
   const [endDate, setEndDate] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("");
   const [userNameFilter, setUserNameFilter] = useState("");
-  const [minQtyFilter, setMinQtyFilter] = useState("");
   const [minItemsFilter, setMinItemsFilter] = useState("");
   const [selected, setSelected] = useState<Sale | null>(null);
   const [printing, setPrinting] = useState(false);
@@ -48,13 +47,9 @@ export default function Sales() {
       endDate,
       paymentFilter,
       userName: userNameFilter,
-      minQty: minQtyFilter,
       minItems: minItemsFilter,
     },
     fetcher: async ({ page, limit, extraFilters }) => {
-      const minQtyNum = extraFilters.minQty?.trim()
-        ? Math.max(1, Math.floor(Number(extraFilters.minQty)))
-        : 0;
       const minItemsNum = extraFilters.minItems?.trim()
         ? Math.max(1, Math.floor(Number(extraFilters.minItems)))
         : 0;
@@ -65,7 +60,6 @@ export default function Sales() {
         end_date: extraFilters.endDate || undefined,
         payment_method: extraFilters.paymentFilter || undefined,
         q: extraFilters.userName?.trim() || undefined,
-        min_total_qty: minQtyNum > 0 ? minQtyNum : undefined,
         min_items_count: minItemsNum > 0 ? minItemsNum : undefined,
       });
       return { items: res.sales, total: res.total };
@@ -75,10 +69,10 @@ export default function Sales() {
   // Cambiar cualquier filtro vuelve a la página 1 (igual que antes).
   useEffect(() => {
     setPage(1);
-  }, [startDate, endDate, paymentFilter, userNameFilter, minQtyFilter, minItemsFilter]);
+  }, [startDate, endDate, paymentFilter, userNameFilter, minItemsFilter]);
 
   const hasActiveFilters = Boolean(
-    startDate || endDate || paymentFilter || userNameFilter || minQtyFilter || minItemsFilter
+    startDate || endDate || paymentFilter || userNameFilter || minItemsFilter
   );
 
   function clearFilters() {
@@ -86,7 +80,6 @@ export default function Sales() {
     setEndDate("");
     setPaymentFilter("");
     setUserNameFilter("");
-    setMinQtyFilter("");
     setMinItemsFilter("");
     setPage(1);
   }
@@ -117,8 +110,6 @@ export default function Sales() {
         setPaymentFilter={setPaymentFilter}
         userNameFilter={userNameFilter}
         setUserNameFilter={setUserNameFilter}
-        minQtyFilter={minQtyFilter}
-        setMinQtyFilter={setMinQtyFilter}
         minItemsFilter={minItemsFilter}
         setMinItemsFilter={setMinItemsFilter}
         hasActiveFilters={hasActiveFilters}

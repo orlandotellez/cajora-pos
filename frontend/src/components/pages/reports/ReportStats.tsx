@@ -30,12 +30,6 @@ export function ReportStats({ report, prevReport }: ReportStatsProps) {
       prev: prevReport?.total_sales ?? 0,
     },
     {
-      label: "Ticket promedio",
-      value: money(report?.average_ticket ?? 0),
-      cur: report?.average_ticket ?? 0,
-      prev: prevReport?.average_ticket ?? 0,
-    },
-    {
       label: "Efectivo",
       value: money((bm as Record<string, number>).efectivo ?? 0),
       cur: (bm as Record<string, number>).efectivo ?? 0,

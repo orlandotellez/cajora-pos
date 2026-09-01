@@ -28,15 +28,6 @@ export function SaleTable({ sales, loading, total, page, totalPages, onPageChang
       ),
     },
     {
-      key: "client",
-      label: "Cliente",
-      render: (s) => (
-        <span className={styles["sale-client"]}>
-          {s.client_name ?? "—"}
-        </span>
-      ),
-    },
-    {
       key: "items",
       label: "Artículos",
       align: "right",
@@ -80,7 +71,7 @@ export function SaleTable({ sales, loading, total, page, totalPages, onPageChang
       onRowClick={onView}
       onEdit={onView}
       emptyMessage="Sin ventas"
-      skeletonCols={[{ width: "35%" }, { width: "15%", align: "right" }, { width: "20%", align: "right" }, { width: "20%" }, { width: "10%" }]}
+      skeletonCols={[{ width: "35%" }, { width: "20%", align: "right" }, { width: "20%" }, { width: "20%" }, { width: "10%" }]}
       dimmed={dimmed}
       refreshing={refreshing}
     />
