@@ -1,9 +1,8 @@
 import { type ReactNode } from "react";
-import { Loader2, Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import TableSkeleton, { type SkeletonCol } from "@/components/common/TableSkeleton";
 import { RefreshBadge } from "@/components/common/RefreshBadge";
 import { getVisiblePages } from "@/lib/pagination";
-import { PAGE_LIMIT } from "@/lib/constants";
 import styles from "./DataTable.module.css";
 
 export interface Column<T> {
@@ -113,73 +112,66 @@ export function DataTable<T extends { id: string }>({
             </tr>
           </thead>
           <tbody>
-            {loading ? (
-              <TableSkeleton cols={skeletonCols ?? columns.map(() => ({ width: "auto" }))} rows={data.length || undefined} />
+            {loading && data.length === 0 ? (
+              <TableSkeleton cols={skeletonCols ?? columns.map(() => ({ width: "auto" }))} />
             ) : data.length > 0 ? (
               <>
-              {data.map((item) => (
-                <tr
-                  key={item.id}
-                  className={`${onRowClick && !selectable ? styles.trClickable : ""} ${dimmed ? styles.trDim : ""} ${selectedIds?.has(item.id) ? styles.trSelected : ""} ${rowClassName?.(item) ?? ""}`}
-                  onClick={() => {
-                    if (!selectable) onRowClick?.(item);
-                  }}
-                >
-                  {selectable && (
-                    <td className={styles.tdCheck}>
-                      <input
-                        type="checkbox"
-                        checked={selectedIds?.has(item.id) ?? false}
-                        onChange={() => toggleSelect(item.id)}
-                        onClick={(e) => e.stopPropagation()}
-                        aria-label={`Seleccionar ${item.id}`}
-                      />
-                    </td>
-                  )}
-                  {columns.map((col) => (
-                    <td
-                      key={col.key}
-                      style={{
-                        textAlign: col.align ?? "left",
-                        padding: "10px 16px",
-                        fontSize: 13,
-                      }}
-                    >
-                      {col.render(item)}
-                    </td>
-                  ))}
-                  {hasEditDelete && (
-                    <td className={styles.tdActions}>
-                      {onEdit && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); onEdit(item); }}
-                          className={styles.iconBtn}
-                          title="Editar"
-                        >
-                          <Pencil size={14} />
-                        </button>
-                      )}
-                      {onDelete && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); onDelete(item); }}
-                          className={`${styles.iconBtn} ${styles.iconDanger}`}
-                          title="Eliminar"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      )}
-                    </td>
-                  )}
-                </tr>
-              ))}
-              {/* Pad with empty rows to maintain consistent table height */}
-              {!loading && data.length > 0 && data.length < PAGE_LIMIT &&
-                Array.from({ length: PAGE_LIMIT - data.length }, (_, i) => (
-                  <tr key={`empty-${i}`} style={{ height: 41 }}>
-                    <td colSpan={columns.length + (hasEditDelete ? 1 : 0) + (selectable ? 1 : 0)} />
+                {data.map((item) => (
+                  <tr
+                    key={item.id}
+                    className={`${onRowClick && !selectable ? styles.trClickable : ""} ${dimmed || loading ? styles.trDim : ""} ${selectedIds?.has(item.id) ? styles.trSelected : ""} ${rowClassName?.(item) ?? ""}`}
+                    onClick={() => {
+                      if (!selectable) onRowClick?.(item);
+                    }}
+                  >
+                    {selectable && (
+                      <td className={styles.tdCheck}>
+                        <input
+                          type="checkbox"
+                          checked={selectedIds?.has(item.id) ?? false}
+                          onChange={() => toggleSelect(item.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          aria-label={`Seleccionar ${item.id}`}
+                        />
+                      </td>
+                    )}
+                    {columns.map((col) => (
+                      <td
+                        key={col.key}
+                        style={{
+                          textAlign: col.align ?? "left",
+                          padding: "10px 16px",
+                          fontSize: 13,
+                        }}
+                      >
+                        {col.render(item)}
+                      </td>
+                    ))}
+                    {hasEditDelete && (
+                      <td className={styles.tdActions}>
+                        {onEdit && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onEdit(item); }}
+                            className={styles.iconBtn}
+                            title="Editar"
+                          >
+                            <Pencil size={14} />
+                          </button>
+                        )}
+                        {onDelete && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onDelete(item); }}
+                            className={`${styles.iconBtn} ${styles.iconDanger}`}
+                            title="Eliminar"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </td>
+                    )}
                   </tr>
-                ))
-              }</>
+                ))}
+              </>
             ) : (
               <tr>
                 <td colSpan={columns.length + (hasEditDelete ? 1 : 0) + (selectable ? 1 : 0)} className={styles.empty}>
@@ -225,14 +217,6 @@ export function DataTable<T extends { id: string }>({
               Siguiente
             </button>
           </div>
-          {loading && (
-            <Loader2
-              size={14}
-              className={styles.spinner}
-              aria-label="Cargando"
-              role="status"
-            />
-          )}
         </div>
       )}
     </div>

@@ -19,7 +19,8 @@
 
 .table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 .table thead th {
@@ -39,6 +40,15 @@
   cursor: pointer;
   transition: background 0.15s;
   border-bottom: 1px solid var(--border);
+}
+
+.table tbody td {
+  height: 56px;
+  vertical-align: middle;
+}
+
+.table tbody tr:last-child {
+  border-bottom: none;
 }
 
 .table tbody tr:hover {
