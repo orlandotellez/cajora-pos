@@ -3,6 +3,7 @@ import { Loader2, Pencil, Trash2 } from "lucide-react";
 import TableSkeleton, { type SkeletonCol } from "@/components/common/TableSkeleton";
 import { RefreshBadge } from "@/components/common/RefreshBadge";
 import { getVisiblePages } from "@/lib/pagination";
+import { PAGE_LIMIT } from "@/lib/constants";
 import styles from "./DataTable.module.css";
 
 export interface Column<T> {
@@ -113,9 +114,10 @@ export function DataTable<T extends { id: string }>({
           </thead>
           <tbody>
             {loading ? (
-              <TableSkeleton cols={skeletonCols ?? columns.map(() => ({ width: "auto" }))} />
+              <TableSkeleton cols={skeletonCols ?? columns.map(() => ({ width: "auto" }))} rows={data.length || undefined} />
             ) : data.length > 0 ? (
-              data.map((item) => (
+              <>
+              {data.map((item) => (
                 <tr
                   key={item.id}
                   className={`${onRowClick && !selectable ? styles.trClickable : ""} ${dimmed ? styles.trDim : ""} ${selectedIds?.has(item.id) ? styles.trSelected : ""} ${rowClassName?.(item) ?? ""}`}
@@ -169,7 +171,15 @@ export function DataTable<T extends { id: string }>({
                     </td>
                   )}
                 </tr>
-              ))
+              ))}
+              {/* Pad with empty rows to maintain consistent table height */}
+              {!loading && data.length > 0 && data.length < PAGE_LIMIT &&
+                Array.from({ length: PAGE_LIMIT - data.length }, (_, i) => (
+                  <tr key={`empty-${i}`} style={{ height: 41 }}>
+                    <td colSpan={columns.length + (hasEditDelete ? 1 : 0) + (selectable ? 1 : 0)} />
+                  </tr>
+                ))
+              }</>
             ) : (
               <tr>
                 <td colSpan={columns.length + (hasEditDelete ? 1 : 0) + (selectable ? 1 : 0)} className={styles.empty}>
