@@ -25,18 +25,16 @@ function groupByFor(range: Range): "day" | "month" {
   return "day";
 }
 
-// Clave de periodo que coincide con la truncación del backend.
-// Usa hora local para generar la clave YYYY-MM-DD.
 function periodKey(d: Date, range: Range): string {
   const pad = (n: number) => String(n).padStart(2, "0");
-  const day = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const day = `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
   if (range === "1y") return `${day.slice(0, 7)}-01`;
   return day;
 }
 
 function stepPeriod(d: Date, range: Range) {
-  if (range === "1y") d.setMonth(d.getMonth() + 1);
-  else d.setDate(d.getDate() + 1);
+  if (range === "1y") d.setUTCMonth(d.getUTCMonth() + 1);
+  else d.setUTCDate(d.getUTCDate() + 1);
 }
 
 // Completa todos los periodos del rango con 0, incluso sin ventas.
@@ -45,7 +43,7 @@ function fillTrendGaps(data: RevenueTrendItem[], range: Range): RevenueTrendItem
   const map = new Map(data.map((i) => [periodKey(new Date(i.date), range), i.revenue]));
   const start = rangeStart(range);
   const end = new Date();
-  const cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  const cursor = new Date(Date.UTC(start.getFullYear(), start.getMonth(), start.getDate()));
   const points: RevenueTrendItem[] = [];
   while (cursor <= end) {
     const key = periodKey(cursor, range);
