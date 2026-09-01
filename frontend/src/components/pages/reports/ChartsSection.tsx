@@ -271,20 +271,21 @@ export function ChartsSection({ report, range }: { report: SaleReport | null; ra
                 </button>
               </div>
             </div>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+            <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", minWidth: 480, borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--border)", color: "var(--muted-foreground)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>
                   <th style={{ padding: "8px 12px", textAlign: "left" }}>#</th>
                   <th style={{ padding: "8px 12px", textAlign: "left" }}>Producto</th>
                   {productMetric === "revenue" ? (
                     <>
-                      <th style={{ padding: "8px 12px", textAlign: "right" }}>Ingresos</th>
-                      <th style={{ padding: "8px 12px", textAlign: "right" }}>Cantidad</th>
+                      <th style={{ padding: "8px 12px", textAlign: "right", whiteSpace: "nowrap" }}>Ingresos</th>
+                      <th style={{ padding: "8px 12px", textAlign: "right", whiteSpace: "nowrap" }}>Cantidad</th>
                     </>
                   ) : (
                     <>
-                      <th style={{ padding: "8px 12px", textAlign: "right" }}>Cantidad</th>
-                      <th style={{ padding: "8px 12px", textAlign: "right" }}>Ingresos</th>
+                      <th style={{ padding: "8px 12px", textAlign: "right", whiteSpace: "nowrap" }}>Cantidad</th>
+                      <th style={{ padding: "8px 12px", textAlign: "right", whiteSpace: "nowrap" }}>Ingresos</th>
                     </>
                   )}
                 </tr>
@@ -296,19 +297,20 @@ export function ChartsSection({ report, range }: { report: SaleReport | null; ra
                     <td style={{ padding: "8px 12px", fontWeight: 500 }}>{p.product_name}</td>
                     {productMetric === "revenue" ? (
                       <>
-                        <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 600 }}>{money(p.revenue)}</td>
-                        <td style={{ padding: "8px 12px", textAlign: "right" }}>{p.quantity}</td>
+                        <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 600, whiteSpace: "nowrap" }}>{money(p.revenue)}</td>
+                        <td style={{ padding: "8px 12px", textAlign: "right", whiteSpace: "nowrap" }}>{p.quantity}</td>
                       </>
                     ) : (
                       <>
-                        <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 600 }}>{p.quantity}</td>
-                        <td style={{ padding: "8px 12px", textAlign: "right" }}>{money(p.revenue)}</td>
+                        <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 600, whiteSpace: "nowrap" }}>{p.quantity}</td>
+                        <td style={{ padding: "8px 12px", textAlign: "right", whiteSpace: "nowrap" }}>{money(p.revenue)}</td>
                       </>
                     )}
                   </tr>
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
       )}
