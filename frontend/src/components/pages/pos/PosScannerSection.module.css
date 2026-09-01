@@ -88,28 +88,3 @@
   box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4);
   z-index: 2;
 }
-
-.scanner-overlay-line {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 240px;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, #22d3ee, transparent);
-  animation: barcodeScanLine 1.5s ease-in-out infinite;
-  pointer-events: none;
-  z-index: 3;
-}
-
-@keyframes barcodeScanLine {
-
-  0%,
-  100% {
-    top: calc(50% - 40px);
-  }
-
-  50% {
-    top: calc(50% + 40px);
-  }
-}

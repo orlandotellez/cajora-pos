@@ -77,7 +77,7 @@ export function BarcodeScanner({ open, onScan, onClose }: BarcodeScannerProps) {
   function stopScanner() {
     if (scannerRef.current) {
       try {
-        scannerRef.current.stop().catch(() => {});
+        scannerRef.current.stop().catch(() => { });
         scannerRef.current.clear();
       } catch {
         // ignore
@@ -140,20 +140,6 @@ export function BarcodeScanner({ open, onScan, onClose }: BarcodeScannerProps) {
           }}
         />
 
-        {/* Scan line animation */}
-        <div
-          style={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: 240,
-            height: 2,
-            background: "linear-gradient(90deg, transparent, #22d3ee, transparent)",
-            animation: "barcodeScan 1.5s ease-in-out infinite",
-            pointerEvents: "none",
-          }}
-        />
       </div>
 
       <p style={{ color: "#94a3b8", fontSize: 14, margin: 0, textAlign: "center" }}>
@@ -182,13 +168,6 @@ export function BarcodeScanner({ open, onScan, onClose }: BarcodeScannerProps) {
           Cancelar
         </button>
       </div>
-
-      <style>{`
-        @keyframes barcodeScan {
-          0%, 100% { top: calc(50% - 40px); }
-          50% { top: calc(50% + 40px); }
-        }
-      `}</style>
     </div>
   );
 }

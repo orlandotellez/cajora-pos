@@ -27,7 +27,6 @@ export function PosScannerSection({ active, onToggle, toggleRef, elementId }: Pr
         <div className={styles["scanner-camera-wrap"]}>
           <div id={elementId} className={styles["scanner-viewfinder"]} />
           <div className={styles["scanner-overlay-brackets"]} />
-          <div className={styles["scanner-overlay-line"]} />
         </div>
       </div>
     </div>
