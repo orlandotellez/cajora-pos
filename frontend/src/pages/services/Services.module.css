@@ -8,3 +8,53 @@
     padding: 40px 40px;
   }
 }
+
+.bulkBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  margin-bottom: 12px;
+  background: color-mix(in srgb, var(--primary, #3b82f6) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary, #3b82f6) 30%, var(--border, #e5e7eb));
+  border-radius: 5px;
+  flex-wrap: wrap;
+}
+
+.bulkCount {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.bulkActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.bulkDeleteBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: none;
+  border-radius: 5px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.bulkDeleteBtn:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.bulkDeleteBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

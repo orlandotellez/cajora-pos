@@ -17,7 +17,7 @@ import { Filter } from "@/components/pages/services/Filter";
 export default function Services() {
   const { toast } = useToast();
   const addToCart = usePosStore((s) => s.addToCart);
-  const { has } = usePermissions();
+  const { has, isAdmin } = usePermissions();
   const canWrite = has("catalog_write");
 
   const {
@@ -44,6 +44,10 @@ export default function Services() {
   const [products, setProducts] = useState<Product[]>([]);
   const [editing, setEditing] = useState<Service | "new" | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [editMode, setEditMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const cart = usePosStore((s) => s.cart);
 
@@ -102,6 +106,30 @@ export default function Services() {
     }
   }
 
+  function toggleEditMode() {
+    setEditMode((prev) => !prev);
+    setSelectedIds(new Set());
+  }
+
+  async function handleBulkDelete() {
+    if (selectedIds.size === 0) return;
+    setBulkDeleting(true);
+    try {
+      await servicesApi.bulkDelete([...selectedIds]);
+      cacheClear("services");
+      refresh();
+      setEditMode(false);
+      setSelectedIds(new Set());
+      setBulkDeleteConfirm(false);
+      toast("Servicios eliminados correctamente", "success");
+    } catch (err) {
+      console.error("Error al eliminar servicios:", err);
+      toast((err as Error)?.message || "Error al eliminar servicios", "error");
+    } finally {
+      setBulkDeleting(false);
+    }
+  }
+
   async function handleAddToCart(s: Service) {
     let productsList = products;
     if (productsList.length === 0) {
@@ -156,9 +184,38 @@ export default function Services() {
 
   return (
     <div className={styles.page}>
-      <Header total={total} setEditing={() => setEditing("new")} loading={loading} showCreateButton={canWrite} />
+      <Header
+        total={total}
+        setEditing={() => setEditing("new")}
+        loading={loading}
+        showCreateButton={canWrite}
+        showEditMode={isAdmin}
+        editMode={editMode}
+        onToggleEditMode={toggleEditMode}
+      />
 
       <Filter q={q} setSearch={setSearch} />
+
+      {editMode && (
+        <div className={styles.bulkBar}>
+          <span className={styles.bulkCount}>
+            {selectedIds.size > 0
+              ? `${selectedIds.size} ${selectedIds.size === 1 ? "servicio seleccionado" : "servicios seleccionados"}`
+              : `Modo edición activo`}
+          </span>
+          {selectedIds.size > 0 && (
+            <div className={styles.bulkActions}>
+              <button
+                className={styles.bulkDeleteBtn}
+                onClick={() => setBulkDeleteConfirm(true)}
+                disabled={bulkDeleting}
+              >
+                Eliminar {selectedIds.size}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       <ServiceTable
         services={services}
@@ -174,6 +231,9 @@ export default function Services() {
         blockedIds={blockedServiceIds}
         dimmed={false}
         refreshing={refreshing}
+        selectable={editMode && isAdmin}
+        selectedIds={selectedIds}
+        onSelectionChange={setSelectedIds}
       />
 
       {canWrite && (
@@ -196,6 +256,16 @@ export default function Services() {
           setDeleteTarget(null);
         }}
         onCancel={() => setDeleteTarget(null)}
+      />
+
+      <ConfirmDialog
+        open={bulkDeleteConfirm}
+        title="Eliminar servicios"
+        message={`¿Estás seguro de que querés eliminar ${selectedIds.size} ${selectedIds.size === 1 ? "servicio" : "servicios"}? Esta acción no se puede deshacer.`}
+        confirmLabel={bulkDeleting ? "Eliminando…" : "Sí, eliminar"}
+        cancelLabel="Cancelar"
+        onConfirm={() => handleBulkDelete()}
+        onCancel={() => { if (!bulkDeleting) setBulkDeleteConfirm(false); }}
       />
     </div>
   );

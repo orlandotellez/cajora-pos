@@ -4,6 +4,7 @@ import type { Client } from "@/api";
 import { cacheClear } from "@/lib/simple-cache";
 import { useCrudPagination } from "@/hooks/useCrudPagination";
 import { useToast } from "@/components/common/ui/Toast";
+import { usePermissions } from "@/hooks/usePermissions";
 import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
 import { ClientTable } from "@/components/pages/clients/ClientTable";
 import { Header } from "@/components/pages/clients/Header";
@@ -23,6 +24,7 @@ const emptyForm = {
 
 export default function Clients() {
   const { toast } = useToast();
+  const { isAdmin } = usePermissions();
 
   const {
     items: clients,
@@ -48,6 +50,10 @@ export default function Clients() {
   const [editing, setEditing] = useState<Client | null | "new">(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [form, setForm] = useState(emptyForm);
 
   const isNew = typeof editing === "string";
@@ -112,11 +118,63 @@ export default function Clients() {
     }
   }
 
+  function toggleEditMode() {
+    setEditMode((prev) => !prev);
+    setSelectedIds(new Set());
+  }
+
+  async function handleBulkDelete() {
+    if (selectedIds.size === 0) return;
+    setBulkDeleting(true);
+    try {
+      await clientsApi.bulkDelete([...selectedIds]);
+      cacheClear("clients");
+      refresh();
+      setEditMode(false);
+      setSelectedIds(new Set());
+      setBulkDeleteConfirm(false);
+      toast("Clientes eliminados correctamente", "success");
+    } catch (err) {
+      console.error("Error al eliminar clientes:", err);
+      toast((err as Error)?.message || "Error al eliminar clientes", "error");
+    } finally {
+      setBulkDeleting(false);
+    }
+  }
+
   return (
     <div className={styles.page}>
-      <Header total={total} onNew={() => setEditing("new")} loading={loading} />
+      <Header
+        total={total}
+        onNew={() => setEditing("new")}
+        loading={loading}
+        showEditMode={isAdmin}
+        editMode={editMode}
+        onToggleEditMode={toggleEditMode}
+      />
 
       <Filter q={q} setSearch={setSearch} />
+
+      {editMode && (
+        <div className={styles.bulkBar}>
+          <span className={styles.bulkCount}>
+            {selectedIds.size > 0
+              ? `${selectedIds.size} ${selectedIds.size === 1 ? "cliente seleccionado" : "clientes seleccionados"}`
+              : `Modo edición activo`}
+          </span>
+          {selectedIds.size > 0 && (
+            <div className={styles.bulkActions}>
+              <button
+                className={styles.bulkDeleteBtn}
+                onClick={() => setBulkDeleteConfirm(true)}
+                disabled={bulkDeleting}
+              >
+                Eliminar {selectedIds.size}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       <ClientTable
         clients={clients}
@@ -129,6 +187,9 @@ export default function Clients() {
         onDelete={(c) => setDeleteTarget(c.id)}
         dimmed={false}
         refreshing={refreshing}
+        selectable={editMode && isAdmin}
+        selectedIds={selectedIds}
+        onSelectionChange={setSelectedIds}
       />
 
       {editing && (
@@ -160,6 +221,16 @@ export default function Clients() {
           setDeleteTarget(null);
         }}
         onCancel={() => setDeleteTarget(null)}
+      />
+
+      <ConfirmDialog
+        open={bulkDeleteConfirm}
+        title="Eliminar clientes"
+        message={`¿Estás seguro de que querés eliminar ${selectedIds.size} ${selectedIds.size === 1 ? "cliente" : "clientes"}? Esta acción no se puede deshacer.`}
+        confirmLabel={bulkDeleting ? "Eliminando…" : "Sí, eliminar"}
+        cancelLabel="Cancelar"
+        onConfirm={() => handleBulkDelete()}
+        onCancel={() => { if (!bulkDeleting) setBulkDeleteConfirm(false); }}
       />
     </div>
   );

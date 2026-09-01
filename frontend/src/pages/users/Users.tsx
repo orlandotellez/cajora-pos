@@ -44,6 +44,10 @@ export default function Users() {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [editMode, setEditMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const isNew = typeof editing === "string";
 
@@ -101,6 +105,29 @@ export default function Users() {
     }
   }
 
+  function toggleEditMode() {
+    setEditMode((prev) => !prev);
+    setSelectedIds(new Set());
+  }
+
+  async function handleBulkDelete() {
+    if (selectedIds.size === 0) return;
+    setBulkDeleting(true);
+    try {
+      await usersApi.bulkDelete([...selectedIds]);
+      refreshImmediate();
+      setEditMode(false);
+      setSelectedIds(new Set());
+      setBulkDeleteConfirm(false);
+      toast("Usuarios eliminados correctamente", "success");
+    } catch (err) {
+      console.error("Error al eliminar usuarios:", err);
+      toast((err as Error)?.message || "Error al eliminar usuarios", "error");
+    } finally {
+      setBulkDeleting(false);
+    }
+  }
+
   async function handleToggleActive(u: UserResponse) {
     try {
       const newStatus = !u.is_active;
@@ -118,9 +145,37 @@ export default function Users() {
 
   return (
     <div className={styles.page}>
-      <Header total={total} onNew={() => setEditing("new")} loading={loading} />
+      <Header
+        total={total}
+        onNew={() => setEditing("new")}
+        loading={loading}
+        showEditMode={true}
+        editMode={editMode}
+        onToggleEditMode={toggleEditMode}
+      />
 
       <Filter q={q} setSearch={setSearch} />
+
+      {editMode && (
+        <div className={styles.bulkBar}>
+          <span className={styles.bulkCount}>
+            {selectedIds.size > 0
+              ? `${selectedIds.size} ${selectedIds.size === 1 ? "usuario seleccionado" : "usuarios seleccionados"}`
+              : `Modo edición activo`}
+          </span>
+          {selectedIds.size > 0 && (
+            <div className={styles.bulkActions}>
+              <button
+                className={styles.bulkDeleteBtn}
+                onClick={() => setBulkDeleteConfirm(true)}
+                disabled={bulkDeleting}
+              >
+                Eliminar {selectedIds.size}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       <UserTable
         users={users}
@@ -135,6 +190,9 @@ export default function Users() {
         onToggleActive={handleToggleActive}
         dimmed={false}
         refreshing={refreshing}
+        selectable={editMode}
+        selectedIds={selectedIds}
+        onSelectionChange={setSelectedIds}
       />
 
       {editing &&
@@ -157,6 +215,16 @@ export default function Users() {
         cancelLabel="Cancelar"
         onConfirm={() => { if (deleteTarget) remove(deleteTarget); setDeleteTarget(null); }}
         onCancel={() => setDeleteTarget(null)}
+      />
+
+      <ConfirmDialog
+        open={bulkDeleteConfirm}
+        title="Eliminar usuarios"
+        message={`¿Estás seguro de que querés eliminar ${selectedIds.size} ${selectedIds.size === 1 ? "usuario" : "usuarios"}? Esta acción no se puede deshacer.`}
+        confirmLabel={bulkDeleting ? "Eliminando…" : "Sí, eliminar"}
+        cancelLabel="Cancelar"
+        onConfirm={() => handleBulkDelete()}
+        onCancel={() => { if (!bulkDeleting) setBulkDeleteConfirm(false); }}
       />
     </div>
   );

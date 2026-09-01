@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { usePermissions } from "@/hooks/usePermissions";
 import { categoriesApi, type Category, type CreateCategoryPayload, type UpdateCategoryPayload } from "@/api/categories";
 import { cacheClear } from "@/lib/simple-cache";
 import { useCrudPagination } from "@/hooks/useCrudPagination";
@@ -14,6 +15,7 @@ const emptyForm = { name: "", description: "" };
 
 export default function Categories() {
   const { toast } = useToast();
+  const { isAdmin } = usePermissions();
 
   const {
     items: categories,
@@ -40,6 +42,10 @@ export default function Categories() {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [editMode, setEditMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const isNew = typeof editing === "string";
 
@@ -92,11 +98,63 @@ export default function Categories() {
     }
   }
 
+  function toggleEditMode() {
+    setEditMode((prev) => !prev);
+    setSelectedIds(new Set());
+  }
+
+  async function handleBulkDelete() {
+    if (selectedIds.size === 0) return;
+    setBulkDeleting(true);
+    try {
+      await categoriesApi.bulkDelete([...selectedIds]);
+      cacheClear("categories");
+      refresh();
+      setEditMode(false);
+      setSelectedIds(new Set());
+      setBulkDeleteConfirm(false);
+      toast("Categorías eliminadas correctamente", "success");
+    } catch (err) {
+      console.error("Error al eliminar categorías:", err);
+      toast((err as Error)?.message || "Error al eliminar categorías", "error");
+    } finally {
+      setBulkDeleting(false);
+    }
+  }
+
   return (
     <div className={styles.page}>
-      <Header total={total} setEditing={() => setEditing("new")} loading={loading} />
+      <Header
+        total={total}
+        setEditing={() => setEditing("new")}
+        loading={loading}
+        showEditMode={isAdmin}
+        editMode={editMode}
+        onToggleEditMode={toggleEditMode}
+      />
 
       <Filter q={q} setSearch={(e) => setSearch(e.target.value)} />
+
+      {editMode && (
+        <div className={styles.bulkBar}>
+          <span className={styles.bulkCount}>
+            {selectedIds.size > 0
+              ? `${selectedIds.size} ${selectedIds.size === 1 ? "categoría seleccionada" : "categorías seleccionadas"}`
+              : `Modo edición activo`}
+          </span>
+          {selectedIds.size > 0 && (
+            <div className={styles.bulkActions}>
+              <button
+                className={styles.bulkDeleteBtn}
+                onClick={() => setBulkDeleteConfirm(true)}
+                disabled={bulkDeleting}
+              >
+                Eliminar {selectedIds.size}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       <CategoryTable
         categories={categories}
@@ -109,6 +167,9 @@ export default function Categories() {
         onDelete={(c) => setDeleteTarget(c.id)}
         dimmed={false}
         refreshing={refreshing}
+        selectable={editMode && isAdmin}
+        selectedIds={selectedIds}
+        onSelectionChange={setSelectedIds}
       />
 
       {editing &&
@@ -134,6 +195,16 @@ export default function Categories() {
           setDeleteTarget(null);
         }}
         onCancel={() => setDeleteTarget(null)}
+      />
+
+      <ConfirmDialog
+        open={bulkDeleteConfirm}
+        title="Eliminar categorías"
+        message={`¿Estás seguro de que querés eliminar ${selectedIds.size} ${selectedIds.size === 1 ? "categoría" : "categorías"}? Los productos asociados no se eliminarán, pero quedarán sin categoría.`}
+        confirmLabel={bulkDeleting ? "Eliminando…" : "Sí, eliminar"}
+        cancelLabel="Cancelar"
+        onConfirm={() => handleBulkDelete()}
+        onCancel={() => { if (!bulkDeleting) setBulkDeleteConfirm(false); }}
       />
     </div>
   );
