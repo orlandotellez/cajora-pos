@@ -71,3 +71,30 @@
   gap: 8px;
   flex-wrap: nowrap;
 }
+
+.editModeBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--foreground);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  height: 40px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+}
+
+.editModeBtn:hover {
+  background: var(--accent, #f3f4f6);
+}
+
+.editModeBtnActive {
+  background: color-mix(in srgb, var(--primary, #3b82f6) 10%, transparent);
+  border-color: color-mix(in srgb, var(--primary, #3b82f6) 50%, var(--border, #e5e7eb));
+  color: var(--primary, #3b82f6);
+}
