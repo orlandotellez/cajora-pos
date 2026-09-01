@@ -2,7 +2,7 @@ import type { FastifyReply, FastifyRequest } from "fastify"
 import { createClientService } from "../application/client.service"
 import { ClientRepository } from "../infrastructure/client.prisma.repository"
 import type { UpdateClientData } from "../domain/client.entities"
-import { CreateClientDtoSchema, UpdateClientDtoSchema, ClientQuerySchema, ClientPhoneQuerySchema } from "./client.dto"
+import { CreateClientDtoSchema, UpdateClientDtoSchema, ClientQuerySchema, ClientPhoneQuerySchema, BulkDeleteClientsDtoSchema } from "./client.dto"
 import { sseBroadcast } from "@/config/sse"
 
 const clientService = createClientService(ClientRepository)
@@ -46,5 +46,14 @@ export const clientsController = {
     await clientService.delete(id, request.storeId)
     sseBroadcast(request.storeId!, "client.deleted", { id })
     return reply.status(200).send({ message: "Client deleted successfully" })
+  },
+
+  deleteMany: async (request: FastifyRequest, reply: FastifyReply) => {
+    const body = BulkDeleteClientsDtoSchema.parse(request.body)
+    const result = await clientService.deleteMany(body.ids, request.storeId)
+    if (result.deleted > 0) {
+      sseBroadcast(request.storeId!, "client.deleted", { count: result.deleted })
+    }
+    return reply.status(200).send({ deleted: result.deleted })
   },
 }

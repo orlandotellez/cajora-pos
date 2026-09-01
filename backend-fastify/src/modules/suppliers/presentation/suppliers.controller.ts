@@ -2,7 +2,7 @@ import type { FastifyReply, FastifyRequest } from "fastify"
 import { createSupplierService } from "../application/suppliers.service"
 import { SupplierRepository } from "../infrastructure/suppliers.prisma.repository"
 import type { UpdateSupplierData } from "../domain/suppliers.entities"
-import { CreateSupplierDtoSchema, UpdateSupplierDtoSchema, SupplierQuerySchema } from "./suppliers.dto"
+import { CreateSupplierDtoSchema, UpdateSupplierDtoSchema, SupplierQuerySchema, BulkDeleteSuppliersDtoSchema } from "./suppliers.dto"
 import { sseBroadcast } from "@/config/sse"
 
 const supplierService = createSupplierService(SupplierRepository)
@@ -40,5 +40,14 @@ export const suppliersController = {
     await supplierService.delete(id, request.storeId)
     sseBroadcast(request.storeId!, "supplier.deleted", { id })
     return reply.status(200).send({ message: "Supplier deleted successfully" })
+  },
+
+  deleteMany: async (request: FastifyRequest, reply: FastifyReply) => {
+    const body = BulkDeleteSuppliersDtoSchema.parse(request.body)
+    const result = await supplierService.deleteMany(body.ids, request.storeId)
+    if (result.deleted > 0) {
+      sseBroadcast(request.storeId!, "supplier.deleted", { count: result.deleted })
+    }
+    return reply.status(200).send({ deleted: result.deleted })
   },
 }

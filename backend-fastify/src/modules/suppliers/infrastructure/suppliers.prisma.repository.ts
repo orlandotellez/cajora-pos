@@ -131,4 +131,11 @@ export const SupplierRepository: ISupplierRepository = {
       data: { deleted_at: new Date() },
     })
   },
+
+  async softDeleteMany(ids: string[], storeId?: string) {
+    return prisma.supplier.updateMany({
+      where: { id: { in: ids }, ...(storeId && { store_id: storeId }) },
+      data: { deleted_at: new Date() },
+    })
+  },
 }

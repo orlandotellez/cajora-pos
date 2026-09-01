@@ -6,4 +6,5 @@ export interface ISupplierRepository {
   create(data: CreateSupplierData, storeId?: string): Promise<ISupplierEntity>
   update(id: string, data: UpdateSupplierData, storeId?: string): Promise<ISupplierEntity>
   softDelete(id: string, storeId?: string): Promise<void>
+  softDeleteMany(ids: string[], storeId?: string): Promise<{ count: number }>
 }

@@ -28,6 +28,10 @@ export const ServiceQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).optional(),
 })
 
+export const BulkDeleteServicesDtoSchema = z.object({
+  ids: z.array(z.string().uuid()).min(1, "At least one service is required").max(500, "Maximum 500 services per deletion"),
+})
+
 export type CreateServiceDto = z.infer<typeof CreateServiceDtoSchema>
 export type UpdateServiceDto = z.infer<typeof UpdateServiceDtoSchema>
 export type ServiceQueryDto = z.infer<typeof ServiceQuerySchema>

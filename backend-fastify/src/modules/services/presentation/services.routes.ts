@@ -4,7 +4,7 @@ import { authGuard } from "@/core/guard/auth.guard"
 import { storeGuard } from "@/core/guard/store.guard"
 import { permissionGuard } from "@/core/guard/permission.guard"
 import { toJsonSchema } from "@/http/swagger-schema"
-import { CreateServiceDtoSchema, UpdateServiceDtoSchema, ServiceQuerySchema } from "./services.dto"
+import { CreateServiceDtoSchema, UpdateServiceDtoSchema, ServiceQuerySchema, BulkDeleteServicesDtoSchema } from "./services.dto"
 
 const TAGS = ["Services"]
 
@@ -28,6 +28,11 @@ export const servicesRoutes = async (fastify: FastifyInstance, _opts: FastifyPlu
     schema: { tags: TAGS, body: toJsonSchema(UpdateServiceDtoSchema) },
     preHandler: [authGuard, storeGuard, permissionGuard("catalog_write")],
   }, servicesController.update)
+
+  fastify.post("/bulk-delete", {
+    schema: { tags: TAGS, body: toJsonSchema(BulkDeleteServicesDtoSchema) },
+    preHandler: [authGuard, storeGuard, permissionGuard("catalog_write")],
+  }, servicesController.deleteMany)
 
   fastify.delete("/:id", {
     schema: { tags: TAGS },

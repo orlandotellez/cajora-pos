@@ -137,6 +137,13 @@ export const UserRepository: IUserRepository = {
     })
   },
 
+  async softDeleteMany(ids: string[]) {
+    return prisma.user.updateMany({
+      where: { id: { in: ids } },
+      data: { deleted_at: new Date() },
+    })
+  },
+
   async updatePassword(id: string, hashedPassword: string) {
     await prisma.account.updateMany({
       where: { user_id: id },

@@ -29,6 +29,10 @@ export const ClientPhoneQuerySchema = z.object({
   phone: z.string().min(1),
 })
 
+export const BulkDeleteClientsDtoSchema = z.object({
+  ids: z.array(z.string().uuid()).min(1, "At least one client is required").max(500, "Maximum 500 clients per deletion"),
+})
+
 export type CreateClientDto = z.infer<typeof CreateClientDtoSchema>
 export type UpdateClientDto = z.infer<typeof UpdateClientDtoSchema>
 export type ClientQueryDto = z.infer<typeof ClientQuerySchema>

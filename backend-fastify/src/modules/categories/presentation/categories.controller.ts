@@ -2,7 +2,7 @@ import type { FastifyReply, FastifyRequest } from "fastify"
 import { createCategoryService } from "../application/categories.service"
 import { CategoryRepository } from "../infrastructure/categories.prisma.repository"
 import type { UpdateCategoryData } from "../domain/categories.entities"
-import { CreateCategoryDtoSchema, UpdateCategoryDtoSchema, CategoryQuerySchema } from "./categories.dto"
+import { CreateCategoryDtoSchema, UpdateCategoryDtoSchema, CategoryQuerySchema, BulkDeleteCategoriesDtoSchema } from "./categories.dto"
 import { sseBroadcast } from "@/config/sse"
 
 const categoryService = createCategoryService(CategoryRepository)
@@ -51,5 +51,14 @@ export const categoriesController = {
     await categoryService.delete(id, request.storeId)
     sseBroadcast(request.storeId!, "category.deleted", { id })
     return reply.status(200).send({ message: "Category deleted successfully" })
+  },
+
+  deleteMany: async (request: FastifyRequest, reply: FastifyReply) => {
+    const body = BulkDeleteCategoriesDtoSchema.parse(request.body)
+    const result = await categoryService.deleteMany(body.ids, request.storeId)
+    if (result.deleted > 0) {
+      sseBroadcast(request.storeId!, "category.deleted", { count: result.deleted })
+    }
+    return reply.status(200).send({ deleted: result.deleted })
   },
 }

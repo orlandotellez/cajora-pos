@@ -27,6 +27,10 @@ export const SupplierQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).optional(),
 })
 
+export const BulkDeleteSuppliersDtoSchema = z.object({
+  ids: z.array(z.string().uuid()).min(1, "At least one supplier is required").max(500, "Maximum 500 suppliers per deletion"),
+})
+
 export type CreateSupplierDto = z.infer<typeof CreateSupplierDtoSchema>
 export type UpdateSupplierDto = z.infer<typeof UpdateSupplierDtoSchema>
 export type SupplierQueryDto = z.infer<typeof SupplierQuerySchema>

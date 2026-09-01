@@ -3,7 +3,7 @@ import { suppliersController } from "./suppliers.controller"
 import { authGuard } from "@/core/guard/auth.guard"
 import { storeGuard } from "@/core/guard/store.guard"
 import { toJsonSchema } from "@/http/swagger-schema"
-import { CreateSupplierDtoSchema, UpdateSupplierDtoSchema, SupplierQuerySchema } from "./suppliers.dto"
+import { CreateSupplierDtoSchema, UpdateSupplierDtoSchema, SupplierQuerySchema, BulkDeleteSuppliersDtoSchema } from "./suppliers.dto"
 
 const TAGS = ["Suppliers"]
 
@@ -28,6 +28,11 @@ export const suppliersRoutes = async (fastify: FastifyInstance, _opts: FastifyPl
     schema: { tags: TAGS, body: toJsonSchema(UpdateSupplierDtoSchema) },
     preHandler: [authGuard, storeGuard],
   }, suppliersController.update)
+
+  fastify.post("/bulk-delete", {
+    schema: { tags: TAGS, body: toJsonSchema(BulkDeleteSuppliersDtoSchema) },
+    preHandler: [authGuard, storeGuard],
+  }, suppliersController.deleteMany)
 
   fastify.delete("/:id", {
     schema: { tags: TAGS },

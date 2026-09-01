@@ -85,4 +85,9 @@ export const createCategoryService = (repository: ICategoryRepository) => ({
     }
     await repository.softDelete(id, storeId)
   },
+
+  deleteMany: async (ids: string[], storeId?: string): Promise<{ deleted: number }> => {
+    const result = await repository.softDeleteMany(ids, storeId)
+    return { deleted: result.count }
+  },
 })

@@ -6,4 +6,5 @@ export interface IServiceRepository {
   create(data: CreateServiceData, storeId?: string): Promise<IServiceEntity>
   update(id: string, data: UpdateServiceData, storeId?: string): Promise<IServiceEntity>
   softDelete(id: string, storeId?: string): Promise<void>
+  softDeleteMany(ids: string[], storeId?: string): Promise<{ count: number }>
 }

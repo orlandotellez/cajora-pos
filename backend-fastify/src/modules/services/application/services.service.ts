@@ -82,4 +82,9 @@ export const createServiceService = (repository: IServiceRepository) => ({
     }
     await repository.softDelete(id, storeId)
   },
+
+  deleteMany: async (ids: string[], storeId?: string): Promise<{ deleted: number }> => {
+    const result = await repository.softDeleteMany(ids, storeId)
+    return { deleted: result.count }
+  },
 })

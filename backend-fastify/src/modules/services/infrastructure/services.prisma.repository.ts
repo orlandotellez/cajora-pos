@@ -158,4 +158,11 @@ export const ServiceRepository: IServiceRepository = {
       data: { deleted_at: new Date() },
     })
   },
+
+  async softDeleteMany(ids: string[], storeId?: string) {
+    return prisma.service.updateMany({
+      where: { id: { in: ids }, ...(storeId && { store_id: storeId }) },
+      data: { deleted_at: new Date() },
+    })
+  },
 }

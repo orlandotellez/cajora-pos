@@ -7,5 +7,6 @@ export interface IUserRepository {
   create(data: CreateUserData): Promise<IUserEntity>
   update(id: string, data: UpdateUserData): Promise<IUserEntity>
   softDelete(id: string): Promise<void>
+  softDeleteMany(ids: string[]): Promise<{ count: number }>
   updatePassword(id: string, hashedPassword: string): Promise<void>
 }

@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify"
 import { createServiceService } from "../application/services.service"
 import { ServiceRepository } from "../infrastructure/services.prisma.repository"
-import { CreateServiceDtoSchema, UpdateServiceDtoSchema, ServiceQuerySchema } from "./services.dto"
+import { CreateServiceDtoSchema, UpdateServiceDtoSchema, ServiceQuerySchema, BulkDeleteServicesDtoSchema } from "./services.dto"
 import { sseBroadcast } from "@/config/sse"
 
 const serviceService = createServiceService(ServiceRepository)
@@ -39,5 +39,14 @@ export const servicesController = {
     await serviceService.delete(id, request.storeId)
     sseBroadcast(request.storeId!, "service.deleted", { id })
     return reply.status(200).send({ message: "Service deleted successfully" })
+  },
+
+  deleteMany: async (request: FastifyRequest, reply: FastifyReply) => {
+    const body = BulkDeleteServicesDtoSchema.parse(request.body)
+    const result = await serviceService.deleteMany(body.ids, request.storeId)
+    if (result.deleted > 0) {
+      sseBroadcast(request.storeId!, "service.deleted", { count: result.deleted })
+    }
+    return reply.status(200).send({ deleted: result.deleted })
   },
 }

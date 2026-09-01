@@ -3,7 +3,7 @@ import { clientsController } from "./client.controller"
 import { authGuard } from "@/core/guard/auth.guard"
 import { storeGuard } from "@/core/guard/store.guard"
 import { toJsonSchema } from "@/http/swagger-schema"
-import { CreateClientDtoSchema, UpdateClientDtoSchema, ClientQuerySchema, ClientPhoneQuerySchema } from "./client.dto"
+import { CreateClientDtoSchema, UpdateClientDtoSchema, ClientQuerySchema, ClientPhoneQuerySchema, BulkDeleteClientsDtoSchema } from "./client.dto"
 
 const TAGS = ["Clients"]
 
@@ -32,6 +32,11 @@ export const clientsRoutes = async (fastify: FastifyInstance, _opts: FastifyPlug
     schema: { tags: TAGS, body: toJsonSchema(UpdateClientDtoSchema) },
     preHandler: [authGuard, storeGuard],
   }, clientsController.update)
+
+  fastify.post("/bulk-delete", {
+    schema: { tags: TAGS, body: toJsonSchema(BulkDeleteClientsDtoSchema) },
+    preHandler: [authGuard, storeGuard],
+  }, clientsController.deleteMany)
 
   fastify.delete("/:id", {
     schema: { tags: TAGS },

@@ -37,5 +37,9 @@ export const UserQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).optional().default(50),
 })
 
+export const BulkDeleteUsersDtoSchema = z.object({
+  ids: z.array(z.string().uuid()).min(1, "At least one user is required").max(500, "Maximum 500 users per deletion"),
+})
+
 export type CreateUserDto = z.infer<typeof CreateUserDtoSchema>
 export type UpdateUserDto = z.infer<typeof UpdateUserDtoSchema>

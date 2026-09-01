@@ -3,7 +3,7 @@ import { categoriesController } from "./categories.controller"
 import { authGuard } from "@/core/guard/auth.guard"
 import { storeGuard } from "@/core/guard/store.guard"
 import { toJsonSchema } from "@/http/swagger-schema"
-import { CreateCategoryDtoSchema, UpdateCategoryDtoSchema, CategoryQuerySchema } from "./categories.dto"
+import { CreateCategoryDtoSchema, UpdateCategoryDtoSchema, CategoryQuerySchema, BulkDeleteCategoriesDtoSchema } from "./categories.dto"
 
 const TAGS = ["Categories"]
 
@@ -32,6 +32,11 @@ export const categoriesRoutes = async (fastify: FastifyInstance, _opts: FastifyP
     schema: { tags: TAGS, body: toJsonSchema(UpdateCategoryDtoSchema) },
     preHandler: [authGuard, storeGuard],
   }, categoriesController.update)
+
+  fastify.post("/bulk-delete", {
+    schema: { tags: TAGS, body: toJsonSchema(BulkDeleteCategoriesDtoSchema) },
+    preHandler: [authGuard, storeGuard],
+  }, categoriesController.deleteMany)
 
   fastify.delete("/:id", {
     schema: { tags: TAGS },

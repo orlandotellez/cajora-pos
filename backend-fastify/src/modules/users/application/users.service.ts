@@ -72,6 +72,11 @@ export const createUserService = (repository: IUserRepository) => ({
     await repository.softDelete(id)
   },
 
+  deleteMany: async (ids: string[]): Promise<{ deleted: number }> => {
+    const result = await repository.softDeleteMany(ids)
+    return { deleted: result.count }
+  },
+
   toggleActive: async (id: string, isActive: boolean): Promise<IUserResponse> => {
     const existing = await repository.findById(id)
     if (!existing) throw new NotFoundError("User not found")

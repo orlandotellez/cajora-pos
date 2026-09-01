@@ -134,6 +134,13 @@ export const ClientRepository: IClientRepository = {
     })
   },
 
+  async softDeleteMany(ids: string[], storeId?: string) {
+    return prisma.client.updateMany({
+      where: { id: { in: ids }, ...(storeId && { store_id: storeId }) },
+      data: { deleted_at: new Date() },
+    })
+  },
+
   async getSaleCount(clientId: string) {
     return prisma.sale.count({ where: { client_id: clientId } })
   },

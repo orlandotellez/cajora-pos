@@ -16,6 +16,10 @@ export const CategoryQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).optional(),
 })
 
+export const BulkDeleteCategoriesDtoSchema = z.object({
+  ids: z.array(z.string().uuid()).min(1, "At least one category is required").max(500, "Maximum 500 categories per deletion"),
+})
+
 export type CreateCategoryDto = z.infer<typeof CreateCategoryDtoSchema>
 export type UpdateCategoryDto = z.infer<typeof UpdateCategoryDtoSchema>
 export type CategoryQueryDto = z.infer<typeof CategoryQuerySchema>
