@@ -3,6 +3,8 @@ import { subscribeRealtime, subscribeRealtimeStatus } from "@/lib/realtime";
 import { PAGE_LIMIT } from "@/lib/constants";
 import { isCrudHydrated, getCrudCache, setCrudCache } from "@/lib/crud-list-cache";
 
+export const FIRST_LOAD_SIZE = 50;
+
 export interface UseCachedCrudListOptions<T> {
   namespace: string;
   hydrate: () => Promise<T[]>;
@@ -11,6 +13,8 @@ export interface UseCachedCrudListOptions<T> {
   realtimeEvents?: string[];
   pollMs?: number;
   limit?: number;
+  hydrateFirstPage?: () => Promise<T[]>;
+  hydrateRest?: (alreadyLoaded: number, total?: number) => Promise<T[]>;
 }
 
 export interface UseCachedCrudListReturn<T> {
@@ -40,6 +44,8 @@ export function useCachedCrudList<T>(
     realtimeEvents,
     pollMs,
     limit = PAGE_LIMIT,
+    hydrateFirstPage,
+    hydrateRest,
   } = opts;
 
   const cached = useRef(getCrudCache<T>(namespace)).current;
@@ -57,17 +63,22 @@ export function useCachedCrudList<T>(
 
   const hydrateRef = useRef(hydrate);
   useEffect(() => { hydrateRef.current = hydrate; }, [hydrate]);
+  const hydrateFirstPageRef = useRef(hydrateFirstPage);
+  useEffect(() => { hydrateFirstPageRef.current = hydrateFirstPage; }, [hydrateFirstPage]);
+  const hydrateRestRef = useRef(hydrateRest);
+  useEffect(() => { hydrateRestRef.current = hydrateRest; }, [hydrateRest]);
   const searchFnRef = useRef(searchFn);
   useEffect(() => { searchFnRef.current = searchFn; }, [searchFn]);
   const filterFnRef = useRef(filterFn);
   useEffect(() => { filterFnRef.current = filterFn; }, [filterFn]);
 
+  const generationRef = useRef(0);
+
+  const initialFillRef = useRef(false);
+
   const doHydrate = useCallback(async (showLoading: boolean, silent = false) => {
+    generationRef.current += 1;
     if (showLoading) setLoading(true);
-    // En modo silencioso no tocamos `refreshing`: el refresh en background de
-    // montaje/poll no debe encender el badge "Actualizando…" (sería ruido en
-    // cada entrada a la página). Solo acciones explícitas (SSE en vivo) lo
-    // muestran.
     if (!silent) setRefreshing(!showLoading);
     try {
       const items = await hydrateRef.current();
@@ -82,18 +93,52 @@ export function useCachedCrudList<T>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [namespace]);
 
+  const doHydrateFastAndFill = useCallback(async () => {
+    const firstFn = hydrateFirstPageRef.current;
+    const restFn = hydrateRestRef.current;
+
+    if (!firstFn || !restFn) {
+      await doHydrate(true);
+      return;
+    }
+
+    const myGeneration = ++generationRef.current;
+    initialFillRef.current = true; // pausa el poll mientras el relleno está activo
+    setLoading(true);
+    try {
+      // Fase 1: primera tanda visible YA. Apenas llegan, apagamos el skeleton.
+      const first = await firstFn();
+      if (generationRef.current !== myGeneration) return; // un SSE/refresh lo invalidó
+      let acc = [...first];
+      let total = first.length;
+      setAllItems(acc);
+      setLoading(false);
+
+      // Fase 2: rellenamos en background DE A 50, actualizando la tabla en cada
+      // tanda (el usuario ve cómo se va poblando). Sin tocar `loading`.
+      for (; ;) {
+        const chunk = await restFn(acc.length, total);
+        if (generationRef.current !== myGeneration) return; // invalidado por SSE/refresh
+        if (chunk.length === 0) break; // no hay más
+        acc = [...acc, ...chunk];
+        total = Math.max(total, acc.length);
+        setAllItems(acc);
+        if (chunk.length < FIRST_LOAD_SIZE) break; // última tanda incompleta
+      }
+      setCrudCache(namespace, acc);
+    } catch (err) {
+      console.warn("Error al hidratar lista:", err);
+      setLoading(false);
+    } finally {
+      initialFillRef.current = false; // el poll ya puede retomar
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [namespace, doHydrate]);
+
   useEffect(() => {
     if (!isCrudHydrated(namespace)) {
-      // Primera vez en esta sesión: todavía no hay nada que mostrar,
-      // hidratamos con skeleton.
-      void doHydrate(true);
+      void doHydrateFastAndFill();
     } else {
-      // Ya hay caché a nivel de módulo: la mostramos al instante (re-entrada
-      // sin skeleton), pero al mismo tiempo re-hidratamos en background desde
-      // el server. Así no nos quedamos con una foto vieja si OTRO terminal
-      // (o esta misma pestaña en otra vista) modificó la data mientras este
-      // namespace no estaba montado/escuchando. Silencioso: no encender el
-      // badge en cada entrada.
       void doHydrate(false, true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -172,6 +217,7 @@ export function useCachedCrudList<T>(
     let inFlight = false;
     const tick = () => {
       if (inFlight || document.hidden) return;
+      if (initialFillRef.current) return;
       if (realtimeConnected && realtimeEventsKey) return;
       inFlight = true;
       const token = ++pollTokenRef.current;

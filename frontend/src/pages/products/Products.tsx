@@ -5,7 +5,7 @@ import { categoriesApi } from "@/api/categories";
 import { suppliersApi } from "@/api/suppliers";
 import type { Product, Category, Supplier } from "@/api";
 import { useCachedCrudList } from "@/hooks/useCachedCrudList";
-import { fetchAllPages } from "@/lib/fetch-all-pages";
+import { fetchAllPages, fetchFirstPage, fetchPageFrom } from "@/lib/fetch-all-pages";
 import { useToast } from "@/components/common/ui/Toast";
 import { usePosStore } from "@/store/posStore";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -74,6 +74,23 @@ export default function Products() {
           .list({ page, limit })
           .then((res) => ({ items: res.products, total: res.total })),
       ),
+    // Primera carga ágil: mostramos al instante los primeros 50 productos y
+    // rellenamos el resto en background de a 50. Así la página se siente rápida
+    // con 500+ productos mientras el usuario ya interactúa con las primeras filas.
+    hydrateFirstPage: () =>
+      fetchFirstPage((page, limit) =>
+        productsApi
+          .list({ page, limit })
+          .then((res) => ({ items: res.products, total: res.total })),
+      ).then((res) => res.items),
+    hydrateRest: (alreadyLoaded) =>
+      fetchPageFrom(
+        (page, limit) =>
+          productsApi
+            .list({ page, limit })
+            .then((res) => ({ items: res.products, total: res.total })),
+        alreadyLoaded,
+      ).then((res) => res.items),
     searchFn: (p, query) =>
       p.name.toLowerCase().includes(query) ||
       (p.barcode?.toLowerCase().includes(query) ?? false) ||
