@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { suppliersApi, type CreateSupplierPayload, type UpdateSupplierPayload } from "@/api/suppliers";
 import type { Supplier } from "@/api/suppliers";
-import { cacheClear } from "@/lib/simple-cache";
-import { useCrudPagination } from "@/hooks/useCrudPagination";
+import { useCachedCrudList } from "@/hooks/useCachedCrudList";
+import { fetchAllPages } from "@/lib/fetch-all-pages";
 import { useToast } from "@/components/common/ui/Toast";
 import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
 import { SupplierTable } from "@/components/pages/suppliers/SupplierTable";
@@ -36,13 +36,20 @@ export default function Suppliers() {
     totalPages,
     setSearch,
     setPage,
-    refresh,
-  } = useCrudPagination<Supplier>({
-    fetcher: ({ page, limit, search }) =>
-      suppliersApi
-        .list({ page, limit, search: search || undefined })
-        .then((res) => ({ items: res.suppliers, total: res.total })),
-    cacheNamespace: "suppliers",
+    refreshImmediate,
+  } = useCachedCrudList<Supplier>({
+    namespace: "suppliers",
+    hydrate: () =>
+      fetchAllPages((page, limit) =>
+        suppliersApi
+          .list({ page, limit })
+          .then((res) => ({ items: res.suppliers, total: res.total })),
+      ),
+    searchFn: (s, query) =>
+      s.name.toLowerCase().includes(query) ||
+      (s.contact_name?.toLowerCase().includes(query) ?? false) ||
+      (s.email?.toLowerCase().includes(query) ?? false) ||
+      (s.phone?.toLowerCase().includes(query) ?? false),
     pollMs: 10_000,
     realtimeEvents: ["supplier.created", "supplier.updated", "supplier.deleted"],
   });
@@ -94,8 +101,7 @@ export default function Suppliers() {
         await suppliersApi.update(editing.id, data as UpdateSupplierPayload);
       }
       setEditing(null);
-      cacheClear("suppliers");
-      refresh();
+      refreshImmediate();
       toast("Proveedor guardado correctamente", "success");
     } catch (err) {
       console.error("Error al guardar proveedor:", err);
@@ -108,8 +114,7 @@ export default function Suppliers() {
   async function remove(id: string) {
     try {
       await suppliersApi.delete(id);
-      cacheClear("suppliers");
-      refresh();
+      refreshImmediate();
       toast("Proveedor eliminado", "success");
     } catch (err) {
       console.error("Error al eliminar proveedor:", err);
@@ -127,8 +132,7 @@ export default function Suppliers() {
     setBulkDeleting(true);
     try {
       await suppliersApi.bulkDelete([...selectedIds]);
-      cacheClear("suppliers");
-      refresh();
+      refreshImmediate();
       setEditMode(false);
       setSelectedIds(new Set());
       setBulkDeleteConfirm(false);

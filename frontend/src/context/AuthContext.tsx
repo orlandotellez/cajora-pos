@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { authApi, type AuthUser, type Store, type RegisterStorePayload } from "@/api/auth";
+import { clearAllCrudCache } from "@/lib/crud-list-cache";
 
 const REFRESH_INTERVAL = 14 * 60 * 1000;
 
@@ -147,6 +148,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (err) { console.warn("[Auth] Error al hacer logout:", err); }
     setUser(null);
     setStore(null);
+    // Limpiar la caché client-side de listas admin para no mezclar datos
+    // entre usuarios en el mismo dispositivo/terminal.
+    clearAllCrudCache();
     localStorage.removeItem("auth-token");
     localStorage.removeItem("auth-refresh-token");
     navigate("/auth");

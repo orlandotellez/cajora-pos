@@ -4,7 +4,8 @@ import type { UserResponse } from "@/api";
 import type { Permission } from "@/api/auth";
 import { useAuth } from "@/context/AuthContext";
 import { useAdminGuard } from "@/hooks/useAdminGuard";
-import { useCrudPagination } from "@/hooks/useCrudPagination";
+import { useCachedCrudList } from "@/hooks/useCachedCrudList";
+import { fetchAllPages } from "@/lib/fetch-all-pages";
 import { useToast } from "@/components/common/ui/Toast";
 import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
 import { UserTable } from "@/components/pages/users/UserTable";
@@ -31,11 +32,18 @@ export default function Users() {
     setSearch,
     setPage,
     refreshImmediate,
-  } = useCrudPagination<UserResponse>({
-    fetcher: ({ page, limit, search }) =>
-      usersApi
-        .list({ page, limit, search: search || undefined })
-        .then((res) => ({ items: res.users, total: res.total })),
+  } = useCachedCrudList<UserResponse>({
+    namespace: "users",
+    hydrate: () =>
+      fetchAllPages((page, limit) =>
+        usersApi
+          .list({ page, limit })
+          .then((res) => ({ items: res.users, total: res.total })),
+      ),
+    searchFn: (u, query) =>
+      u.name.toLowerCase().includes(query) ||
+      u.email.toLowerCase().includes(query) ||
+      (u.phone?.toLowerCase().includes(query) ?? false),
     pollMs: 10_000,
     realtimeEvents: ["user.created", "user.updated", "user.deleted"],
   });

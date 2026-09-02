@@ -4,8 +4,8 @@ import { productsApi, type CreateProductPayload } from "@/api/products";
 import { categoriesApi } from "@/api/categories";
 import { suppliersApi } from "@/api/suppliers";
 import type { Product, Category, Supplier } from "@/api";
-import { cacheClear } from "@/lib/simple-cache";
-import { useCrudPagination } from "@/hooks/useCrudPagination";
+import { useCachedCrudList } from "@/hooks/useCachedCrudList";
+import { fetchAllPages } from "@/lib/fetch-all-pages";
 import { useToast } from "@/components/common/ui/Toast";
 import { usePosStore } from "@/store/posStore";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -65,18 +65,24 @@ export default function Products() {
     setSearch,
     setPage,
     refreshImmediate,
-  } = useCrudPagination<Product>({
-    fetcher: ({ page, limit, search, extraFilters }) =>
-      productsApi
-        .list({
-          page,
-          limit,
-          search: search || undefined,
-          category_id: extraFilters.categoryId || undefined,
-          unit_type: extraFilters.unitType || undefined,
-        })
-        .then((res) => ({ items: res.products, total: res.total })),
-    cacheNamespace: "products",
+    setExternalFilters,
+  } = useCachedCrudList<Product>({
+    namespace: "products",
+    hydrate: () =>
+      fetchAllPages((page, limit) =>
+        productsApi
+          .list({ page, limit })
+          .then((res) => ({ items: res.products, total: res.total })),
+      ),
+    searchFn: (p, query) =>
+      p.name.toLowerCase().includes(query) ||
+      (p.barcode?.toLowerCase().includes(query) ?? false) ||
+      (p.category?.name.toLowerCase().includes(query) ?? false),
+    filterFn: (p, filters) => {
+      if (filters.categoryId && p.category?.id !== filters.categoryId) return false;
+      if (filters.unitType && p.unit_type !== filters.unitType) return false;
+      return true;
+    },
     pollMs: 5_000,
     realtimeEvents: [
       "product.created",
@@ -90,7 +96,6 @@ export default function Products() {
       "supplier.updated",
       "supplier.deleted",
     ],
-    extraFilters: { categoryId, unitType },
   });
 
   // Cargar categorías y proveedores una vez para los dropdowns del modal.
@@ -104,6 +109,11 @@ export default function Products() {
       suppliersApi.list().then((res) => setSuppliers(res.suppliers)).catch(() => { });
     }
   }, [categories.length, suppliers.length]);
+
+  // Sincronizar filtros externos con el hook caché cada vez que cambian.
+  useEffect(() => {
+    setExternalFilters({ categoryId, unitType });
+  }, [categoryId, unitType, setExternalFilters]);
 
   function openCreate() {
     setForm(emptyForm);
@@ -129,7 +139,6 @@ export default function Products() {
       };
       await productsApi.create(data);
       setEditing(null);
-      cacheClear("products");
       refreshImmediate();
       toast("Producto guardado correctamente", "success");
     } catch (err) {
@@ -141,7 +150,6 @@ export default function Products() {
   async function remove(id: string) {
     try {
       await productsApi.delete(id);
-      cacheClear("products");
       refreshImmediate();
       toast("Producto eliminado", "success");
     } catch (err) {
@@ -160,7 +168,6 @@ export default function Products() {
     setBulkDeleting(true);
     try {
       await productsApi.bulkDelete([...selectedIds]);
-      cacheClear("products");
       refreshImmediate();
       setEditMode(false);
       setSelectedIds(new Set());
@@ -181,7 +188,6 @@ export default function Products() {
         ...(q ? { search: q } : {}),
         ...(categoryId ? { category_id: categoryId } : {}),
       });
-      cacheClear("products");
       refreshImmediate();
       setEditMode(false);
       setSelectedIds(new Set());
@@ -295,7 +301,6 @@ export default function Products() {
           suppliers={suppliers}
           onClose={() => setEditing(null)}
           onSaved={() => {
-            cacheClear("products");
             refreshImmediate();
           }}
           readOnly={!canWrite}
@@ -345,7 +350,6 @@ export default function Products() {
         <ImportCsvModal
           setOpen={() => setImportOpen(false)}
           onImported={() => {
-            cacheClear("products");
             refreshImmediate();
             toast("Productos importados correctamente", "success");
           }}

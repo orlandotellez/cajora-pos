@@ -2,8 +2,7 @@ import { create } from "zustand"
 import type { Product, Service } from "@/api"
 import { productsApi } from "@/api/products"
 import { servicesApi } from "@/api/services"
-
-const HYDRATE_PAGE_SIZE = 100
+import { fetchAllPages } from "@/lib/fetch-all-pages"
 
 interface CatalogoState {
   products: Record<string, Product>
@@ -23,22 +22,6 @@ interface CatalogoState {
   removeService: (id: string) => void
   applyStockChange: (productId: string, stock: number) => void
   clear: () => void
-}
-
-async function fetchAllPages<T>(
-  fetchPage: (page: number, limit: number) => Promise<{ items: T[]; total: number }>,
-): Promise<T[]> {
-  const all: T[] = []
-  let page = 1
-  let total = Infinity
-  while ((page - 1) * HYDRATE_PAGE_SIZE < total) {
-    const res = await fetchPage(page, HYDRATE_PAGE_SIZE)
-    all.push(...res.items)
-    total = res.total
-    if (res.items.length === 0) break
-    page += 1
-  }
-  return all
 }
 
 export const useCatalogoStore = create<CatalogoState>()((set, get) => ({

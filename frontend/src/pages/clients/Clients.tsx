@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { clientsApi, type CreateClientPayload, type UpdateClientPayload } from "@/api/clients";
 import type { Client } from "@/api";
-import { cacheClear } from "@/lib/simple-cache";
-import { useCrudPagination } from "@/hooks/useCrudPagination";
+import { useCachedCrudList } from "@/hooks/useCachedCrudList";
+import { fetchAllPages } from "@/lib/fetch-all-pages";
 import { useToast } from "@/components/common/ui/Toast";
 import { usePermissions } from "@/hooks/usePermissions";
 import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
@@ -36,13 +36,19 @@ export default function Clients() {
     totalPages,
     setSearch,
     setPage,
-    refresh,
-  } = useCrudPagination<Client>({
-    fetcher: ({ page, limit, search }) =>
-      clientsApi
-        .list({ page, limit, search: search || undefined })
-        .then((res) => ({ items: res.clients, total: res.total })),
-    cacheNamespace: "clients",
+    refreshImmediate,
+  } = useCachedCrudList<Client>({
+    namespace: "clients",
+    hydrate: () =>
+      fetchAllPages((page, limit) =>
+        clientsApi
+          .list({ page, limit })
+          .then((res) => ({ items: res.clients, total: res.total })),
+      ),
+    searchFn: (c, query) =>
+      c.name.toLowerCase().includes(query) ||
+      (c.phone?.toLowerCase().includes(query) ?? false) ||
+      (c.email?.toLowerCase().includes(query) ?? false),
     pollMs: 10_000,
     realtimeEvents: ["client.created", "client.updated", "client.deleted"],
   });
@@ -92,8 +98,7 @@ export default function Clients() {
         await clientsApi.update(editing.id, data as UpdateClientPayload);
       }
       setEditing(null);
-      cacheClear("clients");
-      refresh();
+      refreshImmediate();
       toast(
         isNew ? "Cliente creado correctamente" : "Cliente actualizado correctamente",
         "success",
@@ -109,8 +114,7 @@ export default function Clients() {
   async function remove(id: string) {
     try {
       await clientsApi.delete(id);
-      cacheClear("clients");
-      refresh();
+      refreshImmediate();
       toast("Cliente eliminado", "success");
     } catch (err) {
       console.error("Error al eliminar cliente:", err);
@@ -128,8 +132,7 @@ export default function Clients() {
     setBulkDeleting(true);
     try {
       await clientsApi.bulkDelete([...selectedIds]);
-      cacheClear("clients");
-      refresh();
+      refreshImmediate();
       setEditMode(false);
       setSelectedIds(new Set());
       setBulkDeleteConfirm(false);

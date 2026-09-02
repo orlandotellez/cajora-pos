@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { categoriesApi, type Category, type CreateCategoryPayload, type UpdateCategoryPayload } from "@/api/categories";
-import { cacheClear } from "@/lib/simple-cache";
-import { useCrudPagination } from "@/hooks/useCrudPagination";
+import { useCachedCrudList } from "@/hooks/useCachedCrudList";
+import { fetchAllPages } from "@/lib/fetch-all-pages";
 import { useToast } from "@/components/common/ui/Toast";
 import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
 import { CategoryTable } from "@/components/pages/categories/CategoryTable";
@@ -27,13 +27,18 @@ export default function Categories() {
     totalPages,
     setSearch,
     setPage,
-    refresh,
-  } = useCrudPagination<Category>({
-    fetcher: ({ page, limit, search }) =>
-      categoriesApi
-        .listPaginated({ page, limit, search: search || undefined })
-        .then((res) => ({ items: res.categories, total: res.total })),
-    cacheNamespace: "categories",
+    refreshImmediate,
+  } = useCachedCrudList<Category>({
+    namespace: "categories",
+    hydrate: () =>
+      fetchAllPages((page, limit) =>
+        categoriesApi
+          .listPaginated({ page, limit })
+          .then((res) => ({ items: res.categories, total: res.total })),
+      ),
+    searchFn: (c, query) =>
+      c.name.toLowerCase().includes(query) ||
+      (c.description?.toLowerCase().includes(query) ?? false),
     pollMs: 10_000,
     realtimeEvents: ["category.created", "category.updated", "category.deleted"],
   });
@@ -72,8 +77,7 @@ export default function Categories() {
         await categoriesApi.update(editing.id, data as UpdateCategoryPayload);
       }
       setEditing(null);
-      cacheClear("categories");
-      refresh();
+      refreshImmediate();
       toast(
         isNew ? "Categoría creada correctamente" : "Categoría actualizada correctamente",
         "success",
@@ -89,8 +93,7 @@ export default function Categories() {
   async function remove(id: string) {
     try {
       await categoriesApi.delete(id);
-      cacheClear("categories");
-      refresh();
+      refreshImmediate();
       toast("Categoría eliminada", "success");
     } catch (err) {
       console.error("Error al eliminar categoría:", err);
@@ -108,8 +111,7 @@ export default function Categories() {
     setBulkDeleting(true);
     try {
       await categoriesApi.bulkDelete([...selectedIds]);
-      cacheClear("categories");
-      refresh();
+      refreshImmediate();
       setEditMode(false);
       setSelectedIds(new Set());
       setBulkDeleteConfirm(false);

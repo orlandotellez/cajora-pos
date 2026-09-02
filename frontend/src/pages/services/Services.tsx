@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { servicesApi, type CreateServicePayload } from "@/api/services";
 import { productsApi } from "@/api/products";
 import type { Service, Product } from "@/api";
-import { cacheClear } from "@/lib/simple-cache";
-import { useCrudPagination } from "@/hooks/useCrudPagination";
+import { useCachedCrudList } from "@/hooks/useCachedCrudList";
+import { fetchAllPages } from "@/lib/fetch-all-pages";
 import { useToast } from "@/components/common/ui/Toast";
 import { usePosStore } from "@/store/posStore";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -30,13 +30,18 @@ export default function Services() {
     totalPages,
     setSearch,
     setPage,
-    refresh,
-  } = useCrudPagination<Service>({
-    fetcher: ({ page, limit, search }) =>
-      servicesApi
-        .list({ page, limit, search: search || undefined })
-        .then((res) => ({ items: res.services, total: res.total })),
-    cacheNamespace: "services",
+    refreshImmediate,
+  } = useCachedCrudList<Service>({
+    namespace: "services",
+    hydrate: () =>
+      fetchAllPages((page, limit) =>
+        servicesApi
+          .list({ page, limit })
+          .then((res) => ({ items: res.services, total: res.total })),
+      ),
+    searchFn: (s, query) =>
+      s.name.toLowerCase().includes(query) ||
+      (s.description?.toLowerCase().includes(query) ?? false),
     pollMs: 10_000,
     realtimeEvents: ["service.created", "service.updated", "service.deleted"],
   });
@@ -85,8 +90,7 @@ export default function Services() {
         await servicesApi.update(editingService.id, payload);
       }
       setEditing(null);
-      cacheClear("services");
-      refresh();
+      refreshImmediate();
       toast("Servicio guardado correctamente", "success");
     } catch (err) {
       console.error("Error al guardar servicio:", err);
@@ -97,8 +101,7 @@ export default function Services() {
   async function remove(id: string) {
     try {
       await servicesApi.delete(id);
-      cacheClear("services");
-      refresh();
+      refreshImmediate();
       toast("Servicio eliminado", "success");
     } catch (err) {
       console.error("Error al eliminar servicio:", err);
@@ -116,8 +119,7 @@ export default function Services() {
     setBulkDeleting(true);
     try {
       await servicesApi.bulkDelete([...selectedIds]);
-      cacheClear("services");
-      refresh();
+      refreshImmediate();
       setEditMode(false);
       setSelectedIds(new Set());
       setBulkDeleteConfirm(false);
