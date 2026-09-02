@@ -9,7 +9,7 @@
  * Retorna un array que puede contener números y el string "dots" para
  * indicar un separador de elipsis.
  */
-export function getVisiblePages(page: number, totalPages: number, maxPages = 7): (number | "dots")[] {
+export function getVisiblePages(page: number, totalPages: number, maxPages = 5): (number | "dots")[] {
   const total = Math.max(1, Math.floor(totalPages));
 
   if (total <= maxPages) {
