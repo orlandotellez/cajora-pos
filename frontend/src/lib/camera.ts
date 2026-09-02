@@ -1,3 +1,5 @@
+import { isAndroidRuntime, isTauriRuntime } from "@/lib/fetch";
+
 export async function acquireCameraStream(): Promise<MediaStream> {
   if (!navigator.mediaDevices?.getUserMedia) {
     throw new Error("Tu navegador no permite el acceso a la cámara.");
@@ -30,6 +32,20 @@ function detectPlatform(): CameraPlatform {
 }
 
 export function cameraPermissionInstructions(): string {
+  // En el APK (Tauri/Android) la WebView pide el permiso nativo de Android en
+  // cada activación, así que Reintentar vuelve a preguntar — no hace falta ir
+  // a la configuración del sitio, salvo que se haya marcado "no volver a pedir".
+  if (isAndroidRuntime()) {
+    return [
+      "Permiso de cámara denegado.",
+      "Tocá Reintentar para volver a pedir el acceso a la cámara.",
+      "Si no vuelve a preguntar, habilitá la cámara desde",
+      "Ajustes de la app → Permisos de la app → Cámara.",
+    ].join("\n");
+  }
+
+  // En el navegador web, una denegación es permanente para el sitio: no hay API
+  // para re-pedir, la única vía es resetear en la configuración del sitio.
   switch (detectPlatform()) {
     case "android":
       return [
