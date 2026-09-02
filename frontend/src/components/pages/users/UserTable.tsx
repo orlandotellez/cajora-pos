@@ -12,9 +12,13 @@ interface UserTableProps {
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
-  onEdit: (user: UserResponse) => void;
-  onDelete: (user: UserResponse) => void;
+  /** Si se define, muestra un botón de editar por fila. */
+  onEdit?: (user: UserResponse) => void;
+  /** Si se define, muestra un botón de eliminar por fila. */
+  onDelete?: (user: UserResponse) => void;
   onToggleActive: (user: UserResponse) => void;
+  /** Si se define, se usa para el click en la fila (separado de onEdit). */
+  onRowClick?: (user: UserResponse) => void;
   dimmed?: boolean;
   refreshing?: boolean;
   selectable?: boolean;
@@ -22,7 +26,7 @@ interface UserTableProps {
   onSelectionChange?: (ids: Set<string>) => void;
 }
 
-export function UserTable({ users, currentUserId, loading, total, page, totalPages, onPageChange, onEdit, onDelete, onToggleActive, dimmed, refreshing, selectable = false, selectedIds, onSelectionChange }: UserTableProps) {
+export function UserTable({ users, currentUserId, loading, total, page, totalPages, onPageChange, onEdit, onDelete, onRowClick, onToggleActive, dimmed, refreshing, selectable = false, selectedIds, onSelectionChange }: UserTableProps) {
   const columns: Column<UserResponse>[] = useMemo(() => [
     {
       key: "name", label: "Nombre", render: (u) => (
@@ -66,9 +70,9 @@ export function UserTable({ users, currentUserId, loading, total, page, totalPag
       page={page}
       totalPages={totalPages}
       onPageChange={onPageChange}
-      onRowClick={onEdit}
-      onEdit={onEdit}
-      onDelete={(u) => { if (u.id !== currentUserId) onDelete(u); }}
+      onRowClick={selectable ? undefined : (onRowClick ?? onEdit)}
+      onEdit={selectable ? undefined : onEdit}
+      onDelete={selectable ? undefined : onDelete}
       emptyMessage="Sin usuarios"
       skeletonCols={[{ width: "35%" }, { width: "35%" }, { width: "15%" }, { width: "10%", align: "right" }, { width: "80px" }]}
       dimmed={dimmed}

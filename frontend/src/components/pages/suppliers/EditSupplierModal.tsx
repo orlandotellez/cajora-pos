@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { X, Trash2 } from "lucide-react";
 import styles from "./EditSupplierModal.module.css";
 import { useModalBack } from "@/hooks/useModalBack";
 
@@ -19,6 +19,8 @@ interface EditSupplierModalProps {
   form: Form;
   setForm: (value: Form) => void;
   submitting: boolean;
+  /** Callback para eliminar el proveedor. Si no se provee, no se muestra la danger zone. */
+  onDelete?: () => void;
 }
 
 export const EditSupplierModal = ({
@@ -28,6 +30,7 @@ export const EditSupplierModal = ({
   form,
   setForm,
   submitting,
+  onDelete,
 }: EditSupplierModalProps) => {
   // Botón de retroceso de Android / gesto de regreso cierra el modal.
   useModalBack(setEditing);
@@ -123,6 +126,19 @@ export const EditSupplierModal = ({
               Cancelar
             </button>
           </div>
+
+          {!isNew && onDelete && (
+            <section className={styles.dangerZone}>
+              <h3 className={styles.dangerTitle}>Zona de peligro</h3>
+              <p className={styles.dangerHint}>
+                Eliminar este proveedor es una acción permanente y no se puede deshacer.
+              </p>
+              <button type="button" onClick={onDelete} className={styles.dangerBtn}>
+                <Trash2 size={14} />
+                Eliminar proveedor
+              </button>
+            </section>
+          )}
         </form>
       </div>
     </div>

@@ -10,8 +10,12 @@ interface CategoryTableProps {
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
-  onEdit: (category: Category) => void;
-  onDelete: (category: Category) => void;
+  /** Si se define, muestra un botón de editar por fila. */
+  onEdit?: (category: Category) => void;
+  /** Si se define, muestra un botón de eliminar por fila. */
+  onDelete?: (category: Category) => void;
+  /** Si se define, se usa para el click en la fila (separado de onEdit). */
+  onRowClick?: (category: Category) => void;
   dimmed?: boolean;
   refreshing?: boolean;
   selectable?: boolean;
@@ -28,6 +32,7 @@ export function CategoryTable({
   onPageChange,
   onEdit,
   onDelete,
+  onRowClick,
   dimmed,
   refreshing,
   selectable = false,
@@ -68,9 +73,9 @@ export function CategoryTable({
       page={page}
       totalPages={totalPages}
       onPageChange={onPageChange}
-      onRowClick={onEdit}
-      onEdit={onEdit}
-      onDelete={onDelete}
+      onRowClick={selectable ? undefined : (onRowClick ?? onEdit)}
+      onEdit={selectable ? undefined : onEdit}
+      onDelete={selectable ? undefined : onDelete}
       emptyMessage="Sin categorías"
       skeletonCols={[{ width: "30%" }, { width: "50%" }, { width: "80px" }]}
       dimmed={dimmed}

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { X, Pencil, Camera, ArrowRight } from "lucide-react";
+import { X, Pencil, Camera, ArrowRight, Trash2 } from "lucide-react";
 import { productsApi, type Product, type UpdateProductPayload } from "@/api/products";
 import { useToast } from "@/components/common/ui/Toast";
 import { money } from "@/lib/format";
@@ -16,6 +16,8 @@ interface ProductDetailModalProps {
   suppliers: Supplier[];
   onClose: () => void;
   onSaved: () => void;
+  /** Callback para eliminar el producto. Si no se provee, no se muestra la danger zone. */
+  onDelete?: (product: Product) => void;
   /** Si es true, oculta el botón de editar (modo solo lectura para cajeros). */
   readOnly?: boolean;
 }
@@ -29,7 +31,7 @@ type Form = {
   supplier_id: string;
 };
 
-export function ProductDetailModal({ product, categories, suppliers, onClose, onSaved, readOnly }: ProductDetailModalProps) {
+export function ProductDetailModal({ product, categories, suppliers, onClose, onSaved, onDelete, readOnly }: ProductDetailModalProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
   // Botón de retroceso de Android / gesto de regreso cierra el modal.
@@ -302,6 +304,19 @@ export function ProductDetailModal({ product, categories, suppliers, onClose, on
           <button onClick={onClose} className={styles.closeBtn}>
             Cerrar
           </button>
+
+          {onDelete && (
+            <section className={styles.dangerZone}>
+              <h3 className={styles.dangerTitle}>Zona de peligro</h3>
+              <p className={styles.dangerHint}>
+                Eliminar este producto es una acción permanente y no se puede deshacer.
+              </p>
+              <button onClick={() => onDelete(productData)} className={styles.dangerBtn}>
+                <Trash2 size={14} />
+                Eliminar producto
+              </button>
+            </section>
+          )}
         </div>
       </div>
 

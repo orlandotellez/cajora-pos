@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { X, Loader2, ChevronDown, ChevronRight } from "lucide-react";
+import { X, Loader2, ChevronDown, ChevronRight, Trash2 } from "lucide-react";
 import { clientsApi, type ClientDetailResponse } from "@/api/clients";
 import { creditsApi } from "@/api/credits";
 import { money } from "@/lib/format";
@@ -10,6 +10,8 @@ import { useModalBack } from "@/hooks/useModalBack";
 interface ClientDetailModalProps {
   clientId: string;
   onClose: () => void;
+  /** Callback para eliminar el cliente. Si no se provee, no se muestra la danger zone. */
+  onDelete?: () => void;
 }
 
 function formatDate(iso: string): string {
@@ -27,7 +29,7 @@ const PAYMENT_LABELS: Record<string, string> = {
   credito: "Crédito",
 };
 
-export function ClientDetailModal({ clientId, onClose }: ClientDetailModalProps) {
+export function ClientDetailModal({ clientId, onClose, onDelete }: ClientDetailModalProps) {
   useModalBack(onClose);
   const currency = usePosStore((s) => s.currency);
   const [client, setClient] = useState<ClientDetailResponse | null>(null);
@@ -194,6 +196,19 @@ export function ClientDetailModal({ clientId, onClose }: ClientDetailModalProps)
                 )}
               </section>
             </>
+          )}
+
+          {onDelete && (
+            <section className={styles.dangerZone}>
+              <h3 className={styles.dangerTitle}>Zona de peligro</h3>
+              <p className={styles.dangerHint}>
+                Eliminar este cliente es una acción permanente y no se puede deshacer.
+              </p>
+              <button onClick={onDelete} className={styles.dangerBtn}>
+                <Trash2 size={14} />
+                Eliminar cliente
+              </button>
+            </section>
           )}
         </div>
       </div>

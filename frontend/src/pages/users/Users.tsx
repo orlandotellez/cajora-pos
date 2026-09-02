@@ -49,7 +49,7 @@ export default function Users() {
   });
 
   const [editing, setEditing] = useState<UserResponse | null | "new">(null);
-  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [editMode, setEditMode] = useState(false);
@@ -193,8 +193,7 @@ export default function Users() {
         page={page}
         totalPages={totalPages}
         onPageChange={setPage}
-        onEdit={(u) => setEditing(u)}
-        onDelete={(u) => setDeleteTarget(u.id)}
+        onRowClick={(u) => setEditing(u)}
         onToggleActive={handleToggleActive}
         dimmed={false}
         refreshing={refreshing}
@@ -212,16 +211,22 @@ export default function Users() {
           form={form}
           setForm={setForm}
           submitting={submitting}
+          onDelete={typeof editing === "object" && editing && editing.id !== currentUser?.id
+            ? () => {
+                setEditing(null);
+                setDeleteTarget({ id: editing.id, name: editing.name });
+              }
+            : undefined}
         />
       }
 
       <ConfirmDialog
         open={deleteTarget !== null}
         title="Eliminar usuario"
-        message="¿Estás seguro de que querés eliminar este usuario? Esta acción no se puede deshacer."
+        message={`¿Estás seguro de que querés eliminar al usuario "${deleteTarget?.name}"? Esta acción no se puede deshacer.`}
         confirmLabel="Sí, eliminar"
         cancelLabel="Cancelar"
-        onConfirm={() => { if (deleteTarget) remove(deleteTarget); setDeleteTarget(null); }}
+        onConfirm={() => { if (deleteTarget) remove(deleteTarget.id); setDeleteTarget(null); }}
         onCancel={() => setDeleteTarget(null)}
       />
 

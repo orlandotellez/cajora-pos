@@ -48,7 +48,7 @@ export default function Products() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [editing, setEditing] = useState<Product | null | "new">(null);
-  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [barcodeScannerOpen, setBarcodeScannerOpen] = useState(false);
@@ -252,9 +252,7 @@ export default function Products() {
         page={page}
         totalPages={totalPages}
         onPageChange={setPage}
-        onEdit={canWrite ? (p) => setEditing(p) : undefined!}
-        onDelete={canWrite ? (p) => setDeleteTarget(p.id) : undefined!}
-        onRowClick={canWrite ? undefined : (p) => setEditing(p)}
+        onRowClick={(p) => setEditing(p)}
         onAddToCart={(p) => {
           const inCart = usePosStore
             .getState()
@@ -303,6 +301,10 @@ export default function Products() {
           onSaved={() => {
             refreshImmediate();
           }}
+          onDelete={canWrite ? (p) => {
+            setEditing(null);
+            setDeleteTarget({ id: p.id, name: p.name });
+          } : undefined}
           readOnly={!canWrite}
         />
       )}
@@ -319,10 +321,10 @@ export default function Products() {
       <ConfirmDialog
         open={deleteTarget !== null}
         title="Eliminar producto"
-        message="¿Estás seguro de que querés eliminar este producto? Esta acción no se puede deshacer."
+        message={`¿Estás seguro de que querés eliminar el producto "${deleteTarget?.name}"? Esta acción no se puede deshacer.`}
         confirmLabel="Sí, eliminar"
         cancelLabel="Cancelar"
-        onConfirm={() => { if (deleteTarget) remove(deleteTarget); setDeleteTarget(null); }}
+        onConfirm={() => { if (deleteTarget) remove(deleteTarget.id); setDeleteTarget(null); }}
         onCancel={() => setDeleteTarget(null)}
       />
 

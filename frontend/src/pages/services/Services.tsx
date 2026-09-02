@@ -48,7 +48,7 @@ export default function Services() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [editing, setEditing] = useState<Service | "new" | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
@@ -226,9 +226,7 @@ export default function Services() {
         page={page}
         totalPages={totalPages}
         onPageChange={setPage}
-        onEdit={canWrite ? (s) => setEditing(s) : undefined!}
-        onDelete={canWrite ? (s) => setDeleteTarget(s.id) : undefined!}
-        onRowClick={undefined}
+        onRowClick={canWrite ? (s) => setEditing(s) : undefined}
         onAddToCart={handleAddToCart}
         blockedIds={blockedServiceIds}
         dimmed={false}
@@ -244,17 +242,21 @@ export default function Services() {
           products={products}
           onClose={() => setEditing(null)}
           onSave={handleSave}
+          onDelete={(s) => {
+            setEditing(null);
+            setDeleteTarget({ id: s.id, name: s.name });
+          }}
         />
       )}
 
       <ConfirmDialog
         open={deleteTarget !== null}
         title="Eliminar servicio"
-        message="¿Estás seguro de que querés eliminar este servicio? Esta acción no se puede deshacer."
+        message={`¿Estás seguro de que querés eliminar el servicio "${deleteTarget?.name}"? Esta acción no se puede deshacer.`}
         confirmLabel="Sí, eliminar"
         cancelLabel="Cancelar"
         onConfirm={() => {
-          if (deleteTarget) remove(deleteTarget);
+          if (deleteTarget) remove(deleteTarget.id);
           setDeleteTarget(null);
         }}
         onCancel={() => setDeleteTarget(null)}

@@ -55,7 +55,7 @@ export default function Suppliers() {
   });
 
   const [editing, setEditing] = useState<Supplier | null | "new">(null);
-  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [editMode, setEditMode] = useState(false);
@@ -186,8 +186,7 @@ export default function Suppliers() {
         page={page}
         totalPages={totalPages}
         onPageChange={setPage}
-        onEdit={(s) => setEditing(s)}
-        onDelete={(s) => setDeleteTarget(s.id)}
+        onRowClick={(s) => setEditing(s)}
         dimmed={false}
         refreshing={refreshing}
         selectable={editMode && isAdmin}
@@ -203,17 +202,22 @@ export default function Suppliers() {
           form={form}
           setForm={setForm}
           submitting={submitting}
+          onDelete={() => {
+            if (typeof editing !== "object" || !editing) return;
+            setEditing(null);
+            setDeleteTarget({ id: editing.id, name: editing.name });
+          }}
         />
       )}
 
       <ConfirmDialog
         open={deleteTarget !== null}
         title="Eliminar proveedor"
-        message="¿Estás seguro de que querés eliminar este proveedor? Esta acción no se puede deshacer."
+        message={`¿Estás seguro de que querés eliminar el proveedor "${deleteTarget?.name}"? Esta acción no se puede deshacer.`}
         confirmLabel="Sí, eliminar"
         cancelLabel="Cancelar"
         onConfirm={() => {
-          if (deleteTarget) remove(deleteTarget);
+          if (deleteTarget) remove(deleteTarget.id);
           setDeleteTarget(null);
         }}
         onCancel={() => setDeleteTarget(null)}

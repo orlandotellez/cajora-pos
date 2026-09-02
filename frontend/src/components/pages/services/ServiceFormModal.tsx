@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { X, Package, Plus } from "lucide-react";
+import { X, Package, Plus, Trash2 } from "lucide-react";
 import { money } from "@/lib/format";
 import type { Service, Product } from "@/api";
 import type { CreateServicePayload } from "@/api/services";
@@ -15,6 +15,8 @@ interface Props {
     isNew: boolean,
     editingService: Service | null,
   ) => Promise<void>;
+  /** Callback para eliminar el servicio. Si no se provee, no se muestra la danger zone. */
+  onDelete?: (service: Service) => void;
 }
 
 interface SelectedProduct {
@@ -25,7 +27,7 @@ interface SelectedProduct {
 
 const EMPTY_FORM = { name: "", description: "", base_price: 0 };
 
-export function ServiceFormModal({ editing, products, onClose, onSave }: Props) {
+export function ServiceFormModal({ editing, products, onClose, onSave, onDelete }: Props) {
   const isNew = typeof editing === "string";
   const editingService = typeof editing === "object" ? editing : null;
 
@@ -235,6 +237,23 @@ export function ServiceFormModal({ editing, products, onClose, onSave }: Props) 
               Cancelar
             </button>
           </div>
+
+          {!isNew && onDelete && editingService && (
+            <section className={styles.dangerZone}>
+              <h3 className={styles.dangerTitle}>Zona de peligro</h3>
+              <p className={styles.dangerHint}>
+                Eliminar este servicio es una acción permanente y no se puede deshacer.
+              </p>
+              <button
+                type="button"
+                onClick={() => onDelete(editingService)}
+                className={styles.dangerBtn}
+              >
+                <Trash2 size={14} />
+                Eliminar servicio
+              </button>
+            </section>
+          )}
         </form>
       </div>
     </div>

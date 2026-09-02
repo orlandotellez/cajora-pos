@@ -10,8 +10,12 @@ interface SupplierTableProps {
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
-  onEdit: (supplier: Supplier) => void;
-  onDelete: (supplier: Supplier) => void;
+  /** Si se define, muestra un botón de editar por fila. */
+  onEdit?: (supplier: Supplier) => void;
+  /** Si se define, muestra un botón de eliminar por fila. */
+  onDelete?: (supplier: Supplier) => void;
+  /** Si se define, se usa para el click en la fila (separado de onEdit). */
+  onRowClick?: (supplier: Supplier) => void;
   dimmed?: boolean;
   refreshing?: boolean;
   selectable?: boolean;
@@ -19,7 +23,7 @@ interface SupplierTableProps {
   onSelectionChange?: (ids: Set<string>) => void;
 }
 
-export function SupplierTable({ suppliers, loading, total, page, totalPages, onPageChange, onEdit, onDelete, dimmed, refreshing, selectable = false, selectedIds, onSelectionChange }: SupplierTableProps) {
+export function SupplierTable({ suppliers, loading, total, page, totalPages, onPageChange, onEdit, onDelete, onRowClick, dimmed, refreshing, selectable = false, selectedIds, onSelectionChange }: SupplierTableProps) {
   const columns: Column<Supplier>[] = useMemo(() => [
     { key: "name", label: "Nombre", render: (s) => <span className={styles["supplier-name"]}>{s.name}</span> },
     { key: "contact", label: "Contacto", render: (s) => <>{s.contact_name ?? "—"}</> },
@@ -43,9 +47,9 @@ export function SupplierTable({ suppliers, loading, total, page, totalPages, onP
       page={page}
       totalPages={totalPages}
       onPageChange={onPageChange}
-      onRowClick={onEdit}
-      onEdit={onEdit}
-      onDelete={onDelete}
+      onRowClick={selectable ? undefined : (onRowClick ?? onEdit)}
+      onEdit={selectable ? undefined : onEdit}
+      onDelete={selectable ? undefined : onDelete}
       emptyMessage="Sin proveedores"
       skeletonCols={[{ width: "30%" }, { width: "20%" }, { width: "15%" }, { width: "20%" }, { width: "10%" }, { width: "80px" }]}
       dimmed={dimmed}

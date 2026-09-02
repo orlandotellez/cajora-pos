@@ -54,7 +54,7 @@ export default function Clients() {
   });
 
   const [editing, setEditing] = useState<Client | null | "new">(null);
-  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -186,8 +186,7 @@ export default function Clients() {
         page={page}
         totalPages={totalPages}
         onPageChange={setPage}
-        onEdit={(c) => setEditing(c)}
-        onDelete={(c) => setDeleteTarget(c.id)}
+        onRowClick={(c) => setEditing(c)}
         dimmed={false}
         refreshing={refreshing}
         selectable={editMode && isAdmin}
@@ -210,17 +209,21 @@ export default function Clients() {
         <ClientDetailModal
           clientId={editing.id}
           onClose={() => setEditing(null)}
+          onDelete={() => {
+            setEditing(null);
+            setDeleteTarget({ id: editing.id, name: editing.name });
+          }}
         />
       )}
 
       <ConfirmDialog
         open={deleteTarget !== null}
         title="Eliminar cliente"
-        message="¿Estás seguro de que querés eliminar este cliente? Esta acción no se puede deshacer."
+        message={`¿Estás seguro de que querés eliminar al cliente "${deleteTarget?.name}"? Esta acción no se puede deshacer.`}
         confirmLabel="Sí, eliminar"
         cancelLabel="Cancelar"
         onConfirm={() => {
-          if (deleteTarget) remove(deleteTarget);
+          if (deleteTarget) remove(deleteTarget.id);
           setDeleteTarget(null);
         }}
         onCancel={() => setDeleteTarget(null)}

@@ -14,8 +14,10 @@ interface ProductTableProps {
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
-  onEdit: (product: Product) => void;
-  onDelete: (product: Product) => void;
+  /** Si se define, muestra un botón de editar por fila. */
+  onEdit?: (product: Product) => void;
+  /** Si se define, muestra un botón de eliminar por fila. */
+  onDelete?: (product: Product) => void;
   onAddToCart?: (product: Product) => void;
   /** Si se define, se usa para el click en la fila (separado de onEdit). */
   onRowClick?: (product: Product) => void;

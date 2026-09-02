@@ -12,8 +12,10 @@ interface ServiceTableProps {
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
-  onEdit: (service: Service) => void;
-  onDelete: (service: Service) => void;
+  /** Si se define, muestra un botón de editar por fila. */
+  onEdit?: (service: Service) => void;
+  /** Si se define, muestra un botón de eliminar por fila. */
+  onDelete?: (service: Service) => void;
   onAddToCart?: (service: Service) => void;
   /** Si se define, se usa para el click en la fila (separado de onEdit). */
   onRowClick?: (service: Service) => void;
@@ -140,9 +142,9 @@ export function ServiceTable({
       page={page}
       totalPages={totalPages}
       onPageChange={onPageChange}
-      onRowClick={onRowClick ?? onEdit}
-      onEdit={onEdit}
-      onDelete={onDelete}
+      onRowClick={selectable ? undefined : (onRowClick ?? onEdit)}
+      onEdit={selectable ? undefined : onEdit}
+      onDelete={selectable ? undefined : onDelete}
       emptyMessage="Sin servicios"
       skeletonCols={[
         { width: "28%" },

@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { X, Eye, EyeOff, Shield } from "lucide-react"
+import { X, Eye, EyeOff, Shield, Trash2 } from "lucide-react"
 import styles from "./EditUserModal.module.css"
 import { useModalBack } from "@/hooks/useModalBack"
 import { ALL_PERMISSIONS, type Permission } from "@/api/auth"
@@ -22,6 +22,8 @@ interface EditUserModalProps {
   form: Form
   setForm: (value: Form) => void
   submitting: boolean
+  /** Callback para eliminar el usuario. Si no se provee, no se muestra la danger zone. */
+  onDelete?: () => void
 }
 
 export const EditUserModal = ({
@@ -31,7 +33,8 @@ export const EditUserModal = ({
   handleSave,
   form,
   setForm,
-  submitting
+  submitting,
+  onDelete
 }: EditUserModalProps) => {
   // Botón de retroceso de Android / gesto de regreso cierra el modal.
   useModalBack(setEditing);
@@ -148,6 +151,19 @@ export const EditUserModal = ({
                 Cancelar
               </button>
             </div>
+
+            {!isNew && onDelete && (
+              <section className={styles.dangerZone}>
+                <h3 className={styles.dangerTitle}>Zona de peligro</h3>
+                <p className={styles.dangerHint}>
+                  Eliminar este usuario es una acción permanente y no se puede deshacer.
+                </p>
+                <button type="button" onClick={onDelete} className={styles.dangerBtn}>
+                  <Trash2 size={14} />
+                  Eliminar usuario
+                </button>
+              </section>
+            )}
           </form>
         </div>
       </div>

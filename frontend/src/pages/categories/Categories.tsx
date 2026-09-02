@@ -44,7 +44,7 @@ export default function Categories() {
   });
 
   const [editing, setEditing] = useState<Category | null | "new">(null);
-  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [editMode, setEditMode] = useState(false);
@@ -165,8 +165,7 @@ export default function Categories() {
         page={page}
         totalPages={totalPages}
         onPageChange={setPage}
-        onEdit={(c) => setEditing(c)}
-        onDelete={(c) => setDeleteTarget(c.id)}
+        onRowClick={(c) => setEditing(c)}
         dimmed={false}
         refreshing={refreshing}
         selectable={editMode && isAdmin}
@@ -182,18 +181,22 @@ export default function Categories() {
           setForm={setForm}
           submitting={submitting}
           handleSave={handleSave}
-
+          onDelete={() => {
+            if (typeof editing !== "object" || !editing) return;
+            setEditing(null);
+            setDeleteTarget({ id: editing.id, name: editing.name });
+          }}
         />
       }
 
       <ConfirmDialog
         open={deleteTarget !== null}
         title="Eliminar categoría"
-        message="¿Estás seguro de que querés eliminar esta categoría? Los productos asociados no se eliminarán, pero quedarán sin categoría."
+        message={`¿Estás seguro de que querés eliminar la categoría "${deleteTarget?.name}"? Los productos asociados no se eliminarán, pero quedarán sin categoría.`}
         confirmLabel="Sí, eliminar"
         cancelLabel="Cancelar"
         onConfirm={() => {
-          if (deleteTarget) remove(deleteTarget);
+          if (deleteTarget) remove(deleteTarget.id);
           setDeleteTarget(null);
         }}
         onCancel={() => setDeleteTarget(null)}

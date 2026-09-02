@@ -21,21 +21,20 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 5px 10px;
-  background: transparent;
-  border: 1px solid var(--border, #e5e7eb);
+  padding: 11px 10px;
+  background: var(--foreground);
+  border: none;
   border-radius: 5px;
   font-size: 12px;
   font-weight: 500;
-  color: var(--foreground, #111827);
+  color: var(--background);
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
 .add-btn:hover:not(:disabled):not(.add-btn-blocked) {
-  background: var(--accent, #f3f4f6);
-  border-color: color-mix(in srgb, var(--border, #e5e7eb) 40%, var(--foreground, #111827));
+  background: color-mix(in srgb, var(--foreground) 85%, var(--background));
 }
 
 .add-btn:active:not(:disabled):not(.add-btn-blocked) {

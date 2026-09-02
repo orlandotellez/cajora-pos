@@ -1,4 +1,4 @@
-import { X } from "lucide-react"
+import { X, Trash2 } from "lucide-react"
 import styles from "./EditCategoryModal.module.css"
 import React from "react"
 import { useModalBack } from "@/hooks/useModalBack"
@@ -12,9 +12,11 @@ interface EditCategoryModalProps {
   setForm: React.Dispatch<React.SetStateAction<Form>>
   handleSave: (e: React.FormEvent) => Promise<void>
   submitting: boolean
+  /** Callback para eliminar la categoría. Si no se provee, no se muestra la danger zone. */
+  onDelete?: () => void
 }
 
-export const EditCategoryModal = ({ isNew, setEditing, form, setForm, handleSave, submitting }: EditCategoryModalProps) => {
+export const EditCategoryModal = ({ isNew, setEditing, form, setForm, handleSave, submitting, onDelete }: EditCategoryModalProps) => {
   // Botón de retroceso de Android / gesto de regreso cierra el modal.
   useModalBack(setEditing);
   return (
@@ -64,6 +66,19 @@ export const EditCategoryModal = ({ isNew, setEditing, form, setForm, handleSave
                 Cancelar
               </button>
             </div>
+
+            {!isNew && onDelete && (
+              <section className={styles.dangerZone}>
+                <h3 className={styles.dangerTitle}>Zona de peligro</h3>
+                <p className={styles.dangerHint}>
+                  Eliminar esta categoría es una acción permanente y no se puede deshacer.
+                </p>
+                <button type="button" onClick={onDelete} className={styles.dangerBtn}>
+                  <Trash2 size={14} />
+                  Eliminar categoría
+                </button>
+              </section>
+            )}
           </form>
         </div>
       </div>
