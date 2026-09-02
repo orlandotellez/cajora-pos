@@ -1,4 +1,4 @@
-import { Plus, Upload, Pencil } from "lucide-react"
+import { Plus, Upload, Pencil, Loader2 } from "lucide-react"
 import { CartIndicator } from "@/components/common/CartIndicator"
 import styles from "./Header.module.css"
 
@@ -6,6 +6,7 @@ interface HeaderProps {
   total: number
   setEditing: () => void
   loading?: boolean
+  filling?: boolean
   showCreateButton?: boolean
   onImport?: () => void
   showEditMode?: boolean
@@ -13,7 +14,7 @@ interface HeaderProps {
   onToggleEditMode?: () => void
 }
 
-export const Header = ({ total, setEditing, loading = false, showCreateButton = true, onImport, showEditMode = false, editMode = false, onToggleEditMode }: HeaderProps) => {
+export const Header = ({ total, setEditing, loading = false, filling = false, showCreateButton = true, onImport, showEditMode = false, editMode = false, onToggleEditMode }: HeaderProps) => {
   return (
     <>
       <header className={styles.header}>
@@ -23,7 +24,12 @@ export const Header = ({ total, setEditing, loading = false, showCreateButton = 
             {loading && total === 0 ? (
               <span className={styles.skeleton} aria-hidden="true" />
             ) : (
-              `${total} productos en catálogo`
+              <>
+                {total} productos en catálogo
+                {filling && (
+                  <Loader2 size={12} className={styles.fillingSpinner} aria-label="Cargando el resto…" />
+                )}
+              </>
             )}
           </p>
         </div>

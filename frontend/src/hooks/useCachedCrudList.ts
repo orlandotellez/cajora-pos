@@ -25,6 +25,8 @@ export interface UseCachedCrudListReturn<T> {
   q: string;
   loading: boolean;
   refreshing: boolean;
+  /** true mientras el relleno progresivo en background está bajando el resto de los items (de a 50). */
+  filling: boolean;
   totalPages: number;
   setSearch: (value: string) => void;
   setPage: (page: number) => void;
@@ -56,6 +58,7 @@ export function useCachedCrudList<T>(
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(() => !isCrudHydrated(namespace));
   const [refreshing, setRefreshing] = useState(false);
+  const [filling, setFilling] = useState(false);
   const [filters, setFilters] = useState<Record<string, string | undefined>>({});
   const [realtimeConnected, setRealtimeConnected] = useState(() => false);
 
@@ -116,6 +119,7 @@ export function useCachedCrudList<T>(
 
       // Fase 2: rellenamos en background DE A 50, actualizando la tabla en cada
       // tanda (el usuario ve cómo se va poblando). Sin tocar `loading`.
+      setFilling(true); // mientras se rellena, el Header muestra un spinner chico
       for (; ;) {
         const chunk = await restFn(acc.length, total);
         if (generationRef.current !== myGeneration) return; // invalidado por SSE/refresh
@@ -131,6 +135,7 @@ export function useCachedCrudList<T>(
       setLoading(false);
     } finally {
       initialFillRef.current = false; // el poll ya puede retomar
+      setFilling(false); // termina el relleno (o fue invalidado) → apagar el spinner
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [namespace, doHydrate]);
@@ -248,6 +253,7 @@ export function useCachedCrudList<T>(
     q,
     loading,
     refreshing,
+    filling,
     totalPages,
     setSearch,
     setPage,

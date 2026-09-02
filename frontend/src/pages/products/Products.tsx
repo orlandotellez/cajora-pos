@@ -61,6 +61,7 @@ export default function Products() {
     q,
     loading,
     refreshing,
+    filling,
     totalPages,
     setSearch,
     setPage,
@@ -220,7 +221,7 @@ export default function Products() {
 
   return (
     <div className={styles.page}>
-      <Header total={total} setEditing={openCreate} loading={loading} showCreateButton={canWrite} onImport={canWrite ? () => setImportOpen(true) : undefined} showEditMode={isAdmin} editMode={editMode} onToggleEditMode={toggleEditMode} />
+      <Header total={total} setEditing={openCreate} loading={loading} filling={filling} showCreateButton={canWrite} onImport={canWrite ? () => setImportOpen(true) : undefined} showEditMode={isAdmin} editMode={editMode} onToggleEditMode={toggleEditMode} />
 
       <Filter
         q={q}
