@@ -1,7 +1,8 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 import { X } from "lucide-react";
 import { useModalBack } from "@/hooks/useModalBack";
+import { acquireCameraStream, cameraErrorMessage } from "@/lib/camera";
 
 interface BarcodeScannerProps {
   open: boolean;
@@ -27,6 +28,8 @@ const SCANNER_ID = "barcode-scanner-element";
 export function BarcodeScanner({ open, onScan, onClose }: BarcodeScannerProps) {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   // Botón de retroceso de Android / gesto de regreso cierra el escáner.
   useModalBack(onClose, open);
@@ -34,11 +37,15 @@ export function BarcodeScanner({ open, onScan, onClose }: BarcodeScannerProps) {
   useEffect(() => {
     if (!open) return;
 
+    let cancelled = false;
+
     const startScanner = async () => {
+      setError(null);
       try {
-        // Ensure the container element exists
+        await acquireCameraStream();
+
         const el = document.getElementById(SCANNER_ID);
-        if (!el) return;
+        if (!el || cancelled) return;
 
         const scanner = new Html5Qrcode(SCANNER_ID, {
           formatsToSupport,
@@ -64,15 +71,22 @@ export function BarcodeScanner({ open, onScan, onClose }: BarcodeScannerProps) {
         );
       } catch (err) {
         console.warn("[BarcodeScanner] Error starting camera:", err);
+        if (!cancelled) setError(cameraErrorMessage(err));
       }
     };
 
     startScanner();
 
     return () => {
+      cancelled = true;
       stopScanner();
     };
-  }, [open]);
+  }, [open, attempt]);
+
+  function retry() {
+    setError(null);
+    setAttempt((a) => a + 1);
+  }
 
   function stopScanner() {
     if (scannerRef.current) {
@@ -145,9 +159,70 @@ export function BarcodeScanner({ open, onScan, onClose }: BarcodeScannerProps) {
 
       </div>
 
-      <p style={{ color: "#94a3b8", fontSize: 14, margin: 0, textAlign: "center" }}>
-        Apunta al código de barras
-      </p>
+      {error ? (
+        <div
+          role="alert"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 10,
+            maxWidth: "min(90vw, 400px)",
+            padding: "12px 16px",
+            borderRadius: 5,
+            background: "#dc2626",
+            color: "#fff",
+            fontSize: 13,
+            lineHeight: 1.4,
+            whiteSpace: "pre-line",
+            textAlign: "center",
+          }}
+        >
+          <span>{error}</span>
+          <div style={{ display: "flex", gap: 8, marginTop: 2 }}>
+            <button
+              onClick={retry}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "8px 16px",
+                border: "none",
+                borderRadius: 5,
+                background: "#fff",
+                color: "#dc2626",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Reintentar
+            </button>
+            <button
+              onClick={onClose}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyItems: "center",
+                padding: "8px 12px",
+                border: "1px solid rgba(255,255,255,0.4)",
+                borderRadius: 5,
+                background: "transparent",
+                color: "#fff",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      ) : (
+        <p style={{ color: "#94a3b8", fontSize: 14, margin: 0, textAlign: "center" }}>
+          Apunta al código de barras
+        </p>
+      )}
 
       <div style={{ display: "flex", gap: 12 }}>
         <button

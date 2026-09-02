@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
+import { acquireCameraStream, cameraErrorMessage } from "@/lib/camera";
 
 /** ID del elemento DOM donde se monta el viewfinder del scanner. */
 export const POS_SCANNER_ELEMENT_ID = "pos-barcode-scanner";
@@ -24,10 +25,14 @@ export interface UsePosScannerReturn {
   active: boolean;
   /** Toggle on/off (respeta throttle). */
   toggle: () => void;
+  /** Limpia el mensaje de error actual. */
+  clearError: () => void;
   /** Ref al elemento button del toggle (para focus u otros). */
   toggleButtonRef: React.RefObject<HTMLButtonElement | null>;
   /** ID del elemento DOM donde se debe renderizar el viewfinder. */
   elementId: string;
+  /** Error legible de la última activación (permiso denegado, cámara en uso, etc.). */
+  error: string | null;
 }
 
 /**
@@ -54,6 +59,7 @@ export function usePosScanner(opts: UsePosScannerOptions): UsePosScannerReturn {
   const [active, setActive] = useState<boolean>(
     () => typeof window !== "undefined" && localStorage.getItem(STORAGE_KEY) === "true",
   );
+  const [error, setError] = useState<string | null>(null);
 
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const scannerActiveRef = useRef(active);
@@ -100,7 +106,20 @@ export function usePosScanner(opts: UsePosScannerOptions): UsePosScannerReturn {
       return;
     }
 
-    queueMicrotask(() => {
+    queueMicrotask(async () => {
+      if (!scannerActiveRef.current) return;
+
+      // 1) Pedir el permiso de cámara SIEMPRE al activar: dispara el prompt del
+      // navegador (o reintenta si el permiso quedó pendiente) y nos deja saber
+      // el estado real antes de montar el scanner.
+      try {
+        await acquireCameraStream();
+      } catch (err) {
+        if (!scannerActiveRef.current) return;
+        setActive(false);
+        setError(cameraErrorMessage(err));
+        return;
+      }
       if (!scannerActiveRef.current) return;
 
       const el = document.getElementById(POS_SCANNER_ELEMENT_ID);
@@ -144,7 +163,12 @@ export function usePosScanner(opts: UsePosScannerOptions): UsePosScannerReturn {
             /* scan error — ignore (es muy verboso) */
           },
         )
-        .catch((err) => console.warn("[PosScanner] Error:", err));
+        .catch((err) => {
+          console.warn("[PosScanner] Error:", err);
+          if (!scannerActiveRef.current) return;
+          setActive(false);
+          setError(cameraErrorMessage(err));
+        });
     });
 
     return () => {
@@ -162,13 +186,20 @@ export function usePosScanner(opts: UsePosScannerOptions): UsePosScannerReturn {
     const now = Date.now();
     if (now - lastToggleRef.current < TOGGLE_THROTTLE_MS) return;
     lastToggleRef.current = now;
+    setError(null); // cada toque reintenta: limpia el error anterior
     setActive((prev) => !prev);
+  }, []);
+
+  const clearError = useCallback(() => {
+    setError(null);
   }, []);
 
   return {
     active,
     toggle,
+    clearError,
     toggleButtonRef,
     elementId: POS_SCANNER_ELEMENT_ID,
+    error,
   };
 }

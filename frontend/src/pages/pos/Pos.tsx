@@ -41,11 +41,13 @@ export default function Pos() {
 
   const { dialog, showAlert, showConfirm, closeDialog } = useDialog();
 
-  const {
+const {
     active: scannerActive,
     toggle: toggleScanner,
-    toggleButtonRef: scannerToggleRef,
-    elementId,
+    clearError: clearScannerError,
+    toggleButtonRef: scannerButtonRef,
+    elementId: scannerElementId,
+    error: scannerError,
   } = usePosScanner({
     onScan: async (decodedText) => {
       try {
@@ -444,8 +446,10 @@ export default function Pos() {
           <PosScannerSection
             active={scannerActive}
             onToggle={toggleScanner}
-            toggleRef={scannerToggleRef}
-            elementId={elementId}
+            onDismiss={clearScannerError}
+            toggleRef={scannerButtonRef}
+            elementId={scannerElementId}
+            error={scannerError}
           />
         )}
 
