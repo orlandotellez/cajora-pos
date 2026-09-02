@@ -35,12 +35,12 @@ export const Header = ({ total, setEditing, loading = false, showCreateButton = 
               className={`${styles.editModeBtn} ${editMode ? styles.editModeBtnActive : ""}`}
               title="Activar o desactivar la selección múltiple (solo admin)"
             >
-              <Pencil size={14} /> Modo edición
+              <Pencil size={14} /> <span className={styles.editModeLabel}>Modo edición</span>
             </button>
           )}
           {showCreateButton && onImport && (
             <button onClick={onImport} className={styles.secondaryBtn}>
-              <Upload size={16} /> Importar
+              <Upload size={16} /> <span className={styles.importLabel}>Importar</span>
             </button>
           )}
           {showCreateButton && (

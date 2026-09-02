@@ -10,6 +10,23 @@
   }
 }
 
+@media (max-width: 760px) {
+  .toolbar {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .searchWrapper {
+    grid-column: 1 / -1;
+  }
+
+  .filterSelect {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
 .searchWrapper {
   position: relative;
   flex: 1;

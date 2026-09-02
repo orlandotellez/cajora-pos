@@ -35,7 +35,7 @@ export const Header = ({ total, setEditing, loading = false, showCreateButton = 
               className={`${styles.editModeBtn} ${editMode ? styles.editModeBtnActive : ""}`}
               title="Activar o desactivar la selección múltiple"
             >
-              <Pencil size={14} /> Modo edición
+              <Pencil size={14} /> <span className={styles.editModeLabel}>Modo edición</span>
             </button>
           )}
           {showCreateButton && (

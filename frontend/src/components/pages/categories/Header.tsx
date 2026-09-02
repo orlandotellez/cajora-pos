@@ -31,11 +31,11 @@ export const Header = ({ total, setEditing, loading = false, showEditMode = fals
               className={`${styles.editModeBtn} ${editMode ? styles.editModeBtnActive : ""}`}
               title="Activar o desactivar la selección múltiple"
             >
-              <Pencil size={14} /> Modo edición
+              <Pencil size={14} /> <span className={styles.editModeLabel}>Modo edición</span>
             </button>
           )}
           <button onClick={setEditing} className={styles.primaryBtn}>
-            <Plus size={16} /> Nueva categoría
+            <Plus size={16} /> Nuevo
           </button>
         </div>
       </header>

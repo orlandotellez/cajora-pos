@@ -98,3 +98,15 @@
   border-color: color-mix(in srgb, var(--primary, #3b82f6) 50%, var(--border, #e5e7eb));
   color: var(--primary, #3b82f6);
 }
+
+@media (max-width: 760px) {
+  .editModeBtn {
+    width: 40px;
+    padding: 8px;
+    justify-content: center;
+  }
+
+  .editModeLabel {
+    display: none;
+  }
+}

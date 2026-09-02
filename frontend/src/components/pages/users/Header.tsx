@@ -30,7 +30,7 @@ export function Header({ total, onNew, loading = false, showEditMode = false, ed
             className={`${styles.editModeBtn} ${editMode ? styles.editModeBtnActive : ""}`}
             title="Activar o desactivar la selección múltiple"
           >
-            <Pencil size={14} /> Modo edición
+            <Pencil size={14} /> <span className={styles.editModeLabel}>Modo edición</span>
           </button>
         )}
         <button onClick={onNew} className={styles.primaryBtn}>

@@ -102,3 +102,15 @@
   gap: 8px;
   margin-bottom: 16px;
 }
+
+@media (max-width: 760px) {
+  .editModeBtn {
+    width: 40px;
+    padding: 8px;
+    justify-content: center;
+  }
+
+  .editModeLabel {
+    display: none;
+  }
+}

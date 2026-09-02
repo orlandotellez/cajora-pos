@@ -16,7 +16,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 5px 10px;
+  padding: 11px 10px;
   background: transparent;
   border: 1px solid var(--border, #e5e7eb);
   border-radius: 5px;
@@ -45,14 +45,12 @@
 
 .unitTag {
   display: inline-block;
-  padding: 1px 6px;
+  margin-left: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted-foreground, #6b7280);
+  background: var(--muted, rgba(0, 0, 0, 0.05));
   border-radius: 5px;
-  background: var(--foreground);
-  color: var(--background);
-  font-size: 10px;
-  font-weight: 600;
-  line-height: 1.4;
+  padding: 1px 6px;
   white-space: nowrap;
-  vertical-align: middle;
-  margin-left: 4px;
 }

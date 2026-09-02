@@ -126,6 +126,12 @@
   background: var(--accent);
 }
 
+@media (max-width: 760px) {
+  .editLabel {
+    display: none;
+  }
+}
+
 .editForm {
   display: flex;
   flex-direction: column;

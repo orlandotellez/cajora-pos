@@ -131,7 +131,7 @@ export function ProductDetailModal({ product, categories, suppliers, onClose, on
               {!editing && !readOnly && (
                 <button onClick={startEdit} className={styles.editBtn}>
                   <Pencil size={13} />
-                  Editar
+                  <span className={styles.editLabel}>Editar</span>
                 </button>
               )}
             </div>

@@ -102,6 +102,7 @@ export function ProductTable({
               {p.unit_type && (
                 <span className={styles.unitTag}>
                   {UNIT_TYPE_LABELS[p.unit_type] || p.unit_type}
+                  {unitQuantitySuffix(p.unit_type, p.unit_quantity)}
                 </span>
               )}
             </span>

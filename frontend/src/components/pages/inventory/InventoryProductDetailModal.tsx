@@ -116,7 +116,7 @@ export function InventoryProductDetailModal({ product, onClose, onEdit, onAdjust
           </button>
           <button onClick={() => onEdit(product)} className={styles.primaryBtn}>
             <Pencil size={15} />
-            Editar producto
+            <span className={styles.editLabel}>Editar producto</span>
           </button>
         </div>
       </div>
