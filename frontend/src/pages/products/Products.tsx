@@ -266,7 +266,7 @@ export default function Products() {
             return;
           }
           addToCart(p);
-          toast(`"${p.name}" agregado a la lista de venta (${inCartQty + 1} en total)`, "success");
+          toast(`"${p.name}" agregado a la lista de venta (${inCartQty + 1} en total)`, "success", { dedupeKey: p.id });
         }}
         dimmed={false}
         refreshing={refreshing}

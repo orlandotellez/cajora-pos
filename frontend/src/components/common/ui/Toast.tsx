@@ -10,22 +10,40 @@ interface Toast {
   id: number;
   message: string;
   variant: ToastVariant;
+  dedupeKey?: string;
+}
+
+interface ToastOptions {
+  dedupeKey?: string;
 }
 
 interface ToastContextType {
-  toast: (message: string, variant?: ToastVariant) => void;
+  toast: (message: string, variant?: ToastVariant, options?: ToastOptions) => void;
 }
 
 const ToastContext = createContext<ToastContextType | null>(null);
 
 let nextId = 0;
 
+const MAX_TOASTS = 4;
+
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const addToast = useCallback((message: string, variant: ToastVariant = "info") => {
+  const addToast = useCallback((message: string, variant: ToastVariant = "info", options?: ToastOptions) => {
     const id = ++nextId;
-    setToasts((prev) => [...prev, { id, message, variant }]);
+    const dedupeKey = options?.dedupeKey;
+    setToasts((prev) => {
+      const existing = prev.find((t) =>
+        dedupeKey
+          ? t.dedupeKey === dedupeKey
+          : t.dedupeKey === undefined && t.message === message && t.variant === variant,
+      );
+      const next = existing
+        ? [...prev.filter((t) => t.id !== existing.id), { id, message, variant, dedupeKey }]
+        : [...prev, { id, message, variant, dedupeKey }];
+      return next.length > MAX_TOASTS ? next.slice(next.length - MAX_TOASTS) : next;
+    });
   }, []);
 
   const removeToast = useCallback((id: number) => {
@@ -59,7 +77,7 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: number) =
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    
+
     requestAnimationFrame(() => setVisible(true));
     const timer = setTimeout(() => {
       setVisible(false);
