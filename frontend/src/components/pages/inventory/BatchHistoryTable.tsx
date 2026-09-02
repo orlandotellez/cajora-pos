@@ -61,9 +61,6 @@ export function BatchHistoryTable({ batches, page, totalPages, loading = false, 
 
       {totalPages > 1 && (
         <div className={styles.pagination}>
-          <span className={styles.paginationInfo}>
-            Página {page} de {totalPages}
-          </span>
           <div className={styles.paginationButtons}>
             <button
               onClick={() => onPageChange(Math.max(1, page - 1))}

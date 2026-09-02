@@ -38,7 +38,6 @@ export function DataTable<T extends { id: string }>({
   columns,
   data,
   loading,
-  total,
   page,
   totalPages,
   onPageChange,
@@ -185,9 +184,6 @@ export function DataTable<T extends { id: string }>({
 
       {totalPages > 1 && (
         <div className={styles.pagination}>
-          <span className={styles.paginationInfo}>
-            {total} registro{total !== 1 ? "s" : ""} · Página {page} de {totalPages}
-          </span>
           <div className={styles.paginationButtons}>
             <button
               onClick={() => onPageChange(page - 1)}

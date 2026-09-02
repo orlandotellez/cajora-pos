@@ -304,9 +304,6 @@ export default function Subscriptions() {
             >
               Anterior
             </button>
-            <span className={styles.pageInfo}>
-              Página {page + 1} de {totalPages}
-            </span>
             <button
               className={styles.pageBtn}
               onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}

@@ -375,7 +375,6 @@ export default function CashRegister() {
                 <button disabled={page <= 1} onClick={() => fetchHistory(page - 1)} className={styles.pageBtn}>
                   <ChevronLeft size={14} /> Anterior
                 </button>
-                <span className={styles.pageInfo}>Página {page} de {totalPages}</span>
                 <button disabled={page >= totalPages} onClick={() => fetchHistory(page + 1)} className={styles.pageBtn}>
                   Siguiente <ChevronRight size={14} />
                 </button>

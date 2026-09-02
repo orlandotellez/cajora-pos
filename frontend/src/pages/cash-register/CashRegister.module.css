@@ -361,11 +361,6 @@
   cursor: not-allowed;
 }
 
-.pageInfo {
-  font-size: 13px;
-  color: var(--muted-foreground);
-}
-
 @media (max-width: 720px) {
   .page {
     padding: 16px;

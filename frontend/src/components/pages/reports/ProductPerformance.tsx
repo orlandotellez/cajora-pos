@@ -147,10 +147,7 @@ export function ProductPerformance({ range }: { range: Range }) {
 
           {/* Paginación */}
           {totalPages > 1 && (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--border)", fontSize: 13 }}>
-              <span style={{ color: "var(--muted-foreground)" }}>
-                {sorted.length} producto{sorted.length !== 1 ? "s" : ""} · Página {page + 1} de {totalPages}
-              </span>
+            <div className={styles.pagination}>
               <div style={{ display: "flex", gap: 4 }}>
                 <button
                   type="button"
