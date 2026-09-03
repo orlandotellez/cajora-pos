@@ -3,6 +3,7 @@ import { salesApi, type SaleReport } from "@/api/sales";
 import { cacheClear, cacheGet, cacheSet, cacheKey } from "@/lib/simple-cache";
 import { subscribeRealtime } from "@/lib/realtime";
 import { rangeStart, rangeEnd, rangeLabel, toLocalISOString, type Range } from "@/lib/date-range";
+import { exportReportsToExcel } from "@/lib/report-export";
 import { Header } from "@/components/pages/reports/Header";
 import { ReportStats } from "@/components/pages/reports/ReportStats";
 import { ChartsSection } from "@/components/pages/reports/ChartsSection";
@@ -39,6 +40,20 @@ export default function Reports() {
     return cached?.prevReport ?? null;
   });
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
+
+  // Descarga el .xlsx con el detalle del rango actual.
+  const handleExport = useCallback(async () => {
+    if (!report || exporting) return;
+    setExporting(true);
+    try {
+      await exportReportsToExcel(range, report);
+    } catch (err) {
+      console.error("Error al exportar a Excel:", err);
+    } finally {
+      setExporting(false);
+    }
+  }, [range, report, exporting]);
 
   // Contador de secuencia: descarta respuestas obsoletas (mismo guard que el hook).
   const loadSeqRef = useRef(0);
@@ -123,7 +138,7 @@ export default function Reports() {
 
   return (
     <div className={styles.page}>
-      <Header range={range} onRangeChange={setRange} />
+      <Header range={range} onRangeChange={setRange} onExport={handleExport} exporting={exporting} />
 
       <ReportStats report={report} prevReport={prevReport} />
 

@@ -7,6 +7,50 @@
   flex-wrap: wrap;
 }
 
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.exportBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--input);
+  border-radius: 5px;
+  background: var(--card);
+  color: var(--foreground);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 0.15s, opacity 0.15s;
+}
+
+.exportBtn:hover:not(:disabled) {
+  border-color: var(--ring);
+}
+
+.exportBtn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (max-width: 768px) {
   .header {
     padding: 16px 24px 0px 24px;
