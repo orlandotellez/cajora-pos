@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
-import { Camera, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useModalBack } from "@/hooks/useModalBack";
 import { acquireCameraStream, cameraErrorMessage } from "@/lib/camera";
 
@@ -28,36 +28,46 @@ const SCANNER_ID = "barcode-scanner-element";
 export function BarcodeScanner({ open, onScan, onClose }: BarcodeScannerProps) {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  // "idle": pantalla previa de confirmación; "starting": pidiendo cámara.
-  const [phase, setPhase] = useState<"idle" | "starting" | "error">("idle");
+  // "starting": pidiendo cámara; "error": fallo de permiso/stream.
+  const [phase, setPhase] = useState<"starting" | "error">("starting");
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
 
   // Botón de retroceso de Android / gesto de regreso cierra el escáner.
   useModalBack(onClose, open);
 
-  // Al abrir el modal mostramos la pantalla previa (phase "idle") en vez de
-  // pedir cámara al vuelo. Así el usuario decide con intención y evitamos
-  // tocar "No permitir" por accidente. El escáner arranca al tocar
-  // "Activar cámara" (un gesto directo, condición ideal para getUserMedia).
+  // El arranque se dispara por el gesto de abrir el escáner (tocar el ícono
+  // de código de barras), así que arrancamos directo en "starting" pidiendo
+  // la cámara sin pantalla previa. Si el stream falla, pasamos a "error".
+  //
+  // `attempt` se incrementa obligatoriamente para forzar el re-arranque: el
+  // estado inicial ya es "starting", así que `setPhase("starting")` solo no
+  // re-dispara el useEffect [phase, attempt] (React no re-renderiza ante un
+  // valor igual). Sin esto, al abrir el escáner la cámara nunca arranca.
   useEffect(() => {
     if (open) {
-      setPhase("idle");
+      setPhase("starting");
+      setAttempt((a) => a + 1);
       setError(null);
     }
   }, [open]);
 
   useEffect(() => {
-    if (phase !== "starting") return;
+    // Nunca pedir cámara si el escáner no está abierto. Este effect corre al
+    // montar (el componente vive todo el tiempo en el árbol) y sin este guard
+    // pediría el permiso apenas entrás a la página, aunque no toques nada.
+    if (!open || phase !== "starting") return;
 
     let cancelled = false;
 
     const startScanner = async () => {
       try {
-        await acquireCameraStream();
-
+        // Primero verificar que el viewfinder esté montado (open=true ya lo
+        // renderizó); si no, no tiene sentido pedir el stream.
         const el = document.getElementById(SCANNER_ID);
         if (!el || cancelled) return;
+
+        await acquireCameraStream();
 
         const scanner = new Html5Qrcode(SCANNER_ID, {
           formatsToSupport,
@@ -95,7 +105,7 @@ export function BarcodeScanner({ open, onScan, onClose }: BarcodeScannerProps) {
       cancelled = true;
       stopScanner();
     };
-  }, [phase, attempt]);
+  }, [phase, attempt, open]);
 
   function retry() {
     setError(null);
@@ -141,64 +151,38 @@ export function BarcodeScanner({ open, onScan, onClose }: BarcodeScannerProps) {
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {phase === "idle" ? (
+        <>
+          {/* Scanner viewfinder */}
           <div
+            id={SCANNER_ID}
+            ref={containerRef}
             style={{
               width: "100%",
               height: "100%",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 16,
-              textAlign: "center",
-              padding: "0 24px",
-              background: "#0f172a",
+              position: "relative",
             }}
-          >
-            <Camera size={40} color="#94a3b8" />
-            <p style={{ color: "#e2e8f0", fontSize: 16, margin: 0, fontWeight: 600 }}>
-            Vas a usar la cámara para escanear
-          </p>
-          <p style={{ color: "#94a3b8", fontSize: 13, margin: 0, lineHeight: 1.4 }}>
-            El navegador (o la app) va a pedirte permiso de cámara. Elegí
-            "Permitir" para poder leer el código de barras.
-          </p>
-          </div>
-        ) : (
-          <>
-            {/* Scanner viewfinder */}
-            <div
-              id={SCANNER_ID}
-              ref={containerRef}
-              style={{
-                width: "100%",
-                height: "100%",
-                position: "relative",
-              }}
-            />
+          />
 
-            {/* Hide html5-qrcode's built-in corner brackets */}
-            <style>{`#${SCANNER_ID} #qr-shaded-region { display: none !important; }`}</style>
+          {/* Hide html5-qrcode's built-in corner brackets */}
+          <style>{`#${SCANNER_ID} #qr-shaded-region { display: none !important; }`}</style>
 
-            {/* Corner brackets */}
-            <div
-              style={{
-                position: "absolute",
-                top: "50%",
-                left: "50%",
-                transform: "translate(-50%, -50%)",
-                width: 260,
-                height: 200,
-                border: "2px solid rgba(255,255,255,0.6)",
-                borderRadius: 5,
-                pointerEvents: "none",
-                boxShadow: "0 0 0 9999px rgba(0,0,0,0.4)",
-                zIndex: 2,
-              }}
-            />
-          </>
-        )}
+          {/* Corner brackets */}
+          <div
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              width: 260,
+              height: 200,
+              border: "2px solid rgba(255,255,255,0.6)",
+              borderRadius: 5,
+              pointerEvents: "none",
+              boxShadow: "0 0 0 9999px rgba(0,0,0,0.4)",
+              zIndex: 2,
+            }}
+          />
+        </>
 
       </div>
 
@@ -261,26 +245,6 @@ export function BarcodeScanner({ open, onScan, onClose }: BarcodeScannerProps) {
             </button>
           </div>
         </div>
-      ) : phase === "idle" ? (
-        <button
-          onClick={retry}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            padding: "12px 24px",
-            border: "none",
-            borderRadius: 5,
-            background: "#1e293b",
-            color: "#fff",
-            fontSize: 15,
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
-        >
-          <Camera size={18} />
-          Activar cámara
-        </button>
       ) : (
         <p style={{ color: "#94a3b8", fontSize: 14, margin: 0, textAlign: "center" }}>
           Apunta al código de barras
