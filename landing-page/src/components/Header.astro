@@ -105,41 +105,43 @@ const links = [
   </div>
 
   <!-- Menú móvil -->
-  <nav class="site-menu" id="site-menu" aria-label="Menú móvil">
+  <nav class="site-menu" id="site-menu" data-menu aria-label="Menú móvil">
     <div class="site-menu__panel">
-      <ul class="site-menu__list">
-        {links.map((link) => (
-          <li>
-            <a href={link.href} class="site-menu__link" data-menu-close>{link.label}</a>
-          </li>
-        ))}
-      </ul>
-      <div class="site-menu__actions">
-        <a
-          class="site-header__cta site-header__cta--primary site-header__cta--full"
-          data-auth-cta="primary"
-          data-menu-close
-        >
-          <svg class="site-header__cta-icon" data-cta-icon="store" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M15 21v-5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5"></path>
-            <path d="M17.774 10.31a1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.451 0 1.12 1.12 0 0 0-1.548 0 2.5 2.5 0 0 1-3.452 0 1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.77-3.248l2.889-4.184A2 2 0 0 1 7 2h10a2 2 0 0 1 1.653.873l2.895 4.192a2.5 2.5 0 0 1-3.774 3.244"></path>
-            <path d="M4 10.95V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8.05"></path>
-          </svg>
-          <svg class="site-header__cta-icon" data-cta-icon="download" style="display: none" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="7 10 12 15 17 10"></polyline>
-            <line x1="12" y1="15" x2="12" y2="3"></line>
-          </svg>
-          Registrar tienda
-        </a>
-        <a
-          href={base + 'login'}
-          class="site-header__cta site-header__cta--full"
-          data-auth-cta="secondary"
-          data-menu-close
-        >
-          Iniciar sesión
-        </a>
+      <div class="site-menu__box">
+        <ul class="site-menu__list">
+          {links.map((link) => (
+            <li>
+              <a href={link.href} class="site-menu__link" data-menu-close>{link.label}</a>
+            </li>
+          ))}
+        </ul>
+        <div class="site-menu__actions">
+          <a
+            class="site-header__cta site-header__cta--primary site-header__cta--full"
+            data-auth-cta="primary"
+            data-menu-close
+          >
+            <svg class="site-header__cta-icon" data-cta-icon="store" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M15 21v-5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5"></path>
+              <path d="M17.774 10.31a1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.451 0 1.12 1.12 0 0 0-1.548 0 2.5 2.5 0 0 1-3.452 0 1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.77-3.248l2.889-4.184A2 2 0 0 1 7 2h10a2 2 0 0 1 1.653.873l2.895 4.192a2.5 2.5 0 0 1-3.774 3.244"></path>
+              <path d="M4 10.95V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8.05"></path>
+            </svg>
+            <svg class="site-header__cta-icon" data-cta-icon="download" style="display: none" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Registrar tienda
+          </a>
+          <a
+            href={base + 'login'}
+            class="site-header__cta site-header__cta--full"
+            data-auth-cta="secondary"
+            data-menu-close
+          >
+            Iniciar sesión
+          </a>
+        </div>
       </div>
     </div>
   </nav>
@@ -412,25 +414,38 @@ const links = [
     height: 1.25rem;
   }
 
-  /* Mobile dropdown menu */
+  /* Mobile dropdown menu: se despliega de arriba hacia abajo bajo la barra */
   .site-menu {
     display: none;
   }
   .site-menu.is-open {
     display: block;
+    animation: site-menu-drop 180ms ease-out;
+  }
+  @keyframes site-menu-drop {
+    from {
+      opacity: 0;
+      transform: translateY(-0.5rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
   .site-menu__panel {
     max-width: 80rem;
     margin: 0 auto;
     padding: 0 1rem 1rem;
   }
-  .site-menu__panel > div {
+  /* Mismo fondo glass que la barra del header: el desplegable continúa la tarjeta */
+  .site-menu__box {
     background: var(--glass);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border: 1px solid rgba(39, 39, 42, 0.8);
-    border-radius: 1rem;
-    padding: 1rem 1.25rem;
+    border-top: none;
+    border-radius: 0 0 1rem 1rem;
+    padding: 0.5rem 1.25rem 1rem;
   }
 
   .site-menu__list {
@@ -462,6 +477,10 @@ const links = [
     }
     .site-menu-btn {
       display: inline-flex;
+    }
+    /* En móvil los botones de sesión viven en el menú desplegable, no en la barra */
+    .site-header__actions .site-header__cta {
+      display: none;
     }
   }
 
