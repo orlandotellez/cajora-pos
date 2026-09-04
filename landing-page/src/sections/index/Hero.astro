@@ -52,10 +52,10 @@ const base = import.meta.env.BASE_URL;
         <div class="mockup-screen">
           <img
             class="mockup__img"
-            src={base + '1.webp'}
+            src={base + 'desktop.webp'}
             alt="CajoraPOS Sistema Punto de Venta Escritorio"
-            width="1755"
-            height="896"
+            width="1854"
+            height="1007"
           />
           <div class="mockup-screen__sheen" aria-hidden="true"></div>
           <div class="mockup-screen__base" aria-hidden="true"></div>
@@ -68,20 +68,32 @@ const base = import.meta.env.BASE_URL;
       <!-- Floating phone mockup -->
       <div class="mockup-phone" aria-hidden="true">
         <div class="phone-frame">
-          <div class="phone-screen">
-            <div class="phone-screen__status">
-              <span>9:41</span>
-              <span class="phone-screen__notch"></span>
-            </div>
-            <img
-              class="phone-screen__img"
-              src={base + '1.webp'}
-              alt=""
-              loading="lazy"
-              width="1755"
-              height="896"
-            />
+        <div class="phone-screen">
+          <div class="phone-screen__status">
+            <span>9:41</span>
+            <span class="phone-screen__notch"></span>
           </div>
+          <img
+            class="phone-screen__img"
+            src={base + 'mobile.webp'}
+            alt=""
+            loading="lazy"
+            width="522"
+            height="1007"
+          />
+          <div class="phone-nav" aria-hidden="true">
+            <svg class="phone-nav__icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <svg class="phone-nav__icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="8"></circle>
+            </svg>
+            <svg class="phone-nav__icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+              <rect x="6" y="6" width="12" height="12" rx="2"></rect>
+            </svg>
+          </div>
+        </div>
         </div>
       </div>
     </div>
@@ -282,7 +294,7 @@ const base = import.meta.env.BASE_URL;
   .mockup__img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     object-position: top;
     -webkit-user-select: none;
     user-select: none;
@@ -381,6 +393,22 @@ const base = import.meta.env.BASE_URL;
     width: 100%;
     object-fit: cover;
     object-position: top;
+  }
+
+  /* Barra de navegación Android (retroceso, inicio, recientes) */
+  .phone-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    flex-shrink: 0;
+    padding: 0.4rem 1.5rem 0.5rem;
+    background: #000000;
+  }
+
+  .phone-nav__icon {
+    width: 0.85rem;
+    height: 0.85rem;
+    color: rgba(255, 255, 255, 0.9);
   }
 
   @media (min-width: 640px) {
