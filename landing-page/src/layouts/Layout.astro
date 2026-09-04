@@ -112,12 +112,18 @@ const {
           document.querySelectorAll('[data-auth-cta="content"]').forEach(function (el) {
             if (paid) {
               el.setAttribute('href', posUrl);
+              el.setAttribute('target', '_blank');
+              el.setAttribute('rel', 'noopener');
               setCtaText(el, 'Ir a mi tienda');
             } else if (hasSession) {
               el.setAttribute('href', checkoutUrl);
+              el.removeAttribute('target');
+              el.removeAttribute('rel');
               setCtaText(el, 'Continuar pago');
             } else {
               el.setAttribute('href', checkoutUrl);
+              el.removeAttribute('target');
+              el.removeAttribute('rel');
             }
           });
         };
@@ -159,7 +165,7 @@ const {
           el.addEventListener('click', (e) => {
             if (el.getAttribute('href') === posUrl) {
               e.preventDefault();
-              void goToPosWithSso();
+              void goToPosWithSso({ newTab: true });
             }
           });
         });

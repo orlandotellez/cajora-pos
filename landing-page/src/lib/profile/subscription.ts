@@ -40,6 +40,8 @@ export function renderSub(sub: Subscription): void {
   dangerScheduledEl.hidden = true;
 
   ctaEl.hidden = true;
+  ctaEl.target = '_self';
+  ctaEl.rel = '';
   payLinkEl.hidden = true;
 
   switch (sub.status) {
@@ -78,6 +80,8 @@ export function renderSub(sub: Subscription): void {
       ctaEl.hidden = false;
       ctaEl.textContent = 'Ir a mi tienda';
       ctaEl.href = posUrl;
+      ctaEl.target = '_blank';
+      ctaEl.rel = 'noopener';
       break;
     }
     case 'past_due': {

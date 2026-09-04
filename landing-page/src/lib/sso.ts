@@ -88,13 +88,21 @@ async function fetchSsoCode(): Promise<string | null> {
   return code;
 }
 
-export async function goToPosWithSso(): Promise<void> {
+export async function goToPosWithSso(opts?: { newTab?: boolean }): Promise<void> {
   const posUrl = import.meta.env.PUBLIC_POS_URL;
-  const code = await fetchSsoCode().catch(() => null);
+  const isNativeApp = '__TAURI__' in window;
+  const useNewTab = !!opts?.newTab && !isNativeApp;
+  // Abre la pestaña de forma síncrona (gesto del usuario) para no caer en bloqueadores;
+  // la URL final se asigna al resolver el código SSO.
+  const win = useNewTab ? window.open('', '_blank') : null;
 
-  if (code) {
-    window.location.href = `${posUrl}/auth?code=${encodeURIComponent(code)}`;
+  const code = await fetchSsoCode().catch(() => null);
+  const url = code ? `${posUrl}/auth?code=${encodeURIComponent(code)}` : posUrl;
+
+  if (win) {
+    win.opener = null;
+    win.location.href = url;
   } else {
-    window.location.href = posUrl;
+    window.location.href = url;
   }
 }

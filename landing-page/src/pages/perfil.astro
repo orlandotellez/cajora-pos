@@ -110,7 +110,7 @@ import ProfileDangerZone from '../sections/perfil/ProfileDangerZone.astro';
     cta.addEventListener("click", (e) => {
       if (cta.getAttribute("href") === posUrl) {
         e.preventDefault();
-        void goToPosWithSso();
+        void goToPosWithSso({ newTab: true });
       }
     });
 
