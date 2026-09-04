@@ -1,13 +1,11 @@
 ---
-import Logo from '../components/Logo.astro';
-
 const base = import.meta.env.BASE_URL;
 
 const CONFIG_URL =
   import.meta.env.PUBLIC_CONFIG_API_URL ??
   'https://pub-17156739f1d5412cb62a579bb0ccbc35.r2.dev/config-api.json';
 
-let version = '';
+let version = 'v2.1.2';
 try {
   const res = await fetch(CONFIG_URL, { signal: AbortSignal.timeout(5000) });
   if (res.ok) {
@@ -15,93 +13,171 @@ try {
     if (cfg.app_version) version = `v${cfg.app_version}`;
   }
 } catch {}
-
-const legalLinks = [
-  { label: 'Política de Privacidad', href: base + 'privacidad' },
-  { label: 'Términos y Condiciones', href: base + 'terminos' },
-  { label: 'Descargas', href: base + 'descargar' },
-  { label: 'Contacto', href: 'mailto:payments@cajorapos.com' },
-  { label: 'GitHub', href: 'https://github.com/orlandotellez/cajora-pos', external: true },
-];
 ---
 
-<footer class="footer">
-  <div class="container footer__row">
-    <a href={import.meta.env.BASE_URL} class="footer__brand" aria-label="CajoraPOS">
-      <span class="footer__mark"><Logo size={24} variant="muted" /></span>
-      <span class="footer__name">CajoraPOS</span>
-    </a>
+<footer class="site-footer">
+  <div class="site-footer__container">
+    <div class="site-footer__row">
+      <!-- Logo & Brand -->
+      <div class="site-footer__brand">
+        <span class="site-footer__mark">
+          <svg class="site-footer__mark-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+            <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+            <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+            <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+            <path d="M8 7v10"></path>
+            <path d="M12 7v10"></path>
+            <path d="M17 7v10"></path>
+          </svg>
+        </span>
+        <span class="site-footer__name">Cajora POS</span>
+      </div>
 
-    <nav class="footer__nav" aria-label="Legal">
-      <ul class="footer__list">
-        {legalLinks.map((link) => (
-          <li><a href={link.href} class="footer__link" target={link.external ? '_blank' : undefined} rel={link.external ? 'noopener noreferrer' : undefined}>{link.label}</a></li>
-        ))}
-      </ul>
-    </nav>
+      <!-- Center links -->
+      <nav class="site-footer__nav" aria-label="Legal">
+        <a class="site-footer__link" href={base + 'privacidad'}>Política de Privacidad</a>
+        <a class="site-footer__link" href={base + 'terminos'}>Términos y Condiciones</a>
+        <a class="site-footer__link" href={base + 'descargar'}>Descargas</a>
+        <a class="site-footer__link" href="mailto:payments@cajorapos.com">Contacto</a>
+        <a class="site-footer__link site-footer__link--external" href="https://github.com/orlandotellez/cajora-pos" rel="noopener noreferrer" target="_blank">
+          GitHub
+          <svg class="site-footer__link-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+        </a>
 
-    <p class="footer__meta">© 2026 CajoraPOS. {version}</p>
+        <!-- Social icons -->
+        <div class="site-footer__social">
+          <a aria-label="Facebook" class="site-footer__social-link" href="#">
+            <svg class="site-footer__social-icon" fill="currentColor" viewBox="0 0 24 24"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"></path></svg>
+          </a>
+          <a aria-label="Instagram" class="site-footer__social-link" href="#">
+            <svg class="site-footer__social-icon" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"></path></svg>
+          </a>
+          <a aria-label="WhatsApp" class="site-footer__social-link" href="#">
+            <svg class="site-footer__social-icon" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163C.703 18.64.156 16.595.157 14.498.16 7.942 5.495 2.607 12.087 2.607c3.212 0 6.23 1.25 8.503 3.524a11.952 11.952 0 013.52 8.49c0 6.557-5.335 11.892-11.898 11.892-2.174 0-4.267-.585-6.063-1.687L.057 24z"></path></svg>
+          </a>
+        </div>
+      </nav>
+
+      <!-- Version -->
+      <div class="site-footer__meta">© 2026 CajoraPOS. {version}</div>
+    </div>
   </div>
 </footer>
 
 <style>
-  .footer {
+  .site-footer {
     padding: 3rem 0;
     border-top: 1px solid var(--border);
+    background: var(--bg);
+    font-size: 0.75rem;
     color: var(--text-muted);
-    font-size: 0.875rem;
   }
 
-  .footer__row {
+  .site-footer__container {
+    max-width: 80rem;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  .site-footer__row {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: space-between;
-    gap: 2rem;
+    gap: 1.5rem;
     text-align: center;
   }
 
-  .footer__brand {
+  .site-footer__brand {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    color: var(--text-muted);
   }
 
-  .footer__mark {
+  .site-footer__mark {
     display: inline-flex;
-    filter: grayscale(1);
-  }
-
-  .footer__name {
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
     color: var(--text);
-    opacity: 0.9;
+    border-radius: 0.375rem;
     font-weight: 700;
   }
 
-  .footer__list {
+  .site-footer__mark-icon {
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+
+  .site-footer__name {
+    color: var(--text);
+    font-weight: 700;
+    font-size: 0.875rem;
+    letter-spacing: -0.02em;
+  }
+
+  .site-footer__nav {
     display: flex;
-    gap: 2rem;
-
-      flex-direction: column;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 1.5rem;
   }
 
-  .footer__link {
+  .site-footer__link {
     color: var(--text-muted);
+    transition: color 150ms ease;
   }
-
-  .footer__link:hover {
+  .site-footer__link:hover {
     color: var(--text);
   }
 
+  .site-footer__link--external {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .site-footer__link-icon {
+    width: 0.75rem;
+    height: 0.75rem;
+  }
+
+  .site-footer__social {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding-left: 1.5rem;
+    border-left: 1px solid var(--border);
+  }
+
+  .site-footer__social-link {
+    color: var(--text-muted);
+    padding: 0.25rem;
+    transition: color 150ms ease;
+  }
+  .site-footer__social-link:hover {
+    color: var(--text);
+  }
+
+  .site-footer__social-icon {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .site-footer__meta {
+    color: var(--text-muted);
+    opacity: 0.7;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6875rem;
+  }
+
   @media (min-width: 768px) {
-    .footer__row {
+    .site-footer__row {
       flex-direction: row;
       text-align: left;
-    }
-
-    .footer__list {
-      flex-direction: row;
     }
   }
 </style>

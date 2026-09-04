@@ -8,47 +8,73 @@ const stats = [
 ---
 
 <section class="stats" aria-label="Características rápidas">
-  <div class="container stats__grid">
-    {stats.map((stat) => (
-      <div class="stats__item">
-        <div class="stats__title">{stat.title}</div>
-        <div class="stats__subtitle">{stat.subtitle}</div>
-      </div>
-    ))}
+  <div class="stats__container">
+    <div class="stats__grid">
+      {stats.map((stat, i) => (
+        <div class="stats__item" data-index={i}>
+          <div class="stats__title">{stat.title}</div>
+          <div class="stats__subtitle">{stat.subtitle}</div>
+        </div>
+      ))}
+    </div>
   </div>
 </section>
 
 <style>
   .stats {
-    padding: 3rem 0;
     background: var(--surface);
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    transition: background-color 250ms ease, border-color 250ms ease;
+    border-top: 1px solid rgba(39, 39, 42, 0.8);
+    border-bottom: 1px solid rgba(39, 39, 42, 0.8);
+    padding: 2rem 0;
+  }
 
+  .stats__container {
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: 0 1rem;
   }
 
   .stats__grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 2rem;
+    gap: 1.5rem 2rem;
     text-align: center;
   }
 
+  .stats__item {
+    padding: 0.5rem;
+  }
+
   .stats__title {
-    font-size: 1.5rem;
+    font-size: clamp(1rem, 2.5vw, 1.125rem);
     font-weight: 700;
-    margin-bottom: 0.25rem;
+    letter-spacing: -0.01em;
+    color: var(--text);
+    margin-bottom: 0.125rem;
   }
 
   .stats__subtitle {
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
     color: var(--text-muted);
   }
 
   @media (min-width: 768px) {
     .stats__grid {
       grid-template-columns: repeat(4, 1fr);
+      gap: 2rem;
+    }
+
+    .stats__item[data-index='1'],
+    .stats__item[data-index='2'],
+    .stats__item[data-index='3'] {
+      border-left: 1px solid rgba(39, 39, 42, 0.5);
+    }
+  }
+
+  @media (max-width: 767px) {
+    .stats__item[data-index='1'],
+    .stats__item[data-index='3'] {
+      border-left: 1px solid rgba(39, 39, 42, 0.5);
     }
   }
 </style>

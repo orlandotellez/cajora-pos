@@ -22,14 +22,14 @@ const {
     <link rel="icon" href={import.meta.env.BASE_URL + 'favicon.ico'} />
     <meta name="generator" content={Astro.generator} />
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#10151E" />
+    <meta name="theme-color" content="#040609" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
     <title>{title}</title>
@@ -42,14 +42,94 @@ const {
         var theme = stored || (prefersLight ? 'light' : 'dark');
         document.documentElement.setAttribute('data-theme', theme);
         var meta = document.querySelector('meta[name="theme-color"]');
-        if (meta) meta.setAttribute('content', theme === 'light' ? '#F6F8FB' : '#10151E');
+        if (meta) meta.setAttribute('content', theme === 'light' ? '#F6F8FB' : '#040609');
       })();
     </script>
   </head>
-  <body>
+  <body
+    class="site-body"
+    data-base-url={import.meta.env.BASE_URL}
+    data-pos-url={import.meta.env.PUBLIC_POS_URL}
+  >
     <Header />
     <slot />
     <Footer/>
+    <script is:inline>
+      // Aplica el estado de sesión a los CTAs antes del primer paint.
+      // Evita que al recargar parpadeen "Registrar tienda" / "Iniciar sesión"
+      // cuando ya hay una sesión activa.
+      (function () {
+        var readSession = function () {
+          try { return JSON.parse(localStorage.getItem('caja_checkout')); } catch (e) { return null; }
+        };
+        var base = document.body.getAttribute('data-base-url') || '/';
+        var posUrl = document.body.getAttribute('data-pos-url') || '';
+        var checkoutUrl = base + 'checkout';
+        var loginUrl = base + 'login';
+        var perfilUrl = base + 'perfil';
+        var pricingUrl = base + '#precios';
+        var descargarUrl = base + 'descargar';
+
+        var setCtaText = function (el, text) {
+          var textNode = null;
+          for (var i = 0; i < el.childNodes.length; i++) {
+            var n = el.childNodes[i];
+            if (n.nodeType === Node.TEXT_NODE && n.textContent.trim()) { textNode = n; break; }
+          }
+          if (textNode) textNode.textContent = text;
+          else el.textContent = text;
+        };
+
+        var applyAuth = function (paid, hasSession) {
+          document.querySelectorAll('[data-auth-paid]').forEach(function (el) {
+            var tag = el.querySelector('[data-auth-tag]');
+            if (tag) tag.textContent = paid ? 'Tu plan actual' : 'Recomendado';
+          });
+          document.querySelectorAll('[data-auth-cta="secondary"]').forEach(function (el) {
+            el.hidden = false;
+            if (hasSession) {
+              el.setAttribute('href', perfilUrl);
+              setCtaText(el, 'Mi perfil');
+            } else {
+              el.setAttribute('href', loginUrl);
+              setCtaText(el, 'Iniciar sesión');
+            }
+          });
+          document.querySelectorAll('[data-auth-cta="primary"]').forEach(function (el) {
+            el.hidden = false;
+            var storeIcon = el.querySelector('[data-cta-icon="store"]');
+            var downloadIcon = el.querySelector('[data-cta-icon="download"]');
+            if (storeIcon) storeIcon.style.display = hasSession ? 'none' : '';
+            if (downloadIcon) downloadIcon.style.display = hasSession ? '' : 'none';
+            if (hasSession) {
+              el.setAttribute('href', descargarUrl);
+              setCtaText(el, 'Descargar aplicación');
+            } else {
+              el.setAttribute('href', pricingUrl);
+              setCtaText(el, 'Registrar tienda');
+            }
+          });
+          document.querySelectorAll('[data-auth-cta="content"]').forEach(function (el) {
+            if (paid) {
+              el.setAttribute('href', posUrl);
+              setCtaText(el, 'Ir a mi tienda');
+            } else if (hasSession) {
+              el.setAttribute('href', checkoutUrl);
+              setCtaText(el, 'Continuar pago');
+            } else {
+              el.setAttribute('href', checkoutUrl);
+            }
+          });
+        };
+
+        window.__applyAuth = applyAuth;
+
+        var session = readSession();
+        var isNativeApp = '__TAURI__' in window;
+        var hasToken = isNativeApp ? !!(session && session.accessToken) : !!(session && session.email);
+        applyAuth(!!(session && session.paid), hasToken);
+      })();
+    </script>
     <script>
       import { goToPosWithSso } from "../lib/sso";
       (() => {
@@ -62,52 +142,13 @@ const {
           }
         };
         const saveSession = (data) => localStorage.setItem('caja_checkout', JSON.stringify(data));
-        const checkoutUrl = import.meta.env.BASE_URL + 'checkout';
-        const loginUrl = import.meta.env.BASE_URL + 'login';
-        const perfilUrl = import.meta.env.BASE_URL + 'perfil';
-        const pricingUrl = import.meta.env.BASE_URL + '#pricing';
         const posUrl = import.meta.env.PUBLIC_POS_URL;
         const apiUrl = import.meta.env.PUBLIC_API_URL;
 
-        const applyAuth = (paid, hasSession) => {
-          document.querySelectorAll('[data-auth-paid]').forEach((el) => {
-            const tag = el.querySelector('[data-auth-tag]');
-            if (tag) tag.textContent = paid ? 'Tu plan actual' : 'Recomendado';
-          });
-          document.querySelectorAll('[data-auth-cta="secondary"]').forEach((el) => {
-            el.hidden = false;
-            if (hasSession) {
-              el.setAttribute('href', perfilUrl);
-              el.textContent = 'Mi perfil';
-            } else {
-              el.setAttribute('href', loginUrl);
-              el.textContent = 'Iniciar sesión';
-            }
-          });
-          document.querySelectorAll('[data-auth-cta="primary"]').forEach((el) => {
-            if (paid) {
-              el.hidden = true;
-            } else if (hasSession) {
-              el.hidden = false;
-              el.setAttribute('href', checkoutUrl);
-              el.textContent = 'Continuar pago';
-            } else {
-              el.hidden = false;
-              el.setAttribute('href', pricingUrl);
-              el.textContent = 'Registrar tienda';
-            }
-          });
-          document.querySelectorAll('[data-auth-cta="content"]').forEach((el) => {
-            if (paid) {
-              el.setAttribute('href', posUrl);
-              el.textContent = 'Ir a mi tienda';
-            } else if (hasSession) {
-              el.setAttribute('href', checkoutUrl);
-              el.textContent = 'Continuar pago';
-            } else {
-              el.setAttribute('href', checkoutUrl);
-            }
-          });
+        // La lógica de pintado de CTAs vive en window.__applyAuth, definida por el
+        // script inline temprano del <body> para aplicarse antes del primer paint.
+        const applyAuth = (paid: boolean, hasSession: boolean): void => {
+          (window as unknown as { __applyAuth?: (p: boolean, h: boolean) => void }).__applyAuth?.(paid, hasSession);
         };
 
         const session = readSession();
@@ -123,9 +164,6 @@ const {
           });
         });
 
-        // Verify session against the backend.
-        // Web: uses httpOnly cookies (credentials: 'include')
-        // Native app: uses Bearer token from localStorage
         const fetchHeaders = {};
         const fetchOpts = {};
         if (isNativeApp && session?.accessToken) {
@@ -134,7 +172,6 @@ const {
           fetchOpts.credentials = 'include';
         }
 
-        // Helper: on web, retry with refresh token on 401
         async function fetchWithRefresh(url, opts) {
           const first = await fetch(url, opts);
           if (isNativeApp || first.status !== 401) return first;
@@ -171,7 +208,7 @@ const {
             if (!data) return;
             const paid = data?.status === 'active' && data?.mode === 'cloud';
             const current = readSession();
-            if (current?.accessToken && !!current.paid !== paid) {
+            if (current && !!current.paid !== paid) {
               saveSession({ ...current, paid });
             }
             applyAuth(paid, true);
@@ -186,31 +223,29 @@ const {
 
 <style is:global>
   :root {
-    /* Design tokens — dark (por defecto) */
     --radius: 5px;
     --radius-sm: 3px;
     --radius-lg: 10px;
 
     --bg: #040609;
     --surface: #090b0f;
-    --surface-2: #090b0f;
-    --border: #232B38;
-    --border-strong: #2E3747;
+    --surface-2: #0e1117;
+    --border: #27272a;
+    --border-strong: #3f3f46;
 
-    --text: #F2F2F2;
-    --text-muted: #8A93A3;
+    --text: #fafafa;
+    --text-muted: #a1a1aa;
 
-    --green: #22C55E;
+    --green: #10b981;
 
-    /* Dependientes del tema */
-    --glass: #090b0f;
+    --glass: rgba(4, 6, 9, 0.75);
     --glow: radial-gradient(
       circle,
-      rgba(58, 71, 89, 0.15) 0%,
-      rgba(16, 21, 30, 0) 70%
+      rgba(255, 255, 255, 0.08) 0%,
+      rgba(0, 0, 0, 0) 70%
     );
     --shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    --hover-border: #3A4759;
+    --hover-border: #52525b;
 
     --max: 1280px;
     --max-narrow: 1024px;
@@ -223,22 +258,22 @@ const {
     --bg: #F6F8FB;
     --surface: #FFFFFF;
     --surface-2: #EEF2F7;
-    --border: #E3E8EF;
-    --border-strong: #C6CFDA;
+    --border: #e4e4e7;
+    --border-strong: #d4d4d8;
 
-    --text: #1A2230;
-    --text-muted: #5B6572;
+    --text: #18181b;
+    --text-muted: #71717a;
 
-    --green: #16A34A;
+    --green: #10b981;
 
-    --glass: #EEF2F7;
+    --glass: rgba(246, 248, 251, 0.85);
     --glow: radial-gradient(
       circle,
       rgba(26, 34, 48, 0.07) 0%,
       rgba(246, 248, 251, 0) 70%
     );
     --shadow: 0 25px 50px -12px rgba(26, 34, 48, 0.18);
-    --hover-border: #C6CFDA;
+    --hover-border: #a1a1aa;
   }
 
   *, *::before, *::after {
@@ -255,11 +290,28 @@ const {
 
   body {
     font-family: var(--font-body);
+    line-height: 1.5;
+  }
+
+  /* Estilo del body del sitio */
+  .site-body {
     background: var(--bg);
     color: var(--text);
-    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
     overflow-x: hidden;
-    transition: background-color 250ms ease, color 250ms ease;
+  }
+  .site-body ::selection {
+    background: #ffffff;
+    color: #000000;
+  }
+
+  .site-main {
+    flex-grow: 1;
   }
 
   a {
@@ -282,6 +334,54 @@ const {
     font-weight: 700;
     letter-spacing: -0.02em;
     line-height: 1.15;
+  }
+
+  [hidden] {
+    display: none !important;
+  }
+
+  section[id] {
+    scroll-margin-top: 80px;
+  }
+
+  /* Glass nav effect for header */
+  .glass-nav {
+    background: var(--glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  /* Card border glow effect */
+  .card-border-glow {
+    position: relative;
+  }
+  .card-border-glow::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.02));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* Perspective grid background */
+  .perspective-grid {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.4;
+    background-size: 40px 40px;
+    background-image:
+      linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    /* Visible atrás del título/subtítulo (arriba) y se desvanece hacia abajo */
+    -webkit-mask-image: linear-gradient(to bottom, black 0%, black 45%, transparent 90%);
+    mask-image: linear-gradient(to bottom, black 0%, black 45%, transparent 90%);
   }
 
   /* Buttons (shared atomic styles) */
@@ -314,7 +414,7 @@ const {
     background: var(--surface);
   }
 
-  /* Container helpers (used sparingly to keep clean markup) */
+  /* Container helpers */
   .container {
     width: 100%;
     max-width: var(--max);
@@ -334,27 +434,6 @@ const {
     max-width: var(--max-read);
     margin: 0 auto;
     padding: 0 1.5rem;
-  }
-
-  .page-back {
-    display: inline-flex;
-    align-items: center;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--text-muted);
-    margin-bottom: 1.5rem;
-  }
-
-  .page-back:hover {
-    color: var(--text);
-  }
-
-  [hidden] {
-    display: none !important;
-  }
-
-  section[id] {
-    scroll-margin-top: 65px;
   }
 
   @media (prefers-reduced-motion: reduce) {

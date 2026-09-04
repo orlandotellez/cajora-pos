@@ -1,42 +1,47 @@
 ---
-import Icon from '../../components/Icon.astro';
-
 const features = [
   {
-    icon: 'scan-barcode',
+    icon: `<svg class="feature-card__icon-svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" stroke-linecap="round" stroke-linejoin="round"></path></svg>`,
     title: 'Ventas rápidas',
     desc: 'Optimiza el cobro con búsqueda instantánea y compatibilidad con cualquier escáner de código de barras.',
+    tag: 'Velocidad de cobro < 2 seg',
   },
   {
-    icon: 'package',
+    icon: `<svg class="feature-card__icon-svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" stroke-linecap="round" stroke-linejoin="round"></path></svg>`,
     title: 'Inventario inteligente',
     desc: 'Control de stock por lotes, trazabilidad por usuario y ajustes masivos de mercancía.',
+    tag: 'Alertas de stock mínimo',
   },
   {
-    icon: 'clipboard-list',
+    icon: `<svg class="feature-card__icon-svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" stroke-linecap="round" stroke-linejoin="round"></path></svg>`,
     title: 'Recetas y Combos',
     desc: 'Crea servicios compuestos por múltiples productos con descuento automático de insumos.',
+    tag: 'Deducción de insumos automática',
   },
   {
-    icon: 'bar-chart-3',
+    icon: `<svg class="feature-card__icon-svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" stroke-linecap="round" stroke-linejoin="round"></path></svg>`,
     title: 'Reportes & KPIs',
     desc: 'Analiza tus ventas, productos top y cierres de caja con reportes visuales en tiempo real.',
+    tag: 'Cierres Z / X',
+    sparkline: true,
   },
   {
-    icon: 'users',
+    icon: `<svg class="feature-card__icon-svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>`,
     title: 'Roles y Accesos',
     desc: 'Define qué puede hacer cada cajero y administrador con un control granular de permisos.',
+    tag: 'Auditoría de acciones',
   },
   {
-    icon: 'printer',
+    icon: `<svg class="feature-card__icon-svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zM9 9h6m-6 3h6m-6-6h6a2 2 0 012 2v1H7V5a2 2 0 012-2z" stroke-linecap="round" stroke-linejoin="round"></path></svg>`,
     title: 'Tickets Térmicos',
     desc: 'Configura los datos de tu tienda y pie de ticket. Compatible con cualquier impresora térmica.',
+    tag: 'Soporte USB, LAN & Bluetooth',
   },
 ];
 ---
 
-<section class="features section" id="features">
-  <div class="container">
+<section class="features" id="caracteristicas">
+  <div class="features__container">
     <div class="features__heading">
       <h2 class="features__title">Todo lo que tu negocio necesita</h2>
       <p class="features__subtitle">Herramientas profesionales para el control total de tu comercio.</p>
@@ -45,11 +50,19 @@ const features = [
     <div class="features__grid">
       {features.map((f) => (
         <article class="feature-card">
-          <div class="feature-card__icon">
-            <Icon name={f.icon} size={20} />
+          <div class="feature-card__body">
+            <div class="feature-card__icon" set:html={f.icon} />
+            <h3 class="feature-card__title">{f.title}</h3>
+            <p class="feature-card__desc">{f.desc}</p>
           </div>
-          <h3 class="feature-card__title">{f.title}</h3>
-          <p class="feature-card__desc">{f.desc}</p>
+          <div class="feature-card__foot">
+            <span class="feature-card__tag">{f.tag}</span>
+            {f.sparkline && (
+              <span class="feature-card__spark" aria-hidden="true">
+                <i></i><i></i><i></i><i></i>
+              </span>
+            )}
+          </div>
         </article>
       ))}
     </div>
@@ -61,18 +74,28 @@ const features = [
     padding: 6rem 0;
   }
 
+  .features__container {
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
   .features__heading {
     text-align: center;
-    max-width: 42rem;
+    max-width: 48rem;
     margin: 0 auto 4rem;
   }
 
   .features__title {
-    font-size: 1.875rem;
+    font-size: clamp(1.75rem, 4vw, 2.25rem);
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    color: var(--text);
     margin-bottom: 1rem;
   }
 
   .features__subtitle {
+    font-size: 1.0625rem;
     color: var(--text-muted);
   }
 
@@ -83,36 +106,63 @@ const features = [
   }
 
   .feature-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 2rem;
-    transition: transform 150ms ease, border-color 150ms ease,
-      background-color 250ms ease;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    transition: background-color 200ms ease, border-color 200ms ease;
+  }
+  .feature-card:hover {
+    background: var(--surface-2);
   }
 
-  .feature-card:hover {
-    transform: translateY(-2px);
-    border-color: var(--hover-border);
+  /* Gradient edge highlight */
+  .feature-card::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.02));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .feature-card__body {
+    flex: 1;
   }
 
   .feature-card__icon {
-    width: 2.5rem;
-    height: 2.5rem;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
     color: var(--text);
     margin-bottom: 1.5rem;
   }
 
+  .feature-card__icon :global(svg) {
+    width: 1rem;
+    height: 1rem;
+  }
+
   .feature-card__title {
-    font-size: 1.25rem;
+    font-size: 1.125rem;
     font-weight: 700;
-    margin-bottom: 0.75rem;
+    letter-spacing: -0.01em;
+    color: var(--text);
+    margin-bottom: 0.5rem;
   }
 
   .feature-card__desc {
@@ -120,6 +170,40 @@ const features = [
     color: var(--text-muted);
     line-height: 1.7;
   }
+
+  .feature-card__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+  }
+
+  .feature-card__tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6875rem;
+  }
+
+  .feature-card__spark {
+    display: inline-flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 14px;
+  }
+  .feature-card__spark i {
+    display: block;
+    width: 6px;
+    border-radius: 2px;
+    background: #3f3f46;
+  }
+  .feature-card__spark i:nth-child(1) { height: 6px; }
+  .feature-card__spark i:nth-child(2) { height: 10px; background: #71717a; }
+  .feature-card__spark i:nth-child(3) { height: 8px; }
+  .feature-card__spark i:nth-child(4) { height: 14px; background: #ffffff; }
 
   @media (min-width: 768px) {
     .features__grid {

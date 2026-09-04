@@ -1,91 +1,146 @@
 ---
-import Icon from '../components/Icon.astro';
-import Logo from '../components/Logo.astro';
-
 const base = import.meta.env.BASE_URL;
 const links = [
-  { label: 'Inicio', href: base },
-  { label: 'Características', href: base + '#features' },
-  { label: 'Precios', href: base + '#pricing' },
+  { label: 'Inicio', href: base + '#inicio' },
+  { label: 'Características', href: base + '#caracteristicas' },
+  { label: 'Precios', href: base + '#precios' },
   { label: 'FAQ', href: base + '#faq' },
   { label: 'Descargas', href: base + 'descargar' },
 ];
 ---
 
 <header class="site-header">
-  <div class="container site-header__row">
-    <a href={import.meta.env.BASE_URL} class="brand" aria-label="CajoraPOS inicio">
-      <span class="brand__mark"><Logo size={28} /></span>
-      <span class="brand__name">CajoraPOS</span>
-    </a>
+  <div class="site-header__container">
+    <nav class="site-header__nav" aria-label="Navegación principal">
+      <!-- Brand Logo -->
+      <a class="site-brand" aria-label="CajoraPOS Inicio" href={base}>
+        <span class="site-brand__mark">
+          <svg class="site-brand__icon" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+            <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+            <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+            <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+            <path d="M8 7v10"></path>
+            <path d="M12 7v10"></path>
+            <path d="M17 7v10"></path>
+          </svg>
+        </span>
+        <span class="site-brand__name">CajoraPOS</span>
+      </a>
 
-    <nav class="site-nav" aria-label="Principal">
-      <ul class="site-nav__list">
+      <!-- Desktop Navigation Links -->
+      <nav class="site-nav" aria-label="Enlaces de navegación">
         {links.map((link) => (
-          <li><a href={link.href} class="site-nav__link">{link.label}</a></li>
+          <a class="site-nav__link" href={link.href}>{link.label}</a>
         ))}
-      </ul>
-    </nav>
+      </nav>
 
-    <div class="site-header__actions">
+      <!-- Right Action Controls -->
+      <div class="site-header__actions">
+        <!-- Light/Dark Mode Toggle -->
+        <button
+          aria-label="Cambiar tema"
+          class="site-icon-btn"
+          type="button"
+          data-theme-toggle
+        >
+          <svg class="site-icon-btn__icon site-icon-btn__icon--sun" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2"></path>
+            <path d="M12 20v2"></path>
+            <path d="m4.93 4.93 1.41 1.41"></path>
+            <path d="m17.66 17.66 1.41 1.41"></path>
+            <path d="M2 12h2"></path>
+            <path d="M20 12h2"></path>
+            <path d="m6.34 17.66-1.41 1.41"></path>
+            <path d="m19.07 4.93-1.41 1.41"></path>
+          </svg>
+          <svg class="site-icon-btn__icon site-icon-btn__icon--moon" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+        <!-- User Portal / Auth CTA -->
+        <a
+          class="site-header__cta"
+          href={base + 'login'}
+          data-auth-cta="secondary"
+        >
+          Iniciar sesión
+        </a>
+        <!-- Registrar tienda (CTA primario) -->
+        <a
+          class="site-header__cta site-header__cta--primary"
+          data-auth-cta="primary"
+        >
+          <svg class="site-header__cta-icon" data-cta-icon="store" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M15 21v-5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5"></path>
+            <path d="M17.774 10.31a1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.451 0 1.12 1.12 0 0 0-1.548 0 2.5 2.5 0 0 1-3.452 0 1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.77-3.248l2.889-4.184A2 2 0 0 1 7 2h10a2 2 0 0 1 1.653.873l2.895 4.192a2.5 2.5 0 0 1-3.774 3.244"></path>
+            <path d="M4 10.95V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8.05"></path>
+          </svg>
+          <svg class="site-header__cta-icon" data-cta-icon="download" style="display: none" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Registrar tienda
+        </a>
+      </div>
+
+      <!-- Mobile menu button -->
       <button
-        class="icon-btn"
-        type="button"
-        role="switch"
-        aria-checked="false"
-        aria-label="Cambiar a tema claro"
-        data-theme-toggle
-      >
-        <span class="icon-btn__sun"><Icon name="sun" size={20} /></span>
-        <span class="icon-btn__moon"><Icon name="moon" size={20} /></span>
-      </button>
-      <a href={import.meta.env.BASE_URL + 'login'} class="btn-secondary site-header__cta" data-auth-cta="secondary">
-        Iniciar sesión
-      </a>
-      <a href={import.meta.env.BASE_URL + '#pricing'} class="btn-primary site-header__cta" data-auth-cta="primary">
-        Registrar tienda
-      </a>
-      <button
-        class="menu-btn"
+        class="site-menu-btn"
         type="button"
         aria-label="Abrir menú"
         aria-expanded="false"
         aria-controls="site-menu"
         data-menu-toggle
       >
-        <span class="menu-btn__bar"></span>
-        <span class="menu-btn__bar"></span>
-        <span class="menu-btn__bar"></span>
+        <svg class="site-menu-btn__icon" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+          <line x1="3" x2="21" y1="6" y2="6"></line>
+          <line x1="3" x2="21" y1="12" y2="12"></line>
+          <line x1="3" x2="21" y1="18" y2="18"></line>
+        </svg>
       </button>
-    </div>
+    </nav>
   </div>
 
-  <!-- Menú móvil: se despliega de arriba hacia abajo -->
-  <nav class="site-menu" id="site-menu" data-menu hidden aria-label="Menú móvil">
-    <ul class="site-menu__list">
-      {links.map((link) => (
-        <li>
-          <a href={link.href} class="site-menu__link" data-menu-close>{link.label}</a>
-        </li>
-      ))}
-    </ul>
-    <div class="site-menu__actions">
-      <a
-        href={import.meta.env.BASE_URL + 'login'}
-        class="btn-secondary site-menu__cta"
-        data-auth-cta="secondary"
-        data-menu-close
-      >
-        Iniciar sesión
-      </a>
-      <a
-        href={import.meta.env.BASE_URL + '#pricing'}
-        class="btn-primary site-menu__cta"
-        data-auth-cta="primary"
-        data-menu-close
-      >
-        Registrar tienda
-      </a>
+  <!-- Menú móvil -->
+  <nav class="site-menu" id="site-menu" aria-label="Menú móvil">
+    <div class="site-menu__panel">
+      <ul class="site-menu__list">
+        {links.map((link) => (
+          <li>
+            <a href={link.href} class="site-menu__link" data-menu-close>{link.label}</a>
+          </li>
+        ))}
+      </ul>
+      <div class="site-menu__actions">
+        <a
+          class="site-header__cta site-header__cta--primary site-header__cta--full"
+          data-auth-cta="primary"
+          data-menu-close
+        >
+          <svg class="site-header__cta-icon" data-cta-icon="store" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M15 21v-5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5"></path>
+            <path d="M17.774 10.31a1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.451 0 1.12 1.12 0 0 0-1.548 0 2.5 2.5 0 0 1-3.452 0 1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.77-3.248l2.889-4.184A2 2 0 0 1 7 2h10a2 2 0 0 1 1.653.873l2.895 4.192a2.5 2.5 0 0 1-3.774 3.244"></path>
+            <path d="M4 10.95V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8.05"></path>
+          </svg>
+          <svg class="site-header__cta-icon" data-cta-icon="download" style="display: none" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Registrar tienda
+        </a>
+        <a
+          href={base + 'login'}
+          class="site-header__cta site-header__cta--full"
+          data-auth-cta="secondary"
+          data-menu-close
+        >
+          Iniciar sesión
+        </a>
+      </div>
     </div>
   </nav>
 </header>
@@ -94,7 +149,7 @@ const links = [
   const root = document.documentElement;
   const toggle = document.querySelector('[data-theme-toggle]');
   const lightMeta = '#F6F8FB';
-  const darkMeta = '#10151E';
+  const darkMeta = '#040609';
 
   const syncToggle = () => {
     const theme = root.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
@@ -102,7 +157,6 @@ const links = [
       'aria-label',
       theme === 'light' ? 'Cambiar a tema oscuro' : 'Cambiar a tema claro'
     );
-    toggle?.setAttribute('aria-checked', String(theme === 'light'));
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', theme === 'light' ? lightMeta : darkMeta);
   };
@@ -112,117 +166,48 @@ const links = [
     root.setAttribute('data-theme', next);
     try {
       localStorage.setItem('theme', next);
-    } catch (e) {
-      /* almacenamiento no disponible */
-    }
+    } catch (e) { /* no storage */ }
     syncToggle();
   });
 
   syncToggle();
 
-  // -------- Menú móvil (hamburguesa) --------
-  const menu = document.querySelector('[data-menu]');
+  // -------- Menú móvil --------
+  const menu = document.querySelector('[data-menu]') as HTMLElement | null;
   const menuToggle = document.querySelector('[data-menu-toggle]');
 
-  const setMenuOpen = (open) => {
-    if (!menu || !menuToggle) return;
-    menuToggle.setAttribute('aria-expanded', String(open));
-    menuToggle.setAttribute('aria-label', open ? 'Cerrar menú' : 'Abrir menú');
-    if (open) {
-      menu.hidden = false;
-      menu.removeAttribute('data-closing');
-    } else {
-      // Animar el cierre (menú visible → oculto) sin quitar el nodo del flujo
-      menu.setAttribute('data-closing', '');
-      menu.addEventListener(
-        'animationend',
-        () => {
-          if (menu.hasAttribute('data-closing')) {
-            menu.hidden = true;
-            menu.removeAttribute('data-closing');
-          }
-        },
-        { once: true }
-      );
-    }
-  };
-
   menuToggle?.addEventListener('click', () => {
-    setMenuOpen(menu?.hidden === true);
+    if (!menu) return;
+    const isOpen = !menu.classList.contains('is-open');
+    menu.classList.toggle('is-open', isOpen);
+    menuToggle.setAttribute('aria-expanded', String(isOpen));
+    menuToggle.setAttribute('aria-label', isOpen ? 'Cerrar menú' : 'Abrir menú');
   });
 
-  // Cerrar al tocar un enlace del menú
   document.querySelectorAll('[data-menu-close]').forEach((el) => {
-    el.addEventListener('click', () => setMenuOpen(false));
-  });
-
-  // Cerrar con Escape
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') setMenuOpen(false);
-  });
-
-  // Cerrar si la ventana crece a tamaño desktop (el menú es solo móvil)
-  const mqDesktop = window.matchMedia('(min-width: 769px)');
-  mqDesktop.addEventListener('change', (e) => {
-    if (e.matches) setMenuOpen(false);
-  });
-
-  const baseUrl = import.meta.env.BASE_URL;
-  const navLinks = [...document.querySelectorAll('.site-nav__link')];
-  const sections = navLinks
-    .map((link) => {
-      const href = link.getAttribute('href') ?? '';
-      const hashIndex = href.indexOf('#');
-      return hashIndex === -1 ? null : document.querySelector(href.slice(hashIndex));
-    })
-    .filter(Boolean);
-
-  // ¿Estamos en la home? Solo ahí existen las secciones del scroll-spy.
-  const isHome = location.pathname.replace(/\/+$/, '') === baseUrl.replace(/\/+$/, '');
-  const normalizePath = (p) => p.replace(/\/+$/, '');
-
-  const setActive = (id) => {
-    const path = normalizePath(location.pathname);
-    navLinks.forEach((link) => {
-      const href = link.getAttribute('href') ?? '';
-      const hashIndex = href.indexOf('#');
-      let isActive;
-
-      if (hashIndex !== -1) {
-        // Link ancla: activo solo en la home, según la sección visible por scroll.
-        isActive = isHome && id !== '' && href.endsWith(`#${id}`);
-      } else if (normalizePath(href) === normalizePath(baseUrl)) {
-        // "Inicio": activo solo en la home cuando ninguna sección ancla está visible.
-        isActive = isHome && id === '';
-      } else {
-        // Link a otra página (ej. /descargar): activo si la ruta actual coincide.
-        isActive = path === normalizePath(href);
-      }
-
-      link.classList.toggle('is-active', isActive);
-      if (isActive) {
-        link.setAttribute('aria-current', 'true');
-      } else {
-        link.removeAttribute('aria-current');
-      }
+    el.addEventListener('click', () => {
+      if (menu) menu.classList.remove('is-open');
+      menuToggle?.setAttribute('aria-expanded', 'false');
+      menuToggle?.setAttribute('aria-label', 'Abrir menú');
     });
-  };
+  });
 
-  const onScroll = () => {
-    const marker = 90;
-    let current = '';
-    for (const section of sections) {
-      if (section.getBoundingClientRect().top <= marker) {
-        current = section.id;
-      } else {
-        break;
-      }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && menu && menu.classList.contains('is-open')) {
+      menu.classList.remove('is-open');
+      menuToggle?.setAttribute('aria-expanded', 'false');
+      menuToggle?.setAttribute('aria-label', 'Abrir menú');
     }
-    setActive(current);
-  };
+  });
 
-  window.addEventListener('scroll', onScroll, { passive: true });
-  onScroll();
+  const mqDesktop = window.matchMedia('(min-width: 768px)');
+  mqDesktop.addEventListener('change', (e) => {
+    if (e.matches && menu) {
+      menu.classList.remove('is-open');
+      menuToggle?.setAttribute('aria-expanded', 'false');
+      menuToggle?.setAttribute('aria-label', 'Abrir menú');
+    }
+  });
 </script>
 
 <style>
@@ -231,50 +216,75 @@ const links = [
     top: 0;
     left: 0;
     right: 0;
-    /* Alto a propósito: los iframes de terceros (botones PayPal) se pintan
-       en capas propias y con z-index bajos pueden quedar por encima. */
     z-index: 1000;
+    transition: background-color 300ms ease;
+  }
+
+  .site-header__container {
+    max-width: 80rem; /* 1280px */
+    margin: 0 auto;
+    padding: 1rem 1rem 0;
+  }
+
+  .site-header__nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 0.75rem 1.25rem;
     background: var(--glass);
-    border-bottom: 1px solid var(--border);
-    transition: background-color 250ms ease, border-color 250ms ease;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(39, 39, 42, 0.8);
+    border-radius: 1rem;
   }
 
-  .site-header__row {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: center;
-    gap: 2rem;
-    height: 64px;
-  }
-
-  .brand {
-    justify-self: start;
+  .site-brand {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.625rem;
+    border-radius: 0.5rem;
     color: var(--text);
+    flex: 1 1 0;
+    justify-content: flex-start;
+  }
+  .site-brand:focus-visible {
+    outline: 2px solid var(--text);
+    outline-offset: 2px;
+  }
+
+  .site-brand__mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    color: var(--text);
+    border-radius: 0.375rem;
+    transition: transform 200ms ease;
+  }
+  .site-brand:hover .site-brand__mark {
+    transform: scale(1.05);
+  }
+
+  .site-brand__icon {
+    width: 1.375rem;
+    height: 1.375rem;
+  }
+
+  .site-brand__name {
+    font-size: 1rem;
     font-weight: 700;
-    font-size: 1.125rem;
-    letter-spacing: -0.01em;
-  }
-
-  .brand:hover {
+    letter-spacing: -0.02em;
     color: var(--text);
-  }
-
-  .brand__mark {
-    display: inline-flex;
-    color: var(--text);
+    white-space: nowrap;
   }
 
   .site-nav {
-    justify-self: center;
-  }
-
-  .site-nav__list {
     display: flex;
     align-items: center;
-    gap: 2rem;
+    gap: 1.75rem;
+    flex: 0 0 auto;
   }
 
   .site-nav__link {
@@ -283,131 +293,158 @@ const links = [
     color: var(--text-muted);
     transition: color 150ms ease;
   }
-
   .site-nav__link:hover {
     color: var(--text);
   }
 
-  .site-nav__link.is-active {
-    color: var(--text);
-  }
-
   .site-header__actions {
-    justify-self: end;
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    flex: 1 1 0;
+    justify-content: flex-end;
   }
 
   .site-header__cta {
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
-  }
-
-  .icon-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
+    padding: 0.375rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    transition: background-color 150ms ease, color 150ms ease,
+      border-color 150ms ease, box-shadow 150ms ease;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  }
+  .site-header__cta[hidden] {
+    display: none !important;
+  }
+  .site-header__cta:hover {
+    background: var(--surface-2);
+    color: var(--text);
+    border-color: var(--hover-border);
+  }
+
+  .site-header__cta-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+
+  /* CTA primario "Registrar tienda": color claro/éfasis (inversión bg/text) */
+  .site-header__cta--primary {
+    background: var(--text);
+    color: var(--bg);
+    border-color: transparent;
+    display: flex;
+    gap: 5px;
+  }
+  .site-header__cta--primary:hover {
+    background: var(--text);
+    color: var(--bg);
+    opacity: 0.9;
+  }
+
+  .site-header__cta--full {
+    width: 100%;
+    padding: 0.75rem 1rem;
+  }
+
+  .site-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    color: var(--text-muted);
+    border-radius: 0.5rem;
     background: transparent;
     border: none;
-    color: var(--text-muted);
-    border-radius: var(--radius);
     cursor: pointer;
-    transition: background-color 150ms ease, color 150ms ease;
+    transition: color 150ms ease, background-color 150ms ease;
   }
-
-  .icon-btn:hover {
-    background: var(--surface);
+  .site-icon-btn:hover {
     color: var(--text);
+    background: var(--surface-2);
   }
 
-  /* El icono muestra el tema al que se puede cambiar */
-  .icon-btn__sun {
+  .site-icon-btn__icon {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .site-icon-btn__icon--sun {
+    display: inline-flex;
+  }
+  .site-icon-btn__icon--moon {
+    display: none;
+  }
+  html[data-theme='light'] .site-icon-btn__icon--sun {
+    display: none;
+  }
+  html[data-theme='light'] .site-icon-btn__icon--moon {
     display: inline-flex;
   }
 
-  .icon-btn__moon {
-    display: none;
-  }
-
-  html[data-theme='light'] .icon-btn__sun {
-    display: none;
-  }
-
-  html[data-theme='light'] .icon-btn__moon {
-    display: inline-flex;
-  }
-
-  /* -------- Botón hamburguesa (solo móvil) -------- */
-  .menu-btn {
+  /* Mobile menu button */
+  .site-menu-btn {
     display: none;
     align-items: center;
     justify-content: center;
-    flex-direction: column;
-    gap: 4px;
-    width: 36px;
-    height: 36px;
-    background: transparent;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
+    padding: 0.5rem;
     color: var(--text-muted);
+    border-radius: 0.5rem;
+    background: transparent;
+    border: none;
     cursor: pointer;
-    transition: background-color 150ms ease, color 150ms ease;
+    transition: color 150ms ease, background-color 150ms ease;
   }
-
-  .menu-btn:hover {
-    background: var(--surface);
+  .site-menu-btn:hover {
     color: var(--text);
+    background: var(--surface-2);
+  }
+  .site-menu-btn__icon {
+    width: 1.25rem;
+    height: 1.25rem;
   }
 
-  .menu-btn__bar {
-    display: block;
-    width: 16px;
-    height: 2px;
-    border-radius: 2px;
-    background: currentColor;
-    transition: transform 200ms ease, opacity 150ms ease;
-  }
-
-  .menu-btn[aria-expanded='true'] .menu-btn__bar:nth-child(1) {
-    transform: translateY(6px) rotate(45deg);
-  }
-
-  .menu-btn[aria-expanded='true'] .menu-btn__bar:nth-child(2) {
-    opacity: 0;
-  }
-
-  .menu-btn[aria-expanded='true'] .menu-btn__bar:nth-child(3) {
-    transform: translateY(-6px) rotate(-45deg);
-  }
-
-  /* -------- Menú móvil (desplegable de arriba hacia abajo) -------- */
-  .site-menu[hidden] {
-    display: none;
-  }
-
+  /* Mobile dropdown menu */
   .site-menu {
     display: none;
+  }
+  .site-menu.is-open {
+    display: block;
+  }
+  .site-menu__panel {
+    max-width: 80rem;
+    margin: 0 auto;
+    padding: 0 1rem 1rem;
+  }
+  .site-menu__panel > div {
+    background: var(--glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(39, 39, 42, 0.8);
+    border-radius: 1rem;
+    padding: 1rem 1.25rem;
   }
 
   .site-menu__list {
     list-style: none;
-    margin: 0;
-    padding: 0;
   }
-
   .site-menu__link {
     display: block;
-    padding: 0.875rem 0;
-    font-size: 0.9375rem;
+    padding: 0.625rem 0;
+    font-size: 0.875rem;
     font-weight: 500;
     color: var(--text-muted);
     border-bottom: 1px solid var(--border);
     transition: color 150ms ease;
   }
-
   .site-menu__link:hover {
     color: var(--text);
   }
@@ -416,91 +453,21 @@ const links = [
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-    padding-top: 1rem;
     margin-top: 1rem;
   }
 
-  .site-menu__cta {
-    width: 100%;
-    padding: 0.75rem 1rem;
-  }
-
-  @media (max-width: 768px) {
-    .menu-btn {
-      display: inline-flex;
-    }
-
-    /* En el header solo queda "Registrar tienda" + hamburguesa */
-    .site-header__cta[data-auth-cta='secondary'] {
-      display: none;
-    }
-
-    .site-menu {
-      display: block;
-      position: absolute;
-      top: 64px;
-      left: 0;
-      right: 0;
-      z-index: 49;
-      background: var(--glass);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
-      padding: 0 1.5rem 1.5rem;
-      animation: menu-slide-down 220ms ease;
-    }
-
-    .site-menu[data-closing] {
-      animation: menu-slide-up 180ms ease forwards;
-    }
-  }
-
-  @keyframes menu-slide-down {
-    from {
-      opacity: 0;
-      transform: translateY(-8px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes menu-slide-up {
-    from {
-      opacity: 1;
-      transform: translateY(0);
-    }
-    to {
-      opacity: 0;
-      transform: translateY(-8px);
-    }
-  }
-
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     .site-nav {
       display: none;
     }
-
-    /* En móvil el header queda de 2 columnas: marca | acciones a la derecha */
-    .site-header__row {
-      grid-template-columns: auto 1fr;
-      gap: 1rem;
-    }
-
-    .site-header__actions {
-      justify-self: end;
+    .site-menu-btn {
+      display: inline-flex;
     }
   }
 
-  @media (max-width: 480px) {
-    .site-header__actions {
-      gap: 0.5rem;
-    }
-
-    .site-header__cta {
-      padding: 0.5rem 0.75rem;
-      font-size: 0.8125rem;
+  @media (min-width: 768px) {
+    .site-menu {
+      display: none !important;
     }
   }
 </style>
