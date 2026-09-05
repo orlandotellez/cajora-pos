@@ -210,6 +210,76 @@ const links = [
       menuToggle?.setAttribute('aria-label', 'Abrir menú');
     }
   });
+
+  // -------- Scroll spy: activa el nav item según la sección visible --------
+  const spyIds = ['inicio', 'caracteristicas', 'precios', 'faq'];
+
+  const spyLinksById = new Map(spyIds.map((id) => [id, []]));
+  document.querySelectorAll('.site-nav__link, .site-menu__link').forEach((link) => {
+    const href = link.getAttribute('href') || '';
+    const id = href.split('#')[1];
+    const group = spyLinksById.get(id);
+    if (group) group.push(link);
+  });
+
+  const spySections = spyIds
+    .map((id) => document.getElementById(id))
+    .filter((el): el is HTMLElement => el !== null);
+
+  // Altura del header fijo + un margen: la sección cuenta como activa
+  // cuando su tope pasa por debajo del header.
+  const spyHeaderOffset = 100;
+
+  let spyTicking = false;
+  const updateSpy = () => {
+    // Si no estamos en la landing (no hay secciones con esos ids),
+    // no activamos ningún item.
+    if (spySections.length === 0) {
+      spyLinksById.forEach((group) =>
+        group.forEach((link) => link.classList.remove('is-active'))
+      );
+      return;
+    }
+    const pos = window.scrollY + spyHeaderOffset + 1;
+    let currentId: string | null = null;
+    for (const section of spySections) {
+      if (section.offsetTop <= pos) currentId = section.id;
+      else break;
+    }
+    spyLinksById.forEach((group, id) => {
+      const active = id === currentId;
+      group.forEach((link) => link.classList.toggle('is-active', active));
+    });
+    spyTicking = false;
+  };
+
+  const onScroll = () => {
+    if (spyTicking) return;
+    spyTicking = true;
+    requestAnimationFrame(updateSpy);
+  };
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  updateSpy();
+
+  // -------- Página actual: activa el link si el pathname coincide --------
+  // Ej: en /descargar se activa el item "Descargas" (que apunta a una página,
+  // no a un ancla, así que el scroll spy por ids no lo cubre).
+  const normalizePath = (p: string) => {
+    const clean = p.split('#')[0].replace(/\/+$/, '');
+    if (clean === '') return '/';
+    return clean.startsWith('/') ? clean : '/' + clean;
+  };
+  const currentPath = normalizePath(window.location.pathname);
+
+  document.querySelectorAll('.site-nav__link, .site-menu__link').forEach((link) => {
+    const rawHref = link.getAttribute('href') || '';
+    if (rawHref.includes('#')) return; // los anclas los maneja el scroll spy
+    if (normalizePath(rawHref) === currentPath) {
+      link.classList.add('is-active');
+      link.setAttribute('aria-current', 'page');
+    }
+  });
 </script>
 
 <style>
@@ -293,10 +363,15 @@ const links = [
     font-size: 0.875rem;
     font-weight: 500;
     color: var(--text-muted);
-    transition: color 150ms ease;
+    border-bottom: 1px solid transparent;
+    transition: color 150ms ease, border-color 150ms ease;
   }
   .site-nav__link:hover {
     color: var(--text);
+  }
+  .site-nav__link.is-active {
+    color: var(--text);
+    border-bottom-color: currentColor;
   }
 
   .site-header__actions {
@@ -462,6 +537,10 @@ const links = [
   }
   .site-menu__link:hover {
     color: var(--text);
+  }
+  .site-menu__link.is-active {
+    color: var(--text);
+    font-weight: 600;
   }
 
   .site-menu__actions {
