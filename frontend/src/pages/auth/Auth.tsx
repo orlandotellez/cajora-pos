@@ -22,7 +22,7 @@ export default function Auth() {
       </button>
       <div className={styles.brand}>
         <div className={styles.brandInner}>
-          <h1 className={styles.brandTitle}>Caja</h1>
+          <h1 className={styles.brandTitle}>CajoraPOS</h1>
           <p className={styles.brandSubtitle}>Sistema de Punto de Venta e Inventario</p>
 
           <div className={styles.features}>
