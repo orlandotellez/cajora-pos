@@ -23,8 +23,8 @@ const stats = [
 <style>
   .stats {
     background: var(--surface);
-    border-top: 1px solid rgba(39, 39, 42, 0.8);
-    border-bottom: 1px solid rgba(39, 39, 42, 0.8);
+    border-top: 1px solid var(--border-glass);
+    border-bottom: 1px solid var(--border-glass);
     padding: 2rem 0;
   }
 
@@ -67,14 +67,14 @@ const stats = [
     .stats__item[data-index='1'],
     .stats__item[data-index='2'],
     .stats__item[data-index='3'] {
-      border-left: 1px solid rgba(39, 39, 42, 0.5);
+      border-left: 1px solid var(--border-glass-soft);
     }
   }
 
   @media (max-width: 767px) {
     .stats__item[data-index='1'],
     .stats__item[data-index='3'] {
-      border-left: 1px solid rgba(39, 39, 42, 0.5);
+      border-left: 1px solid var(--border-glass-soft);
     }
   }
 </style>
