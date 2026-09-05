@@ -120,6 +120,23 @@ const base = import.meta.env.BASE_URL;
       linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
     -webkit-mask-image: linear-gradient(to bottom, black 0%, black 45%, transparent 90%);
     mask-image: linear-gradient(to bottom, black 0%, black 45%, transparent 90%);
+    animation: grid-scroll 12s linear infinite;
+    will-change: background-position;
+  }
+
+  @keyframes grid-scroll {
+    from {
+      background-position: 0 0;
+    }
+    to {
+      background-position: 40px 40px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero__grid {
+      animation: none;
+    }
   }
 
   /* --- Ambient glow --- */
