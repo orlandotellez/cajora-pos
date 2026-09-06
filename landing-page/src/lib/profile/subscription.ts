@@ -113,14 +113,22 @@ export function renderSub(sub: Subscription): void {
 
 export function initSubscriptionActions(fetchOpts: { headers?: Record<string, string>; credentials?: RequestCredentials }): void {
   const cancelBtn = document.querySelector<HTMLElement>('[data-profile-cancel]')!;
-  cancelBtn.addEventListener('click', async () => {
-    if (
-      !window.confirm(
-        '¿Cancelar tu suscripción? Se cancelará al final del período ya pagado y seguirás con acceso hasta esa fecha.',
-      )
-    ) {
-      return;
-    }
+  const cancelDialog = document.querySelector<HTMLDialogElement>('[data-cancel-dialog]')!;
+  const cancelDismiss = document.querySelector<HTMLElement>('[data-cancel-dismiss]')!;
+  const cancelConfirm = document.querySelector<HTMLElement>('[data-cancel-confirm]')!;
+
+  cancelBtn.addEventListener('click', () => {
+    cancelDialog.showModal();
+  });
+  cancelDismiss.addEventListener('click', () => {
+    cancelDialog.close();
+  });
+  // Cerrar al hacer click fuera del dialog (en el backdrop)
+  cancelDialog.addEventListener('click', (e) => {
+    if (e.target === cancelDialog) cancelDialog.close();
+  });
+  cancelConfirm.addEventListener('click', async () => {
+    cancelDialog.close();
     try {
       const res = await fetch(`${apiUrl}/subscriptions/cancel`, {
         method: 'POST',

@@ -38,6 +38,44 @@
   </div>
 </section>
 
+<!-- Confirmación de cierre de sesión -->
+<dialog class="profile__confirm" data-logout-dialog>
+  <div class="profile__confirm-box">
+    <h3 class="profile__confirm-title">¿Cerrar sesión?</h3>
+    <p class="profile__confirm-text">
+      Vas a cerrar tu sesión en este dispositivo. Vas a necesitar iniciar sesión de nuevo
+      para volver a tu tienda.
+    </p>
+    <div class="profile__confirm-actions">
+      <button type="button" class="btn-secondary profile__confirm-btn" data-logout-cancel>
+        Cancelar
+      </button>
+      <button type="button" class="profile__danger-btn profile__confirm-btn" data-logout-confirm>
+        Cerrar sesión
+      </button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Confirmación de cancelación de suscripción -->
+<dialog class="profile__confirm" data-cancel-dialog>
+  <div class="profile__confirm-box">
+    <h3 class="profile__confirm-title">¿Cancelar tu suscripción?</h3>
+    <p class="profile__confirm-text">
+      Se cancelará al final del período ya pagado y seguirás con acceso hasta esa fecha.
+      No perderás tu tienda ni tus datos.
+    </p>
+    <div class="profile__confirm-actions">
+      <button type="button" class="btn-secondary profile__confirm-btn" data-cancel-dismiss>
+        Seguir con mi plan
+      </button>
+      <button type="button" class="profile__danger-btn profile__confirm-btn" data-cancel-confirm>
+        Cancelar suscripción
+      </button>
+    </div>
+  </div>
+</dialog>
+
 <style>
   .profile__danger {
     margin-top: 2.5rem;
@@ -97,6 +135,78 @@
   .profile__submit {
     padding: 0.75rem 1.5rem;
     align-self: flex-start;
+  }
+
+  .profile__confirm {
+    /* El reset global `* { margin: 0 }` del Layout pisa el `margin: auto` que
+       el navegador usa para centrar el dialog — hay que restaurarlo. */
+    margin: auto;
+    border: none;
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    padding: 0;
+    width: min(24rem, calc(100vw - 2rem));
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+  }
+
+  .profile__confirm::backdrop {
+    background: rgba(0, 0, 0, 0.6);
+  }
+
+  .profile__confirm[open] {
+    animation: profile__confirm-in 180ms ease;
+  }
+
+  @keyframes profile__confirm-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .profile__confirm-box {
+    padding: 1.5rem;
+  }
+
+  .profile__confirm-title {
+    font-size: 1.125rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .profile__confirm-text {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    line-height: 1.6;
+    margin: 0 0 1.5rem;
+  }
+
+  .profile__confirm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+  }
+
+  .profile__confirm-btn {
+    padding: 0.6rem 1.25rem;
+    font-size: 0.875rem;
+    border-radius: var(--radius);
+    cursor: pointer;
+  }
+
+  @media (max-width: 480px) {
+    .profile__confirm-actions {
+      flex-direction: column-reverse;
+    }
+
+    .profile__confirm-btn {
+      width: 100%;
+      justify-content: center;
+    }
   }
 
   @media (max-width: 480px) {

@@ -76,14 +76,13 @@ import ProfileDangerZone from '../sections/perfil/ProfileDangerZone.astro';
       fetchOpts.credentials = 'include';
     }
 
-    // -------- Cerrar sesión --------
-    $("[data-logout]").addEventListener("click", async () => {
+    // -------- Cerrar sesión (con confirmación) --------
+    const doLogout = async () => {
       if (!isNativeApp) {
         // Web: logout via cookies
         try {
           await fetch(`${apiUrl}/auth/logout`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
             credentials: "include",
           });
         } catch {
@@ -103,6 +102,22 @@ import ProfileDangerZone from '../sections/perfil/ProfileDangerZone.astro';
       }
       clearSession();
       window.location.href = homeUrl;
+    };
+
+    const logoutDialog = $("[data-logout-dialog]");
+    $("[data-logout]").addEventListener("click", () => {
+      logoutDialog.showModal();
+    });
+    $("[data-logout-cancel]").addEventListener("click", () => {
+      logoutDialog.close();
+    });
+    $("[data-logout-confirm]").addEventListener("click", () => {
+      logoutDialog.close();
+      void doLogout();
+    });
+    // Cerrar al hacer click fuera del dialog (en el backdrop)
+    logoutDialog.addEventListener("click", (e) => {
+      if (e.target === logoutDialog) logoutDialog.close();
     });
 
     // -------- CTA "Ir a mi tienda" --------
