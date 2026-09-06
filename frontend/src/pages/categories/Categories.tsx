@@ -3,6 +3,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { categoriesApi, type Category, type CreateCategoryPayload, type UpdateCategoryPayload } from "@/api/categories";
 import { useCachedCrudList } from "@/hooks/useCachedCrudList";
 import { fetchAllPages } from "@/lib/fetch-all-pages";
+import { stripAccents } from "@/lib/catalog";
 import { useToast } from "@/components/common/ui/Toast";
 import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
 import { CategoryTable } from "@/components/pages/categories/CategoryTable";
@@ -36,9 +37,13 @@ export default function Categories() {
           .listPaginated({ page, limit })
           .then((res) => ({ items: res.categories, total: res.total })),
       ),
-    searchFn: (c, query) =>
-      c.name.toLowerCase().includes(query) ||
-      (c.description?.toLowerCase().includes(query) ?? false),
+    searchFn: (c, query) => {
+      const q = stripAccents(query);
+      return (
+        stripAccents(c.name.toLowerCase()).includes(q) ||
+        (c.description ? stripAccents(c.description.toLowerCase()).includes(q) : false)
+      );
+    },
     pollMs: 10_000,
     realtimeEvents: ["category.created", "category.updated", "category.deleted"],
   });

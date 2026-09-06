@@ -4,6 +4,7 @@ import { money } from "@/lib/format";
 import { toLocalISOString, type Range } from "@/lib/date-range";
 import { rangeStart, rangeEnd } from "@/lib/date-range";
 import { getVisiblePages } from "@/lib/pagination";
+import { stripAccents } from "@/lib/catalog";
 import styles from "./ChartsSection.module.css";
 
 type SortKey = "revenue" | "quantity" | "product_name" | "last_sale_date";
@@ -30,7 +31,10 @@ export function ProductPerformance({ range }: { range: Range }) {
   }, [range]);
 
   const filtered = useMemo(
-    () => data.filter((p) => p.product_name.toLowerCase().includes(search.toLowerCase())),
+    () =>
+      data.filter((p) =>
+        stripAccents(p.product_name.toLowerCase()).includes(stripAccents(search.toLowerCase())),
+      ),
     [data, search],
   );
 

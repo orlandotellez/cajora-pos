@@ -1,7 +1,7 @@
 import type { Product, Service } from "@/api"
 
 /** Quita acentos/diacríticos para búsquedas sin importar tildes. */
-function stripAccents(s: string): string {
+export function stripAccents(s: string): string {
   return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
 }
 

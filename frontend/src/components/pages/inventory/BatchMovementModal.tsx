@@ -1,12 +1,16 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { X, Trash2, PackageSearch } from "lucide-react";
 import { inventoryApi } from "@/api/inventory";
+import { productsApi, type Product } from "@/api/products";
 import { useToast } from "@/components/common/ui/Toast";
 import { useCashSessionStore } from "@/store/cashSessionStore";
 import { useSettingsStore } from "@/store/settingsStore";
 import { money } from "@/lib/format";
 import { usePosStore } from "@/store/posStore";
-import type { Supplier, Product } from "@/api";
+import { useCatalogoStore } from "@/store/catalogoStore";
+import { stripAccents } from "@/lib/catalog";
+import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
+import type { Supplier } from "@/api";
 import type { CreateBatchPayload } from "@/api/inventory";
 import { UNIT_TYPE_LABELS, unitQuantitySuffix, costUnitNoun, needsUnitQuantity } from "@/lib/constants";
 import styles from "./BatchMovementModal.module.css";
@@ -15,7 +19,6 @@ import { useModalBack } from "@/hooks/useModalBack";
 interface BatchMovementModalProps {
   open: boolean;
   suppliers: Supplier[];
-  products: Product[];
   onClose: () => void;
   onCreated: () => void;
 }
@@ -29,7 +32,7 @@ type BatchFormItem = {
   showNote: boolean;
 };
 
-export function BatchMovementModal({ open, suppliers, products, onClose, onCreated }: BatchMovementModalProps) {
+export function BatchMovementModal({ open, suppliers, onClose, onCreated }: BatchMovementModalProps) {
   const { toast } = useToast();
   const currency = usePosStore((s) => s.currency);
   const canSellCashRaw = useCashSessionStore((s) => s.canSellCash);
@@ -45,10 +48,46 @@ export function BatchMovementModal({ open, suppliers, products, onClose, onCreat
   const [batchItems, setBatchItems] = useState<BatchFormItem[]>([]);
   const [submitting, setSubmitting] = useState(false);
   // Buscador global: elegir un producto agrega la línea directamente.
+  // Busca en el catálogo local ya hidratado (igual que el POS), ignorando
+  // mayúsculas Y acentos: "cafe" encuentra "Café". Si el catálogo aún no
+  // cargó, hace fallback a la API (que matchea mayúsculas pero no acentos).
   const [addSearch, setAddSearch] = useState("");
   const [showAddDropdown, setShowAddDropdown] = useState(false);
   const itemIdCounter = useRef(0);
   const addSearchRef = useRef<HTMLInputElement>(null);
+  const catalogoProducts = useCatalogoStore((s) => s.products);
+  const catalogoLoaded = useCatalogoStore((s) => s.loaded);
+
+  const { results: apiResults, loading: addSearchLoading } = useDebouncedSearch<Product>({
+    query: catalogoLoaded ? "" : addSearch,
+    fetcher: async (term) => {
+      const res = await productsApi.list({ search: term, active: true, limit: 15 });
+      return res.products;
+    },
+  });
+
+  // Búsqueda local sobre el catálogo completo, ignorando acentos/mayúsculas:
+  // "cafe" encuentra "Café" (igual que el POS). Lista vacía si el catálogo
+  // aún no cargó — en ese caso el dropdown usa el fallback de la API.
+  const addResults: Product[] = useMemo(() => {
+    if (catalogoLoaded) {
+      const q = stripAccents(addSearch.trim().toLowerCase());
+      if (!q) return [];
+      const all = Object.values(catalogoProducts);
+      const out: Product[] = [];
+      for (const p of all) {
+        if (
+          stripAccents(p.name.toLowerCase()).includes(q) ||
+          (p.barcode && p.barcode.toLowerCase().includes(q))
+        ) {
+          out.push(p);
+          if (out.length >= 15) break;
+        }
+      }
+      return out;
+    }
+    return apiResults;
+  }, [catalogoLoaded, catalogoProducts, addSearch, apiResults]);
 
   useEffect(() => {
     if (open) useCashSessionStore.getState().fetchStatus();
@@ -63,17 +102,6 @@ export function BatchMovementModal({ open, suppliers, products, onClose, onCreat
   const totalUnits = batchItems.reduce((sum, i) => sum + (i.quantity || 0), 0);
   const validItems = batchItems.filter(i => i.quantity > 0);
   const canSubmit = !submitting && validItems.length > 0;
-
-  function searchProducts(query: string): Product[] {
-    if (!query.trim()) return [];
-    const q = query.toLowerCase();
-    return products.filter(p =>
-      p.name.toLowerCase().includes(q) ||
-      (p.barcode && p.barcode.toLowerCase().includes(q))
-    ).slice(0, 8);
-  }
-
-  const addResults = searchProducts(addSearch);
 
   function addItemFromSearch(product: Product) {
     itemIdCounter.current += 1;
@@ -204,19 +232,22 @@ export function BatchMovementModal({ open, suppliers, products, onClose, onCreat
                 />
                 {showAddDropdown && addSearch && (
                   <div className={styles.batchDropdown}>
-                    {addResults.map((p) => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => addItemFromSearch(p)}
-                        className={styles.batchDropdownItem}
-                      >
-                        <span className={styles.batchDropdownName}>{p.name}</span>
-                        <span className={styles.batchDropdownStock}>Stock: {p.stock}</span>
-                      </button>
-                    ))}
-                    {addResults.length === 0 && (
+                    {addSearchLoading ? (
+                      <div className={styles.batchDropdownEmpty}>Buscando…</div>
+                    ) : addResults.length > 0 ? (
+                      addResults.map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => addItemFromSearch(p)}
+                          className={styles.batchDropdownItem}
+                        >
+                          <span className={styles.batchDropdownName}>{p.name}</span>
+                          <span className={styles.batchDropdownStock}>Stock: {p.stock}</span>
+                        </button>
+                      ))
+                    ) : (
                       <div className={styles.batchDropdownEmpty}>Sin resultados</div>
                     )}
                   </div>

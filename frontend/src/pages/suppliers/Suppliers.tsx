@@ -4,6 +4,7 @@ import { suppliersApi, type CreateSupplierPayload, type UpdateSupplierPayload } 
 import type { Supplier } from "@/api/suppliers";
 import { useCachedCrudList } from "@/hooks/useCachedCrudList";
 import { fetchAllPages } from "@/lib/fetch-all-pages";
+import { stripAccents } from "@/lib/catalog";
 import { useToast } from "@/components/common/ui/Toast";
 import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
 import { SupplierTable } from "@/components/pages/suppliers/SupplierTable";
@@ -45,11 +46,15 @@ export default function Suppliers() {
           .list({ page, limit })
           .then((res) => ({ items: res.suppliers, total: res.total })),
       ),
-    searchFn: (s, query) =>
-      s.name.toLowerCase().includes(query) ||
-      (s.contact_name?.toLowerCase().includes(query) ?? false) ||
-      (s.email?.toLowerCase().includes(query) ?? false) ||
-      (s.phone?.toLowerCase().includes(query) ?? false),
+    searchFn: (s, query) => {
+      const q = stripAccents(query);
+      return (
+        stripAccents(s.name.toLowerCase()).includes(q) ||
+        (s.contact_name ? stripAccents(s.contact_name.toLowerCase()).includes(q) : false) ||
+        (s.email ? stripAccents(s.email.toLowerCase()).includes(q) : false) ||
+        (s.phone ? stripAccents(s.phone.toLowerCase()).includes(q) : false)
+      );
+    },
     pollMs: 10_000,
     realtimeEvents: ["supplier.created", "supplier.updated", "supplier.deleted"],
   });

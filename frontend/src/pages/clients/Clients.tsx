@@ -3,6 +3,7 @@ import { clientsApi, type CreateClientPayload, type UpdateClientPayload } from "
 import type { Client } from "@/api";
 import { useCachedCrudList } from "@/hooks/useCachedCrudList";
 import { fetchAllPages } from "@/lib/fetch-all-pages";
+import { stripAccents } from "@/lib/catalog";
 import { useToast } from "@/components/common/ui/Toast";
 import { usePermissions } from "@/hooks/usePermissions";
 import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
@@ -45,10 +46,14 @@ export default function Clients() {
           .list({ page, limit })
           .then((res) => ({ items: res.clients, total: res.total })),
       ),
-    searchFn: (c, query) =>
-      c.name.toLowerCase().includes(query) ||
-      (c.phone?.toLowerCase().includes(query) ?? false) ||
-      (c.email?.toLowerCase().includes(query) ?? false),
+    searchFn: (c, query) => {
+      const q = stripAccents(query);
+      return (
+        stripAccents(c.name.toLowerCase()).includes(q) ||
+        (c.phone ? stripAccents(c.phone.toLowerCase()).includes(q) : false) ||
+        (c.email ? stripAccents(c.email.toLowerCase()).includes(q) : false)
+      );
+    },
     pollMs: 10_000,
     realtimeEvents: ["client.created", "client.updated", "client.deleted"],
   });

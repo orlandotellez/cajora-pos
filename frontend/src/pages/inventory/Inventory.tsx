@@ -350,7 +350,6 @@ export default function Inventory() {
       <BatchMovementModal
         open={batchModalOpen}
         suppliers={suppliers}
-        products={products}
         onClose={() => setBatchModalOpen(false)}
         onCreated={handleBatchCreated}
       />

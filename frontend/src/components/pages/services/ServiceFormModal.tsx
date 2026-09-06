@@ -1,14 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { X, Package, Plus, Trash2 } from "lucide-react";
 import { money } from "@/lib/format";
-import type { Service, Product } from "@/api";
+import { productsApi, type Product } from "@/api/products";
+import type { Service } from "@/api";
 import type { CreateServicePayload } from "@/api/services";
+import { useCatalogoStore } from "@/store/catalogoStore";
+import { stripAccents } from "@/lib/catalog";
+import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 import styles from "./ServiceFormModal.module.css";
 import { useModalBack } from "@/hooks/useModalBack";
 
 interface Props {
   editing: Service | "new" | null;
-  products: Product[];
   onClose: () => void;
   onSave: (
     payload: CreateServicePayload,
@@ -27,7 +30,130 @@ interface SelectedProduct {
 
 const EMPTY_FORM = { name: "", description: "", base_price: 0 };
 
-export function ServiceFormModal({ editing, products, onClose, onSave, onDelete }: Props) {
+/**
+ * Combobox de producto con búsqueda vía API (nombre, barcode o categoría).
+ * Reemplaza al <select> nativo: encontrás CUALQUIER producto del catálogo,
+ * no solo los que venían precargados.
+ */
+function ProductRowCombobox({
+  productId,
+  productName,
+  takenIds,
+  onSelect,
+}: {
+  /** Id del producto actual de la fila ("" si la fila aún no eligió). */
+  productId: string;
+  productName: string;
+  /** Ids de productos ya elegidos en OTRAS filas (para no repetirlos). */
+  takenIds: Set<string>;
+  onSelect: (p: Product) => void;
+}) {
+  const [draft, setDraft] = useState(productName);
+  const [open, setOpen] = useState(false);
+  const catalogoProducts = useCatalogoStore((s) => s.products);
+  const catalogoLoaded = useCatalogoStore((s) => s.loaded);
+
+  // Al elegir un producto, el nombre del input se sincroniza con él.
+  useEffect(() => {
+    setDraft(productName);
+  }, [productName]);
+
+  const isDirty = draft !== productName;
+
+  const { results: apiResults, loading } = useDebouncedSearch<Product>({
+    query: catalogoLoaded ? "" : (isDirty && draft) || "",
+    fetcher: async (term) => {
+      const res = await productsApi.list({ search: term, active: true, limit: 15 });
+      return res.products;
+    },
+  });
+
+  // Búsqueda local sobre el catálogo completo, ignorando acentos/mayúsculas.
+  const localResults: Product[] = useMemo(() => {
+    if (!catalogoLoaded) return [];
+    const term = isDirty ? draft : "";
+    const q = stripAccents(term.trim().toLowerCase());
+    if (!q) return [];
+    const all = Object.values(catalogoProducts);
+    const out: Product[] = [];
+    for (const p of all) {
+      if (
+        stripAccents(p.name.toLowerCase()).includes(q) ||
+        (p.barcode && p.barcode.toLowerCase().includes(q))
+      ) {
+        out.push(p);
+        if (out.length >= 15) break;
+      }
+    }
+    return out;
+  }, [catalogoLoaded, catalogoProducts, draft, isDirty]);
+
+  const results = catalogoLoaded ? localResults : apiResults;
+  const available = results.filter((p) => p.id === productId || !takenIds.has(p.id));
+
+  function select(p: Product) {
+    onSelect(p);
+    setDraft(p.name);
+    setOpen(false);
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (available.length > 0) select(available[0]);
+    } else if (e.key === "Escape") {
+      setOpen(false);
+      setDraft(productName);
+    }
+  }
+
+  return (
+    <div className={styles["product-combo"]}>
+      <input
+        value={draft}
+        onChange={(e) => {
+          setDraft(e.target.value);
+          setOpen(true);
+        }}
+        onFocus={(e) => {
+          // Al enfocar, seleccionar el texto para que tipear reemplace directo.
+          e.target.select();
+          setOpen(true);
+        }}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        onKeyDown={handleKeyDown}
+        placeholder="Buscar producto…"
+        className={styles["product-combo-input"]}
+      />
+      {/* Solo abrir el dropdown si el usuario modificó el texto (o la fila
+          es nueva y no eligió nada todavía). */}
+      {(isDirty || !productName) && open && draft.trim() && (
+        <div className={styles["product-dropdown"]}>
+          {loading ? (
+            <div className={styles["product-dropdown-empty"]}>Buscando…</div>
+          ) : available.length > 0 ? (
+            available.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => select(p)}
+                className={styles["product-dropdown-item"]}
+              >
+                <span className={styles["product-dropdown-name"]}>{p.name}</span>
+                <span className={styles["product-dropdown-stock"]}>Stock: {p.stock}</span>
+              </button>
+            ))
+          ) : (
+            <div className={styles["product-dropdown-empty"]}>Sin resultados</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function ServiceFormModal({ editing, onClose, onSave, onDelete }: Props) {
   const isNew = typeof editing === "string";
   const editingService = typeof editing === "object" ? editing : null;
 
@@ -73,10 +199,12 @@ export function ServiceFormModal({ editing, products, onClose, onSave, onDelete 
         name: form.name,
         description: form.description || undefined,
         base_price: form.base_price,
-        products: selectedProducts.map((sp) => ({
-          product_id: sp.product_id,
-          quantity: sp.quantity,
-        })),
+        products: selectedProducts
+          .filter((sp) => sp.product_id)
+          .map((sp) => ({
+            product_id: sp.product_id,
+            quantity: sp.quantity,
+          })),
       };
       await onSave(payload, isNew, editingService);
     } catch (err) {
@@ -88,51 +216,49 @@ export function ServiceFormModal({ editing, products, onClose, onSave, onDelete 
   }
 
   function addProduct() {
-    const available = products.filter(
-      (p) => !selectedProducts.find((sp) => sp.product_id === p.id),
-    );
-    if (available.length === 0) return;
-    const first = available[0];
-    setSelectedProducts([
-      ...selectedProducts,
-      { product_id: first.id, product_name: first.name, quantity: 1 },
+    // Agrega una fila vacía: el usuario busca y elige desde el combobox.
+    setSelectedProducts((prev) => [
+      ...prev,
+      { product_id: "", product_name: "", quantity: 1 },
     ]);
   }
 
-  function removeProduct(productId: string) {
-    setSelectedProducts(selectedProducts.filter((sp) => sp.product_id !== productId));
-  }
-
-  function updateQty(productId: string, qty: number) {
-    if (qty <= 0) {
-      removeProduct(productId);
-      return;
-    }
-    setSelectedProducts(
-      selectedProducts.map((sp) =>
-        sp.product_id === productId ? { ...sp, quantity: qty } : sp,
-      ),
-    );
-  }
-
-  function changeProduct(oldId: string, newId: string) {
-    const prod = products.find((p) => p.id === newId);
+  function changeProduct(rowIndex: number, product: Product) {
     if (
-      !prod ||
-      selectedProducts.find((sp) => sp.product_id === newId && sp.product_id !== oldId)
+      selectedProducts.some(
+        (sp, i) => i !== rowIndex && sp.product_id === product.id,
+      )
     ) {
       return;
     }
-    setSelectedProducts(
-      selectedProducts.map((sp) =>
-        sp.product_id === oldId
-          ? { ...sp, product_id: prod.id, product_name: prod.name }
+    setSelectedProducts((prev) =>
+      prev.map((sp, i) =>
+        i === rowIndex
+          ? { ...sp, product_id: product.id, product_name: product.name }
           : sp,
       ),
     );
   }
 
+  function removeProduct(rowIndex: number) {
+    setSelectedProducts((prev) => prev.filter((_, i) => i !== rowIndex));
+  }
+
+  function updateQty(rowIndex: number, qty: number) {
+    if (qty <= 0) {
+      removeProduct(rowIndex);
+      return;
+    }
+    setSelectedProducts((prev) =>
+      prev.map((sp, i) => (i === rowIndex ? { ...sp, quantity: qty } : sp)),
+    );
+  }
+
   if (!editing) return null;
+
+  const takenIds = new Set(
+    selectedProducts.map((sp) => sp.product_id).filter(Boolean),
+  );
 
   return (
     <div className={styles.overlay} onClick={onClose}>
@@ -194,29 +320,25 @@ export function ServiceFormModal({ editing, products, onClose, onSave, onDelete 
               </div>
             ) : (
               <div className={styles["products-list"]}>
-                {selectedProducts.map((sp) => (
-                  <div key={sp.product_id} className={styles["product-row"]}>
-                    <select
-                      value={sp.product_id}
-                      onChange={(e) => changeProduct(sp.product_id, e.target.value)}
-                      className={styles["product-select"]}
-                    >
-                      {products.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name} — {money(p.price)}
-                        </option>
-                      ))}
-                    </select>
+                {selectedProducts.map((sp, i) => (
+                  <div key={sp.product_id || `new-${i}`} className={styles["product-row"]}>
+                    <ProductRowCombobox
+                      productId={sp.product_id}
+                      productName={sp.product_name}
+                      takenIds={takenIds}
+                      onSelect={(p) => changeProduct(i, p)}
+                    />
                     <input
                       type="number"
                       min="1"
                       value={sp.quantity}
-                      onChange={(e) => updateQty(sp.product_id, Number(e.target.value))}
+                      onChange={(e) => updateQty(i, Number(e.target.value))}
                       className={styles["product-qty"]}
+                      disabled={!sp.product_id}
                     />
                     <button
                       type="button"
-                      onClick={() => removeProduct(sp.product_id)}
+                      onClick={() => removeProduct(i)}
                       className={styles["product-remove"]}
                     >
                       <X size={14} />

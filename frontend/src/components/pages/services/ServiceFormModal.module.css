@@ -187,19 +187,80 @@
   gap: 8px;
 }
 
-.product-select {
+.product-combo {
+  position: relative;
   flex: 1;
+  min-width: 0;
+}
+
+.product-combo-input {
+  width: 100%;
   padding: 6px 28px 6px 8px;
   border: 1px solid var(--border);
   border-radius: 5px;
   font-size: 12px;
   background: var(--background);
   color: var(--foreground);
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 8px center;
-  background-size: 12px;
+  box-sizing: border-box;
+}
+
+.product-combo-input:focus {
+  outline: none;
+  border-color: var(--ring);
+}
+
+.product-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  margin-top: 2px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--background);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.product-dropdown-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 12px;
+  border: none;
+  background: none;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--foreground);
+  cursor: pointer;
+  text-align: left;
+}
+
+.product-dropdown-item:hover {
+  background: var(--accent);
+}
+
+.product-dropdown-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.product-dropdown-stock {
+  font-size: 12px;
+  color: var(--muted-foreground);
+  flex-shrink: 0;
+}
+
+.product-dropdown-empty {
+  padding: 12px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted-foreground);
 }
 
 .product-qty {
@@ -210,6 +271,11 @@
   font-size: 12px;
   background: var(--background);
   color: var(--foreground);
+}
+
+.product-qty:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .product-remove {

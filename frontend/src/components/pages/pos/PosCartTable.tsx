@@ -2,9 +2,15 @@ import { useEffect, useState } from "react";
 import { Trash2, X, ScanBarcode, Wrench, PackagePlus } from "lucide-react";
 import { money } from "@/lib/format";
 import { UNIT_TYPE_LABELS } from "@/lib/constants";
+import { stripAccents } from "@/lib/catalog";
 import { usePosStore, type CartItem, type ProductCartItem, type ServiceCartItem } from "@/store/posStore";
 import type { Product } from "@/api/products";
 import styles from "../../../pages/pos/Pos.module.css";
+
+// Búsqueda sin importar mayúsculas ni acentos: "cafe" encuentra "Café".
+function matchesSearch(name: string, term: string) {
+  return stripAccents(name.toLowerCase()).includes(stripAccents(term.trim().toLowerCase()));
+}
 
 interface PosCartTableProps {
   cart: CartItem[];
@@ -190,7 +196,7 @@ function ServiceProductManager({
                     p.active &&
                     !svc.products.find((sp) => sp.product_id === p.id) &&
                     (serviceProductSearch === "" ||
-                      p.name.toLowerCase().includes(serviceProductSearch.toLowerCase()))
+                      matchesSearch(p.name, serviceProductSearch))
                 )
                 .slice(0, 8)
                 .map((p) => (
@@ -216,7 +222,7 @@ function ServiceProductManager({
                   p.active &&
                   !svc.products.find((sp) => sp.product_id === p.id) &&
                   (serviceProductSearch === "" ||
-                    p.name.toLowerCase().includes(serviceProductSearch.toLowerCase()))
+                    matchesSearch(p.name, serviceProductSearch))
               ).length === 0 && (
                   <div className={styles.spAddEmpty}>Sin resultados</div>
                 )}

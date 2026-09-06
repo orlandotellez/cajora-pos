@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useAdminGuard } from "@/hooks/useAdminGuard";
 import { useCachedCrudList } from "@/hooks/useCachedCrudList";
 import { fetchAllPages } from "@/lib/fetch-all-pages";
+import { stripAccents } from "@/lib/catalog";
 import { useToast } from "@/components/common/ui/Toast";
 import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
 import { UserTable } from "@/components/pages/users/UserTable";
@@ -40,10 +41,14 @@ export default function Users() {
           .list({ page, limit })
           .then((res) => ({ items: res.users, total: res.total })),
       ),
-    searchFn: (u, query) =>
-      u.name.toLowerCase().includes(query) ||
-      u.email.toLowerCase().includes(query) ||
-      (u.phone?.toLowerCase().includes(query) ?? false),
+    searchFn: (u, query) => {
+      const q = stripAccents(query);
+      return (
+        stripAccents(u.name.toLowerCase()).includes(q) ||
+        stripAccents(u.email.toLowerCase()).includes(q) ||
+        (u.phone ? stripAccents(u.phone.toLowerCase()).includes(q) : false)
+      );
+    },
     pollMs: 10_000,
     realtimeEvents: ["user.created", "user.updated", "user.deleted"],
   });

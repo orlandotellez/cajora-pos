@@ -7,6 +7,7 @@ import { fetchAllPages } from "@/lib/fetch-all-pages";
 import { useToast } from "@/components/common/ui/Toast";
 import { usePosStore } from "@/store/posStore";
 import { usePermissions } from "@/hooks/usePermissions";
+import { stripAccents } from "@/lib/catalog";
 import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
 import { ServiceTable } from "@/components/pages/services/ServiceTable";
 import styles from "./Services.module.css";
@@ -39,9 +40,13 @@ export default function Services() {
           .list({ page, limit })
           .then((res) => ({ items: res.services, total: res.total })),
       ),
-    searchFn: (s, query) =>
-      s.name.toLowerCase().includes(query) ||
-      (s.description?.toLowerCase().includes(query) ?? false),
+    searchFn: (s, query) => {
+      const q = stripAccents(query);
+      return (
+        stripAccents(s.name.toLowerCase()).includes(q) ||
+        (s.description ? stripAccents(s.description.toLowerCase()).includes(q) : false)
+      );
+    },
     pollMs: 10_000,
     realtimeEvents: ["service.created", "service.updated", "service.deleted"],
   });
@@ -239,7 +244,6 @@ export default function Services() {
       {canWrite && (
         <ServiceFormModal
           editing={editing}
-          products={products}
           onClose={() => setEditing(null)}
           onSave={handleSave}
           onDelete={(s) => {

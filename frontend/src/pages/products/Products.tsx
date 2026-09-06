@@ -6,6 +6,7 @@ import { suppliersApi } from "@/api/suppliers";
 import type { Product, Category, Supplier } from "@/api";
 import { useCachedCrudList } from "@/hooks/useCachedCrudList";
 import { fetchAllPages, fetchFirstPage, fetchPageFrom } from "@/lib/fetch-all-pages";
+import { stripAccents } from "@/lib/catalog";
 import { useToast } from "@/components/common/ui/Toast";
 import { usePosStore } from "@/store/posStore";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -92,10 +93,14 @@ export default function Products() {
             .then((res) => ({ items: res.products, total: res.total })),
         alreadyLoaded,
       ).then((res) => res.items),
-    searchFn: (p, query) =>
-      p.name.toLowerCase().includes(query) ||
-      (p.barcode?.toLowerCase().includes(query) ?? false) ||
-      (p.category?.name.toLowerCase().includes(query) ?? false),
+    searchFn: (p, query) => {
+      const q = stripAccents(query);
+      return (
+        stripAccents(p.name.toLowerCase()).includes(q) ||
+        (p.barcode ? stripAccents(p.barcode.toLowerCase()).includes(q) : false) ||
+        (p.category?.name ? stripAccents(p.category.name.toLowerCase()).includes(q) : false)
+      );
+    },
     filterFn: (p, filters) => {
       if (filters.categoryId && p.category?.id !== filters.categoryId) return false;
       if (filters.unitType && p.unit_type !== filters.unitType) return false;

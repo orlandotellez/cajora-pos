@@ -8,6 +8,7 @@ import type {
 import { sendBytesToPrinter } from "@/lib/tcp-printer";
 import { printReceiptBrowser } from "@/lib/browser-print";
 import { isTauriRuntime } from "@/lib/fetch";
+import { stripAccents } from "@/lib/catalog";
 import { useModalBack } from "@/hooks/useModalBack";
 import { DataTable, type Column } from "@/components/common/DataTable";
 import { ApiError } from "@/api/client";
@@ -70,7 +71,7 @@ export default function PrintersPanel() {
   useModalBack(() => setDeletingId(null), deletingId !== null);
 
   useEffect(() => {
-    const t = setTimeout(() => setDebounced(search.trim().toLowerCase()), 300);
+    const t = setTimeout(() => setDebounced(stripAccents(search.trim().toLowerCase())), 300);
     return () => clearTimeout(t);
   }, [search]);
 
@@ -100,9 +101,9 @@ export default function PrintersPanel() {
     if (!debounced) return printers;
     return printers.filter(
       (p) =>
-        p.name.toLowerCase().includes(debounced) ||
-        p.address.toLowerCase().includes(debounced) ||
-        p.role.toLowerCase().includes(debounced)
+        stripAccents(p.name.toLowerCase()).includes(debounced) ||
+        stripAccents(p.address.toLowerCase()).includes(debounced) ||
+        stripAccents(p.role.toLowerCase()).includes(debounced)
     );
   }, [printers, debounced]);
 
