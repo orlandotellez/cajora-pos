@@ -280,11 +280,12 @@ export const ProductRepository: IProductRepository = {
   },
 
   async softDeleteMany(ids: string[], storeId?: string) {
-    const result = await prisma.product.updateMany({
+    const result = await prisma.product.updateManyAndReturn({
       where: { id: { in: ids }, deleted_at: null, ...(storeId ? { store_id: storeId } : {}) },
       data: { deleted_at: new Date() },
+      select: { id: true },
     })
-    return { count: result.count }
+    return { count: result.length, ids: result.map((r) => r.id) }
   },
 
   async softDeleteAllByFilters(filters?: { search?: string; category_id?: string; active?: boolean; lowStock?: boolean; outOfStock?: boolean; storeId?: string }) {
@@ -320,11 +321,12 @@ export const ProductRepository: IProductRepository = {
       where.stock = { lte: 0 }
     }
 
-    const result = await prisma.product.updateMany({
+    const result = await prisma.product.updateManyAndReturn({
       where,
       data: { deleted_at: new Date() },
+      select: { id: true },
     })
-    return { count: result.count }
+    return { count: result.length, ids: result.map((r) => r.id) }
   },
 
   async updateStock(id: string, quantity: number, storeId?: string) {

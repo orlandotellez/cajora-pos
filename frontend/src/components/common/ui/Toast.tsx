@@ -27,6 +27,13 @@ let nextId = 0;
 
 const MAX_TOASTS = 4;
 
+type ToastFn = (message: string, variant?: ToastVariant, options?: ToastOptions) => void;
+let globalToastFn: ToastFn | null = null;
+
+export function toastGlobal(message: string, variant?: ToastVariant, options?: ToastOptions) {
+  globalToastFn?.(message, variant, options);
+}
+
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
@@ -45,6 +52,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       return next.length > MAX_TOASTS ? next.slice(next.length - MAX_TOASTS) : next;
     });
   }, []);
+
+  useEffect(() => {
+    globalToastFn = addToast;
+    return () => {
+      globalToastFn = null;
+    };
+  }, [addToast]);
 
   const removeToast = useCallback((id: number) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));

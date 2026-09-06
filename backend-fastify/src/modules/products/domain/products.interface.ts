@@ -11,7 +11,7 @@ export interface IProductRepository {
   createMany(data: CreateProductData[], storeId?: string): Promise<{ count: number }>
   update(id: string, data: UpdateProductData, storeId?: string): Promise<IProductEntity>
   softDelete(id: string, storeId?: string): Promise<void>
-  softDeleteMany(ids: string[], storeId?: string): Promise<{ count: number }>
-  softDeleteAllByFilters(filters?: { search?: string; category_id?: string; active?: boolean; lowStock?: boolean; outOfStock?: boolean; storeId?: string }): Promise<{ count: number }>
+  softDeleteMany(ids: string[], storeId?: string): Promise<{ count: number; ids: string[] }>
+  softDeleteAllByFilters(filters?: { search?: string; category_id?: string; active?: boolean; lowStock?: boolean; outOfStock?: boolean; storeId?: string }): Promise<{ count: number; ids: string[] }>
   updateStock(id: string, quantity: number, storeId?: string): Promise<IProductEntity>
 }

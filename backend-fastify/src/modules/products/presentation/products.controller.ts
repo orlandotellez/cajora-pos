@@ -88,7 +88,7 @@ export const productsController = {
     const body = BulkDeleteProductsDtoSchema.parse(request.body)
     const result = await productService.deleteMany(body.ids, request.storeId)
     if (result.deleted > 0) {
-      sseBroadcast(request.storeId!, "product.deleted", { count: result.deleted })
+      sseBroadcast(request.storeId!, "product.deleted", { ids: result.ids })
     }
     return reply.status(200).send({ deleted: result.deleted })
   },
@@ -104,7 +104,7 @@ export const productsController = {
       storeId: request.storeId,
     })
     if (result.deleted > 0) {
-      sseBroadcast(request.storeId!, "product.deleted", { count: result.deleted })
+      sseBroadcast(request.storeId!, "product.deleted", { ids: result.ids })
     }
     return reply.status(200).send({ deleted: result.deleted })
   },

@@ -1,4 +1,6 @@
 import { useCatalogoStore } from "@/store/catalogoStore";
+import { usePosStore } from "@/store/posStore";
+import { toastGlobal } from "@/components/common/ui/Toast";
 import { subscribeRealtime } from "@/lib/realtime";
 import { inventoryApi } from "@/api/inventory";
 
@@ -22,8 +24,24 @@ export async function applyCatalogRealtimeEvent(event: string, data: unknown): P
       break;
     }
     case "product.deleted": {
-      const id = (data as { id?: string }).id;
-      if (id) store.removeProduct(id);
+      const payload = (data as { id?: string; ids?: string[] }) ?? {};
+      const ids = Array.isArray(payload.ids) && payload.ids.length > 0
+        ? payload.ids
+        : payload.id
+          ? [payload.id]
+          : [];
+      for (const id of ids) {
+        store.removeProduct(id);
+        const removed = usePosStore.getState().purgeProduct(id);
+        if (removed) {
+          toastGlobal(
+            removed.fromService
+              ? `"${removed.name}" (de "${removed.fromService}") fue eliminado del catálogo y se quitó del carrito`
+              : `"${removed.name}" fue eliminado del catálogo y se quitó del carrito`,
+            "info",
+          );
+        }
+      }
       break;
     }
     case "service.created":

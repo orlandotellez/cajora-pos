@@ -41,7 +41,7 @@ export default function Pos() {
 
   const { dialog, showAlert, showConfirm, closeDialog } = useDialog();
 
-const {
+  const {
     active: scannerActive,
     toggle: toggleScanner,
     clearError: clearScannerError,
@@ -136,10 +136,6 @@ const {
   // Tiempo real: cuando otro terminal vende, ajusta stock o edita/elimina un
   // producto, refrescar el stock del carrito y los resultados visibles.
   // Comparte la ÚNICA conexión SSE del sistema (`subscribeRealtime`).
-  // Ref mutable para que el handler siempre vea el `showAlert` más reciente
-  // (mismo patrón que `fetchSalesRef` en Sales.tsx).
-  const showAlertRef = useRef(showAlert);
-  useEffect(() => { showAlertRef.current = showAlert; }, [showAlert]);
 
   useEffect(() => {
     return subscribeRealtime((event, rawData) => {
@@ -194,30 +190,6 @@ const {
         });
         if (Object.keys(stocks).length > 0) {
           usePosStore.getState().syncStocks(stocks);
-        }
-
-        // Si el cajero tenía en el carrito un producto que acaban de eliminar,
-        // avisarle y quitarlo (no se puede cobrar). Cubre items regulares y
-        // sub-productos dentro de servicios.
-        if (event === "product.deleted" && payload.id) {
-          const state = usePosStore.getState();
-          const asProduct = state.cart.find(
-            (item) => item._type === "product" && item.id === payload.id,
-          ) as ProductCartItem | undefined;
-          if (asProduct) {
-            state.setQty(payload.id, 0);
-            showAlertRef.current(`"${asProduct.name}" fue eliminado del catálogo y se quitó del carrito`);
-            return;
-          }
-          const inService = state.cart.flatMap((item) =>
-            item._type === "service"
-              ? item.products.filter((sp) => sp.product_id === payload.id).map((sp) => ({ svc: item, sp }))
-              : []
-          )[0];
-          if (inService) {
-            state.removeServiceProduct(inService.svc.service_id, payload.id);
-            showAlertRef.current(`"${inService.sp.product_name}" (de "${inService.svc.name}") fue eliminado del catálogo y se quitó del carrito`);
-          }
         }
       })();
     });

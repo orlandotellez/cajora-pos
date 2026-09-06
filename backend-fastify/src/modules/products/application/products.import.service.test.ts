@@ -52,8 +52,8 @@ function fakeRepository(state: FakeState, overrides: Partial<IProductRepository>
     },
     update: async (_id, data) => data as never,
     softDelete: async () => { },
-    softDeleteMany: async (ids) => ({ count: ids.length }),
-    softDeleteAllByFilters: async () => ({ count: 0 }),
+    softDeleteMany: async (ids) => ({ count: ids.length, ids }),
+    softDeleteAllByFilters: async () => ({ count: 0, ids: [] }),
     updateStock: async (_id, q) => ({ stock: q } as never),
     ...overrides,
   }

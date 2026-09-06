@@ -54,6 +54,7 @@ interface PosState {
   setQty: (id: string, q: number) => void;
   updateServiceProductQty: (serviceId: string, productId: string, qty: number) => void;
   removeServiceProduct: (serviceId: string, productId: string) => void;
+  purgeProduct: (productId: string) => { name: string; fromService?: string } | null;
   addServiceProduct: (serviceId: string, product: Product, quantity?: number) => void;
   toggleServiceProductAffectsPrice: (serviceId: string, productId: string) => void;
   /**
@@ -78,7 +79,7 @@ function isProduct(item: Product | { id: string; service_id: string; name: strin
   return "price" in item && typeof (item as Product).price === "number" && !("service_id" in item);
 }
 
-export const usePosStore = create<PosState>()((set) => ({
+export const usePosStore = create<PosState>()((set, get) => ({
   cart: [],
   discountPct: 0,
   payment: "efectivo",
@@ -141,13 +142,13 @@ export const usePosStore = create<PosState>()((set) => ({
       cart: s.cart.map((x) =>
         x._type === "service" && x.service_id === serviceId
           ? {
-              ...(x as ServiceCartItem),
-              products: qty <= 0
-                ? (x as ServiceCartItem).products.filter((sp) => sp.product_id !== productId)
-                : (x as ServiceCartItem).products.map((sp) =>
-                    sp.product_id === productId ? { ...sp, quantity: qty } : sp
-                  ),
-            }
+            ...(x as ServiceCartItem),
+            products: qty <= 0
+              ? (x as ServiceCartItem).products.filter((sp) => sp.product_id !== productId)
+              : (x as ServiceCartItem).products.map((sp) =>
+                sp.product_id === productId ? { ...sp, quantity: qty } : sp
+              ),
+          }
           : x
       ),
     })),
@@ -157,24 +158,55 @@ export const usePosStore = create<PosState>()((set) => ({
       cart: s.cart.map((x) =>
         x._type === "service" && x.service_id === serviceId
           ? {
-              ...(x as ServiceCartItem),
-              products: (x as ServiceCartItem).products.filter((sp) => sp.product_id !== productId),
-            }
+            ...(x as ServiceCartItem),
+            products: (x as ServiceCartItem).products.filter((sp) => sp.product_id !== productId),
+          }
           : x
       ),
     })),
+
+  purgeProduct: (productId) => {
+    const state = get();
+    let removed: { name: string; fromService?: string } | null = null;
+
+    for (const item of state.cart) {
+      if (item._type === "product" && item.id === productId) {
+        removed = { name: item.name };
+        break;
+      }
+      if (item._type === "service") {
+        const sp = item.products.find((p) => p.product_id === productId);
+        if (sp) {
+          removed = { name: sp.product_name, fromService: item.name };
+          break;
+        }
+      }
+    }
+    if (!removed) return null;
+
+    set((s) => ({
+      cart: s.cart
+        .filter((x) => !(x._type === "product" && x.id === productId))
+        .map((x) =>
+          x._type === "service" && x.products.some((sp) => sp.product_id === productId)
+            ? { ...(x as ServiceCartItem), products: (x as ServiceCartItem).products.filter((sp) => sp.product_id !== productId) }
+            : x
+        ),
+    }));
+    return removed;
+  },
 
   addServiceProduct: (serviceId, product, quantity = 1) =>
     set((s) => ({
       cart: s.cart.map((x) =>
         x._type === "service" && x.service_id === serviceId
           ? {
-              ...(x as ServiceCartItem),
-              products: [
-                ...(x as ServiceCartItem).products,
-                { product_id: product.id, product_name: product.name, quantity, unit_price: product.price, affects_price: false, stock: product.stock },
-              ],
-            }
+            ...(x as ServiceCartItem),
+            products: [
+              ...(x as ServiceCartItem).products,
+              { product_id: product.id, product_name: product.name, quantity, unit_price: product.price, affects_price: false, stock: product.stock },
+            ],
+          }
           : x
       ),
     })),
@@ -184,11 +216,11 @@ export const usePosStore = create<PosState>()((set) => ({
       cart: s.cart.map((x) =>
         x._type === "service" && x.service_id === serviceId
           ? {
-              ...(x as ServiceCartItem),
-              products: (x as ServiceCartItem).products.map((sp) =>
-                sp.product_id === productId ? { ...sp, affects_price: !sp.affects_price } : sp
-              ),
-            }
+            ...(x as ServiceCartItem),
+            products: (x as ServiceCartItem).products.map((sp) =>
+              sp.product_id === productId ? { ...sp, affects_price: !sp.affects_price } : sp
+            ),
+          }
           : x
       ),
     })),

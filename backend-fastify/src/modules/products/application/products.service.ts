@@ -96,14 +96,14 @@ export const createProductService = (repository: IProductRepository) => ({
     await repository.softDelete(id, storeId)
   },
 
-  deleteMany: async (ids: string[], storeId?: string): Promise<{ deleted: number }> => {
+  deleteMany: async (ids: string[], storeId?: string): Promise<{ deleted: number; ids: string[] }> => {
     const result = await repository.softDeleteMany(ids, storeId)
-    return { deleted: result.count }
+    return { deleted: result.count, ids: result.ids }
   },
 
-  deleteAllByFilters: async (filters?: { search?: string; category_id?: string; active?: boolean; lowStock?: boolean; outOfStock?: boolean; storeId?: string }): Promise<{ deleted: number }> => {
+  deleteAllByFilters: async (filters?: { search?: string; category_id?: string; active?: boolean; lowStock?: boolean; outOfStock?: boolean; storeId?: string }): Promise<{ deleted: number; ids: string[] }> => {
     const result = await repository.softDeleteAllByFilters(filters)
-    return { deleted: result.count }
+    return { deleted: result.count, ids: result.ids }
   },
 
   importMany: async (
