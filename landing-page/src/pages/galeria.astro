@@ -1,0 +1,490 @@
+---
+import Layout from '../layouts/Layout.astro';
+import {
+  ScanLine,
+  Wallet,
+  BarChart3,
+  Boxes,
+  Package,
+  Users,
+} from 'lucide-astro';
+
+const base = import.meta.env.BASE_URL;
+
+const scenes = [
+  {
+    title: 'Punto de venta',
+    desc: 'Cobrá en segundos: escáner de código de barras, búsqueda instantánea y carrito con descuentos por porcentaje o monto.',
+    url: 'app.cajorapos.com/pos',
+    desktop: base + 'desktop.webp',
+    desktopAlt: 'Captura del punto de venta CajoraPOS en escritorio',
+    desktopW: 1854,
+    desktopH: 1007,
+    mobile: base + 'mobile.webp',
+    mobileAlt: 'Captura del punto de venta CajoraPOS en Android',
+    mobileW: 522,
+    mobileH: 1007,
+    Icon: ScanLine,
+  },
+  {
+    title: 'Caja registradora',
+    desc: 'Control total del efectivo: apertura y cierre de caja, registro de gastos y arqueo con diferencia cuadrada al instante.',
+    url: 'app.cajorapos.com/cash-register',
+    desktop: null,
+    desktopAlt: 'Captura de la caja registradora en escritorio',
+    mobile: null,
+    mobileAlt: 'Captura de la caja registradora en Android',
+    Icon: Wallet,
+  },
+  {
+    title: 'Reportes',
+    desc: 'Métricas de ventas por día, mes o periodo, comparativas con el periodo anterior, top productos y exportación a Excel.',
+    url: 'app.cajorapos.com/reports',
+    desktop: null,
+    desktopAlt: 'Captura de reportes en escritorio',
+    mobile: null,
+    mobileAlt: 'Captura de reportes en Android',
+    Icon: BarChart3,
+  },
+  {
+    title: 'Inventario',
+    desc: 'Stock en tiempo real, movimientos de entrada y salida, ajustes manuales y lotes agrupados con alertas de reposición.',
+    url: 'app.cajorapos.com/inventory',
+    desktop: null,
+    desktopAlt: 'Captura del inventario en escritorio',
+    mobile: null,
+    mobileAlt: 'Captura del inventario en Android',
+    Icon: Boxes,
+  },
+  {
+    title: 'Productos',
+    desc: 'Catálogo con códigos de barras, precios de venta y costo, unidades de medida y carga masiva por archivo CSV.',
+    url: 'app.cajorapos.com/products',
+    desktop: null,
+    desktopAlt: 'Captura del catálogo de productos en escritorio',
+    mobile: null,
+    mobileAlt: 'Captura del catálogo de productos en Android',
+    Icon: Package,
+  },
+  {
+    title: 'Clientes y créditos',
+    desc: 'Fichas completas de clientes con historial, cuentas corrientes, registro de pagos y alerta de morosos.',
+    url: 'app.cajorapos.com/clients',
+    desktop: null,
+    desktopAlt: 'Captura de clientes en escritorio',
+    mobile: null,
+    mobileAlt: 'Captura de clientes en Android',
+    Icon: Users,
+  },
+];
+---
+
+<Layout
+  title="Galería · CajoraPOS"
+  description="Mirá cómo se ve CajoraPOS en escritorio y Android: punto de venta, caja registradora, reportes, inventario, productos y clientes."
+>
+  <main class="gallery container-narrow">
+    <header class="gallery__head">
+      <h1 class="gallery__title">Pantallas del sistema</h1>
+      <p class="gallery__lead">
+        Así se ve CajoraPOS en escritorio y en Android: un punto de venta completo con
+        inventario, reportes y control de caja en una sola herramienta.
+      </p>
+    </header>
+
+    <div class="gallery__grid">
+      {scenes.map((scene) => (
+        <article class="gcard">
+          <div class="gcard__mock">
+            <div class="gcard__frame">
+              <div class="gcard__bar">
+                <span class="gcard__bar-dot" aria-hidden="true"></span>
+                <span class="gcard__bar-dot" aria-hidden="true"></span>
+                <span class="gcard__bar-dot" aria-hidden="true"></span>
+                <span class="gcard__bar-url">{scene.url}</span>
+              </div>
+              <div class="gcard__screen">
+                {scene.desktop ? (
+                  <img
+                    class="gcard__img"
+                    src={scene.desktop}
+                    alt={scene.desktopAlt}
+                    width={scene.desktopW}
+                    height={scene.desktopH}
+                    loading="lazy"
+                  />
+                ) : (
+                  <div class="gl-ph" role="img" aria-label={scene.desktopAlt}>
+                    <div class="gl-ph__grid" aria-hidden="true"></div>
+                    <scene.Icon class="gl-ph__icon" aria-hidden="true" />
+                    <span class="gl-ph__label">{scene.title}</span>
+                    <span class="gl-ph__soon">Captura próximamente</span>
+                  </div>
+                )}
+                <div class="gcard__sheen" aria-hidden="true"></div>
+              </div>
+            </div>
+
+            {scene.mobile && (
+              <div class="gcard__phone" aria-hidden="true">
+                <div class="gcard__phone-frame">
+                  <div class="gcard__phone-status">
+                    <span>9:41</span>
+                    <span class="gcard__phone-notch"></span>
+                  </div>
+                  {scene.mobile.startsWith(base) ? (
+                    <img
+                      class="gcard__phone-img"
+                      src={scene.mobile}
+                      alt=""
+                      loading="lazy"
+                      width={scene.mobileW}
+                      height={scene.mobileH}
+                    />
+                  ) : (
+                    <div class="gl-ph gl-ph--mini" role="img" aria-label={scene.mobileAlt}>
+                      <div class="gl-ph__grid" aria-hidden="true"></div>
+                      <scene.Icon class="gl-ph__icon" aria-hidden="true" />
+                    </div>
+                  )}
+                  <div class="gcard__phone-nav" aria-hidden="true">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <line x1="19" y1="12" x2="5" y2="12"></line>
+                      <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="8"></circle>
+                    </svg>
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <rect x="6" y="6" width="12" height="12" rx="2"></rect>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div class="gcard__body">
+            <h2 class="gcard__title">{scene.title}</h2>
+            <p class="gcard__desc">{scene.desc}</p>
+          </div>
+        </article>
+      ))}
+    </div>
+
+    <section class="gallery__cta">
+      <h2 class="gallery__cta-title">¿Listo para vender con CajoraPOS?</h2>
+      <p class="gallery__cta-text">
+        Creá tu tienda en minutos y empezá a gestionar ventas, inventario y reportes desde
+        cualquier dispositivo.
+      </p>
+      <a class="btn-primary gallery__cta-btn" data-auth-cta="primary">
+        <svg class="gallery__cta-icon" data-cta-icon="store" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M15 21v-5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5"></path>
+          <path d="M17.774 10.31a1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.451 0 1.12 1.12 0 0 0-1.548 0 2.5 2.5 0 0 1-3.452 0 1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.77-3.248l2.889-4.184A2 2 0 0 1 7 2h10a2 2 0 0 1 1.653.873l2.895 4.192a2.5 2.5 0 0 1-3.774 3.244"></path>
+          <path d="M4 10.95V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8.05"></path>
+        </svg>
+        <svg class="gallery__cta-icon" data-cta-icon="download" style="display: none" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        Registrar tienda
+      </a>
+    </section>
+  </main>
+</Layout>
+
+<style>
+  .gallery {
+    padding-top: calc(64px + 4rem);
+    padding-bottom: 5rem;
+  }
+
+  .gallery__head {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .gallery__title {
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    margin-bottom: 0.75rem;
+  }
+
+  .gallery__lead {
+    color: var(--text-muted);
+    font-size: clamp(0.9375rem, 2vw, 1.125rem);
+    max-width: 38rem;
+    margin: 0 auto;
+    line-height: 1.7;
+  }
+
+  .gallery__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+
+  /* ---------- Card ---------- */
+  .gcard__mock {
+    position: relative;
+    padding: 0.5rem 0.625rem;
+    background: #16161a;
+    border: 1px solid rgba(63, 63, 70, 0.8);
+    border-radius: 1rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+  }
+
+  .gcard__bar {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    background: rgba(24, 24, 27, 0.95);
+    border-bottom: 1px solid #27272a;
+    border-radius: 0.75rem 0.75rem 0 0;
+  }
+
+  .gcard__bar-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 999px;
+    background: #3f3f46;
+    flex-shrink: 0;
+  }
+
+  .gcard__bar-url {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.625rem;
+    color: #71717a;
+    background: rgba(4, 6, 9, 0.8);
+    border: 1px solid rgba(39, 39, 42, 0.8);
+    border-radius: 999px;
+    padding: 0.125rem 0.625rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .gcard__screen {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    border-radius: 0 0 0.75rem 0.75rem;
+    overflow: hidden;
+    background: #000000;
+    border-left: 1px solid #27272a;
+    border-right: 1px solid #27272a;
+    border-bottom: 1px solid #27272a;
+  }
+
+  .gcard__img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: top;
+    display: block;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .gcard__sheen {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top right, transparent, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.06));
+    pointer-events: none;
+  }
+
+  /* ---------- Placeholder de captura ---------- */
+  .gl-ph {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: var(--text-muted);
+    background: var(--surface-2);
+    overflow: hidden;
+    text-align: center;
+    padding: 1rem;
+  }
+
+  .gl-ph__grid {
+    position: absolute;
+    inset: 0;
+    background-size: 32px 32px;
+    background-image:
+      linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 0%, transparent 75%);
+    mask-image: radial-gradient(ellipse at center, black 0%, transparent 75%);
+  }
+
+  .gl-ph__icon {
+    position: relative;
+    width: 2rem;
+    height: 2rem;
+    color: var(--text-muted);
+    opacity: 0.7;
+  }
+
+  .gl-ph__label {
+    position: relative;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .gl-ph__soon {
+    position: relative;
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 0.25rem 0.625rem;
+    border-radius: 999px;
+  }
+
+  .gl-ph--mini {
+    border-radius: 0;
+  }
+  .gl-ph--mini .gl-ph__icon {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  /* ---------- Phone flotante ---------- */
+  .gcard__phone {
+    display: none;
+    position: absolute;
+    right: -1.25rem;
+    bottom: -1.5rem;
+    width: 8.5rem;
+    z-index: 10;
+  }
+
+  .gcard__phone-frame {
+    position: relative;
+    background: #0c0c0e;
+    border: 2px solid rgba(63, 63, 70, 0.8);
+    border-radius: 2rem;
+    padding: 0.4rem;
+    box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.8);
+  }
+
+  .gcard__phone-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.4rem 0.75rem 0.25rem;
+    color: #ffffff;
+    font-size: 0.5625rem;
+    font-weight: 600;
+  }
+
+  .gcard__phone-notch {
+    width: 2.75rem;
+    height: 0.625rem;
+    border-radius: 999px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+  }
+
+  .gcard__phone-img {
+    width: 100%;
+    aspect-ratio: 9 / 19;
+    object-fit: cover;
+    object-position: top;
+    display: block;
+  }
+
+  .gcard__phone-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0.3rem 1rem 0.4rem;
+    background: #000000;
+  }
+  .gcard__phone-nav svg {
+    width: 0.7rem;
+    height: 0.7rem;
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  /* ---------- Cuerpo de la card ---------- */
+  .gcard__body {
+    padding: 1.5rem 0 0;
+  }
+
+  .gcard__title {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .gcard__desc {
+    color: var(--text-muted);
+    font-size: 0.9375rem;
+    line-height: 1.7;
+    margin: 0;
+  }
+
+  /* ---------- CTA final ---------- */
+  .gallery__cta {
+    margin-top: 4rem;
+    padding: 3rem 2rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    text-align: center;
+  }
+
+  .gallery__cta-title {
+    font-size: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .gallery__cta-text {
+    color: var(--text-muted);
+    max-width: 32rem;
+    margin: 0 auto 1.75rem;
+    font-size: 0.9375rem;
+    line-height: 1.7;
+  }
+
+  .gallery__cta-btn {
+    gap: 0.5rem;
+    padding: 0.75rem 1.75rem;
+    font-size: 0.875rem;
+  }
+
+  .gallery__cta-icon {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  /* ---------- Responsive ---------- */
+  @media (min-width: 560px) {
+    .gcard__phone {
+      display: block;
+    }
+  }
+
+  @media (min-width: 900px) {
+    .gallery__grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 3rem 2rem;
+    }
+    .gcard:nth-child(3n + 1) {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (min-width: 1200px) {
+    .gcard__phone {
+      width: 9.5rem;
+    }
+  }
+</style>
