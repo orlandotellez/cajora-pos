@@ -126,6 +126,10 @@ const {
               el.removeAttribute('rel');
             }
           });
+          document.querySelectorAll('[data-auth-guest]').forEach(function (el) {
+            // Contenido solo para visitantes sin sesión (ej: CTAs de una página).
+            el.hidden = hasSession;
+          });
         };
 
         window.__applyAuth = applyAuth;
