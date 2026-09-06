@@ -139,13 +139,16 @@ export const authController = {
   logout: async (request: FastifyRequest, reply: FastifyReply) => {
     const refreshToken = getRefreshToken(request)
 
+    // Limpiar las cookies SIEMPRE, pase lo que pase con el token:
+    // si el refresh no está (o expiró), el navegador no debe quedarse con
+    // cookies vivas que el front reutilice para pintar una sesión fantasma.
+    await clearAuthCookies(reply)
+
     if (!refreshToken) {
       throw new UnauthorizedError("Refresh token required")
     }
 
     const result = await authService.logout(refreshToken)
-
-    clearAuthCookies(reply)
 
     return reply.status(200).send(result)
   },
