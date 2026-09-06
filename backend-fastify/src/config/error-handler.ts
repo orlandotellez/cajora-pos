@@ -18,12 +18,13 @@ export const errorHandler = (
     });
   }
 
-  // App errors → status/code propio, message genérico del mapa, original al log.
+  // App errors → status/code propio y message escrito en el dominio para mostrarse.
+  // (Los errores NO operacionales siguen cayendo al 500 genérico más abajo.)
   if (error instanceof AppError) {
     request.log.warn({ err: error }, `App error (${error.code})`);
     return reply.status(error.statusCode).send({
       code: error.code,
-      message: getErrorMessageForStatus(error.statusCode),
+      message: error.message,
     });
   }
 
