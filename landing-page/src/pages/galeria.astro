@@ -1,4 +1,6 @@
 ---
+import { readdirSync, existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import Layout from '../layouts/Layout.astro';
 import {
   ScanLine,
@@ -7,9 +9,21 @@ import {
   Boxes,
   Package,
   Users,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-astro';
 
 const base = import.meta.env.BASE_URL;
+
+/** Descubre capturas en public/<dir>/ (1.webp, 2.webp, …) y las devuelve ordenadas naturalmente. */
+function shotsFromDir(dir: string): string[] {
+  const abs = resolve(process.cwd(), 'public', dir);
+  if (!existsSync(abs)) return [];
+  return readdirSync(abs)
+    .filter((f) => f.endsWith('.webp'))
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+    .map((f) => base + `${dir}/${f}`);
+}
 
 const scenes = [
   {
@@ -50,8 +64,8 @@ const scenes = [
     title: 'Inventario',
     desc: 'Stock en tiempo real, movimientos de entrada y salida, ajustes manuales y lotes agrupados con alertas de reposición.',
     url: 'app.cajorapos.com/inventory',
-    desktop: null,
-    desktopAlt: 'Captura del inventario en escritorio',
+    shots: shotsFromDir('inventory'),
+    desktopAlt: 'Capturas del inventario en escritorio',
     mobile: null,
     mobileAlt: 'Captura del inventario en Android',
     Icon: Boxes,
@@ -103,8 +117,33 @@ const scenes = [
                 <span class="gcard__bar-dot" aria-hidden="true"></span>
                 <span class="gcard__bar-url">{scene.url}</span>
               </div>
-              <div class="gcard__screen">
-                {scene.desktop ? (
+              <div
+                class:list={['gcard__screen', { 'gcard__screen--shot': scene.shots?.length }]}
+              >
+                {scene.shots && scene.shots.length > 0 ? (
+                  <div class="gl-slider" data-slider>
+                    <div class="gl-slider__track" data-slider-track>
+                      {scene.shots.map((shot, i) => (
+                        <img
+                          class="gl-slider__slide"
+                          data-slider-slide
+                          src={shot}
+                          alt={scene.desktopAlt}
+                          width="1850"
+                          height="1007"
+                          loading={i === 0 ? 'eager' : 'lazy'}
+                          draggable="false"
+                        />
+                      ))}
+                    </div>
+                    <button class="gl-slider__nav gl-slider__nav--prev" type="button" data-slider-prev aria-label="Captura anterior">
+                      <ChevronLeft class="gl-slider__nav-icon" aria-hidden="true" />
+                    </button>
+                    <button class="gl-slider__nav gl-slider__nav--next" type="button" data-slider-next aria-label="Siguiente captura">
+                      <ChevronRight class="gl-slider__nav-icon" aria-hidden="true" />
+                    </button>
+                  </div>
+                ) : scene.desktop ? (
                   <img
                     class="gcard__img"
                     src={scene.desktop}
@@ -123,6 +162,22 @@ const scenes = [
                 )}
                 <div class="gcard__sheen" aria-hidden="true"></div>
               </div>
+
+              {scene.shots && scene.shots.length > 0 && (
+                <div class="gl-ctl">
+                  <div class="gl-ctl__dots" data-slider-dots>
+                    {scene.shots.map((_, i) => (
+                      <button
+                        class="gl-ctl__dot"
+                        type="button"
+                        data-slider-dot
+                        aria-label={`Ir a la captura ${i + 1}`}
+                      ></button>
+                    ))}
+                  </div>
+                  <span class="gl-ctl__count" data-slider-count>1 / {scene.shots.length}</span>
+                </div>
+              )}
             </div>
 
             {scene.mobile && (
@@ -292,6 +347,117 @@ const scenes = [
     inset: 0;
     background: linear-gradient(to top right, transparent, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.06));
     pointer-events: none;
+  }
+
+  /* ---------- Slider de capturas ---------- */
+  .gcard__screen--shot {
+    border-radius: 0;
+  }
+
+  .gl-slider {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+
+  .gl-slider__track {
+    display: flex;
+    height: 100%;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .gl-slider__track::-webkit-scrollbar {
+    display: none;
+  }
+
+  .gl-slider__slide {
+    flex: 0 0 100%;
+    scroll-snap-align: start;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .gl-slider__nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(9, 9, 11, 0.72);
+    color: #fafafa;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s ease, background 0.2s ease;
+    z-index: 2;
+  }
+  .gl-slider__nav:hover {
+    background: rgba(9, 9, 11, 0.92);
+  }
+  .gl-slider:hover .gl-slider__nav,
+  .gl-slider__nav:focus-visible {
+    opacity: 1;
+  }
+  .gl-slider__nav--prev {
+    left: 0.625rem;
+  }
+  .gl-slider__nav--next {
+    right: 0.625rem;
+  }
+  .gl-slider__nav-icon {
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+
+  .gl-ctl {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.4rem 0.75rem;
+    background: rgba(24, 24, 27, 0.95);
+    border-left: 1px solid #27272a;
+    border-right: 1px solid #27272a;
+    border-bottom: 1px solid #27272a;
+    border-radius: 0 0 0.75rem 0.75rem;
+  }
+
+  .gl-ctl__dots {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+  }
+
+  .gl-ctl__dot {
+    width: 0.375rem;
+    height: 0.375rem;
+    border-radius: 999px;
+    border: none;
+    padding: 0;
+    background: #3f3f46;
+    cursor: pointer;
+    transition: background 0.2s ease, width 0.2s ease;
+  }
+  .gl-ctl__dot.is-active {
+    width: 0.75rem;
+    background: #fafafa;
+  }
+
+  .gl-ctl__count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.625rem;
+    color: #71717a;
+    white-space: nowrap;
   }
 
   /* ---------- Placeholder de captura ---------- */
@@ -466,6 +632,12 @@ const scenes = [
   }
 
   /* ---------- Responsive ---------- */
+  @media (hover: none), (max-width: 559px) {
+    .gl-slider__nav {
+      opacity: 1;
+    }
+  }
+
   @media (min-width: 560px) {
     .gcard__phone {
       display: block;
@@ -488,3 +660,64 @@ const scenes = [
     }
   }
 </style>
+
+<script>
+  /** Slider de capturas de la galería: flechas, dots y swipe táctil. */
+  document.querySelectorAll('[data-slider]').forEach((slider) => {
+    const track = slider.querySelector('[data-slider-track]');
+    const dots = Array.from(slider.closest('.gcard')?.querySelectorAll('[data-slider-dot]') ?? []);
+    const count = slider.closest('.gcard')?.querySelector('[data-slider-count]');
+    const prev = slider.querySelector('[data-slider-prev]');
+    const next = slider.querySelector('[data-slider-next]');
+    const slides = Array.from(track.children);
+    const total = slides.length;
+
+    /** Devuelve el índice del slide actual (redondea al más cercano). */
+    const currentIndex = () => Math.round(track.scrollLeft / track.clientWidth);
+
+    /** Actualiza dots + contador según el slide activo. */
+    const sync = () => {
+      const index = Math.min(currentIndex(), total - 1);
+      dots.forEach((dot, i) => dot.classList.toggle('is-active', i === index));
+      if (count) count.textContent = `${index + 1} / ${total}`;
+      if (prev) prev.disabled = index === 0;
+      if (next) next.disabled = index === total - 1;
+    };
+
+    /** Desplaza hasta el slide i (con snap suave). */
+    const goTo = (i) => {
+      const clamped = Math.max(0, Math.min(total - 1, i));
+      track.scrollTo({ left: clamped * track.clientWidth, behavior: 'smooth' });
+    };
+
+    if (prev) {
+      prev.addEventListener('click', () => goTo(currentIndex() - 1));
+      prev.disabled = true;
+    }
+    if (next) {
+      next.addEventListener('click', () => goTo(currentIndex() + 1));
+    }
+    dots.forEach((dot, i) => dot.addEventListener('click', () => goTo(i)));
+
+    // Re-sincroniza al scrollear (swipe táctil, rueda del mouse, teclado).
+    let ticking = false;
+    track.addEventListener(
+      'scroll',
+      () => {
+        if (!ticking) {
+          ticking = true;
+          requestAnimationFrame(() => {
+            sync();
+            ticking = false;
+          });
+        }
+      },
+      { passive: true }
+    );
+
+    // Recalcula el contador si cambia el ancho (rotación de pantalla, resize).
+    window.addEventListener('resize', sync);
+
+    sync();
+  });
+</script>

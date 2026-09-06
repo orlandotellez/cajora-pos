@@ -156,7 +156,7 @@ import PlansModal from '../sections/checkout/PlansModal.astro';
       onNoSession: resetToStart,
     });
 
-    initCheckoutLogin({ onAuth: afterAuth, onToken: (t) => { accessToken = t; } });
+    initCheckoutLogin({ apiUrl, onAuth: afterAuth, onToken: (t) => { accessToken = t; } });
 
     // Reanudar sesión guardada (cookies en web, localStorage en desktop).
     async function resumeFlow(): Promise<void> {

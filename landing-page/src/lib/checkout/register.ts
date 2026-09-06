@@ -21,6 +21,17 @@ function hideError(el: HTMLElement): void {
   el.hidden = true;
 }
 
+function mapAuthError(msg: string): string {
+  const map: Record<string, string> = {
+    "Invalid credentials": "Email o contraseña incorrectos.",
+    "Email already registered": "Ya existe una cuenta con ese email. Iniciá sesión o recuperá tu contraseña.",
+    "A store with this name already exists": "Ya existe una tienda con ese nombre. Elegí otro nombre.",
+    "User not found": "No encontramos una cuenta con ese email.",
+    "Account has been deactivated": "La cuenta está desactivada. Contactanos para reactivarla.",
+  };
+  return map[msg] ?? msg;
+}
+
 export function initRegister(opts: {
   apiUrl: string;
   onAuth: (storeName: string | null, email: string, emailVerified: boolean, sendCodeOnEnter: boolean) => void;
@@ -102,18 +113,20 @@ export function initRegister(opts: {
       const data = (await res.json().catch(() => null)) as RegisterResponse | null;
 
       if (!res.ok) {
-        const msg = data?.message ?? "No se pudo crear la cuenta. Intentalo de nuevo.";
-        if (res.status === 409) {
-          // La tienda/email ya existe → pasamos a login con el email precargado.
-          showError(registerError, "Ya existe una tienda con ese email. Ingresá para continuar.");
+        const raw = data?.message ?? "";
+        const msg = mapAuthError(raw);
+        if (res.status === 409 && raw === "Email already registered") {
+          // El email ya tiene cuenta → pasamos a login con el email precargado
+          // y un mensaje visible que explica por qué.
           const emailInput = loginForm.querySelector<HTMLInputElement>('input[name="email"]');
           if (emailInput) emailInput.value = payload.adminEmail;
           loginPanel.hidden = false;
           registerPanel.hidden = true;
-          hideError(registerError);
-          hideError(loginError);
+          showError(loginError, "Ya existe una cuenta con ese email. Iniciá sesión para continuar.");
         } else {
-          showError(registerError, msg);
+          // Cualquier otro error (incluido conflicto de NOMBRE de tienda) → se muestra
+          // en el panel de registro, SIN ocultarlo, y el usuario decide qué hacer.
+          showError(registerError, msg || "No se pudo crear la cuenta. Intentalo de nuevo.");
         }
         registerSubmit.disabled = false;
         registerSubmit.textContent = "Crear cuenta y continuar";
@@ -139,7 +152,7 @@ export function initRegister(opts: {
     } catch (err) {
       showError(
         registerError,
-        (err as { message?: string } | null)?.message ?? "No se pudo crear la cuenta. Intentalo de nuevo.",
+        mapAuthError((err as { message?: string } | null)?.message ?? "") || "No se pudo crear la cuenta. Intentalo de nuevo.",
       );
       registerSubmit.disabled = false;
       registerSubmit.textContent = "Crear cuenta y continuar";
@@ -149,6 +162,7 @@ export function initRegister(opts: {
 
 // Login del checkout: panel entrelazado con el de registro, usa loginUser compartido.
 export function initCheckoutLogin(opts: {
+  apiUrl: string;
   onAuth: (storeName: string | null, email: string, emailVerified: boolean, sendCodeOnEnter: boolean) => void;
   onToken: (token: string) => void;
 }): void {
@@ -200,10 +214,99 @@ export function initCheckoutLogin(opts: {
     } catch (err) {
       showError(
         loginError,
-        (err as { message?: string } | null)?.message ?? "No se pudo iniciar sesión.",
+        mapAuthError((err as { message?: string } | null)?.message ?? "") || "No se pudo iniciar sesión.",
       );
       loginSubmit.disabled = false;
       loginSubmit.textContent = "Iniciar sesión y continuar";
     }
   });
+
+  // ─── Recuperación de contraseña (forgot → reset) ───
+  const forgotTrigger = $("[data-forgot-trigger]");
+  const forgotPanel = $("[data-forgot-panel]");
+  const forgotForm = $("[data-forgot-form]") as HTMLFormElement | null;
+  const forgotSubmit = $("[data-forgot-submit]") as HTMLButtonElement | null;
+  const forgotError = $("[data-forgot-error]");
+  const forgotOk = $("[data-forgot-ok]");
+
+  if (forgotTrigger && forgotPanel && forgotForm && forgotSubmit && forgotError && forgotOk) {
+    const currentEmail = (): string => {
+      const fd = new FormData(loginForm);
+      return String(fd.get("email") ?? "").trim();
+    };
+
+    forgotTrigger.addEventListener("click", async () => {
+      hideError(forgotError);
+      forgotOk.hidden = true;
+
+      const email = currentEmail();
+      if (!email) {
+        showError(forgotError, "Escribí tu email arriba y volvé a intentarlo.");
+        return;
+      }
+
+      forgotTrigger.disabled = true;
+      forgotTrigger.textContent = "Enviando...";
+      try {
+        const res = await fetch(`${opts.apiUrl}/auth/forgot-password`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+          credentials: "__TAURI__" in window ? undefined : "include",
+        });
+        const data = (await res.json().catch(() => null)) as { message?: string } | null;
+        if (!res.ok) {
+          throw new Error(data?.message ?? "No se pudo enviar el código.");
+        }
+        forgotPanel.hidden = false;
+        forgotOk.textContent = "Te enviamos un código a tu email. Revisá tu bandeja de entrada.";
+        forgotOk.hidden = false;
+      } catch (err) {
+        showError(
+          forgotError,
+          (err as { message?: string } | null)?.message ?? "No se pudo enviar el código.",
+        );
+      } finally {
+        forgotTrigger.disabled = false;
+        forgotTrigger.textContent = "¿Olvidaste tu contraseña?";
+      }
+    });
+
+    forgotForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      hideError(forgotError);
+      forgotOk.hidden = true;
+      forgotSubmit.disabled = true;
+      forgotSubmit.textContent = "Cambiando...";
+
+      const fd = new FormData(forgotForm);
+      const code = String(fd.get("resetCode") ?? "").trim();
+      const newPassword = String(fd.get("newPassword") ?? "");
+
+      try {
+        const res = await fetch(`${opts.apiUrl}/auth/reset-password`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: currentEmail(), code, newPassword }),
+          credentials: "__TAURI__" in window ? undefined : "include",
+        });
+        const data = (await res.json().catch(() => null)) as { message?: string } | null;
+        if (!res.ok) {
+          throw new Error(data?.message ?? "No se pudo cambiar la contraseña.");
+        }
+        forgotPanel.hidden = true;
+        forgotOk.textContent = "Contraseña actualizada. Iniciá sesión con tu nueva contraseña.";
+        forgotOk.hidden = false;
+      } catch (err) {
+        showError(
+          forgotError,
+          mapAuthError((err as { message?: string } | null)?.message ?? "") ||
+          "No se pudo cambiar la contraseña. Verificá el código e intentá de nuevo.",
+        );
+      } finally {
+        forgotSubmit.disabled = false;
+        forgotSubmit.textContent = "Cambiar contraseña";
+      }
+    });
+  }
 }
