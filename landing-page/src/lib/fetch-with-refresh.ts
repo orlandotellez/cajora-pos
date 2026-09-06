@@ -13,7 +13,6 @@ export async function fetchWithRefresh(
   try {
     const refreshRes = await fetch(`${apiUrl}/auth/refresh`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
     });
 

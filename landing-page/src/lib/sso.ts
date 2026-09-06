@@ -49,7 +49,6 @@ async function fetchSsoCode(): Promise<string | null> {
     try {
       const res = await fetch(`${apiUrl}/auth/refresh`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         credentials: "include",
       });
       if (res.ok) {
