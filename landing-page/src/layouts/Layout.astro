@@ -184,7 +184,6 @@ const {
           try {
             const refreshRes = await fetch(`${apiUrl}/auth/refresh`, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
               credentials: 'include',
             });
             if (refreshRes.ok) return fetch(url, opts);
@@ -214,7 +213,17 @@ const {
             if (!data) return;
             const paid = data?.status === 'active' && data?.mode === 'cloud';
             const current = readSession();
-            if (current && !!current.paid !== paid) {
+            if (!current) {
+              applyAuth(false, false);
+              if (!isNativeApp) {
+                void fetch(`${apiUrl}/auth/logout`, {
+                  method: 'POST',
+                  credentials: 'include',
+                }).catch(() => {});
+              }
+              return;
+            }
+            if (!!current.paid !== paid) {
               saveSession({ ...current, paid });
             }
             applyAuth(paid, true);
