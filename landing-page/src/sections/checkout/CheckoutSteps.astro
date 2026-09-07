@@ -69,13 +69,25 @@
   }
 
   .checkout__step.is-done {
-    border-color: var(--green);
     color: var(--green);
+    border-color: var(--green);
+    background: rgba(34, 197, 94, 0.06);
   }
 
   .checkout__step.is-done .checkout__step-num {
     background: var(--green);
     color: var(--bg);
+  }
+
+  /* Pasos no alcanzables: se ven "aún no" — letra apagada, sin hover, sin cursor.
+     Se diferencian de `is-done` (verde, completado) y `is-active` (fondo oscuro, actual).
+  */
+  .checkout__step:not(.is-active):not(.is-done):not(.is-clickable) {
+    color: var(--text-muted);
+    opacity: 0.62;
+    cursor: not-allowed;
+    background: var(--surface);
+    border-color: var(--border);
   }
 
   .checkout__step.is-clickable {
@@ -84,9 +96,8 @@
   }
 
   .checkout__step.is-clickable:hover {
-    transform: translateY(-1px);
-    border-color: var(--green);
     color: var(--green);
+    border-color: var(--green);
   }
 
   .checkout__step.is-clickable:focus-visible {
