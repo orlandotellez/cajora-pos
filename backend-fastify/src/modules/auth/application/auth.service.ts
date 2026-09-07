@@ -1,4 +1,4 @@
-import { ConflictError, NotFoundError, UnauthorizedError, PaymentRequiredError } from "@/core/errors/AppError"
+import { ConflictError, NotFoundError, UnauthorizedError, PaymentRequiredError, InternalServerError } from "@/core/errors/AppError"
 import { comparePassword, hashPassword, generateVerificationCode } from "@/core/utils/crypto.utils"
 import { generateTokens, verifyToken } from "@/core/utils/token.utils"
 import { sendVerificationCodeEmail } from "../infrastructure/email-sender"
@@ -75,18 +75,18 @@ export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISs
 
   register: async (data: IRegisterPayload, storeId: string): Promise<IAuthResponse> => {
     const { name, email, password, role = "cajero" } = data
+    const normalized = email.trim().toLowerCase()
 
     // Check email uniqueness within the same store
-    const existingUser = await repository.user.findByEmail(email, storeId)
+    const existingUser = await repository.user.findByEmail(normalized, storeId)
     if (existingUser) {
       throw new ConflictError("Email already registered in this store")
     }
 
     const hashedPassword = await hashPassword(password)
-
     const user = await repository.user.create({
       name,
-      email,
+      email: normalized,
       role,
       email_verified: false,
       store_id: storeId,
@@ -101,15 +101,18 @@ export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISs
 
     const verificationCode = generateVerificationCode()
     await repository.verification.create({
-      identifier: email,
+      identifier: user.email,
       value: verificationCode,
       expiresAt: new Date(Date.now() + VERIFICATION_CODE_EXPIRY),
     })
 
-    // Enviar el código por email (fallback a console si no hay RESEND_API_KEY).
-    await sendVerificationCodeEmail(email, verificationCode).catch((err) => {
-      console.error(`[auth] No se pudo enviar código de verificación a ${email}:`, err)
-    })
+    // Enviar el código por email (falla ruidosamente si no se puede enviar).
+    const emailResult = await sendVerificationCodeEmail(user.email, verificationCode)
+    if (!emailResult.ok) {
+      throw new InternalServerError(
+        emailResult.error ?? "No se pudo enviar el código de verificación.",
+      )
+    }
 
     const store = await getStoreInfo(storeId)
     if (!store) throw new NotFoundError("Store not found")
@@ -132,6 +135,7 @@ export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISs
 
   registerStore: async (data: IRegisterStorePayload): Promise<IRegisterStoreResponse> => {
     const { storeName, storeAddress, storePhone, adminName, adminEmail, adminPassword } = data
+    const normalizedAdminEmail = adminEmail.trim().toLowerCase()
 
     // Check store name uniqueness
     const existingStore = await prisma.store.findFirst({ where: { name: storeName } })
@@ -140,7 +144,7 @@ export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISs
     }
 
     // Check email uniqueness within the future store (global email check for simplicity)
-    const existingUser = await repository.user.findByEmail(adminEmail)
+    const existingUser = await repository.user.findByEmail(normalizedAdminEmail)
     if (existingUser) {
       throw new ConflictError("Email already registered")
     }
@@ -162,7 +166,7 @@ export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISs
       const user = await tx.user.create({
         data: {
           name: adminName,
-          email: adminEmail,
+          email: normalizedAdminEmail,
           role: "admin",
           is_owner: true,
           email_verified: false,
@@ -209,16 +213,19 @@ export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISs
       expiresAt: new Date(Date.now() + SESSION_EXPIRY),
     })
 
-    // Generar y enviar código de verificación por email (fallback a console sin RESEND_API_KEY).
+    // Generar y enviar código de verificación por email (falla ruidosamente si no se puede enviar).
     const verificationCode = generateVerificationCode()
     await repository.verification.create({
-      identifier: adminEmail,
+      identifier: result.user.email,
       value: verificationCode,
       expiresAt: new Date(Date.now() + VERIFICATION_CODE_EXPIRY),
     })
-    await sendVerificationCodeEmail(adminEmail, verificationCode).catch((err) => {
-      console.error(`[auth] No se pudo enviar código de verificación a ${adminEmail}:`, err)
-    })
+    const emailResult = await sendVerificationCodeEmail(result.user.email, verificationCode)
+    if (!emailResult.ok) {
+      throw new InternalServerError(
+        emailResult.error ?? "No se pudo enviar el código de verificación.",
+      )
+    }
 
     return {
       message: "Store created successfully. Please verify your email.",
@@ -298,8 +305,9 @@ export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISs
 
   login: async (data: ILoginPayload): Promise<IAuthResponse> => {
     const { email, password } = data
+    const normalized = email.trim().toLowerCase()
 
-    const account = await repository.account.findCredentialsAccountByEmail(email)
+    const account = await repository.account.findCredentialsAccountByEmail(normalized)
     if (!account) {
       throw new UnauthorizedError("Invalid credentials")
     }
@@ -409,9 +417,10 @@ export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISs
 
   verifyEmail: async (data: IVerifyEmailPayload): Promise<IVerifyEmailResponse> => {
     const { identifier, code } = data
+    const normalized = identifier.trim().toLowerCase()
 
     const verification = await repository.verification.findByIdentifierAndValue(
-      identifier,
+      normalized,
       code,
     )
 
@@ -420,18 +429,18 @@ export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISs
     }
 
     if (verification.expires_at < new Date()) {
-      await repository.verification.deleteByIdentifier(identifier)
+      await repository.verification.deleteByIdentifier(normalized)
       throw new UnauthorizedError("Verification code expired")
     }
 
-    const user = await repository.user.findByEmail(identifier)
+    const user = await repository.user.findByEmail(normalized)
     if (!user) {
       throw new NotFoundError("User not found")
     }
 
     await repository.user.update(user.id, { email_verified: true })
 
-    await repository.verification.deleteByIdentifier(identifier)
+    await repository.verification.deleteByIdentifier(normalized)
 
     const store = await getStoreInfo(user.store_id)
     const { accessToken, refreshToken } = generateTokens(
@@ -457,8 +466,9 @@ export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISs
 
   forgotPassword: async (data: IForgotPasswordPayload): Promise<IForgotPasswordResponse> => {
     const { email } = data
+    const normalized = email.trim().toLowerCase()
 
-    const user = await repository.user.findByEmail(email)
+    const user = await repository.user.findByEmail(normalized)
     if (!user) {
       return {
         message: "If the email exists, a reset code has been sent",
@@ -468,12 +478,12 @@ export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISs
 
     const resetCode = generateVerificationCode()
     await repository.verification.create({
-      identifier: `reset:${email}`,
+      identifier: `reset:${normalized}`,
       value: resetCode,
       expiresAt: new Date(Date.now() + VERIFICATION_CODE_EXPIRY),
     })
 
-    console.log(`Password reset code for ${email}: ${resetCode}`)
+    console.log(`Password reset code for ${normalized}: ${resetCode}`)
 
     return {
       message: "If the email exists, a reset code has been sent",
@@ -485,7 +495,7 @@ export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISs
     const { email, code, newPassword } = data
 
     const verification = await repository.verification.findByIdentifierAndValue(
-      `reset:${email}`,
+      `reset:${email.trim().toLowerCase()}`,
       code,
     )
 
@@ -494,16 +504,17 @@ export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISs
     }
 
     if (verification.expires_at < new Date()) {
-      await repository.verification.deleteByIdentifier(`reset:${email}`)
+      await repository.verification.deleteByIdentifier(`reset:${email.trim().toLowerCase()}`)
       throw new UnauthorizedError("Reset code expired")
     }
 
-    const user = await repository.user.findByEmail(email)
+    const normalized = email.trim().toLowerCase()
+    const user = await repository.user.findByEmail(normalized)
     if (!user) {
       throw new NotFoundError("User not found")
     }
 
-    const account = await repository.account.findCredentialsAccountByEmail(email)
+    const account = await repository.account.findCredentialsAccountByEmail(normalized)
     if (!account) {
       throw new NotFoundError("Account not found")
     }
@@ -513,7 +524,7 @@ export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISs
 
     await repository.session.deleteByUserId(user.id)
 
-    await repository.verification.deleteByIdentifier(`reset:${email}`)
+    await repository.verification.deleteByIdentifier(`reset:${normalized}`)
 
     return {
       message: "Password reset successfully. Please login with your new password.",
@@ -555,7 +566,8 @@ export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISs
   },
 
   resendVerification: async (email: string): Promise<IVerificationResponse> => {
-    const user = await repository.user.findByEmail(email)
+    const normalized = email.trim().toLowerCase()
+    const user = await repository.user.findByEmail(normalized)
 
     if (!user) {
       return {
@@ -568,17 +580,19 @@ export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISs
       throw new ConflictError("Email already verified")
     }
 
-    await repository.verification.deleteByIdentifier(email)
-
     const verificationCode = generateVerificationCode()
+
+    const emailResult = await sendVerificationCodeEmail(normalized, verificationCode)
+    if (!emailResult.ok) {
+      throw new InternalServerError(
+        emailResult.error ?? "No se pudo enviar el código de verificación.",
+      )
+    }
+
     await repository.verification.create({
-      identifier: email,
+      identifier: normalized,
       value: verificationCode,
       expiresAt: new Date(Date.now() + VERIFICATION_CODE_EXPIRY),
-    })
-
-    await sendVerificationCodeEmail(email, verificationCode).catch((err) => {
-      console.error(`[auth] No se pudo reenviar código de verificación a ${email}:`, err)
     })
 
     return {

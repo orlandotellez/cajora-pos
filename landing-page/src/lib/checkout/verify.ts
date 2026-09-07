@@ -5,6 +5,13 @@ const $ = (sel: string): HTMLElement | null => document.querySelector(sel);
 let apiUrl = "";
 
 function showError(el: HTMLElement, msg: string): void {
+  el.classList.remove("is-success");
+  el.textContent = msg;
+  el.hidden = false;
+}
+
+function showNotice(el: HTMLElement, msg: string): void {
+  el.classList.add("is-success");
   el.textContent = msg;
   el.hidden = false;
 }
@@ -103,7 +110,7 @@ export function initVerify(opts: {
       btn.textContent = "Enviando...";
       try {
         await sendCode();
-        showError(verifyError, "Código reenviado — revisá tu bandeja de entrada.");
+        showNotice(verifyError, "Código reenviado — revisá tu bandeja de entrada.");
       } catch (err) {
         showError(
           verifyError,

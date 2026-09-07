@@ -9,13 +9,21 @@ function getClient(): Resend | null {
   return client;
 }
 
-export async function sendVerificationCodeEmail(email: string, code: string): Promise<void> {
+interface SendEmailResult {
+  ok: boolean
+  error?: string
+}
+
+export async function sendVerificationCodeEmail(
+  email: string,
+  code: string,
+): Promise<SendEmailResult> {
   const resend = getClient();
 
   // Sin key configurada: fallback a console (nunca romper el flujo de registro).
   if (!resend) {
     console.log(`[email] RESEND_API_KEY no configurada. Código de verificación para ${email}: ${code}`);
-    return;
+    return { ok: true };
   }
 
   try {
@@ -41,13 +49,12 @@ export async function sendVerificationCodeEmail(email: string, code: string): Pr
 
     if (error) {
       console.error(`[email] Error enviando código a ${email}:`, error.message);
-      throw new Error("No se pudo enviar el correo de verificación");
+      return { ok: false, error: error.message };
     }
+
+    return { ok: true };
   } catch (err) {
-    if (err instanceof Error && err.message !== "No se pudo enviar el correo de verificación") {
-      console.error(`[email] Error enviando código a ${email}:`, err);
-      throw new Error("No se pudo enviar el correo de verificación");
-    }
-    throw err;
+    console.error(`[email] Error enviando código a ${email}:`, err);
+    return { ok: false, error: err instanceof Error ? err.message : "Error inesperado" };
   }
 }
