@@ -46,6 +46,11 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string; size?: number }>;
   /** Si se especifica, el usuario necesita este permiso para ver el ítem. */
   permission?: Permission;
+  /**
+   * Activo solo en la ruta EXACTA (útil para rutas raíz que son prefijo de
+   * otras, p. ej. /super-admin vs /super-admin/stores).
+   */
+  end?: boolean;
 }
 
 interface NavGroup {
@@ -92,7 +97,7 @@ const navGroups: NavGroup[] = [
     label: "SUPER ADMIN",
     superAdminOnly: true,
     items: [
-      { to: "/super-admin", label: "Panel Global", icon: Globe },
+      { to: "/super-admin", label: "Panel Global", icon: Globe, end: true },
       { to: "/super-admin/subscriptions", label: "Suscripciones", icon: CreditCard },
       { to: "/super-admin/stores", label: "Tiendas", icon: Store },
       { to: "/super-admin/users", label: "Usuarios", icon: Users },
@@ -191,7 +196,12 @@ export function AppShell({ children }: { children: ReactNode }) {
           <span className={styles.navSectionLabel}>{group.label}</span>
           {visibleItems.map((it) => {
             const Icon = it.icon;
-            const active = pathname.startsWith(it.to);
+            // Activo: si el ítem es `end`, solo en la ruta exacta; si no, en la
+            // ruta exacta o cualquier sub-ruta (matcheo por segmento para no
+            // marcar rutas hermanas tipo /settings como activas en /settings-x).
+            const active = it.end
+              ? pathname === it.to
+              : pathname === it.to || pathname.startsWith(it.to + "/");
             return (
               <Link
                 key={it.to}
