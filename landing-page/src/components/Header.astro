@@ -179,37 +179,34 @@ const links = [
   const menu = document.querySelector('[data-menu]') as HTMLElement | null;
   const menuToggle = document.querySelector('[data-menu-toggle]');
 
+  const header = document.querySelector('.site-header') as HTMLElement | null;
+
+  const applyMenuState = (open: boolean): void => {
+    if (!menu) return;
+    menu.classList.toggle('is-open', open);
+    menuToggle?.setAttribute('aria-expanded', String(open));
+    menuToggle?.setAttribute('aria-label', open ? 'Cerrar menú' : 'Abrir menú');
+    header?.classList.toggle('menu-open', open);
+  };
+
   menuToggle?.addEventListener('click', () => {
     if (!menu) return;
-    const isOpen = !menu.classList.contains('is-open');
-    menu.classList.toggle('is-open', isOpen);
-    menuToggle.setAttribute('aria-expanded', String(isOpen));
-    menuToggle.setAttribute('aria-label', isOpen ? 'Cerrar menú' : 'Abrir menú');
+    applyMenuState(!menu.classList.contains('is-open'));
   });
 
   document.querySelectorAll('[data-menu-close]').forEach((el) => {
-    el.addEventListener('click', () => {
-      if (menu) menu.classList.remove('is-open');
-      menuToggle?.setAttribute('aria-expanded', 'false');
-      menuToggle?.setAttribute('aria-label', 'Abrir menú');
-    });
+    el.addEventListener('click', () => applyMenuState(false));
   });
 
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && menu && menu.classList.contains('is-open')) {
-      menu.classList.remove('is-open');
-      menuToggle?.setAttribute('aria-expanded', 'false');
-      menuToggle?.setAttribute('aria-label', 'Abrir menú');
+    if (e.key === 'Escape' && menu?.classList.contains('is-open')) {
+      applyMenuState(false);
     }
   });
 
   const mqDesktop = window.matchMedia('(min-width: 768px)');
   mqDesktop.addEventListener('change', (e) => {
-    if (e.matches && menu) {
-      menu.classList.remove('is-open');
-      menuToggle?.setAttribute('aria-expanded', 'false');
-      menuToggle?.setAttribute('aria-label', 'Abrir menú');
-    }
+    if (e.matches) applyMenuState(false);
   });
 
   // -------- Scroll spy: activa el nav item según la sección visible --------
@@ -310,6 +307,15 @@ const links = [
     -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--border-glass);
     border-radius: 1rem;
+  }
+
+  /* Cuando el menú móvil está abierto, el header pierde línea inferior y
+     las esquinas inferiores dejan de estar redondeadas para que no tape
+     el borde del menú desplegado.
+  */
+  .site-header.menu-open .site-header__nav {
+    border-bottom: 0;
+    border-radius: 1rem 1rem 0 0;
   }
 
   .site-brand {
