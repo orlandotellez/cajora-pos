@@ -6,6 +6,7 @@ export interface SessionData {
   accessToken?: string;
   refreshToken?: string;
   storeName?: string | null;
+  adminName?: string | null;
   email?: string;
   emailVerified?: boolean;
   paypalMounted?: boolean;

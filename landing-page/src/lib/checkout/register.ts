@@ -139,6 +139,7 @@ export function initRegister(opts: {
         accessToken: body.accessToken,
         refreshToken: body.refreshToken,
         storeName: body.store?.name ?? payload.storeName,
+        adminName: payload.adminName,
         email: body.user?.email ?? payload.adminEmail,
         emailVerified,
       });
