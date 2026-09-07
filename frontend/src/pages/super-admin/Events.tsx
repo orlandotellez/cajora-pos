@@ -35,26 +35,20 @@ export default function Events() {
   const [error, setError] = useState<string | null>(null);
   const [actionFilter, setActionFilter] = useState("");
   const [page, setPage] = useState(0);
-  const limit = 30;
+  const limit = 10;
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     else setRefreshing(true);
     setError(null);
     try {
-      const params = new URLSearchParams({
-        limit: String(limit),
-        offset: String(page * limit),
+      const res = await superAdminApi.getSubscriptionEvents({
+        limit,
+        offset: page * limit,
+        action: actionFilter || undefined,
       });
-      if (actionFilter) params.set("action", actionFilter);
-
-      const res = await fetch(`/api/super-admin/subscription-events?${params}`, {
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Error al cargar eventos");
-      const data = await res.json();
-      setEvents(data.events);
-      setTotal(data.total);
+      setEvents(res.events);
+      setTotal(res.total);
     } catch (err) {
       setError((err as Error)?.message || "Error al cargar eventos");
     } finally {
@@ -147,7 +141,7 @@ export default function Events() {
                     </td>
                     <td>
                       <SubStatusBadge
-                        status={ev.action.includes("payment_failed") ? "past_due" : ev.action.includes("cancelled") ? "canceled" : ev.action.includes("expired") ? "expired" : ev.action.includes("activated") || ev.action.includes("sale_completed") ? "active" : "pending"}
+                        status={ev.action.includes("payment_failed") ? "past_due" : ev.action.includes("cancelled") ? "canceled" : ev.action.includes("expired") ? "expired" : ev.action.includes("activate") || ev.action.includes("sale_completed") ? "active" : "pending"}
                       />
                       <span className={styles.userDate} style={{ marginLeft: 8 }}>{formatEventAction(ev.action)}</span>
                     </td>
