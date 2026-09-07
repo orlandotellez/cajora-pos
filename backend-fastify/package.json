@@ -14,6 +14,7 @@
     "create-super-admin": "bun src/scripts/create-super-admin.ts",
     "set-store-owner": "bun src/scripts/set-store-owner.ts",
     "plan:create": "bun src/scripts/create-paypal-plan.ts",
+    "plan:list": "bun src/scripts/list-paypal-plans.ts",
     "reconcile": "bun src/scripts/reconcile-subscriptions.ts",
     "test": "bun test",
     "load-test:k6": "k6 run load-test/k6-load-test.js",
