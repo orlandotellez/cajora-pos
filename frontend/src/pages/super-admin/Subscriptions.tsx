@@ -63,17 +63,13 @@ export default function Subscriptions() {
     else setRefreshing(true);
     setError(null);
     try {
-      const [healthRes, listRes] = await Promise.all([
-        loadHealth().then(() => superAdminApi.getSubscriptionHealth()),
-        superAdminApi.getSubscriptionsList({
-          status: statusFilter || undefined,
-          mode: modeFilter || undefined,
-          search: search || undefined,
-          limit,
-          offset: page * limit,
-        }),
-      ]);
-      setHealth(healthRes);
+      const listRes = await superAdminApi.getSubscriptionsList({
+        status: statusFilter || undefined,
+        mode: modeFilter || undefined,
+        search: search || undefined,
+        limit,
+        offset: page * limit,
+      });
       setSubs(listRes.subscriptions);
       setTotal(listRes.total);
     } catch (err) {
@@ -84,6 +80,12 @@ export default function Subscriptions() {
     }
   }, [statusFilter, modeFilter, search, page]);
 
+  // El resumen de salud es global: se carga una sola vez al montar.
+  useEffect(() => {
+    loadHealth();
+  }, [loadHealth]);
+
+  // La lista (con filtros/paginación) recarga ante cada cambio.
   useEffect(() => {
     loadList();
   }, [loadList]);
@@ -169,7 +171,7 @@ export default function Subscriptions() {
         <span className={styles.cardCount}>{total} suscripciones</span>
         <button
           className={styles.refreshBtn}
-          onClick={() => loadList(true)}
+          onClick={() => { loadHealth(); loadList(true); }}
           disabled={refreshing || loading}
         >
           <RefreshCw size={15} className={refreshing ? styles.spin : ""} />
