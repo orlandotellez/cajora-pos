@@ -30,6 +30,15 @@ export interface IStoreStatsRow {
   users_count: number
   products_count: number
   services_count: number
+  // Owner (primer usuario propietario no eliminado)
+  owner_name: string | null
+  owner_email: string | null
+  // Suscripción
+  subscription_mode: string | null
+  subscription_plan: string | null
+  subscription_status: string | null
+  subscription_period_end: string | null
+  subscription_cancel_at_period_end: boolean | null
 }
 
 export interface IStoresListResponse {

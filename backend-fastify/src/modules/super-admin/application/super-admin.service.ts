@@ -89,6 +89,22 @@ export const superAdminService = {
   async getStores(): Promise<IStoresListResponse> {
     const stores = await prisma.store.findMany({
       orderBy: { created_at: "asc" },
+      include: {
+        users: {
+          where: { is_owner: true, deleted_at: null },
+          select: { name: true, email: true },
+          take: 1,
+        },
+        subscription: {
+          select: {
+            mode: true,
+            plan: true,
+            status: true,
+            current_period_end: true,
+            cancel_at_period_end: true,
+          },
+        },
+      },
     })
     const storeIds = stores.map((s) => s.id)
 
@@ -115,16 +131,27 @@ export const superAdminService = {
     const servicesMap = new Map(servicesByStore.map((r) => [r.store_id, r._count._all]))
 
     return {
-      stores: stores.map((s) => ({
-        id: s.id,
-        name: s.name,
-        address: s.address ?? null,
-        phone: s.phone ?? null,
-        created_at: s.created_at,
-        users_count: usersMap.get(s.id) ?? 0,
-        products_count: productsMap.get(s.id) ?? 0,
-        services_count: servicesMap.get(s.id) ?? 0,
-      })),
+      stores: stores.map((s) => {
+        const owner = s.users?.[0] ?? null
+        const sub = s.subscription ?? null
+        return {
+          id: s.id,
+          name: s.name,
+          address: s.address ?? null,
+          phone: s.phone ?? null,
+          created_at: s.created_at,
+          users_count: usersMap.get(s.id) ?? 0,
+          products_count: productsMap.get(s.id) ?? 0,
+          services_count: servicesMap.get(s.id) ?? 0,
+          owner_name: owner?.name ?? null,
+          owner_email: owner?.email ?? null,
+          subscription_mode: sub?.mode ?? null,
+          subscription_plan: sub?.plan ?? null,
+          subscription_status: sub?.status ?? null,
+          subscription_period_end: sub?.current_period_end?.toISOString() ?? null,
+          subscription_cancel_at_period_end: sub?.cancel_at_period_end ?? null,
+        }
+      }),
       total: stores.length,
     }
   },
