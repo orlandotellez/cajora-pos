@@ -81,7 +81,6 @@
   height: 7px;
   border-radius: 5px;
   background: var(--success);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--success) 18%, transparent);
 }
 
 .refreshBtn {
@@ -96,17 +95,10 @@
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.15s, transform 0.15s;
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--primary) 25%, transparent);
 }
 
 .refreshBtn:hover:not(:disabled) {
   opacity: 0.9;
-  transform: translateY(-1px);
-}
-
-.refreshBtn:active:not(:disabled) {
-  transform: translateY(0);
 }
 
 .refreshBtn:disabled {
@@ -126,7 +118,6 @@
   background: color-mix(in srgb, var(--destructive) 8%, transparent);
   color: var(--destructive);
   font-size: 13px;
-  animation: cardIn 0.25s ease both;
 }
 
 .errorCard button {
@@ -139,7 +130,6 @@
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s;
 }
 
 .errorCard button:hover {
@@ -159,33 +149,10 @@
   border: 1px solid var(--border);
   border-radius: 5px;
   padding: 18px 20px;
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 4%, transparent),
-    0 6px 20px -8px color-mix(in srgb, var(--foreground) 10%, transparent);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-  animation: cardIn 0.35s ease both;
-}
-
-.kpiCard:nth-child(1) {
-  animation-delay: 0.03s;
-}
-
-.kpiCard:nth-child(2) {
-  animation-delay: 0.09s;
-}
-
-.kpiCard:nth-child(3) {
-  animation-delay: 0.15s;
-}
-
-.kpiCard:nth-child(4) {
-  animation-delay: 0.21s;
 }
 
 .kpiCard:hover {
-  transform: translateY(-2px);
   border-color: color-mix(in srgb, var(--border) 50%, var(--foreground));
-  box-shadow: 0 2px 4px color-mix(in srgb, var(--foreground) 5%, transparent),
-    0 12px 28px -10px color-mix(in srgb, var(--foreground) 14%, transparent);
 }
 
 .kpiIconChip {
@@ -211,10 +178,6 @@
 .kpiToneAmber {
   background: color-mix(in srgb, #f59e0b 12%, transparent);
   color: #f59e0b;
-}
-
-.kpiCardWarn .kpiIconChip {
-  animation: warnPulse 2s ease-in-out infinite;
 }
 
 .kpiLabel {
@@ -247,9 +210,6 @@
   border-radius: 5px;
   overflow: hidden;
   margin-bottom: 24px;
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 4%, transparent),
-    0 8px 24px -12px color-mix(in srgb, var(--foreground) 12%, transparent);
-  animation: cardIn 0.35s ease 0.12s both;
 }
 
 .cardHeader {
@@ -350,7 +310,6 @@
 
 .storeRow {
   cursor: pointer;
-  transition: background 0.15s ease;
 }
 
 .storeRow:hover {
@@ -378,7 +337,6 @@
   font-size: 13px;
   font-weight: 700;
   flex-shrink: 0;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--foreground) 8%, transparent);
 }
 
 .storeText {
@@ -413,7 +371,6 @@
   color: var(--muted-foreground);
   background: var(--muted);
   border: 1px solid var(--border);
-  transition: transform 0.2s ease, background 0.15s ease, color 0.15s ease;
 }
 
 .storeRow:hover .chevronBtn,
@@ -441,8 +398,6 @@
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 5px;
-  box-shadow: 0 1px 3px color-mix(in srgb, var(--foreground) 4%, transparent);
-  animation: cardIn 0.25s ease both;
 }
 
 .usersTitle {
@@ -491,7 +446,6 @@
   background: color-mix(in srgb, var(--accent) 30%, transparent);
   border: 1px solid var(--border);
   border-radius: 5px;
-  transition: border-color 0.15s ease, background 0.15s ease;
   flex-wrap: wrap;
 }
 
@@ -522,7 +476,6 @@
   font-size: 12px;
   font-weight: 700;
   flex-shrink: 0;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--foreground) 8%, transparent);
 }
 
 .userText {
@@ -659,48 +612,6 @@
 .skeleton {
   background: color-mix(in srgb, var(--muted) 60%, var(--card));
   border-radius: 5px;
-  animation: skeletonPulse 1.4s ease-in-out infinite;
-}
-
-@keyframes skeletonPulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.45;
-  }
-}
-
-.spin {
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes cardIn {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes warnPulse {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 color-mix(in srgb, #f59e0b 40%, transparent);
-  }
-  50% {
-    box-shadow: 0 0 0 5px color-mix(in srgb, #f59e0b 0%, transparent);
-  }
 }
 
 /* ===== KPI tones for subscription health ===== */
@@ -822,7 +733,6 @@
   margin-bottom: -1px;
   text-decoration: none;
   white-space: nowrap;
-  transition: color 0.15s, border-color 0.15s;
 }
 
 .tab:hover {
@@ -914,7 +824,6 @@
   font-weight: 600;
   color: var(--foreground);
   cursor: pointer;
-  transition: background 0.15s;
 }
 
 .pageBtn:hover:not(:disabled) {
@@ -944,7 +853,6 @@
   background: var(--card);
   color: var(--foreground);
   outline: none;
-  transition: border-color 0.15s;
   min-width: 140px;
 }
 
@@ -989,7 +897,6 @@
   background: color-mix(in srgb, #000 40%, transparent);
   backdrop-filter: blur(2px);
   z-index: 1000;
-  animation: fadeIn 0.2s ease both;
 }
 
 .drawer {
@@ -1000,30 +907,10 @@
   width: min(420px, 100vw);
   background: var(--card);
   border-left: 1px solid var(--border);
-  box-shadow: -8px 0 32px -12px color-mix(in srgb, var(--foreground) 20%, transparent);
   z-index: 1001;
   display: flex;
   flex-direction: column;
-  animation: drawerSlideIn 0.28s cubic-bezier(0.32, 0.72, 0, 1) both;
   overflow: hidden;
-}
-
-@keyframes drawerSlideIn {
-  from {
-    transform: translateX(100%);
-  }
-  to {
-    transform: translateX(0);
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
 }
 
 .drawerHeader {
@@ -1054,7 +941,6 @@
   font-size: 15px;
   font-weight: 700;
   flex-shrink: 0;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--foreground) 8%, transparent);
 }
 
 .drawerTitleWrap {
@@ -1097,7 +983,6 @@
   color: var(--muted-foreground);
   cursor: pointer;
   flex-shrink: 0;
-  transition: background 0.15s, color 0.15s;
 }
 
 .drawerClose:hover {
