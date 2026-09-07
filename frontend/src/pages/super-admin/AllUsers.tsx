@@ -26,6 +26,8 @@ export default function AllUsers() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
+  const limit = 10;
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -82,6 +84,9 @@ export default function AllUsers() {
     );
   });
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / limit));
+  const pageUsers = filtered.slice(page * limit, page * limit + limit);
+
   return (
     <>
       <div className={styles.sectionActions}>
@@ -91,7 +96,7 @@ export default function AllUsers() {
             type="text"
             placeholder="Buscar por nombre, email o tienda…"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(0); }}
             className={styles.searchInput}
           />
         </div>
@@ -148,7 +153,7 @@ export default function AllUsers() {
                       </div>
                     </td>
                   </tr>
-                ) : filtered.map((u) => {
+                ) : pageUsers.map((u) => {
                   const hue = hueFromString(u.name);
                   return (
                     <tr key={u.id} className={u.deleted_at ? styles.userDeleted : ""}>
@@ -196,6 +201,26 @@ export default function AllUsers() {
             </tbody>
           </table>
         </div>
+
+        {/* Paginación */}
+        {totalPages > 1 && (
+          <div className={styles.pagination}>
+            <button
+              className={styles.pageBtn}
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={page === 0}
+            >
+              Anterior
+            </button>
+            <button
+              className={styles.pageBtn}
+              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              disabled={page >= totalPages - 1}
+            >
+              Siguiente
+            </button>
+          </div>
+        )}
       </div>
     </>
   );

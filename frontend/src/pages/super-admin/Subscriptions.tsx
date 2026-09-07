@@ -47,7 +47,7 @@ export default function Subscriptions() {
   const [modeFilter, setModeFilter] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
-  const limit = 20;
+  const limit = 10;
 
   const loadHealth = useCallback(async () => {
     try {
