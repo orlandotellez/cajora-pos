@@ -981,3 +981,320 @@
   border-color: color-mix(in srgb, #eab308 40%, transparent);
   background: color-mix(in srgb, #eab308 6%, transparent);
 }
+
+/* ===== Drawer de tienda (slide lateral) ===== */
+.drawerOverlay {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, #000 40%, transparent);
+  backdrop-filter: blur(2px);
+  z-index: 1000;
+  animation: fadeIn 0.2s ease both;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(420px, 100vw);
+  background: var(--card);
+  border-left: 1px solid var(--border);
+  box-shadow: -8px 0 32px -12px color-mix(in srgb, var(--foreground) 20%, transparent);
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  animation: drawerSlideIn 0.28s cubic-bezier(0.32, 0.72, 0, 1) both;
+  overflow: hidden;
+}
+
+@keyframes drawerSlideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.drawerHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--accent) 40%, transparent);
+  flex-shrink: 0;
+}
+
+.drawerHeaderStore {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.storeAvatarLarge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--foreground) 8%, transparent);
+}
+
+.drawerTitleWrap {
+  min-width: 0;
+}
+
+.drawerStoreName {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.drawerStoreStatus {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.cancelNotice {
+  font-size: 11px;
+  color: #f97316;
+  font-weight: 600;
+}
+
+.drawerClose {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--muted-foreground);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.drawerClose:hover {
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+.drawerBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Métricas */
+.drawerMetricsRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.drawerMetric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 8px;
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.drawerMetricIcon {
+  color: var(--muted-foreground);
+  margin-bottom: 4px;
+}
+
+.drawerMetricValue {
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+  line-height: 1.1;
+}
+
+.drawerMetricLabel {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted-foreground);
+}
+
+/* Secciones */
+.drawerSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.drawerSectionTitle {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted-foreground);
+}
+
+/* Lista de info */
+.drawerInfoList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.drawerInfoItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.drawerInfoItem:last-child {
+  border-bottom: none;
+}
+
+.drawerInfoIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--muted) 70%, transparent);
+  border: 1px solid var(--border);
+  color: var(--muted-foreground);
+  flex-shrink: 0;
+}
+
+.drawerInfoText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.drawerInfoLabel {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted-foreground);
+}
+
+.drawerInfoValue {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--foreground);
+  margin-top: 1px;
+  overflow-wrap: break-word;
+}
+
+/* Cargando / vacío */
+.drawerLoading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted-foreground);
+  padding: 14px 0;
+}
+
+.drawerEmpty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 0;
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+
+/* Lista de usuarios en drawer */
+.drawerUserList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.drawerUserRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--accent) 25%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  flex-wrap: wrap;
+}
+
+.drawerUserMain {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.drawerUserText {
+  min-width: 0;
+}
+
+.drawerUserName {
+  font-weight: 600;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+  display: flex;
+  align-items: center;
+}
+
+.drawerUserMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.chevronArrow {
+  font-style: normal;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--muted-foreground);
+}

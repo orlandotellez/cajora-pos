@@ -16,6 +16,13 @@ export interface SuperAdminStoreRow {
   users_count: number;
   products_count: number;
   services_count: number;
+  owner_name?: string | null;
+  owner_email?: string | null;
+  subscription_mode?: string | null;
+  subscription_plan?: string | null;
+  subscription_status?: string | null;
+  subscription_period_end?: string | null;
+  subscription_cancel_at_period_end?: boolean | null;
 }
 
 export interface SuperAdminStoreUser {
@@ -98,6 +105,11 @@ export interface SubscriptionsListResponse {
   total: number
 }
 
+export interface SubscriptionEventsResponse {
+  events: SubscriptionHealthEvent[]
+  total: number
+}
+
 export const superAdminApi = {
   getStats: () => api.get<SuperAdminStats>("/super-admin/stats"),
 
@@ -108,6 +120,19 @@ export const superAdminApi = {
 
   getSubscriptionHealth: () =>
     api.get<SubscriptionHealthResponse>("/super-admin/subscription-health"),
+
+  getSubscriptionEvents: (params?: { action?: string; limit?: number; offset?: number; store_id?: string; user_id?: string; from?: string; to?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.action) qs.set("action", params.action);
+    if (params?.limit) qs.set("limit", String(params.limit));
+    if (params?.offset) qs.set("offset", String(params.offset));
+    if (params?.store_id) qs.set("store_id", params.store_id);
+    if (params?.user_id) qs.set("user_id", params.user_id);
+    if (params?.from) qs.set("from", params.from);
+    if (params?.to) qs.set("to", params.to);
+    const q = qs.toString();
+    return api.get<SubscriptionEventsResponse>(`/super-admin/subscription-events${q ? `?${q}` : ""}`);
+  },
 
   getSubscriptionsList: (params?: { status?: string; mode?: string; search?: string; limit?: number; offset?: number }) => {
     const qs = new URLSearchParams();
