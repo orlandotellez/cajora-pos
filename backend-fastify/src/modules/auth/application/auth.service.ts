@@ -27,41 +27,14 @@ import type {
 } from "../domain/auth.types"
 import type { Role } from "@/types/auth"
 import { env } from "@/config/env"
-import type { IUserEntity } from "../domain/auth.entities"
 import { generateSsoCode, type ISsoCodeStore } from "../infrastructure/sso-code.store"
+import { mapUserToResponse, mapStoreToResponse } from "./common/auth.mappers"
 
 const ACCESS_TOKEN_EXPIRY = 15 * 60 * 1000
 const REFRESH_TOKEN_EXPIRY = 7 * 24 * 60 * 60 * 1000
 const VERIFICATION_CODE_EXPIRY = 15 * 60 * 1000
 const SESSION_EXPIRY = 7 * 24 * 60 * 60 * 1000
 const SSO_CODE_TTL_SECONDS = 120
-
-function mapUserToResponse(user: IUserEntity): IUserResponse {
-  return {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    email_verified: user.email_verified,
-    role: user.role as Role,
-    is_owner: user.is_owner ?? false,
-    is_active: user.is_active ?? true,
-    permissions: user.permissions ?? [],
-    phone: user.phone,
-    image: user.image,
-    store_id: user.store_id,
-    created_at: user.created_at,
-    updated_at: user.updated_at,
-  }
-}
-
-function mapStoreToResponse(store: { id: string; name: string; address?: string | null; phone?: string | null }): IStoreResponse {
-  return {
-    id: store.id,
-    name: store.name,
-    address: store.address || undefined,
-    phone: store.phone || undefined,
-  }
-}
 
 async function getStoreInfo(storeId: string | null): Promise<IStoreResponse | null> {
   // Super admin: no pertenece a ninguna tienda.

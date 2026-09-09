@@ -1,28 +1,9 @@
 import type { ICashRegisterRepository, ICashSessionWithLive, ICashCloseResult } from "../domain/cash-register.interface"
-import type { CreateCashSessionData, CloseCashSessionData, CreateCashExpenseData, ICashSessionEntity } from "../domain/cash-register.entities"
+import type { CreateCashSessionData, CloseCashSessionData, CreateCashExpenseData } from "../domain/cash-register.entities"
 import { round2 } from "../domain/cash-register.entities"
 import type { ICashSessionResponse, ICashCloseResponse } from "../domain/cash-register.types"
 import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from "@/core/errors/AppError"
-
-/** Round to 2 decimals handled by domain helper (round2) */
-
-function mapSession(s: ICashSessionEntity): ICashSessionResponse {
-  return {
-    id: s.id,
-    store_id: s.store_id,
-    user_id: s.user_id,
-    user_name: s.user_name,
-    label: s.label ?? undefined,
-    status: s.status as "abierto" | "cerrado",
-    opening_amount: Number(s.opening_amount),
-    closing_amount_counted: s.closing_amount_counted != null ? Number(s.closing_amount_counted) : undefined,
-    expected_amount: s.expected_amount != null ? Number(s.expected_amount) : undefined,
-    difference: s.difference != null ? Number(s.difference) : undefined,
-    observations: s.observations ?? undefined,
-    opened_at: s.opened_at instanceof Date ? s.opened_at.toISOString() : String(s.opened_at),
-    closed_at: s.closed_at ? (s.closed_at instanceof Date ? s.closed_at.toISOString() : String(s.closed_at)) : undefined,
-  }
-}
+import { mapSession } from "./common/cash-register.mappers"
 
 export const createCashRegisterService = (repository: ICashRegisterRepository) => ({
   open: async (

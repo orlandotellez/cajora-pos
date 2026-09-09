@@ -2,7 +2,6 @@ import { env } from "@/config/env"
 import { ConflictError } from "@/core/errors/AppError"
 import { paypalClient } from "../infrastructure/paypal.client"
 import type { ISubscriptionRepository } from "../domain/subscription.interface"
-import type { ISubscriptionEntity } from "../domain/subscription.entities"
 import type { IBillingResponse, ISubscriptionResponse } from "../domain/subscription.types"
 import type { IPayPalWebhookEventRepository } from "../domain/paypal-webhook-event.interface"
 import {
@@ -11,22 +10,11 @@ import {
   type ISubscriptionEventRepository,
   type SubscriptionActor,
 } from "../domain/subscription-event.interface"
+import { mapToResponse } from "./common/subscriptions.mappers"
 
 const PERIOD_DAYS = 30
 const PLAN_PRICE = "15.99"
 const PLAN_CURRENCY = "USD"
-
-function mapToResponse(sub: ISubscriptionEntity): ISubscriptionResponse {
-  return {
-    mode: sub.mode,
-    plan: sub.plan,
-    status: sub.status,
-    paypal_subscription_id: sub.paypal_subscription_id,
-    current_period_start: sub.current_period_start?.toISOString() ?? null,
-    current_period_end: sub.current_period_end?.toISOString() ?? null,
-    cancel_at_period_end: sub.cancel_at_period_end,
-  }
-}
 
 function noopActor(): SubscriptionActor {
   return { userId: null, ip: null, userAgent: null }

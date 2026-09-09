@@ -1,18 +1,7 @@
 import type { ISettingsRepository } from "../domain/settings.interface"
 import type { ISettingsResponse } from "../domain/settings.types"
 import type { UpdateSettingsData, ISettingsEntity } from "../domain/settings.entities"
-
-function mapSettingsToResponse(settings: ISettingsEntity): ISettingsResponse {
-  return {
-    name: settings.name,
-    address: settings.address || undefined,
-    phone: settings.phone || undefined,
-    low_stock_threshold: settings.low_stock_threshold,
-    ticket_footer: settings.ticket_footer || undefined,
-    cash_register_enabled: settings.cash_register_enabled,
-    updated_at: settings.updated_at instanceof Date ? settings.updated_at.toISOString() : settings.updated_at,
-  }
-}
+import { mapSettingsToResponse } from "./common/settings.mappers"
 
 export const createSettingsService = (repository: ISettingsRepository) => ({
   get: async (storeId: string): Promise<ISettingsResponse> => {

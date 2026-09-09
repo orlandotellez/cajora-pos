@@ -1,36 +1,9 @@
 import { NotFoundError, ConflictError } from "@/core/errors/AppError"
 import type { IProductRepository } from "../domain/products.interface"
 import type { IProductResponse, IProductListResponse, IProductCategory } from "../domain/products.types"
-import type { CreateProductData, UpdateProductData, IProductEntity } from "../domain/products.entities"
+import type { CreateProductData, UpdateProductData } from "../domain/products.entities"
 import type { ImportProductRowDto } from "../presentation/products.dto"
-
-interface RichProductEntity extends IProductEntity {
-  category?: { id: string; name: string } | null
-  supplier?: { id: string; name: string } | null
-}
-
-function mapProductToResponse(product: RichProductEntity): IProductResponse {
-  return {
-    id: product.id,
-    barcode: product.barcode || undefined,
-    name: product.name,
-    unit_type: product.unit_type || undefined,
-    unit_quantity: product.unit_quantity ?? undefined,
-    category: product.category
-      ? { id: product.category.id, name: product.category.name }
-      : undefined,
-    supplier: product.supplier
-      ? { id: product.supplier.id, name: product.supplier.name }
-      : undefined,
-    price: Number(product.price),
-    cost: Number(product.cost),
-    stock: product.stock,
-    low_stock_threshold: product.low_stock_threshold,
-    active: product.active,
-    created_at: product.created_at instanceof Date ? product.created_at.toISOString() : product.created_at,
-    updated_at: product.updated_at instanceof Date ? product.updated_at.toISOString() : product.updated_at,
-  }
-}
+import { mapProductToResponse } from "./common/products.mappers"
 
 export const createProductService = (repository: IProductRepository) => ({
   list: async (params?: { search?: string; category_id?: string; active?: boolean; lowStock?: boolean; outOfStock?: boolean; page?: number; limit?: number; storeId?: string }): Promise<IProductListResponse> => {

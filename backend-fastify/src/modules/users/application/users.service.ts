@@ -3,24 +3,7 @@ import { hashPassword } from "@/modules/auth/application/common/crypto.utils"
 import type { IUserRepository } from "../domain/users.interface"
 import type { IUserResponse, IUserListResponse } from "../domain/users.types"
 import type { CreateUserData, UpdateUserData } from "../domain/users.entities"
-import type { IUserEntity } from "../domain/users.entities"
-
-function mapUserToResponse(user: IUserEntity): IUserResponse {
-  return {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    email_verified: user.email_verified,
-    role: user.role,
-    is_owner: user.is_owner ?? false,
-    is_active: user.is_active ?? true,
-    permissions: user.permissions ?? [],
-    phone: user.phone || undefined,
-    image: user.image || undefined,
-    created_at: user.created_at instanceof Date ? user.created_at : new Date(user.created_at),
-    updated_at: user.updated_at instanceof Date ? user.updated_at : new Date(user.updated_at),
-  }
-}
+import { mapUserToResponse } from "./common/users.mappers"
 
 export const createUserService = (repository: IUserRepository) => ({
   list: async (params?: { search?: string; page?: number; limit?: number; storeId?: string }): Promise<IUserListResponse> => {
