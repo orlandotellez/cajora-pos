@@ -1,7 +1,7 @@
 import { describe, it, beforeEach, afterEach, mock } from "node:test"
 import assert from "node:assert/strict"
-import { Prisma } from "@prisma/client"
 import { env } from "@/config/env"
+import { makeP2002 } from "@/tests/fakes"
 import { webhookController } from "./webhook.controller"
 import { SubscriptionRepository } from "../infrastructure/subscription.prisma.repository"
 import { PayPalWebhookEventRepository } from "../infrastructure/paypal-webhook-event.prisma.repository"
@@ -73,13 +73,6 @@ function makeOutbox(overrides: Partial<paypal_webhook_event> = {}): paypal_webho
     payload: {},
     ...overrides,
   } as paypal_webhook_event
-}
-
-function makeP2002(): Prisma.PrismaClientKnownRequestError {
-  return new Prisma.PrismaClientKnownRequestError("Unique constraint failed", {
-    code: "P2002",
-    clientVersion: "test",
-  })
 }
 
 describe("webhookController.receive", () => {
