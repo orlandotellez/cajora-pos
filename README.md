@@ -10,7 +10,7 @@
 ![Rust](https://img.shields.io/badge/rust-%23000000.svg?style=for-the-badge&logo=rust&logoColor=white)
 ![Axum](https://img.shields.io/badge/axum-%23000000.svg?style=for-the-badge&logo=rust&logoColor=white)
 
-Sistema de Punto de Venta (POS) multiplataforma construido como **monorepo** con cuatro proyectos coordinados: un frontend común empaquetado con **Tauri** (Web + Desktop + Mobile), un backend **Node.js + Fastify** ya terminado, un backend alternativo **Rust + Axum** actualmente en desarrollo y un sitio de **landing page** en Astro.
+Sistema de Punto de Venta (POS) multiplataforma construido como **monorepo** con cuatro proyectos coordinados: un frontend común empaquetado con **Tauri** (Web + Desktop + Mobile), un backend **Node.js + Fastify** ya terminado, un backend alternativo **Rust + Axum** actualmente en desarrollo (en `alternative/backend-rust/`) y un sitio de **landing page** en Astro.
 
 El sistema cubre la operación típica de un negocio minorista: gestión de productos, categorías, proveedores, inventario por lotes y movimientos individuales, ventas (con productos y servicios), autenticación de usuarios, configuración del negocio y reportes. La landing page presenta el producto y sus planes.
 
@@ -26,8 +26,9 @@ El sistema cubre la operación típica de un negocio minorista: gestión de prod
 - [Configuración rápida](#configuración-rápida)
 - [Frontend (Web / Desktop / Mobile)](#frontend-web--desktop--mobile)
 - [Backend Fastify (terminado)](#backend-fastify-terminado)
-- [Backend Rust (en progreso)](#backend-rust-en-progreso)
+- [Backend Rust (en progreso)](#backend-rust-en-progreso) — en `alternative/backend-rust/`
 - [Landing Page (Astro)](#landing-page-astro)
+- [Alternative Backends](#alternative-backends)
 - [Modelo de datos](#modelo-de-datos)
 - [Variables de entorno](#variables-de-entorno)
 - [Scripts útiles](#scripts-útiles)
@@ -46,13 +47,14 @@ El sistema cubre la operación típica de un negocio minorista: gestión de prod
 └───────────────────────────┬─────────────────────────────────────┘
                             │  HTTPS / JWT en cookie httpOnly
                             ▼
-        ┌──────────────────────────────┐    ┌──────────────────────────────┐
-        │  backend-fastify (Node.js)   │    │   backend-rust (Rust)        │
-        │   ✅ Terminado               │    │   🚧 En progreso             │
-        │   Fastify 5 + Prisma 6       │    │   Axum 0.8 + SQLx 0.8        │
-        │   Puerto por defecto         │    │   Puerto por defecto         │
-        │   → http://localhost:3000    │    │   → http://localhost:4001    │
-        └──────────────┬───────────────┘    └──────────────┬───────────────┘
+        ┌──────────────────────────────┐    ┌──────────────────────────────────┐
+        │  backend-fastify (Node.js)   │    │   backend-rust (Rust)            │
+        │   ✅ Terminado               │    │   🚧 En progreso                 │
+        │   Fastify 5 + Prisma 6       │    │   Axum 0.8 + SQLx 0.8            │
+        │   Puerto por defecto         │    │   Puerto por defecto             │
+        │   → http://localhost:3000    │    │   → http://localhost:4001        │
+        │                              │    │   📁 alternative/backend-rust/   │
+        └──────────────┬───────────────┘    └──────────────┬───────────────────┘
                        │                                     │
                        ▼                                     ▼
               ┌──────────────────────────────────────────────────┐
@@ -158,34 +160,37 @@ El frontend puede hablar con **cualquiera** de los dos backends: ambos exponen l
 │   ├── http/                # Colección de requests (.http) para VS Code / IntelliJ
 │   └── docs/                # manual-fastify.md, prisma.md
 │
-├── backend-rust/            # API Rust con Axum (EN PROGRESO)
+├── landing-page/            # Sitio de marketing en Astro (terminado)
 │   ├── src/
-│   │   ├── main.rs          # Bootstrap Axum + CORS + TraceLayer
-│   │   ├── routes/          # Router principal
-│   │   ├── features/        # Patrón vertical slices (auth implementado)
-│   │   │   └── auth/
-│   │   │       ├── domain/           # contratos + entities
-│   │   │       ├── application/      # servicios (registro, sesión…)
-│   │   │       ├── presentation/     # handlers + dto + routes
-│   │   │       └── infrastructure/   # sqlx repos + models + mapper
-│   │   ├── shared/          # config, errors, security, state, validación
-│   │   ├── database/        # conexión + migrations SQL
-│   │   └── scripts/seed.rs  # Binario independiente de seed
-│   ├── database/migrations/ # Migraciones SQL puras
-│   └── docs/                # manual-axum.md, sqlx.md, estructura.md
+│   │   ├── components/      # Icon.astro (SVGs inline), Logo.astro
+│   │   ├── layouts/         # Layout.astro (design tokens + tema)
+│   │   ├── pages/           # index.astro
+│   │   └── sections/        # Header, Hero, Stats, Features, Pricing, FAQ, CTA, Footer
+│   ├── public/              # favicons
+│   ├── astro.config.mjs
+│   └── package.json
 │
-└── landing-page/            # Sitio de marketing en Astro (terminado)
-    ├── src/
-    │   ├── components/      # Icon.astro (SVGs inline), Logo.astro
-    │   ├── layouts/         # Layout.astro (design tokens + tema)
-    │   ├── pages/           # index.astro
-    │   └── sections/        # Header, Hero, Stats, Features, Pricing, FAQ, CTA, Footer
-    ├── public/              # favicons
-    ├── astro.config.mjs
-    └── package.json
+└── alternative/             # Backends alternativos
+    ├── README.md            # Documentación de la carpeta
+    └── backend-rust/        # API Rust con Axum (EN PROGRESO)
+        ├── src/
+        │   ├── main.rs          # Bootstrap Axum + CORS + TraceLayer
+        │   ├── routes/          # Router principal
+        │   ├── features/        # Patrón vertical slices (auth implementado)
+        │   │   └── auth/
+        │   │       ├── domain/           # contratos + entities
+        │   │       ├── application/      # servicios (registro, sesión…)
+        │   │       ├── presentation/     # handlers + dto + routes
+        │   │       └── infrastructure/   # sqlx repos + models + mapper
+        │   ├── shared/          # config, errors, security, state, validación
+        │   ├── database/        # conexión + migrations SQL
+        │   └── scripts/seed.rs  # Binario independiente de seed
+        ├── database/migrations/ # Migraciones SQL puras
+        ├── .sqlx/               # SQLx offline query cache
+        └── docs/                # manual-axum.md, sqlx.md, estructura.md
 ```
 
-Cada workspace usa **pnpm** (frontend + backend-fastify + landing-page) y **Cargo** (backend-rust) como package manager.
+Cada workspace usa **pnpm** (frontend + backend-fastify + landing-page) y **Cargo** (`alternative/backend-rust`) como package manager.
 
 ---
 
@@ -196,7 +201,7 @@ Cada workspace usa **pnpm** (frontend + backend-fastify + landing-page) y **Carg
 | `backend-fastify/` | ✅ **Terminado** — todos los módulos implementados con arquitectura por capas (domain / application / presentation / infrastructure). |
 | `frontend/` | ✅ **Terminado** — UI completa, estado global, integración con API, build para Web / Desktop / Android vía Tauri 2. |
 | `landing-page/` | ✅ **Terminada** — sitio estático de marketing con Astro, secciones por componente, tema claro/oscuro y build estático. |
-| `backend-rust/` | 🚧 **En progreso** — bootstrap, conexión a DB, CORS, tracing, shutdown graceful y **módulo `auth`** completos. El resto de features (products, sales, inventory, etc.) se está migrando siguiendo el mismo patrón `features/<recurso>/{domain,application,presentation,infrastructure}`. |
+| `backend-rust/` | 🚧 **En progreso** — (en `alternative/backend-rust/`) bootstrap, conexión a DB, CORS, tracing, shutdown graceful y **módulo `auth`** completos. El resto de features (products, sales, inventory, etc.) se está migrando siguiendo el mismo patrón `features/<recurso>/{domain,application,presentation,infrastructure}`. |
 
 ---
 
@@ -236,7 +241,7 @@ pnpm tauri build            # Build de release multiplataforma
 pnpm tauri android dev      # Ejecuta en un dispositivo/emulador Android
 
 # 3) Backend Rust (opcional, en otra terminal)
-cd backend-rust
+cd alternative/backend-rust
 cp .env.example .env        # editar DATABASE_URL / REDIS_URL / JWT_SECRET
 cargo run --bin server      # arranca en http://localhost:4001
 
@@ -305,14 +310,14 @@ API REST en `/api/v1`. Cuenta con las siguientes capabilities transversales:
 
 ## Backend Rust (en progreso)
 
-Réplica de la API escrita en Rust con el mismo contrato HTTP (mismo prefijo `/api/v1`, mismos DTOs y reglas de negocio) para comparar rendimiento y validar el modelo de datos entre ambas implementaciones.
+Réplica de la API escrita en Rust con el mismo contrato HTTP (mismo prefijo `/api/v1`, mismos DTOs y reglas de negocio) para comparar rendimiento y validar el modelo de datos entre ambas implementaciones. Ubicada en `alternative/backend-rust/`.
 
-- **Bootstrap** en `src/main.rs`: pool SQLx + CORS (`shared/config/cors.rs`) + `TraceLayer` + graceful shutdown (`shared/config/shutdown.rs`).
+- **Bootstrap** en `alternative/backend-rust/src/main.rs`: pool SQLx + CORS (`shared/config/cors.rs`) + `TraceLayer` + graceful shutdown (`shared/config/shutdown.rs`).
 - **Patrón vertical slice** por feature → `features/<recurso>/{domain, application, presentation, infrastructure}`.
 - **Módulo `auth`** ya implementado: contratos (domain), servicios (registration / authentication), handlers (login, refresh, logout, forgot/reset password, verify-email, resend, session) y repositorios SQLx.
 - **Migraciones SQL** puras en `database/migrations/` (independientes del bootstrap).
 - **Seed** independiente como binario (`cargo run --bin seed`).
-- Documentación ampliada en `backend-rust/docs/` (`manual-axum.md`, `sqlx.md`, `estructura.md`).
+- Documentación ampliada en `alternative/backend-rust/docs/` (`manual-axum.md`, `sqlx.md`, `estructura.md`).
 
 > El resto de features (products, sales, inventory, services, users, suppliers, settings) se está migrando siguiendo el mismo esqueleto del módulo `auth`.
 
@@ -349,6 +354,18 @@ pnpm dev        # Dev server en http://localhost:4321
 pnpm build      # Build estático a ./dist/
 pnpm preview    # Previsualizar el build
 ```
+
+---
+
+## Alternative Backends
+
+Carpeta `alternative/` que contiene implementaciones alternativas del backend. Estos backends exponen la **misma API REST** que `backend-fastify/`, permitiendo comparar rendimiento y validar el modelo de datos entre implementaciones.
+
+| Backend | Tecnología | Estado | Path |
+| --- | --- | --- | --- |
+| `backend-rust/` | Rust + Axum 0.8 + SQLx 0.8 | 🚧 En progreso | `alternative/backend-rust/` |
+
+> Ver `alternative/README.md` para documentación detallada de cada backend alternativo.
 
 ---
 
@@ -399,7 +416,7 @@ Convenciones:
 | `JWT_EXPIRES_IN` | TTL del access token | `15m` |
 | `CORS_ORIGIN` | Orígenes permitidos (CSV) | `http://localhost:5173,http://localhost:1420` |
 
-### `backend-rust/.env`
+### `alternative/backend-rust/.env`
 
 | Variable | Descripción | Ejemplo |
 | --- | --- | --- |
