@@ -192,11 +192,61 @@ describe("cash-register service", () => {
       })
       const service = createCashRegisterService(repo)
 
-      const result = await service.status("store-1")
+      const result = await service.status("store-1", "user-1", "admin")
       assert.equal(result.can_sell_cash, true)
       assert.equal(result.open_sessions.length, 1)
       assert.equal(result.open_sessions[0].cash_so_far, 1280.5)
       assert.equal(result.open_sessions[0].expenses_total, 300)
+    })
+
+    it("can_sell_cash true cuando cajero tiene sesión abierta propia", async () => {
+      const repo = makeFakeRepo({
+        listOpenByUser: async () => [makeSession()],
+        getCashIn: async () => 500,
+        getExpensesTotal: async () => 50,
+      })
+      const service = createCashRegisterService(repo)
+
+      const result = await service.status("store-1", "user-1", "cajero")
+      assert.equal(result.can_sell_cash, true)
+      assert.equal(result.open_sessions.length, 1)
+      assert.equal(result.open_sessions[0].cash_so_far, 500)
+      assert.equal(result.open_sessions[0].expenses_total, 50)
+    })
+
+    it("can_sell_cash false cuando cajero no tiene sesión abierta", async () => {
+      const service = createCashRegisterService(makeFakeRepo())
+      const result = await service.status("store-1", "user-1", "cajero")
+      assert.equal(result.can_sell_cash, false)
+      assert.deepEqual(result.open_sessions, [])
+    })
+
+    it("can_sell_cash true y enriquece cada sesión cuando el cajero tiene varias abiertas", async () => {
+      const sessions = [
+        makeSession({ id: "session-a", user_id: "user-1" }),
+        makeSession({ id: "session-b", user_id: "user-1" }),
+        makeSession({ id: "session-c", user_id: "user-1" }),
+      ]
+      const repo = makeFakeRepo({
+        listOpenByUser: async () => sessions,
+        getCashIn: async (params) => (params.session_id === "session-a" ? 1000 : params.session_id === "session-b" ? 500 : 250),
+        getExpensesTotal: async ({ session_id }) => (session_id === "session-a" ? 100 : session_id === "session-b" ? 50 : 20),
+      })
+      const service = createCashRegisterService(repo)
+
+      const result = await service.status("store-1", "user-1", "cajero")
+
+      assert.equal(result.can_sell_cash, true)
+      assert.equal(result.open_sessions.length, 3)
+      assert.equal(result.open_sessions[0].session.id, "session-a")
+      assert.equal(result.open_sessions[0].cash_so_far, 1000)
+      assert.equal(result.open_sessions[0].expenses_total, 100)
+      assert.equal(result.open_sessions[1].session.id, "session-b")
+      assert.equal(result.open_sessions[1].cash_so_far, 500)
+      assert.equal(result.open_sessions[1].expenses_total, 50)
+      assert.equal(result.open_sessions[2].session.id, "session-c")
+      assert.equal(result.open_sessions[2].cash_so_far, 250)
+      assert.equal(result.open_sessions[2].expenses_total, 20)
     })
   })
 
