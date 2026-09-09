@@ -1,8 +1,9 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/config/prisma"
 import { NotFoundError } from "@/core/errors/AppError"
-import { SubscriptionRepository } from "@/modules/subscriptions/infrastructure/subscription.prisma.repository"
-import { SubscriptionEventRepository } from "@/modules/subscriptions/infrastructure/subscription-event.prisma.repository"
+import type { ISubscriptionRepository } from "@/modules/subscriptions/domain/subscription.interface"
+import type { ISubscriptionEventRepository } from "@/modules/subscriptions/domain/subscription-event.interface"
+import type { UpdateSubscriptionInput } from "@/modules/subscriptions/domain/subscription.entities"
 import type {
   IGlobalStats,
   IStoresListResponse,
@@ -14,6 +15,11 @@ import type {
   IStoreUsersResponse,
 } from "../domain/super-admin.types"
 
+interface SuperAdminDeps {
+  subscriptionRepo: Pick<ISubscriptionRepository, "update">
+  eventRepo: Pick<ISubscriptionEventRepository, "create">
+}
+
 function startOfToday(): Date {
   const d = new Date()
   return new Date(d.getFullYear(), d.getMonth(), d.getDate())
@@ -24,7 +30,7 @@ function startOfMonth(): Date {
   return new Date(d.getFullYear(), d.getMonth(), 1)
 }
 
-export const superAdminService = {
+export const createSuperAdminService = ({ subscriptionRepo, eventRepo }: SuperAdminDeps) => ({
   async getStats(): Promise<IGlobalStats> {
     const startToday = startOfToday()
     const startMonth = startOfMonth()
@@ -434,13 +440,13 @@ export const superAdminService = {
     storeId: string,
     status: string,
   ): Promise<Record<string, unknown> | null> {
-    const sub = await SubscriptionRepository.update(storeId, {
-      status: status as any,
+    const sub = await subscriptionRepo.update(storeId, {
+      status: status as UpdateSubscriptionInput["status"],
     })
     if (!sub) return null
 
     // Registrar evento de auditoría
-    await SubscriptionEventRepository.create({
+    await eventRepo.create({
       store_id: storeId,
       user_id: null,
       action: "admin_status_change",
@@ -455,4 +461,4 @@ export const superAdminService = {
       updated_at: sub.updated_at,
     }
   },
-}
+})

@@ -1,5 +1,12 @@
 import type { FastifyReply, FastifyRequest } from "fastify"
-import { superAdminService } from "../application/super-admin.service"
+import { createSuperAdminService } from "../application/super-admin.service"
+import { SubscriptionRepository } from "@/modules/subscriptions/infrastructure/subscription.prisma.repository"
+import { SubscriptionEventRepository } from "@/modules/subscriptions/infrastructure/subscription-event.prisma.repository"
+
+const superAdminService = createSuperAdminService({
+  subscriptionRepo: SubscriptionRepository,
+  eventRepo: SubscriptionEventRepository,
+})
 
 export const superAdminController = {
   stats: async (_request: FastifyRequest, reply: FastifyReply) => {

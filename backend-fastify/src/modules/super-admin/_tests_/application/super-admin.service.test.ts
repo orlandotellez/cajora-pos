@@ -36,21 +36,12 @@ mock.module("@/config/prisma", () => ({
   prisma: prismaMocks,
 }))
 
-mock.module(
-  "@/modules/subscriptions/infrastructure/subscription.prisma.repository",
-  () => ({
-    SubscriptionRepository: subscriptionRepoMocks,
-  }),
-)
+const { createSuperAdminService } = await import("../../application/super-admin.service")
 
-mock.module(
-  "@/modules/subscriptions/infrastructure/subscription-event.prisma.repository",
-  () => ({
-    SubscriptionEventRepository: subscriptionEventRepoMocks,
-  }),
-)
-
-const { superAdminService } = await import("../../application/super-admin.service")
+const superAdminService = createSuperAdminService({
+  subscriptionRepo: subscriptionRepoMocks,
+  eventRepo: subscriptionEventRepoMocks,
+})
 
 function makeStore(overrides: Record<string, any> = {}): any {
   return {
