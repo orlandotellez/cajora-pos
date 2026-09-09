@@ -3,6 +3,7 @@ import type { FastifyReply, FastifyRequest } from "fastify"
 import type Redis from "ioredis"
 import { isOriginAllowed } from "@/config/cors"
 import { getRedisClient } from "./redis"
+import { logger } from "./logger"
 
 /**
  * Hub SSE (por storeId) con respaldo en Redis pub/sub.
@@ -103,7 +104,7 @@ export function ensureRedisSubscriber(): void {
     })
   } catch (err) {
     redisSubscriber = null
-    console.error("Redis SSE subscriber unavailable:", err)
+    logger.error({ err }, "Redis SSE subscriber unavailable")
   }
 }export const closeSseRedis = async (): Promise<void> => {
   if (redisSubscriber) {

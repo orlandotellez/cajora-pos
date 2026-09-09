@@ -2,6 +2,7 @@ import type { buildApp } from "../app"
 import { closeRedis } from "./redis"
 import { closeAllSseConnections, closeSseRedis } from "./sse"
 import { prisma } from "./prisma"
+import { logger } from "./logger"
 
 type AppInstance = Awaited<ReturnType<typeof buildApp>>
 
@@ -11,10 +12,10 @@ export const setupGracefulShutdown = (app: AppInstance) => {
   const gracefulShutdown = async (signal: string) => {
     if (shuttingDown) return
     shuttingDown = true
-    console.log(`Received ${signal}, shutting down gracefully...`)
+    logger.info(`Received ${signal}, shutting down gracefully...`)
 
     const forceExit = setTimeout(() => {
-      console.warn("Shutdown excedió 3s, forzando salida")
+      logger.warn("Shutdown excedió 3s, forzando salida")
       process.exit(0)
     }, 3_000)
     forceExit.unref()
@@ -28,7 +29,7 @@ export const setupGracefulShutdown = (app: AppInstance) => {
       clearTimeout(forceExit)
       process.exit(0)
     } catch (error) {
-      console.error("Error during graceful shutdown:", error)
+      logger.error({ err: error }, "Error during graceful shutdown")
       process.exit(1)
     }
   }

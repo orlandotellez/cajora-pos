@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { env } from "@/config/env";
+import { logger } from "@/config/logger";
 
 let client: Resend | null = null;
 
@@ -20,9 +21,9 @@ export async function sendVerificationCodeEmail(
 ): Promise<SendEmailResult> {
   const resend = getClient();
 
-  // Sin key configurada: fallback a console (nunca romper el flujo de registro).
+  // Sin key configurada: fallback a logger (nunca romper el flujo de registro).
   if (!resend) {
-    console.log(`[email] RESEND_API_KEY no configurada. Código de verificación para ${email}: ${code}`);
+    logger.info({ email, code }, "[email] RESEND_API_KEY no configurada. Código de verificación");
     return { ok: true };
   }
 
@@ -48,13 +49,13 @@ export async function sendVerificationCodeEmail(
     });
 
     if (error) {
-      console.error(`[email] Error enviando código a ${email}:`, error.message);
+      logger.error({ email, error: error.message }, "[email] Error enviando código");
       return { ok: false, error: error.message };
     }
 
     return { ok: true };
   } catch (err) {
-    console.error(`[email] Error enviando código a ${email}:`, err);
+    logger.error({ email, err }, "[email] Error enviando código");
     return { ok: false, error: err instanceof Error ? err.message : "Error inesperado" };
   }
 }

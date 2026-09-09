@@ -1,5 +1,6 @@
 import Redis from "ioredis"
 import { env } from "./env"
+import { logger } from "./logger"
 
 let redisClient: Redis | null = null
 
@@ -13,7 +14,7 @@ export const getRedisClient = () => {
       connectionName: "pos-system",
       retryStrategy: (times) => {
         if (times > 5) {
-          console.error("Redis max retries reached")
+          logger.error("Redis max retries reached")
           return null
         }
         return Math.min(times * 200, 2000)
@@ -21,36 +22,36 @@ export const getRedisClient = () => {
     })
 
     redisClient.connect().then(() => {
-      console.log("Redis connected successfully")
+      logger.info("Redis connected successfully")
     }).catch((error) => {
-      console.error("Redis connection failed:", error)
+      logger.error({ err: error }, "Redis connection failed")
     })
 
     let hasLoggedRedisError = false
 
     redisClient.on("ready", () => {
       hasLoggedRedisError = false
-      console.log("Redis ready")
+      logger.info("Redis ready")
     })
 
     redisClient.on("error", (error) => {
       if (!hasLoggedRedisError) {
-        console.error("Redis connection error:", error)
+        logger.error({ err: error }, "Redis connection error")
         hasLoggedRedisError = true
       }
     })
 
     redisClient.on("reconnecting", () => {
-      console.warn("Redis reconnecting...")
+      logger.warn("Redis reconnecting...")
     })
 
     redisClient.on("close", () => {
-      console.warn("Redis connection closed")
+      logger.warn("Redis connection closed")
     })
 
     return redisClient
   } catch (error) {
-    console.error("Redis unavailable, continuing without cache")
+    logger.error({ err: error }, "Redis unavailable, continuing without cache")
     return null
   }
 }
@@ -65,7 +66,7 @@ export const closeRedis = async () => {
     redisClient.disconnect()
   }
   redisClient = null
-  console.log("Redis disconnected")
+  logger.info("Redis disconnected")
 }
 
 export const redis = getRedisClient()

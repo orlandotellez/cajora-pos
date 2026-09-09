@@ -456,8 +456,6 @@ export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISs
       expiresAt: new Date(Date.now() + VERIFICATION_CODE_EXPIRY),
     })
 
-    console.log(`Password reset code for ${normalized}: ${resetCode}`)
-
     return {
       message: "If the email exists, a reset code has been sent",
       expires_at: new Date(Date.now() + VERIFICATION_CODE_EXPIRY),
