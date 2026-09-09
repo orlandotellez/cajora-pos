@@ -90,17 +90,18 @@ export const SupplierRepository: ISupplierRepository = {
   },
 
   async create(data: CreateSupplierData, storeId?: string) {
+    const createData: Prisma.supplierUncheckedCreateInput = {
+      store_id: storeId ?? "",
+      name: data.name,
+      contact_name: data.contact_name,
+      email: data.email,
+      phone: data.phone,
+      address: data.address,
+      notes: data.notes,
+      is_active: data.is_active ?? true,
+    }
     const supplier = await prisma.supplier.create({
-      data: {
-        ...(storeId && { store_id: storeId }),
-        name: data.name,
-        contact_name: data.contact_name,
-        email: data.email,
-        phone: data.phone,
-        address: data.address,
-        notes: data.notes,
-        is_active: data.is_active ?? true,
-      },
+      data: createData,
       select: supplierSelect,
     })
     return mapToEntity(supplier)

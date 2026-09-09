@@ -19,6 +19,7 @@ export const SUBSCRIPTION_EVENT_ACTIONS = {
   WEBHOOK_EXPIRED: "webhook_expired",
   WEBHOOK_SALE_COMPLETED: "webhook_sale_completed",
   WEBHOOK_PAYMENT_FAILED: "webhook_payment_failed",
+  ADMIN_STATUS_CHANGE: "admin_status_change",
 } as const
 export type SubscriptionEventAction =
   (typeof SUBSCRIPTION_EVENT_ACTIONS)[keyof typeof SUBSCRIPTION_EVENT_ACTIONS]

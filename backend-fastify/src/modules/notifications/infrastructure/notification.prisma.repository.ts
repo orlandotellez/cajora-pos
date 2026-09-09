@@ -1,4 +1,5 @@
 import { prisma } from "@/config/prisma"
+import { Prisma } from "@prisma/client"
 import type {
   ICreateNotificationInput,
   INotification,
@@ -38,7 +39,7 @@ export const NotificationRepository: INotificationRepository = {
         type: data.type,
         title: data.title,
         message: data.message,
-        metadata: data.metadata ?? undefined,
+        metadata: (data.metadata ?? Prisma.DbNull) as unknown as Prisma.InputJsonValue,
       },
     })
     return mapToEntity(row)

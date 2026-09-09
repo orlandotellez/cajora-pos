@@ -94,16 +94,17 @@ export const ClientRepository: IClientRepository = {
   },
 
   async create(data: CreateClientData, storeId?: string) {
+    const createData: Prisma.clientUncheckedCreateInput = {
+      store_id: storeId ?? "",
+      name: data.name,
+      phone: data.phone,
+      email: data.email,
+      address: data.address,
+      notes: data.notes,
+      is_active: data.is_active ?? true,
+    }
     const client = await prisma.client.create({
-      data: {
-        ...(storeId && { store_id: storeId }),
-        name: data.name,
-        phone: data.phone,
-        email: data.email,
-        address: data.address,
-        notes: data.notes,
-        is_active: data.is_active ?? true,
-      },
+      data: createData,
       select: clientSelect,
     })
     return mapToEntity(client)

@@ -8,7 +8,7 @@ export const createClientService = (repository: IClientRepository) => ({
   list: async (params?: { search?: string; is_active?: boolean; page?: number; limit?: number; storeId?: string }): Promise<IClientListResponse> => {
     const result = await repository.findAll(params)
     return {
-      clients: result.clients.map(mapClientToResponse),
+      clients: result.clients.map((c) => mapClientToResponse(c)),
       total: result.total,
       page: result.page,
       limit: result.limit,

@@ -6,7 +6,7 @@ import type { ImportProductRowDto } from "../presentation/products.dto"
 import { mapProductToResponse } from "./common/products.mappers"
 
 export const createProductService = (repository: IProductRepository) => ({
-  list: async (params?: { search?: string; category_id?: string; active?: boolean; lowStock?: boolean; outOfStock?: boolean; page?: number; limit?: number; storeId?: string }): Promise<IProductListResponse> => {
+  list: async (params?: { search?: string; category_id?: string; unitType?: string; active?: boolean; lowStock?: boolean; outOfStock?: boolean; page?: number; limit?: number; storeId?: string }): Promise<IProductListResponse> => {
     const result = await repository.findAll(params)
     return {
       products: result.products.map(mapProductToResponse),

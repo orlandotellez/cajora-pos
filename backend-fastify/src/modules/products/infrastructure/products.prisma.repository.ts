@@ -93,7 +93,7 @@ export const ProductRepository: IProductRepository = {
     }
 
     if (params?.unitType) {
-      where.unit_type = params.unitType
+      where.unit_type = params.unitType as UNIT_TYPE
     }
 
     const page = params?.page || 1

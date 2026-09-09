@@ -57,8 +57,8 @@ async function migrate() {
     { name: "products", model: prisma.product },
     { name: "services", model: prisma.service },
     { name: "sales", model: prisma.sale },
-    { name: "inventory_batches", model: prisma.inventoryBatch },
-    { name: "inventory_movements", model: prisma.inventoryMovement },
+    { name: "inventory_batches", model: prisma.inventory_batch },
+    { name: "inventory_movements", model: prisma.inventory_movement },
   ]
 
   for (const { name, model } of tables) {

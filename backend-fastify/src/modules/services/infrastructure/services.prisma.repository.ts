@@ -100,24 +100,25 @@ export const ServiceRepository: IServiceRepository = {
   },
 
   async create(data: CreateServiceData, storeId?: string) {
+    const createData: Prisma.serviceUncheckedCreateInput = {
+      store_id: storeId ?? "",
+      name: data.name,
+      description: data.description,
+      base_price: data.base_price,
+      is_active: data.is_active ?? true,
+      ...(data.products && data.products.length > 0
+        ? {
+            service_products: {
+              create: data.products.map((p) => ({
+                product_id: p.product_id,
+                quantity: p.quantity,
+              })),
+            },
+          }
+        : {}),
+    }
     const service = await prisma.service.create({
-      data: {
-        ...(storeId && { store_id: storeId }),
-        name: data.name,
-        description: data.description,
-        base_price: data.base_price,
-        is_active: data.is_active ?? true,
-        ...(data.products && data.products.length > 0
-          ? {
-              service_products: {
-                create: data.products.map((p) => ({
-                  product_id: p.product_id,
-                  quantity: p.quantity,
-                })),
-              },
-            }
-          : {}),
-      },
+      data: createData,
       select: serviceSelect,
     })
     return mapToEntity(service)
