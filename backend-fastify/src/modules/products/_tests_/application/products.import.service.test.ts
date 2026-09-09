@@ -1,9 +1,9 @@
 import { describe, it } from "node:test"
 import assert from "node:assert/strict"
-import { createProductService } from "./products.service"
-import type { IProductRepository } from "../domain/products.interface"
-import type { CreateProductData } from "../domain/products.entities"
-import type { ImportProductRowDto } from "../presentation/products.dto"
+import { createProductService } from "../../application/products.service"
+import type { IProductRepository } from "../../domain/products.interface"
+import type { CreateProductData } from "../../domain/products.entities"
+import type { ImportProductRowDto } from "../../presentation/products.dto"
 
 interface FakeState {
   existingBarcodes: string[]
@@ -136,7 +136,6 @@ describe("createProductService.importMany", () => {
       state.cats.map((c) => c.name).sort(),
       ["Bebidas", "Snacks"],
     )
-    // "Snacks" se crea automáticamente (id asignado por el fake), "Bebidas" reusa el existente
     const coca = state.createdMany.find((c) => c.name === "Coca")
     assert.equal(coca?.category_id, "cat-1")
     const pepsi = state.createdMany.find((c) => c.name === "Pepsi")
@@ -156,7 +155,6 @@ describe("createProductService.importMany", () => {
 
     assert.equal(res.imported, 2)
     assert.deepEqual(res.errors, [])
-    // "Proveedor Nuevo" se crea automáticamente, "Distribuidora Uno" reusa el existente
     assert.deepEqual(
       state.suppliers.map((s) => s.name).sort(),
       ["Distribuidora Uno", "Proveedor Nuevo"],
@@ -199,7 +197,7 @@ describe("createProductService.importMany", () => {
 })
 
 describe("ImportProductRowSchema (validación de fila)", async () => {
-  const { ImportProductRowSchema } = await import("../presentation/products.dto")
+  const { ImportProductRowSchema } = await import("../../presentation/products.dto")
 
   it("acepta venta suelta sin unit_quantity", () => {
     const r = ImportProductRowSchema.safeParse({ name: "Galleta", unit_type: "unidad", price: 5 })
