@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify"
 import type { Role } from "@/types/auth"
 import { UnauthorizedError, ForbiddenError } from "@/core/errors/AppError"
-import { getUserIdFromCookies, getUserIdFromBearerToken } from "./auth.utils"
+import { getAuthResultFromRequest } from "./auth.utils"
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -16,10 +16,7 @@ export const authGuard = async (
   request: FastifyRequest,
   _reply: FastifyReply
 ) => {
-  const fromCookies = getUserIdFromCookies(request)
-  const fromBearer = getUserIdFromBearerToken(request)
-
-  const { userId, role, storeId, storeName } = fromCookies.userId ? fromCookies : fromBearer
+  const { userId, role, storeId, storeName } = getAuthResultFromRequest(request)
 
   if (!userId) {
     throw new UnauthorizedError("Authentication required")

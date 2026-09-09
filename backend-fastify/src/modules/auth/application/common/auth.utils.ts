@@ -11,6 +11,30 @@ interface AuthResult {
   storeName: string | null
 }
 
+/**
+ * Resuelve el auth result de una request priorizando cookie o Bearer.
+ *
+ * `prefer` define qué dato decide la precedencia:
+ * - "userId" (default): si la cookie trae userId, gana la cookie. Útil para
+ *   auth (login web con cookie de sesión).
+ * - "storeId": la cookie solo gana si trae storeId; si la cookie es
+ *   refresh-only (sin storeId), se cae al Bearer. Necesario en guards de
+ *   licencia/tienda: el accesoToken por Bearer siempre lleva storeId, y
+ *   preferir la cookie refresh sin storeId reabriría el bypass de licencia.
+ */
+export const getAuthResultFromRequest = (
+  request: FastifyRequest,
+  opts?: { prefer?: "userId" | "storeId" },
+): AuthResult => {
+  const fromCookies = getUserIdFromCookies(request)
+  const fromBearer = getUserIdFromBearerToken(request)
+
+  if ((opts?.prefer ?? "userId") === "storeId") {
+    return fromCookies.storeId ? fromCookies : fromBearer
+  }
+  return fromCookies.userId ? fromCookies : fromBearer
+}
+
 export const getUserIdFromCookies = (request: FastifyRequest): AuthResult => {
   const token = request.cookies.accessToken || request.cookies.refreshToken
   if (!token) return { userId: null, role: null, storeId: null, storeName: null }

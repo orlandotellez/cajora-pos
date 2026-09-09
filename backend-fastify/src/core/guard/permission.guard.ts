@@ -1,43 +1,49 @@
 import type { FastifyReply, FastifyRequest } from "fastify"
-import { prisma } from "@/config/prisma"
 import { ForbiddenError } from "@/core/errors/AppError"
+import type { IUserRepository } from "@/modules/users/domain/users.interface"
 
 /**
- * permissionGuard - Factory that returns a preHandler middleware.
+ * createPermissionGuard - Factory que devuelve un guard factory de permisos.
+ *
+ * La factory recibe el repositorio de usuarios; el guard resultante se
+ * construye con los permisos requeridos y se usa como preHandler.
  *
  * Checks if the authenticated user has at least one of the required permissions.
  * Must run AFTER authGuard (which sets request.userId).
  *
- * @param requiredPermissions - One or more permission strings. The user needs at least one.
+ * @param deps.userRepo - Repositorio con findById (SELECT permissions del usuario).
  */
-export function permissionGuard(...requiredPermissions: string[]) {
-  return async (request: FastifyRequest, _reply: FastifyReply) => {
-    // Admins always have all permissions
-    if (request.userRole === "admin" || request.userRole === "super_admin") {
-      return
-    }
+export function createPermissionGuard(deps: {
+  userRepo: Pick<IUserRepository, "findById">
+}) {
+  const { userRepo } = deps
 
-    const userId = request.userId
-    if (!userId) {
-      throw new ForbiddenError("User not authenticated")
-    }
+  return function permissionGuard(...requiredPermissions: string[]) {
+    return async (request: FastifyRequest, _reply: FastifyReply) => {
+      // Admins always have all permissions
+      if (request.userRole === "admin" || request.userRole === "super_admin") {
+        return
+      }
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { permissions: true },
-    })
+      const userId = request.userId
+      if (!userId) {
+        throw new ForbiddenError("User not authenticated")
+      }
 
-    const userPermissions: string[] =
-      user?.permissions && Array.isArray(user.permissions)
-        ? (user.permissions as string[])
-        : []
+      const user = await userRepo.findById(userId)
 
-    const hasPermission = requiredPermissions.some((p) => userPermissions.includes(p))
+      const userPermissions: string[] =
+        user?.permissions && Array.isArray(user.permissions)
+          ? (user.permissions as string[])
+          : []
 
-    if (!hasPermission) {
-      throw new ForbiddenError(
-        `Se requiere uno de los siguientes permisos: ${requiredPermissions.join(", ")}`,
-      )
+      const hasPermission = requiredPermissions.some((p) => userPermissions.includes(p))
+
+      if (!hasPermission) {
+        throw new ForbiddenError(
+          `Se requiere uno de los siguientes permisos: ${requiredPermissions.join(", ")}`,
+        )
+      }
     }
   }
 }

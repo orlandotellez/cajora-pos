@@ -2,13 +2,13 @@ import type { FastifyInstance, FastifyPluginOptions } from "fastify"
 import { productsController } from "./products.controller"
 import { authGuard } from "@/modules/auth/application/common/auth.guard"
 import { storeGuard } from "@/core/guard/store.guard"
-import { permissionGuard } from "@/core/guard/permission.guard"
 import { toJsonSchema } from "@/http/swagger-schema"
 import { CreateProductDtoSchema, UpdateProductDtoSchema, ProductQuerySchema, ImportProductsDtoSchema, BulkDeleteProductsDtoSchema, DeleteAllProductsQuerySchema } from "./products.dto"
 
 const TAGS = ["Products"]
 
 export const productsRoutes = async (fastify: FastifyInstance, _opts: FastifyPluginOptions) => {
+  const permissionGuard = fastify.permissionGuard
   fastify.get("/", {
     schema: { tags: TAGS, querystring: toJsonSchema(ProductQuerySchema) },
     preHandler: [authGuard, storeGuard],

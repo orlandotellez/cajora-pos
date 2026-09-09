@@ -18,16 +18,14 @@ import { printersRoutes } from "@/modules/printers/presentation/printers.router"
 import { subscriptionRoutes } from "@/modules/subscriptions/presentation/subscription.routes";
 import { webhookRoutes } from "@/modules/subscriptions/presentation/webhook.routes";
 import { notificationRoutes } from "@/modules/notifications/presentation/notification.routes";
-import { licenseGuard } from "@/core/guard/license.guard";
-import { activeUserGuard } from "@/core/guard/active-user.guard";
 
 export const routes = async (fastify: FastifyInstance, _opts: FastifyPluginOptions) => {
   fastify.register(eventsRoutes, { prefix: "" })
   fastify.register(authRoutes, { prefix: "/auth" })
 
   fastify.register(async (business) => {
-    business.addHook("preHandler", licenseGuard)
-    business.addHook("preHandler", activeUserGuard)
+    business.addHook("preHandler", fastify.licenseGuard)
+    business.addHook("preHandler", fastify.activeUserGuard)
     business.register(productsRoutes, { prefix: "/products" })
     business.register(categoriesRoutes, { prefix: "/categories" })
     business.register(servicesRoutes, { prefix: "/services" })

@@ -15,6 +15,11 @@ import { swaggerOptions, swaggerUiOptions } from "./config/swagger"
 import { routes } from "./http/routes"
 import { reconciliationSchedulerPlugin } from "./modules/subscriptions/infrastructure/reconciliation.scheduler"
 import { getUserIdFromBearerToken, getUserIdFromCookies } from "./modules/auth/application/common/auth.utils"
+import { createLicenseGuard } from "./core/guard/license.guard"
+import { createActiveUserGuard } from "./core/guard/active-user.guard"
+import { createPermissionGuard } from "./core/guard/permission.guard"
+import { SubscriptionRepository } from "./modules/subscriptions/infrastructure/subscription.prisma.repository"
+import { UserRepository } from "./modules/users/infrastructure/users.prisma.repository"
 
 export const buildApp = async () => {
   const app = Fastify({ loggerInstance: logger, trustProxy: true })
@@ -48,6 +53,11 @@ export const buildApp = async () => {
   }
   // ─── Global error handler ───
   app.setErrorHandler(errorHandler)
+
+  // ─── Guards (composition root: instancias construidas con repos reales) ───
+  app.decorate("licenseGuard", createLicenseGuard({ subscriptionRepo: SubscriptionRepository }))
+  app.decorate("activeUserGuard", createActiveUserGuard({ userRepo: UserRepository }))
+  app.decorate("permissionGuard", createPermissionGuard({ userRepo: UserRepository }))
 
   app.register(routes, { prefix: '/api/v1' });
 

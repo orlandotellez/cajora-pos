@@ -2,13 +2,13 @@ import type { FastifyInstance, FastifyPluginOptions } from "fastify"
 import { servicesController } from "./services.controller"
 import { authGuard } from "@/modules/auth/application/common/auth.guard"
 import { storeGuard } from "@/core/guard/store.guard"
-import { permissionGuard } from "@/core/guard/permission.guard"
 import { toJsonSchema } from "@/http/swagger-schema"
 import { CreateServiceDtoSchema, UpdateServiceDtoSchema, ServiceQuerySchema, BulkDeleteServicesDtoSchema } from "./services.dto"
 
 const TAGS = ["Services"]
 
 export const servicesRoutes = async (fastify: FastifyInstance, _opts: FastifyPluginOptions) => {
+  const permissionGuard = fastify.permissionGuard
   fastify.get("/", {
     schema: { tags: TAGS, querystring: toJsonSchema(ServiceQuerySchema) },
     preHandler: [authGuard, storeGuard],
