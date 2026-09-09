@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyPluginOptions } from "fastify"
 import { usersController } from "./users.controller"
-import { authGuard, adminGuard } from "@/core/guard/auth.guard"
+import { authGuard, adminGuard } from "@/modules/auth/application/common/auth.guard"
 import { storeGuard } from "@/core/guard/store.guard"
 import { toJsonSchema } from "@/http/swagger-schema"
 import { CreateUserDtoSchema, UpdateUserDtoSchema, ToggleActiveDtoSchema, UserQuerySchema, BulkDeleteUsersDtoSchema } from "./users.dto"

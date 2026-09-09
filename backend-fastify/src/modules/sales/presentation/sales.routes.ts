@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyPluginOptions } from "fastify"
 import { salesController } from "./sales.controller"
-import { authGuard } from "@/core/guard/auth.guard"
+import { authGuard } from "@/modules/auth/application/common/auth.guard"
 import { storeGuard } from "@/core/guard/store.guard"
 import { toJsonSchema } from "@/http/swagger-schema"
 import { CreateSaleDtoSchema, SaleQuerySchema, ReportQuerySchema, RevenueTrendQuerySchema, RevenueByHourQuerySchema, RevenueByCategoryQuerySchema, ProductPerformanceQuerySchema } from "./sales.dto"

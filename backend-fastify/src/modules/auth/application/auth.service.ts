@@ -1,6 +1,6 @@
 import { ConflictError, NotFoundError, UnauthorizedError, PaymentRequiredError, InternalServerError } from "@/core/errors/AppError"
-import { comparePassword, hashPassword, generateVerificationCode } from "@/core/utils/crypto.utils"
-import { generateTokens, verifyToken } from "@/core/utils/token.utils"
+import { comparePassword, hashPassword, generateVerificationCode } from "@/modules/auth/application/common/crypto.utils"
+import { generateTokens, verifyToken } from "@/modules/auth/application/common/token.utils"
 import { sendVerificationCodeEmail } from "../infrastructure/email-sender"
 import { prisma } from "@/config/prisma"
 import type { IAuthRepository } from "../domain/auth.interface"

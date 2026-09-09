@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify"
 import { env } from "@/config/env"
 import { PaymentRequiredError } from "@/core/errors/AppError"
-import { getUserIdFromCookies, getUserIdFromBearerToken } from "../utils/auth.utils"
+import { getUserIdFromCookies, getUserIdFromBearerToken } from "@/modules/auth/application/common/auth.utils"
 import { SubscriptionRepository } from "@/modules/subscriptions/infrastructure/subscription.prisma.repository"
 
 const GRACE_DAYS = 3

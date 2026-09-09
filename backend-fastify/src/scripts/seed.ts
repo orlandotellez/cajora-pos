@@ -1,5 +1,5 @@
 import { prisma } from "@/config/prisma.js"
-import { hashPassword } from "@/core/utils/crypto.utils"
+import { hashPassword } from "@/modules/auth/application/common/crypto.utils"
 
 type CategoryMap = Record<string, string>
 type SupplierMap = Record<string, string>

@@ -14,7 +14,7 @@ import { corsOptions } from "./config/cors"
 import { swaggerOptions, swaggerUiOptions } from "./config/swagger"
 import { routes } from "./http/routes"
 import { reconciliationSchedulerPlugin } from "./modules/subscriptions/infrastructure/reconciliation.scheduler"
-import { getUserIdFromBearerToken, getUserIdFromCookies } from "./core/utils/auth.utils"
+import { getUserIdFromBearerToken, getUserIdFromCookies } from "./modules/auth/application/common/auth.utils"
 
 export const buildApp = async () => {
   const app = Fastify({ loggerInstance: logger, trustProxy: true })

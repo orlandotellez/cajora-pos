@@ -13,9 +13,9 @@ import {
   SsoExchangeDtoSchema
 } from "./auth.dto"
 import { env } from "@/config/env"
-import { clearAuthCookies, setAuthCookies } from "@/core/utils/cookie.utils"
+import { clearAuthCookies, setAuthCookies } from "@/modules/auth/application/common/cookie.utils"
 import { ConflictError, UnauthorizedError } from "@/core/errors/AppError"
-import { resolveCurrentUserId } from "@/core/utils/auth.utils"
+import { resolveCurrentUserId } from "@/modules/auth/application/common/auth.utils"
 import { redisSsoCodeStore } from "../infrastructure/sso-code.store"
 
 const authService = createAuthService(AuthRepository, redisSsoCodeStore)

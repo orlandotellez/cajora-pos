@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyPluginOptions } from "fastify"
 import { printersController } from "./printers.controller"
-import { authGuard } from "@/core/guard/auth.guard"
+import { authGuard } from "@/modules/auth/application/common/auth.guard"
 import { storeGuard } from "@/core/guard/store.guard"
 import { toJsonSchema } from "@/http/swagger-schema"
 import {

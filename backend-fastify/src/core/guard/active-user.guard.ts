@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify"
 import { PaymentRequiredError } from "@/core/errors/AppError"
-import { getUserIdFromCookies, getUserIdFromBearerToken } from "../utils/auth.utils"
+import { getUserIdFromCookies, getUserIdFromBearerToken } from "@/modules/auth/application/common/auth.utils"
 import { prisma } from "@/config/prisma"
 
 /**

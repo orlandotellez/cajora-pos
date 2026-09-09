@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify"
-import { authGuard } from "@/core/guard/auth.guard"
+import { authGuard } from "@/modules/auth/application/common/auth.guard"
 import { storeGuard } from "@/core/guard/store.guard"
 import { createCreditService } from "../application/credit.service"
 import { CreditRepository } from "../infrastructure/credit.prisma.repository"

@@ -14,11 +14,11 @@ interface TokenPayload {
 
 export const generateTokens = (userId: string, email: string, role: Role, storeId: string | null, storeName: string | null) => {
   const accessTokenOptions: SignOptions = {
-    expiresIn: 900  // 15 minutos en segundos
+    expiresIn: 900
   }
 
   const refreshTokenOptions: SignOptions = {
-    expiresIn: 604000  // 7 días en segundos
+    expiresIn: 604000
   }
 
   const accessToken = jwt.sign(

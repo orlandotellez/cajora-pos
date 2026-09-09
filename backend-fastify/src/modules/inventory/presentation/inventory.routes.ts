@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyPluginOptions } from "fastify"
 import { inventoryController } from "./inventory.controller"
-import { authGuard } from "@/core/guard/auth.guard"
+import { authGuard } from "@/modules/auth/application/common/auth.guard"
 import { storeGuard } from "@/core/guard/store.guard"
 import { toJsonSchema } from "@/http/swagger-schema"
 import { CreateMovementDtoSchema, MovementQuerySchema } from "./inventory.dto"

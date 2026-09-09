@@ -62,10 +62,8 @@ export const resolveCurrentUserId = async (
   reply: FastifyReply
 ): Promise<string | null> => {
   try {
-    // If authGuard already resolved the user, use it
     if (request.userId) return request.userId
 
-    // Otherwise check cookies first, then Bearer header
     const fromCookies = getUserIdFromCookies(request)
     if (fromCookies.userId) return fromCookies.userId
 

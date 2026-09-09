@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyPluginOptions } from "fastify"
 import { superAdminController } from "./super-admin.controller"
-import { authGuard, superAdminGuard } from "@/core/guard/auth.guard"
+import { authGuard, superAdminGuard } from "@/modules/auth/application/common/auth.guard"
 
 const TAGS = ["Super Admin"]
 

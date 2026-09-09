@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify"
 import type { Role } from "@/types/auth"
 import { UnauthorizedError, ForbiddenError } from "@/core/errors/AppError"
-import { getUserIdFromCookies, getUserIdFromBearerToken } from "../utils/auth.utils"
+import { getUserIdFromCookies, getUserIdFromBearerToken } from "./auth.utils"
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -40,13 +40,6 @@ export const adminGuard = async (
   }
 }
 
-/**
- * superAdminGuard middleware
- *
- * Restringe rutas globales (cross-tenant) al rol super_admin.
- * Debe correr DESPUÉS de authGuard. NO usa storeGuard: estas
- * rutas agregan datos de TODAS las tiendas.
- */
 export const superAdminGuard = async (
   request: FastifyRequest,
   _reply: FastifyReply

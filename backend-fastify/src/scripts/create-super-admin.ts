@@ -14,7 +14,7 @@
  */
 import "dotenv/config"
 import { prisma } from "@/config/prisma"
-import { hashPassword } from "@/core/utils/crypto.utils"
+import { hashPassword } from "@/modules/auth/application/common/crypto.utils"
 
 function parseArgs(argv: string[]): Record<string, string> {
   const args: Record<string, string> = {}

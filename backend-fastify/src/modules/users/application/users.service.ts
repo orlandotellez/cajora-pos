@@ -1,5 +1,5 @@
 import { NotFoundError, ConflictError } from "@/core/errors/AppError"
-import { hashPassword } from "@/core/utils/crypto.utils"
+import { hashPassword } from "@/modules/auth/application/common/crypto.utils"
 import type { IUserRepository } from "../domain/users.interface"
 import type { IUserResponse, IUserListResponse } from "../domain/users.types"
 import type { CreateUserData, UpdateUserData } from "../domain/users.entities"

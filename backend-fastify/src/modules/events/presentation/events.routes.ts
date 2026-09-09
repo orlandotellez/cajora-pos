@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyPluginOptions } from "fastify"
 import { eventsController } from "./events.controller"
-import { authGuard } from "@/core/guard/auth.guard"
+import { authGuard } from "@/modules/auth/application/common/auth.guard"
 
 const TAGS = ["Realtime"]
 

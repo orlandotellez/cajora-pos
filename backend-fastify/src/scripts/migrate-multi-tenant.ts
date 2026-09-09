@@ -1,5 +1,5 @@
 import { prisma } from "@/config/prisma.js"
-import { hashPassword } from "@/core/utils/crypto.utils"
+import { hashPassword } from "@/modules/auth/application/common/crypto.utils"
 
 /**
  * Migration script: Single-tenant → Multi-tenant
