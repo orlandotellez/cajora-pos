@@ -1,12 +1,11 @@
 import type { FastifyReply, FastifyRequest } from "fastify"
 import { createBatchInventoryService } from "../application/batch-inventory.service"
-import { BatchInventoryRepository } from "../infrastructure/batch-inventory.prisma.repository"
 import { ProductRepository } from "../../products/infrastructure/products.prisma.repository"
 import { CreateBatchDtoSchema, BatchQuerySchema } from "./batch-inventory.dto"
 import { UnauthorizedError } from "@/core/errors/AppError"
 import { sseBroadcast } from "@/config/sse"
 
-const batchInventoryService = createBatchInventoryService(BatchInventoryRepository, ProductRepository)
+const batchInventoryService = createBatchInventoryService(ProductRepository)
 
 export const batchInventoryController = {
   create: async (request: FastifyRequest, reply: FastifyReply) => {

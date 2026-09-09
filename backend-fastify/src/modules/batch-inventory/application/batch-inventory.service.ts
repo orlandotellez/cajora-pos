@@ -1,14 +1,12 @@
 import { prisma } from "@/config/prisma"
 import { NotFoundError, BadRequestError, ConflictError } from "@/core/errors/AppError"
-import type { IBatchInventoryRepository } from "../domain/batch-inventory.interface"
 import type { IProductRepository } from "../../products/domain/products.interface"
 import type { IBatchResponse, IBatchListResponse } from "../domain/batch-inventory.types"
 import type { CreateBatchData } from "../domain/batch-inventory.entities"
 import { mapBatchToResponse, type RichBatch } from "./common/batch-inventory.mappers"
 
 export const createBatchInventoryService = (
-  batchInventoryRepository: IBatchInventoryRepository,
-  productRepository: IProductRepository
+  productRepository: Pick<IProductRepository, "findById">
 ) => ({
   create: async (data: CreateBatchData): Promise<IBatchResponse> => {
     const products = await Promise.all(

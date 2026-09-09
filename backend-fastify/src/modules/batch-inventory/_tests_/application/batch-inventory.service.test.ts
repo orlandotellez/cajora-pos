@@ -1,7 +1,6 @@
 import { describe, it, beforeEach, afterEach, mock } from "bun:test"
 import assert from "node:assert/strict"
 import { NotFoundError, BadRequestError, ConflictError } from "@/core/errors/AppError"
-import type { IBatchInventoryRepository } from "../../domain/batch-inventory.interface"
 import type { IProductRepository } from "../../../products/domain/products.interface"
 
 function fakeDecimal(n: number) {
@@ -61,29 +60,6 @@ function makeProductRepo(overrides: Partial<IProductRepository> = {}): IProductR
     },
     async updateStock(id, quantity, storeId) {
       return makeProduct({ id, stock: quantity })
-    },
-    ...overrides,
-  }
-}
-
-function makeBatchRepo(overrides: Partial<IBatchInventoryRepository> = {}): IBatchInventoryRepository {
-  return {
-    async create(data) {
-      return {
-        id: "batch-1",
-        movement_type: data.movement_type,
-        supplier_id: data.supplier_id ?? null,
-        notes: data.notes ?? null,
-        user_id: data.user_id,
-        store_id: data.store_id,
-        created_at: new Date("2026-09-01T10:00:00Z"),
-      }
-    },
-    async findById(id, storeId) {
-      return null
-    },
-    async findAll(params) {
-      return { batches: [], total: 0, page: params?.page || 1, limit: params?.limit || 50 }
     },
     ...overrides,
   }
@@ -224,7 +200,7 @@ describe("batch-inventory service", () => {
         },
       } as any)
 
-      const service = createBatchInventoryService(makeBatchRepo(), productRepo)
+      const service = createBatchInventoryService(productRepo)
       const data: any = {
         movement_type: "entrada",
         user_id: "user-1",
@@ -245,7 +221,7 @@ describe("batch-inventory service", () => {
         },
       } as any)
 
-      const service = createBatchInventoryService(makeBatchRepo(), productRepo)
+      const service = createBatchInventoryService(productRepo)
       const data: any = {
         movement_type: "entrada",
         user_id: "user-1",
@@ -267,7 +243,7 @@ describe("batch-inventory service", () => {
         },
       } as any)
 
-      const service = createBatchInventoryService(makeBatchRepo(), productRepo)
+      const service = createBatchInventoryService(productRepo)
       const data: any = {
         movement_type: "entrada",
         user_id: "user-1",
@@ -292,7 +268,7 @@ describe("batch-inventory service", () => {
         },
       } as any)
 
-      const service = createBatchInventoryService(makeBatchRepo(), productRepo)
+      const service = createBatchInventoryService(productRepo)
       const data: any = {
         movement_type: "entrada",
         supplier_id: "supplier-1",
@@ -342,7 +318,7 @@ describe("batch-inventory service", () => {
         },
       } as any)
 
-      const service = createBatchInventoryService(makeBatchRepo(), productRepo)
+      const service = createBatchInventoryService(productRepo)
       const data: any = {
         movement_type: "salida",
         user_id: "user-1",
@@ -363,7 +339,7 @@ describe("batch-inventory service", () => {
         },
       } as any)
 
-      const service = createBatchInventoryService(makeBatchRepo(), productRepo)
+      const service = createBatchInventoryService(productRepo)
       const data: any = {
         movement_type: "salida",
         user_id: "user-1",
@@ -386,7 +362,7 @@ describe("batch-inventory service", () => {
         },
       } as any)
 
-      const service = createBatchInventoryService(makeBatchRepo(), productRepo)
+      const service = createBatchInventoryService(productRepo)
       const data: any = {
         movement_type: "salida",
         user_id: "user-1",
@@ -408,7 +384,7 @@ describe("batch-inventory service", () => {
         },
       } as any)
 
-      const service = createBatchInventoryService(makeBatchRepo(), productRepo)
+      const service = createBatchInventoryService(productRepo)
       const data: any = {
         movement_type: "entrada",
         user_id: "user-1",
@@ -433,7 +409,7 @@ describe("batch-inventory service", () => {
         },
       } as any)
 
-      const service = createBatchInventoryService(makeBatchRepo(), productRepo)
+      const service = createBatchInventoryService(productRepo)
       const data: any = {
         movement_type: "entrada",
         user_id: "user-1",
@@ -458,7 +434,7 @@ describe("batch-inventory service", () => {
         },
       } as any)
 
-      const service = createBatchInventoryService(makeBatchRepo(), productRepo)
+      const service = createBatchInventoryService(productRepo)
       const data: any = {
         movement_type: "entrada",
         user_id: "user-1",
@@ -482,7 +458,7 @@ describe("batch-inventory service", () => {
         },
       } as any)
 
-      const service = createBatchInventoryService(makeBatchRepo(), productRepo)
+      const service = createBatchInventoryService(productRepo)
       const data: any = {
         movement_type: "entrada",
         user_id: "user-1",
@@ -515,7 +491,7 @@ describe("batch-inventory service", () => {
         },
       } as any)
 
-      const service = createBatchInventoryService(makeBatchRepo(), productRepo)
+      const service = createBatchInventoryService(productRepo)
       const data: any = {
         movement_type: "entrada",
         user_id: "user-1",
@@ -539,7 +515,7 @@ describe("batch-inventory service", () => {
         },
       } as any)
 
-      const service = createBatchInventoryService(makeBatchRepo(), productRepo)
+      const service = createBatchInventoryService(productRepo)
       const data: any = {
         movement_type: "entrada",
         user_id: "user-1",
@@ -564,7 +540,7 @@ describe("batch-inventory service", () => {
         },
       } as any)
 
-      const service = createBatchInventoryService(makeBatchRepo(), productRepo)
+      const service = createBatchInventoryService(productRepo)
       const data: any = {
         movement_type: "entrada",
         user_id: "user-1",
@@ -590,7 +566,7 @@ describe("batch-inventory service", () => {
         },
       } as any)
 
-      const service = createBatchInventoryService(makeBatchRepo(), productRepo)
+      const service = createBatchInventoryService(productRepo)
       const data: any = {
         movement_type: "entrada",
         notes: "  compra urgente  ",
@@ -613,7 +589,7 @@ describe("batch-inventory service", () => {
         return makeRichBatch()
       }
 
-      const service = createBatchInventoryService(makeBatchRepo(), makeProductRepo())
+      const service = createBatchInventoryService(makeProductRepo())
       const result = await service.getById("batch-1", "store-1")
 
       assert.equal(result.id, "batch-1")
@@ -628,7 +604,7 @@ describe("batch-inventory service", () => {
     })
 
     it("throws NotFound when no batch matches", async () => {
-      const service = createBatchInventoryService(makeBatchRepo(), makeProductRepo())
+      const service = createBatchInventoryService(makeProductRepo())
 
       await assert.rejects(
         () => service.getById("missing", "store-1"),
@@ -648,7 +624,7 @@ describe("batch-inventory service", () => {
         return 3
       }
 
-      const service = createBatchInventoryService(makeBatchRepo(), makeProductRepo())
+      const service = createBatchInventoryService(makeProductRepo())
       const result = await service.list()
 
       assert.equal(result.total, 3)
@@ -673,7 +649,7 @@ describe("batch-inventory service", () => {
         return 7
       }
 
-      const service = createBatchInventoryService(makeBatchRepo(), makeProductRepo())
+      const service = createBatchInventoryService(makeProductRepo())
       const result = await service.list({
         movement_type: "entrada",
         supplier_id: "supplier-1",
