@@ -1,7 +1,7 @@
 import { describe, it, beforeEach, afterEach, mock } from "node:test"
 import assert from "node:assert/strict"
 import { env } from "@/config/env"
-import { verifyPayPalWebhook, isTrustedCertUrl } from "./paypal.webhook-verifier"
+import { verifyPayPalWebhook, isTrustedCertUrl } from "../../infrastructure/paypal.webhook-verifier"
 
 const WEBHOOK_ID = "test-webhook-id-123"
 const BODY = JSON.stringify({ id: "evt-1", event_type: "BILLING.SUBSCRIPTION.ACTIVATED" })
@@ -132,6 +132,48 @@ describe("verifyPayPalWebhook (verificación vía API de PayPal)", () => {
     assert.equal(payload.auth_algo, "SHA256withRSA")
     assert.deepEqual(payload.webhook_event, { id: "evt-1", event_type: "BILLING.SUBSCRIPTION.ACTIVATED" })
   })
+
+  it("falta un header de firma → false sin contactar a PayPal", async () => {
+    mock.property(env, "PAYPAL_WEBHOOK_ID", WEBHOOK_ID)
+    const { fetchMock } = mockPayPalApi("SUCCESS")
+    const headers = { ...validHeaders() }
+    delete headers["paypal-transmission-sig"]
+    assert.equal(await verifyPayPalWebhook(headers, BODY), false)
+    assert.equal(fetchMock.mock.callCount(), 0)
+  })
+
+  it("PayPal responde 200 con cuerpo no JSON → false", async () => {
+    mock.property(env, "PAYPAL_WEBHOOK_ID", WEBHOOK_ID)
+    mock.method(globalThis, "fetch", async (input: string | URL) => {
+      const url = String(input)
+      if (url.includes("/v1/oauth2/token")) {
+        return new Response(JSON.stringify({ access_token: "test-token", expires_in: 3600 }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        })
+      }
+      return new Response("no-json", { status: 200, headers: { "content-type": "application/json" } })
+    })
+    assert.equal(await verifyPayPalWebhook(validHeaders(), BODY), false)
+  })
+
+  it("respuesta sin verification_status → false", async () => {
+    mock.property(env, "PAYPAL_WEBHOOK_ID", WEBHOOK_ID)
+    mock.method(globalThis, "fetch", async (input: string | URL) => {
+      const url = String(input)
+      if (url.includes("/v1/oauth2/token")) {
+        return new Response(JSON.stringify({ access_token: "test-token", expires_in: 3600 }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        })
+      }
+      return new Response(JSON.stringify({ status: "weird" }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      })
+    })
+    assert.equal(await verifyPayPalWebhook(validHeaders(), BODY), false)
+  })
 })
 
 describe("isTrustedCertUrl", () => {
@@ -144,5 +186,13 @@ describe("isTrustedCertUrl", () => {
     assert.equal(isTrustedCertUrl("http://api.sandbox.paypal.com/cert"), false)
     assert.equal(isTrustedCertUrl("not-a-url"), false)
     assert.equal(isTrustedCertUrl(undefined), false)
+    assert.equal(isTrustedCertUrl("https://api.sandbox.paypal.com.evil.example/cert.pem"), false)
+    assert.equal(isTrustedCertUrl("https://evil.example/api.sandbox.paypal.com/cert.pem"), false)
+  })
+
+  it("acepta api-m.sandbox, api.paypal.com y puertos en hosts confiables", () => {
+    assert.equal(isTrustedCertUrl("https://api-m.sandbox.paypal.com/v1/notifications/certs/CERT-3"), true)
+    assert.equal(isTrustedCertUrl("https://api.paypal.com/certs/CERT-4"), true)
+    assert.equal(isTrustedCertUrl("https://api.sandbox.paypal.com:8443/certs/CERT-5"), true)
   })
 })

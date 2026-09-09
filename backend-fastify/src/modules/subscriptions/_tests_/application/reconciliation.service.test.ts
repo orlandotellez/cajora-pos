@@ -1,12 +1,12 @@
 import { describe, it, beforeEach, afterEach, mock } from "node:test"
 import assert from "node:assert/strict"
-import { createReconciliationService } from "./reconciliation.service"
-import { paypalClient } from "../infrastructure/paypal.client"
+import { createReconciliationService } from "../../application/reconciliation.service"
+import { paypalClient } from "../../infrastructure/paypal.client"
 import { env } from "@/config/env"
 import { AppError } from "@/core/errors/AppError"
-import type { ISubscriptionRepository } from "../domain/subscription.interface"
-import type { ISubscriptionEntity } from "../domain/subscription.entities"
-import type { NewSubscriptionEvent } from "../domain/subscription-event.interface"
+import type { ISubscriptionRepository } from "../../domain/subscription.interface"
+import type { ISubscriptionEntity } from "../../domain/subscription.entities"
+import type { NewSubscriptionEvent } from "../../domain/subscription-event.interface"
 
 const DAY_MS = 86_400_000
 
@@ -372,5 +372,152 @@ describe("ReconciliationService", () => {
     assert.equal(stats2.paymentsBackfilled, 0, "la segunda pasada no vuelve a insertar")
     assert.equal(created.filter((e) => e.action === "webhook_sale_completed").length, 1)
     assert.equal(getRows().length, 1)
+  })
+
+  it("sub sin paypal_subscription_id → se cuenta como revisada sin consultar PayPal", async () => {
+    mock.property(env, "PAYPAL_ENABLED", true)
+    let getCalls = 0
+    mock.method(paypalClient, "getSubscription", async () => {
+      getCalls++
+      return { id: "x", status: "ACTIVE", nextBillingTime: null }
+    })
+    const { repo, updated } = makeRepo([makeEntity({ status: "pending", paypal_subscription_id: null })])
+    const service = createReconciliationService(repo)
+
+    const stats = await service.run(logger)
+
+    assert.deepEqual(stats, { reviewed: 1, drifted: 0, errors: 0, cleaned: 0, paymentsBackfilled: 0 })
+    assert.equal(getCalls, 0)
+    assert.equal(updated.length, 0)
+  })
+
+  it("ACTIVE con período vigente pero cancel_at_period_end local → limpia el flag", async () => {
+    mock.property(env, "PAYPAL_ENABLED", true)
+    const { repo, updated } = makeRepo([
+      makeEntity({
+        status: "active",
+        cancel_at_period_end: true,
+        current_period_end: new Date(Date.now() + 10 * DAY_MS),
+      }),
+    ])
+    paypalActive(new Date(Date.now() + 30 * DAY_MS).toISOString())
+    const service = createReconciliationService(repo)
+
+    const stats = await service.run(logger)
+
+    assert.equal(stats.drifted, 1)
+    assert.deepEqual(updated[0], { status: "active", cancel_at_period_end: false })
+  })
+
+  it("ACTIVE período vencido SIN next_billing_time y sin drift → no toca", async () => {
+    mock.property(env, "PAYPAL_ENABLED", true)
+    const { repo, updated } = makeRepo([
+      makeEntity({ status: "active", current_period_end: new Date(Date.now() - 2 * DAY_MS) }),
+    ])
+    mock.method(paypalClient, "getSubscription", async (id: string) => ({
+      id,
+      status: "ACTIVE",
+      nextBillingTime: null,
+    }))
+    paypalNoTransactions()
+    const service = createReconciliationService(repo)
+
+    const stats = await service.run(logger)
+
+    assert.deepEqual(stats, { reviewed: 1, drifted: 0, errors: 0, cleaned: 0, paymentsBackfilled: 0 })
+    assert.equal(updated.length, 0)
+  })
+
+  it("CANCELLED ya localizado como canceled+flag → no toca", async () => {
+    mock.property(env, "PAYPAL_ENABLED", true)
+    const { repo, updated } = makeRepo([makeEntity({ status: "canceled", cancel_at_period_end: true })])
+    mock.method(paypalClient, "getSubscription", async (id: string) => ({
+      id,
+      status: "CANCELLED",
+      nextBillingTime: null,
+    }))
+    paypalNoTransactions()
+    const service = createReconciliationService(repo)
+
+    const stats = await service.run(logger)
+
+    assert.deepEqual(stats, { reviewed: 1, drifted: 0, errors: 0, cleaned: 0, paymentsBackfilled: 0 })
+    assert.equal(updated.length, 0)
+  })
+
+  it("SUSPENDED ya en past_due → no toca", async () => {
+    mock.property(env, "PAYPAL_ENABLED", true)
+    const { repo, updated } = makeRepo([makeEntity({ status: "past_due" })])
+    mock.method(paypalClient, "getSubscription", async (id: string) => ({
+      id,
+      status: "SUSPENDED",
+      nextBillingTime: null,
+    }))
+    paypalNoTransactions()
+    const service = createReconciliationService(repo)
+
+    const stats = await service.run(logger)
+
+    assert.deepEqual(stats, { reviewed: 1, drifted: 0, errors: 0, cleaned: 0, paymentsBackfilled: 0 })
+    assert.equal(updated.length, 0)
+  })
+
+  it("EXPIRED ya en expired+flag → no toca", async () => {
+    mock.property(env, "PAYPAL_ENABLED", true)
+    const { repo, updated } = makeRepo([makeEntity({ status: "expired", cancel_at_period_end: true })])
+    mock.method(paypalClient, "getSubscription", async (id: string) => ({
+      id,
+      status: "EXPIRED",
+      nextBillingTime: null,
+    }))
+    paypalNoTransactions()
+    const service = createReconciliationService(repo)
+
+    const stats = await service.run(logger)
+
+    assert.deepEqual(stats, { reviewed: 1, drifted: 0, errors: 0, cleaned: 0, paymentsBackfilled: 0 })
+    assert.equal(updated.length, 0)
+  })
+
+  it("sub activa sin current_period_start → no consulta transacciones (backfill se saltea)", async () => {
+    mock.property(env, "PAYPAL_ENABLED", true)
+    const { repo } = makeRepo([makeEntity({ status: "active", current_period_start: null })])
+    mock.method(paypalClient, "getSubscription", async (id: string) => ({
+      id,
+      status: "ACTIVE",
+      nextBillingTime: new Date(Date.now() + 30 * DAY_MS).toISOString(),
+    }))
+    let txCalls = 0
+    mock.method(paypalClient, "getTransactions", async () => {
+      txCalls++
+      return []
+    })
+    const service = createReconciliationService(repo)
+
+    const stats = await service.run(logger)
+
+    assert.deepEqual(stats, { reviewed: 1, drifted: 0, errors: 0, cleaned: 0, paymentsBackfilled: 0 })
+    assert.equal(txCalls, 0)
+  })
+
+  it("falla getTransactions → se contabiliza el error sin romper la pasada", async () => {
+    mock.property(env, "PAYPAL_ENABLED", true)
+    const { repo, getRows } = makeRepo([
+      makeEntity({ status: "active", current_period_start: new Date(Date.now() - 10 * DAY_MS) }),
+    ])
+    mock.method(paypalClient, "getSubscription", async (id: string) => ({
+      id,
+      status: "ACTIVE",
+      nextBillingTime: new Date(Date.now() + 30 * DAY_MS).toISOString(),
+    }))
+    mock.method(paypalClient, "getTransactions", async () => {
+      throw new AppError("red caída", 502, "PAYPAL_NETWORK_ERROR")
+    })
+    const service = createReconciliationService(repo)
+
+    const stats = await service.run(logger)
+
+    assert.deepEqual(stats, { reviewed: 1, drifted: 0, errors: 1, cleaned: 0, paymentsBackfilled: 0 })
+    assert.equal(getRows()[0].status, "active")
   })
 })

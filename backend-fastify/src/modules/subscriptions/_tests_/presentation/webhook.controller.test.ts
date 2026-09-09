@@ -2,10 +2,10 @@ import { describe, it, beforeEach, afterEach, mock } from "node:test"
 import assert from "node:assert/strict"
 import { env } from "@/config/env"
 import { makeP2002 } from "@/tests/fakes"
-import { webhookController } from "./webhook.controller"
-import { SubscriptionRepository } from "../infrastructure/subscription.prisma.repository"
-import { PayPalWebhookEventRepository } from "../infrastructure/paypal-webhook-event.prisma.repository"
-import { SubscriptionEventRepository } from "../infrastructure/subscription-event.prisma.repository"
+import { webhookController } from "../../presentation/webhook.controller"
+import { SubscriptionRepository } from "../../infrastructure/subscription.prisma.repository"
+import { PayPalWebhookEventRepository } from "../../infrastructure/paypal-webhook-event.prisma.repository"
+import { SubscriptionEventRepository } from "../../infrastructure/subscription-event.prisma.repository"
 import type { paypal_webhook_event } from "@prisma/client"
 
 const WEBHOOK_ID = "test-webhook-id-123"
@@ -338,5 +338,250 @@ describe("webhookController.receive", () => {
     const { reply } = buildReply()
     await assert.rejects(() => webhookController.receive(buildRequest(rawBody) as never, reply as never))
     assert.equal(insert.mock.callCount(), 0)
+  })
+
+  it("BILLING.SUBSCRIPTION.CANCELLED → marca canceled + cancel_at_period_end y audita", async () => {
+    mock.property(env, "PAYPAL_WEBHOOK_ID", WEBHOOK_ID)
+    mockPayPalVerify("SUCCESS")
+    const rawBody = JSON.stringify({
+      id: "evt-c1",
+      event_type: "BILLING.SUBSCRIPTION.CANCELLED",
+      resource_type: "subscription",
+      resource: { id: "I-CANCEL-1", resource_type: "subscription" },
+    })
+
+    mock.method(PayPalWebhookEventRepository, "insert", async () =>
+      makeOutbox({ event_id: "evt-c1", event_type: "BILLING.SUBSCRIPTION.CANCELLED", resource_id: "I-CANCEL-1" }),
+    )
+    const markProcessed = mock.method(PayPalWebhookEventRepository, "markProcessed", async () => {})
+    mock.method(SubscriptionRepository, "getByPaypalSubscriptionId", async () => ({
+      id: "sub-1",
+      store_id: "store-ghost-c1",
+      mode: "cloud",
+      plan: "monthly",
+      status: "active",
+      paypal_subscription_id: "I-CANCEL-1",
+      current_period_start: null,
+      current_period_end: null,
+      cancel_at_period_end: false,
+      created_at: new Date(),
+      updated_at: new Date(),
+    }))
+    const update = mock.method(SubscriptionRepository, "update", async () => null)
+    const audits: Array<{ action: string }> = []
+    mock.method(SubscriptionEventRepository, "create", async (data: { action: string }) => {
+      audits.push(data)
+    })
+
+    const { reply, state } = buildReply()
+    await webhookController.receive(buildRequest(rawBody) as never, reply as never)
+
+    assert.equal(state.status, 200)
+    const data = update.mock.calls[0].arguments[1] as {
+      status?: string
+      cancel_at_period_end?: boolean
+    }
+    assert.equal(data.status, "canceled")
+    assert.equal(data.cancel_at_period_end, true)
+    assert.equal(audits[0].action, "webhook_cancelled")
+    assert.equal(markProcessed.mock.callCount(), 1)
+  })
+
+  it("BILLING.SUBSCRIPTION.SUSPENDED → past_due y audita", async () => {
+    mock.property(env, "PAYPAL_WEBHOOK_ID", WEBHOOK_ID)
+    mockPayPalVerify("SUCCESS")
+    const rawBody = JSON.stringify({
+      id: "evt-s1",
+      event_type: "BILLING.SUBSCRIPTION.SUSPENDED",
+      resource_type: "subscription",
+      resource: { id: "I-SUSP-1", resource_type: "subscription" },
+    })
+
+    mock.method(PayPalWebhookEventRepository, "insert", async () =>
+      makeOutbox({ event_id: "evt-s1", event_type: "BILLING.SUBSCRIPTION.SUSPENDED", resource_id: "I-SUSP-1" }),
+    )
+    const markProcessed = mock.method(PayPalWebhookEventRepository, "markProcessed", async () => {})
+    mock.method(SubscriptionRepository, "getByPaypalSubscriptionId", async () => ({
+      id: "sub-1",
+      store_id: "store-ghost-s1",
+      mode: "cloud",
+      plan: "monthly",
+      status: "active",
+      paypal_subscription_id: "I-SUSP-1",
+      current_period_start: null,
+      current_period_end: null,
+      cancel_at_period_end: false,
+      created_at: new Date(),
+      updated_at: new Date(),
+    }))
+    const update = mock.method(SubscriptionRepository, "update", async () => null)
+    const audits: Array<{ action: string }> = []
+    mock.method(SubscriptionEventRepository, "create", async (data: { action: string }) => {
+      audits.push(data)
+    })
+
+    const { reply, state } = buildReply()
+    await webhookController.receive(buildRequest(rawBody) as never, reply as never)
+
+    assert.equal(state.status, 200)
+    const data = update.mock.calls[0].arguments[1] as { status?: string }
+    assert.equal(data.status, "past_due")
+    assert.equal(audits[0].action, "webhook_suspended")
+    assert.equal(markProcessed.mock.callCount(), 1)
+  })
+
+  it("PAYMENT.SALE.PAYMENT.FAILED → past_due y audita", async () => {
+    mock.property(env, "PAYPAL_WEBHOOK_ID", WEBHOOK_ID)
+    mockPayPalVerify("SUCCESS")
+    const rawBody = JSON.stringify({
+      id: "evt-f1",
+      event_type: "PAYMENT.SALE.PAYMENT.FAILED",
+      resource_type: "sale",
+      resource: {
+        id: "SALE-F-1",
+        billing_agreement_id: "I-FAIL-1",
+        resource_type: "sale",
+      },
+    })
+
+    mock.method(PayPalWebhookEventRepository, "insert", async () =>
+      makeOutbox({
+        event_id: "evt-f1",
+        event_type: "PAYMENT.SALE.PAYMENT.FAILED",
+        resource_id: "I-FAIL-1",
+      }),
+    )
+    const markProcessed = mock.method(PayPalWebhookEventRepository, "markProcessed", async () => {})
+    mock.method(SubscriptionRepository, "getByPaypalSubscriptionId", async () => ({
+      id: "sub-1",
+      store_id: "store-ghost-f1",
+      mode: "cloud",
+      plan: "monthly",
+      status: "active",
+      paypal_subscription_id: "I-FAIL-1",
+      current_period_start: null,
+      current_period_end: null,
+      cancel_at_period_end: false,
+      created_at: new Date(),
+      updated_at: new Date(),
+    }))
+    const update = mock.method(SubscriptionRepository, "update", async () => null)
+    const audits: Array<{ action: string }> = []
+    mock.method(SubscriptionEventRepository, "create", async (data: { action: string }) => {
+      audits.push(data)
+    })
+
+    const { reply, state } = buildReply()
+    await webhookController.receive(buildRequest(rawBody) as never, reply as never)
+
+    assert.equal(state.status, 200)
+    const data = update.mock.calls[0].arguments[1] as { status?: string }
+    assert.equal(data.status, "past_due")
+    assert.equal(audits[0].action, "webhook_payment_failed")
+    assert.equal(markProcessed.mock.callCount(), 1)
+  })
+
+  it("BILLING.SUBSCRIPTION.EXPIRED → expired + cancel_at_period_end y audita", async () => {
+    mock.property(env, "PAYPAL_WEBHOOK_ID", WEBHOOK_ID)
+    mockPayPalVerify("SUCCESS")
+    const rawBody = JSON.stringify({
+      id: "evt-e1",
+      event_type: "BILLING.SUBSCRIPTION.EXPIRED",
+      resource_type: "subscription",
+      resource: { id: "I-EXP-1", resource_type: "subscription" },
+    })
+
+    mock.method(PayPalWebhookEventRepository, "insert", async () =>
+      makeOutbox({ event_id: "evt-e1", event_type: "BILLING.SUBSCRIPTION.EXPIRED", resource_id: "I-EXP-1" }),
+    )
+    const markProcessed = mock.method(PayPalWebhookEventRepository, "markProcessed", async () => {})
+    mock.method(SubscriptionRepository, "getByPaypalSubscriptionId", async () => ({
+      id: "sub-1",
+      store_id: "store-ghost-e1",
+      mode: "cloud",
+      plan: "monthly",
+      status: "active",
+      paypal_subscription_id: "I-EXP-1",
+      current_period_start: null,
+      current_period_end: null,
+      cancel_at_period_end: false,
+      created_at: new Date(),
+      updated_at: new Date(),
+    }))
+    const update = mock.method(SubscriptionRepository, "update", async () => null)
+    const audits: Array<{ action: string }> = []
+    mock.method(SubscriptionEventRepository, "create", async (data: { action: string }) => {
+      audits.push(data)
+    })
+
+    const { reply, state } = buildReply()
+    await webhookController.receive(buildRequest(rawBody) as never, reply as never)
+
+    assert.equal(state.status, 200)
+    const data = update.mock.calls[0].arguments[1] as {
+      status?: string
+      cancel_at_period_end?: boolean
+    }
+    assert.equal(data.status, "expired")
+    assert.equal(data.cancel_at_period_end, true)
+    assert.equal(audits[0].action, "webhook_expired")
+    assert.equal(markProcessed.mock.callCount(), 1)
+  })
+
+  it("evento no manejado → ACK 200, se marca procesado y no toca la sub", async () => {
+    mock.property(env, "PAYPAL_WEBHOOK_ID", WEBHOOK_ID)
+    mockPayPalVerify("SUCCESS")
+    const rawBody = JSON.stringify({
+      id: "evt-unk",
+      event_type: "PAYMENT.SALE.REFUNDED",
+      resource_type: "sale",
+      resource: { id: "SALE-REF-1", billing_agreement_id: "I-UNK-1", resource_type: "sale" },
+    })
+
+    mock.method(PayPalWebhookEventRepository, "insert", async () =>
+      makeOutbox({
+        event_id: "evt-unk",
+        event_type: "PAYMENT.SALE.REFUNDED",
+        resource_id: "I-UNK-1",
+      }),
+    )
+    const markProcessed = mock.method(PayPalWebhookEventRepository, "markProcessed", async () => {})
+    const update = mock.method(SubscriptionRepository, "update", async () => null)
+    const audit = mock.method(SubscriptionEventRepository, "create", async () => {})
+
+    const { reply, state } = buildReply()
+    await webhookController.receive(buildRequest(rawBody) as never, reply as never)
+
+    assert.equal(state.status, 200)
+    assert.equal(markProcessed.mock.callCount(), 1)
+    assert.equal(update.mock.callCount(), 0)
+    assert.equal(audit.mock.callCount(), 0)
+  })
+
+  it("recurso sin suscripción local → ACK 200 sin update ni auditoría", async () => {
+    mock.property(env, "PAYPAL_WEBHOOK_ID", WEBHOOK_ID)
+    mockPayPalVerify("SUCCESS")
+    const rawBody = JSON.stringify({
+      id: "evt-nomatch",
+      event_type: "BILLING.SUBSCRIPTION.CANCELLED",
+      resource_type: "subscription",
+      resource: { id: "I-NOPE-1", resource_type: "subscription" },
+    })
+
+    mock.method(PayPalWebhookEventRepository, "insert", async () =>
+      makeOutbox({ event_id: "evt-nomatch", resource_id: "I-NOPE-1" }),
+    )
+    const markProcessed = mock.method(PayPalWebhookEventRepository, "markProcessed", async () => {})
+    mock.method(SubscriptionRepository, "getByPaypalSubscriptionId", async () => null)
+    const update = mock.method(SubscriptionRepository, "update", async () => null)
+    const audit = mock.method(SubscriptionEventRepository, "create", async () => {})
+
+    const { reply, state } = buildReply()
+    await webhookController.receive(buildRequest(rawBody) as never, reply as never)
+
+    assert.equal(state.status, 200)
+    assert.equal(markProcessed.mock.callCount(), 1)
+    assert.equal(update.mock.callCount(), 0)
+    assert.equal(audit.mock.callCount(), 0)
   })
 })
