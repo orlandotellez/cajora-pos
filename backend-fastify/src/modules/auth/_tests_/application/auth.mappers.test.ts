@@ -50,7 +50,7 @@ describe("mapUserToResponse", () => {
     const user = makeUser({
       is_owner: undefined as unknown as boolean,
       is_active: undefined as unknown as boolean,
-      permissions: undefined as unknown as string[],
+      permissions: undefined as unknown as IUserEntity["permissions"],
     })
     const res = mapUserToResponse(user)
 

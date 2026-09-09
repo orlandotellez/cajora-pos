@@ -124,7 +124,7 @@ describe("sales service", () => {
           captured = { data, storeId, deduct: serviceProductsToDeduct, custom: customServiceProducts }
           return makeSaleEntity()
         },
-      } as any)
+      })
 
       prismaMocks.product.findMany = async () => [
         { id: "p1", name: "Widget", price: fakeDecimal(50), stock: 10 },
@@ -234,7 +234,7 @@ describe("sales service", () => {
           captured = { data, storeId, deduct: serviceProductsToDeduct, custom: customServiceProducts }
           return makeSaleEntity()
         },
-      } as any)
+      })
 
       const service = createSaleService(repo)
       const data: any = {
@@ -272,7 +272,7 @@ describe("sales service", () => {
           captured = { data, storeId, deduct: serviceProductsToDeduct, custom: customServiceProducts }
           return makeSaleEntity()
         },
-      } as any)
+      })
 
       const service = createSaleService(repo)
       const data: any = {
@@ -310,7 +310,7 @@ describe("sales service", () => {
           captured = { data, storeId, deduct: serviceProductsToDeduct, custom: customServiceProducts }
           return makeSaleEntity()
         },
-      } as any)
+      })
 
       const service = createSaleService(repo)
       const data: any = {
@@ -365,7 +365,7 @@ describe("sales service", () => {
 
     it("throws NotFound when no sale matches", async () => {
       const service = createSaleService(
-        makeRepo({ findById: async () => null } as any)
+        makeRepo({ findById: async () => null })
       )
 
       await assert.rejects(
@@ -379,6 +379,7 @@ describe("sales service", () => {
     it("returns paginated sales with defaults for page and limit", async () => {
       const repo = makeRepo({
         async findAll(params) {
+          assert.ok(params)
           assert.ok(params.startDate instanceof Date)
           assert.ok(params.endDate instanceof Date)
           assert.equal(params.userId, "user-1")
@@ -386,7 +387,7 @@ describe("sales service", () => {
           assert.equal(params.storeId, "store-1")
           return { sales: [makeSaleEntity()], total: 1 }
         },
-      } as any)
+      })
 
       const service = createSaleService(repo)
       const result = await service.list({

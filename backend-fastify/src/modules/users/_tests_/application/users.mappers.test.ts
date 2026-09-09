@@ -9,7 +9,7 @@ function makeUser(overrides: Record<string, unknown> = {}): IUserEntity {
     name: "John Doe",
     email: "john@example.com",
     email_verified: true,
-    role: "ADMIN",
+    role: "admin",
     is_owner: true,
     is_active: true,
     permissions: ["catalog_read", "settings"],
@@ -30,7 +30,7 @@ describe("users mappers", () => {
       assert.equal(response.name, "John Doe")
       assert.equal(response.email, "john@example.com")
       assert.equal(response.email_verified, true)
-      assert.equal(response.role, "ADMIN")
+      assert.equal(response.role, "admin")
       assert.equal(response.is_owner, true)
       assert.equal(response.is_active, true)
       assert.deepEqual(response.permissions, ["catalog_read", "settings"])

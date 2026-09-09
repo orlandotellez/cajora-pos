@@ -198,7 +198,7 @@ describe("batch-inventory service", () => {
         async findById(id, storeId) {
           return null
         },
-      } as any)
+      })
 
       const service = createBatchInventoryService(productRepo)
       const data: any = {
@@ -219,7 +219,7 @@ describe("batch-inventory service", () => {
         async findById(id, storeId) {
           return makeProduct({ deleted_at: new Date("2026-08-02T10:00:00Z") })
         },
-      } as any)
+      })
 
       const service = createBatchInventoryService(productRepo)
       const data: any = {
@@ -241,7 +241,7 @@ describe("batch-inventory service", () => {
           if (id === "product-1") return makeProduct()
           return null
         },
-      } as any)
+      })
 
       const service = createBatchInventoryService(productRepo)
       const data: any = {
@@ -266,7 +266,7 @@ describe("batch-inventory service", () => {
           if (id === "product-1") return makeProduct()
           return makeProduct({ id: "product-2", name: "Producto Dos", stock: 10 })
         },
-      } as any)
+      })
 
       const service = createBatchInventoryService(productRepo)
       const data: any = {
@@ -316,7 +316,7 @@ describe("batch-inventory service", () => {
         async findById(id, storeId) {
           return makeProduct({ stock: 3 })
         },
-      } as any)
+      })
 
       const service = createBatchInventoryService(productRepo)
       const data: any = {
@@ -337,7 +337,7 @@ describe("batch-inventory service", () => {
         async findById(id, storeId) {
           return makeProduct({ stock: 10 })
         },
-      } as any)
+      })
 
       const service = createBatchInventoryService(productRepo)
       const data: any = {
@@ -360,7 +360,7 @@ describe("batch-inventory service", () => {
         async findById(id, storeId) {
           return makeProduct({ stock: 10 })
         },
-      } as any)
+      })
 
       const service = createBatchInventoryService(productRepo)
       const data: any = {
@@ -382,7 +382,7 @@ describe("batch-inventory service", () => {
         async findById(id, storeId) {
           return makeProduct()
         },
-      } as any)
+      })
 
       const service = createBatchInventoryService(productRepo)
       const data: any = {
@@ -407,7 +407,7 @@ describe("batch-inventory service", () => {
         async findById(id, storeId) {
           return makeProduct()
         },
-      } as any)
+      })
 
       const service = createBatchInventoryService(productRepo)
       const data: any = {
@@ -432,7 +432,7 @@ describe("batch-inventory service", () => {
         async findById(id, storeId) {
           return makeProduct()
         },
-      } as any)
+      })
 
       const service = createBatchInventoryService(productRepo)
       const data: any = {
@@ -456,7 +456,7 @@ describe("batch-inventory service", () => {
         async findById(id, storeId) {
           return makeProduct()
         },
-      } as any)
+      })
 
       const service = createBatchInventoryService(productRepo)
       const data: any = {
@@ -489,7 +489,7 @@ describe("batch-inventory service", () => {
         async findById(id, storeId) {
           return makeProduct()
         },
-      } as any)
+      })
 
       const service = createBatchInventoryService(productRepo)
       const data: any = {
@@ -513,7 +513,7 @@ describe("batch-inventory service", () => {
         async findById(id, storeId) {
           return makeProduct()
         },
-      } as any)
+      })
 
       const service = createBatchInventoryService(productRepo)
       const data: any = {
@@ -538,7 +538,7 @@ describe("batch-inventory service", () => {
           if (id === "product-1") return makeProduct()
           return makeProduct({ id: "product-2", name: "Producto Dos" })
         },
-      } as any)
+      })
 
       const service = createBatchInventoryService(productRepo)
       const data: any = {
@@ -564,7 +564,7 @@ describe("batch-inventory service", () => {
         async findById(id, storeId) {
           return makeProduct()
         },
-      } as any)
+      })
 
       const service = createBatchInventoryService(productRepo)
       const data: any = {

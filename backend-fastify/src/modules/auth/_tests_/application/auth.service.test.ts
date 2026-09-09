@@ -95,11 +95,38 @@ function makeAccount(overrides: Partial<IAccountEntity> = {}): IAccountEntity {
   }
 }
 
-function makeRepo(overrides: Partial<IAuthRepository> = {}) {
+function makeVerification(overrides: Partial<IVerificationEntity> = {}): IVerificationEntity {
+  const now = new Date()
+  return {
+    id: "ver-1",
+    identifier: "reset:ana@cajorapos.com",
+    value: "123456",
+    expires_at: new Date(now.getTime() + 60_000),
+    created_at: now,
+    updated_at: now,
+    ...overrides,
+  }
+}
+
+interface AuthRepoOverrides {
+  user?: Partial<IAuthRepository["user"]>
+  account?: Partial<IAuthRepository["account"]>
+  session?: Partial<IAuthRepository["session"]>
+  verification?: Partial<IAuthRepository["verification"]>
+}
+
+function makeRepo(overrides: AuthRepoOverrides = {}) {
   const createdSessions: Array<{ userId: string; token: string; expiresAt: Date }> = []
-  const createSession = (data: { userId: string; token: string; expiresAt: Date }) => {
+  const createSession = (data: { userId: string; token: string; expiresAt: Date }): ISessionEntity => {
     createdSessions.push(data)
-    return { id: `sess-${createdSessions.length}`, ...data, created_at: new Date(), updated_at: new Date() } as ISessionEntity
+    return {
+      id: `sess-${createdSessions.length}`,
+      token: data.token,
+      expires_at: data.expiresAt,
+      user_id: data.userId,
+      created_at: new Date(),
+      updated_at: new Date(),
+    }
   }
 
   const repo: IAuthRepository = {
@@ -154,7 +181,9 @@ function makeRepo(overrides: Partial<IAuthRepository> = {}) {
       },
     },
     verification: {
-      async create() {},
+      async create(data) {
+        return makeVerification(data as Partial<IVerificationEntity>)
+      },
       async findByIdentifier() {
         return null
       },
@@ -167,10 +196,9 @@ function makeRepo(overrides: Partial<IAuthRepository> = {}) {
         return 0
       },
     },
-    ...overrides,
   }
 
-  return { repo, createdSessions, createSession }
+  return { repo: { ...repo, ...overrides } as unknown as IAuthRepository, createdSessions, createSession }
 }
 
 describe("register", () => {
@@ -222,6 +250,7 @@ describe("register", () => {
       verification: {
         async create(data) {
           verificationArgs.push(data)
+          return makeVerification(data as Partial<IVerificationEntity>)
         },
         async findByIdentifier() {
           return null
@@ -284,7 +313,7 @@ describe("register", () => {
         async findByEmail() {
           return makeUser()
         },
-      } as Partial<IAuthRepository["user"]>,
+      },
     })
 
     const service = createAuthService(repo, fakeSsoStore().store)
@@ -310,7 +339,7 @@ describe("login", () => {
         async findCredentialsAccountByEmail() {
           return null
         },
-      } as Partial<IAuthRepository["account"]>,
+      },
     })
 
     const service = createAuthService(repo, fakeSsoStore().store)
@@ -327,7 +356,7 @@ describe("login", () => {
         async findCredentialsAccountByEmail() {
           return makeAccount({ password: undefined })
         },
-      } as Partial<IAuthRepository["account"]>,
+      },
     })
 
     const service = createAuthService(repo, fakeSsoStore().store)
@@ -347,12 +376,12 @@ describe("login", () => {
         async findCredentialsAccountByEmail() {
           return makeAccount({ password: hash, user_id: "user-1" })
         },
-      } as Partial<IAuthRepository["account"]>,
+      },
       user: {
         async findById() {
           return makeUser()
         },
-      } as Partial<IAuthRepository["user"]>,
+      },
     })
 
     const service = createAuthService(repo, fakeSsoStore().store)
@@ -376,12 +405,12 @@ describe("login", () => {
         async findCredentialsAccountByEmail() {
           return makeAccount({ password: hash, user_id: "user-1" })
         },
-      } as Partial<IAuthRepository["account"]>,
+      },
       user: {
         async findById() {
           return makeUser({ is_active: false })
         },
-      } as Partial<IAuthRepository["user"]>,
+      },
     })
 
     const service = createAuthService(repo, fakeSsoStore().store)
@@ -417,7 +446,7 @@ describe("refresh", () => {
         async findByToken() {
           return null
         },
-      } as Partial<IAuthRepository["session"]>,
+      },
     })
 
     const service = createAuthService(repo, fakeSsoStore().store)
@@ -442,7 +471,7 @@ describe("refresh", () => {
         async delete(token: string) {
           deletedToken = token
         },
-      } as Partial<IAuthRepository["session"]>,
+      },
     })
 
     const service = createAuthService(repo, fakeSsoStore().store)
@@ -464,7 +493,7 @@ describe("refresh", () => {
       session: {
         async create(data) {
           createdSessions.push(data)
-          return { id: `sess-${createdSessions.length}`, ...data, created_at: new Date(), updated_at: new Date() } as ISessionEntity
+          return { id: `sess-${createdSessions.length}`, token: data.token, expires_at: data.expiresAt, user_id: data.userId, created_at: new Date(), updated_at: new Date() } as ISessionEntity
         },
         async findByToken() {
           return { id: "sess-1", token: refreshToken, expires_at: new Date(Date.now() + 100000), user_id: "user-1", created_at: new Date(), updated_at: new Date() } as ISessionEntity
@@ -472,12 +501,12 @@ describe("refresh", () => {
         async delete(token: string) {
           deletedTokens.push(token)
         },
-      } as Partial<IAuthRepository["session"]>,
+      },
       user: {
         async findById() {
           return makeUser()
         },
-      } as Partial<IAuthRepository["user"]>,
+      },
     })
 
     const service = createAuthService(repo, fakeSsoStore().store)
@@ -503,7 +532,7 @@ describe("verifyEmail", () => {
         async findByIdentifierAndValue() {
           return null
         },
-      } as Partial<IAuthRepository["verification"]>,
+      },
     })
 
     const service = createAuthService(repo, fakeSsoStore().store)
@@ -521,7 +550,7 @@ describe("verifyEmail", () => {
           return { id: "v-1", identifier: "ana@cajorapos.com", value: "ABC123", expires_at: new Date(Date.now() - 1000), created_at: new Date(), updated_at: new Date() } as IVerificationEntity
         },
         async deleteByIdentifier() {},
-      } as Partial<IAuthRepository["verification"]>,
+      },
     })
 
     const service = createAuthService(repo, fakeSsoStore().store)
@@ -543,7 +572,7 @@ describe("verifyEmail", () => {
         async deleteByIdentifier(identifier: string) {
           deletedIdentifiers.push(identifier)
         },
-      } as Partial<IAuthRepository["verification"]>,
+      },
       user: {
         async findByEmail() {
           return makeUser()
@@ -552,7 +581,7 @@ describe("verifyEmail", () => {
           updatedUser = id
           return makeUser(data)
         },
-      } as Partial<IAuthRepository["user"]>,
+      },
     })
 
     const service = createAuthService(repo, fakeSsoStore().store)
@@ -578,7 +607,7 @@ describe("forgotPassword and resetPassword", () => {
         async findByEmail() {
           return null
         },
-      } as Partial<IAuthRepository["user"]>,
+      },
     })
 
     const service = createAuthService(repo, fakeSsoStore().store)
@@ -596,12 +625,13 @@ describe("forgotPassword and resetPassword", () => {
         async findByEmail() {
           return makeUser()
         },
-      } as Partial<IAuthRepository["user"]>,
+      },
       verification: {
         async create(data) {
           createdVerifications.push(data)
+          return makeVerification(data as Partial<IVerificationEntity>)
         },
-      } as Partial<IAuthRepository["verification"]>,
+      },
     })
 
     const service = createAuthService(repo, fakeSsoStore().store)
@@ -611,7 +641,7 @@ describe("forgotPassword and resetPassword", () => {
     assert.match(result.message, /if the email exists/i)
     assert.equal(createdVerifications.length, 1)
     assert.equal(createdVerifications[0].identifier, "reset:ana@cajorapos.com")
-    assert.ok((createdVerifications[0] as { value: string }).value, "a reset code must be generated")
+    assert.ok((createdVerifications[0] as unknown as { value: string }).value, "a reset code must be generated")
   })
 
   it("resetPassword rejects an invalid code", async () => {
@@ -620,7 +650,7 @@ describe("forgotPassword and resetPassword", () => {
         async findByIdentifierAndValue() {
           return null
         },
-      } as Partial<IAuthRepository["verification"]>,
+      },
     })
 
     const service = createAuthService(repo, fakeSsoStore().store)
@@ -643,12 +673,12 @@ describe("forgotPassword and resetPassword", () => {
         async deleteByIdentifier() {
           verificationCleared = true
         },
-      } as Partial<IAuthRepository["verification"]>,
+      },
       user: {
         async findByEmail() {
           return makeUser()
         },
-      } as Partial<IAuthRepository["user"]>,
+      },
       account: {
         async findCredentialsAccountByEmail() {
           return makeAccount()
@@ -657,12 +687,12 @@ describe("forgotPassword and resetPassword", () => {
           updatedAccount.push(data as { password: string })
           return makeAccount(data as Partial<IAccountEntity>)
         },
-      } as Partial<IAuthRepository["account"]>,
+      },
       session: {
         async deleteByUserId() {
           sessionsCleared = true
         },
-      } as Partial<IAuthRepository["session"]>,
+      },
     })
 
     const service = createAuthService(repo, fakeSsoStore().store)
@@ -704,7 +734,7 @@ describe("SSO auth flow", () => {
         async findById() {
           return makeUser()
         },
-      } as Partial<IAuthRepository["user"]>,
+      },
     })
     const { store, codes } = fakeSsoStore()
     const service = createAuthService(repo, store)
@@ -737,7 +767,7 @@ describe("SSO auth flow", () => {
         async findById() {
           return makeUser()
         },
-      } as Partial<IAuthRepository["user"]>,
+      },
     })
     const { store } = fakeSsoStore()
     const service = createAuthService(repo, store)
@@ -757,7 +787,7 @@ describe("SSO auth flow", () => {
         async findById() {
           return makeUser({ deleted_at: new Date() })
         },
-      } as Partial<IAuthRepository["user"]>,
+      },
     })
     const { store } = fakeSsoStore()
     const service = createAuthService(repo, store)

@@ -52,6 +52,7 @@ export interface IStoreUserRow {
   email: string
   email_verified: boolean
   role: string
+  is_owner: boolean
   phone: string | null
   created_at: Date
   deleted_at: Date | null

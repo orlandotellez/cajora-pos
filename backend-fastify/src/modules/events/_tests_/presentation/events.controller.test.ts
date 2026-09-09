@@ -1,8 +1,10 @@
-import { describe, it, afterEach, spyOn, mock } from "bun:test"
+import { describe, it, afterEach, spyOn, mock, type Mock } from "bun:test"
 import assert from "node:assert/strict"
 
 const sseStub = {
-  handleSseConnection: async (_request: unknown, _reply: unknown) => {},
+  handleSseConnection: (async (_request: unknown, _reply: unknown) => {}) as Mock<
+    (request: unknown, reply: unknown) => Promise<void>
+  >,
 }
 
 spyOn(sseStub, "handleSseConnection")

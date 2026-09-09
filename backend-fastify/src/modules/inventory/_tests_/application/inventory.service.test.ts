@@ -23,7 +23,7 @@ function makeMovement(overrides: Partial<IInventoryMovementEntity> = {}): IInven
     store_id: "store-1",
     created_at: new Date("2026-09-01T10:00:00Z"),
     ...overrides,
-  }
+  } as unknown as IInventoryMovementEntity
 }
 
 function makeProduct(overrides: Partial<IProductEntity> = {}): IProductEntity {

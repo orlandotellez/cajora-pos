@@ -2,6 +2,9 @@ import { describe, it, beforeEach, afterEach, mock } from "bun:test"
 import { mock as nodeMock } from "node:test"
 import assert from "node:assert/strict"
 import { NotFoundError } from "@/core/errors/AppError"
+import type { ISubscriptionEntity } from "@/modules/subscriptions/domain/subscription.entities"
+import type { ISubscriptionRepository } from "@/modules/subscriptions/domain/subscription.interface"
+import type { ISubscriptionEventRepository } from "@/modules/subscriptions/domain/subscription-event.interface"
 
 const prismaMocks: Record<string, any> = {
   store: { count: async () => 0, findMany: async () => [], findUnique: async () => null },
@@ -18,18 +21,19 @@ const prismaMocks: Record<string, any> = {
   $queryRaw: async () => [],
 }
 
-const subscriptionRepoMocks = {
-  update: async () => ({
-    id: "sub-1",
-    store_id: "store-1",
-    status: "active",
-    paypal_subscription_id: "I-ABC123",
-    updated_at: new Date("2026-09-02T10:00:00Z"),
-  }),
+const subscriptionRepoMocks: Pick<ISubscriptionRepository, "update"> = {
+  update: async (_storeId, _data) =>
+    ({
+      id: "sub-1",
+      store_id: "store-1",
+      status: "active",
+      paypal_subscription_id: "I-ABC123",
+      updated_at: new Date("2026-09-02T10:00:00Z"),
+    }) as unknown as ISubscriptionEntity,
 }
 
-const subscriptionEventRepoMocks = {
-  create: async () => ({}),
+const subscriptionEventRepoMocks: Pick<ISubscriptionEventRepository, "create"> = {
+  create: async (_data) => {},
 }
 
 mock.module("@/config/prisma", () => ({
@@ -107,14 +111,15 @@ beforeEach(() => {
   prismaMocks.subscription_event.findMany = async () => []
   prismaMocks.subscription_event.count = async () => 0
   prismaMocks.$queryRaw = async () => []
-  subscriptionRepoMocks.update = async () => ({
-    id: "sub-1",
-    store_id: "store-1",
-    status: "active",
-    paypal_subscription_id: "I-ABC123",
-    updated_at: new Date("2026-09-02T10:00:00Z"),
-  })
-  subscriptionEventRepoMocks.create = async () => ({})
+  subscriptionRepoMocks.update = async () =>
+    ({
+      id: "sub-1",
+      store_id: "store-1",
+      status: "active",
+      paypal_subscription_id: "I-ABC123",
+      updated_at: new Date("2026-09-02T10:00:00Z"),
+    }) as unknown as ISubscriptionEntity
+  subscriptionEventRepoMocks.create = async () => {}
 })
 
 afterEach(() => {
@@ -243,7 +248,7 @@ describe("super-admin service", () => {
       prismaMocks.subscription_event.findMany = async () => [makeSubscriptionEvent()]
       prismaMocks.subscription_event.count = async () => 1
 
-      const result = await superAdminService.getSubscriptionEvents({})
+      const result = await superAdminService.getSubscriptionEvents({ limit: 50, offset: 0 })
 
       assert.equal(result.events.length, 1)
       assert.equal(result.total, 1)
@@ -290,7 +295,10 @@ describe("super-admin service", () => {
 
   describe("getSubscriptionHealth", () => {
     it("summarizes counts by status and mode and flags problem stores", async () => {
-      nodeMock.timers.enable({ now: new Date("2026-09-01T00:00:00Z") })
+      nodeMock.timers.enable({
+        apis: ["setInterval", "setTimeout", "setImmediate", "Date"],
+        now: new Date("2026-09-01T00:00:00Z").getTime(),
+      })
       prismaMocks.subscription.groupBy = async () => [
         { status: "active", _count: { _all: 2 } },
         { status: "past_due", _count: { _all: 1 } },
@@ -346,7 +354,10 @@ describe("super-admin service", () => {
 
   describe("getSubscriptionsList", () => {
     it("maps subscriptions with owner, dates and expiry days", async () => {
-      nodeMock.timers.enable({ now: new Date("2026-09-01T00:00:00Z") })
+      nodeMock.timers.enable({
+        apis: ["setInterval", "setTimeout", "setImmediate", "Date"],
+        now: new Date("2026-09-01T00:00:00Z").getTime(),
+      })
       prismaMocks.subscription.findMany = async () => [
         {
           id: "sub-1",
@@ -448,11 +459,10 @@ describe("super-admin service", () => {
           status: "active",
           paypal_subscription_id: "I-ABC123",
           updated_at: new Date("2026-09-02T10:00:00Z"),
-        }
+        } as unknown as ISubscriptionEntity
       }
       subscriptionEventRepoMocks.create = async (args: any) => {
         eventArgs = args
-        return {}
       }
 
       const result = await superAdminService.updateSubscriptionStatus("store-1", "canceled")
@@ -474,7 +484,6 @@ describe("super-admin service", () => {
       let eventCalled = false
       subscriptionEventRepoMocks.create = async () => {
         eventCalled = true
-        return {}
       }
 
       const result = await superAdminService.updateSubscriptionStatus("store-1", "canceled")

@@ -7,8 +7,8 @@ function makeEntity(overrides: Partial<ISubscriptionEntity> = {}): ISubscription
   return {
     id: "sub-1",
     store_id: "store-1",
-    mode: "monthly",
-    plan: "pro",
+    mode: "cloud",
+    plan: "monthly",
     status: "active",
     paypal_subscription_id: "paypal-1",
     current_period_start: new Date("2026-09-01T10:00:00Z"),
@@ -24,8 +24,8 @@ describe("subscriptions mappers", () => {
   describe("mapToResponse", () => {
     it("mapea los campos passthrough", () => {
       const res = mapToResponse(makeEntity())
-      assert.equal(res.mode, "monthly")
-      assert.equal(res.plan, "pro")
+      assert.equal(res.mode, "cloud")
+      assert.equal(res.plan, "monthly")
       assert.equal(res.status, "active")
       assert.equal(res.paypal_subscription_id, "paypal-1")
       assert.equal(res.cancel_at_period_end, false)
@@ -65,13 +65,13 @@ describe("subscriptions mappers", () => {
 
     it("mantiene otros valores de mode, plan y status", () => {
       const res = mapToResponse(makeEntity({
-        mode: "yearly",
-        plan: "free",
-        status: "canceled",
+        mode: "self_hosted",
+        plan: "annual",
+        status: "expired",
       }))
-      assert.equal(res.mode, "yearly")
-      assert.equal(res.plan, "free")
-      assert.equal(res.status, "canceled")
+      assert.equal(res.mode, "self_hosted")
+      assert.equal(res.plan, "annual")
+      assert.equal(res.status, "expired")
     })
   })
 })
