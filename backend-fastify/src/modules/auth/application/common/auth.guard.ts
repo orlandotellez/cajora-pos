@@ -1,12 +1,12 @@
 import type { FastifyReply, FastifyRequest } from "fastify"
-import type { Role } from "@/types/auth"
+import type { ROLE } from "@prisma/client"
 import { UnauthorizedError, ForbiddenError } from "@/core/errors/AppError"
 import { getAuthResultFromRequest } from "./auth.utils"
 
 declare module "fastify" {
   interface FastifyRequest {
     userId?: string
-    userRole?: Role
+    userRole?: ROLE
     storeId?: string
     storeName?: string
   }

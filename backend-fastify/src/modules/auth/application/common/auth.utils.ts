@@ -1,12 +1,12 @@
 import type { FastifyReply, FastifyRequest } from "fastify"
-import type { Role } from "@/types/auth"
+import type { ROLE } from "@prisma/client"
 import { clearAuthCookies } from "./cookie.utils"
 import { env } from "@/config/env"
 import jwt, { type JwtPayload } from "jsonwebtoken"
 
 interface AuthResult {
   userId: string | null
-  role: Role | null
+  role: ROLE | null
   storeId: string | null
   storeName: string | null
 }
@@ -40,7 +40,7 @@ export const getUserIdFromCookies = (request: FastifyRequest): AuthResult => {
   if (!token) return { userId: null, role: null, storeId: null, storeName: null }
 
   try {
-    const decoded = jwt.verify(token, env.JWT_SECRET) as JwtPayload & { userId?: string; role?: Role; storeId?: string; storeName?: string }
+    const decoded = jwt.verify(token, env.JWT_SECRET) as JwtPayload & { userId?: string; role?: ROLE; storeId?: string; storeName?: string }
     return {
       userId: decoded.userId ?? null,
       role: decoded.role ?? null,
@@ -69,7 +69,7 @@ export const getUserIdFromBearerToken = (
   const token = parts[1]
 
   try {
-    const decoded = jwt.verify(token, env.JWT_SECRET) as JwtPayload & { userId?: string; role?: Role; storeId?: string; storeName?: string }
+    const decoded = jwt.verify(token, env.JWT_SECRET) as JwtPayload & { userId?: string; role?: ROLE; storeId?: string; storeName?: string }
     return {
       userId: decoded.userId ?? null,
       role: decoded.role ?? null,

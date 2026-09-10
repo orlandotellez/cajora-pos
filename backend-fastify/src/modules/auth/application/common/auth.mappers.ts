@@ -1,6 +1,6 @@
 import type { IUserEntity } from "../../domain/auth.entities"
 import type { IUserResponse, IStoreResponse } from "../../domain/auth.types"
-import type { Role } from "@/types/auth"
+import type { ROLE } from "@prisma/client"
 
 export function mapUserToResponse(user: IUserEntity): IUserResponse {
   return {
@@ -8,7 +8,7 @@ export function mapUserToResponse(user: IUserEntity): IUserResponse {
     name: user.name,
     email: user.email,
     email_verified: user.email_verified,
-    role: user.role as Role,
+    role: user.role as ROLE,
     is_owner: user.is_owner ?? false,
     is_active: user.is_active ?? true,
     permissions: user.permissions ?? [],

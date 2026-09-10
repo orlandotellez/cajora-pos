@@ -1,5 +1,5 @@
 import { env } from "@/config/env"
-import type { Role } from "@/types/auth"
+import type { ROLE } from "@prisma/client"
 import type { FastifyRequest } from "fastify"
 import type { SignOptions } from "jsonwebtoken"
 import jwt from "jsonwebtoken"
@@ -7,12 +7,12 @@ import jwt from "jsonwebtoken"
 interface TokenPayload {
   userId: string
   email: string
-  role: Role
+  role: ROLE
   storeId: string | null
   storeName: string | null
 }
 
-export const generateTokens = (userId: string, email: string, role: Role, storeId: string | null, storeName: string | null) => {
+export const generateTokens = (userId: string, email: string, role: ROLE, storeId: string | null, storeName: string | null) => {
   const accessTokenOptions: SignOptions = {
     expiresIn: 900
   }

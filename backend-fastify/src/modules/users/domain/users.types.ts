@@ -1,4 +1,4 @@
-import type { Role } from "@/types/auth"
+import type { ROLE } from "@prisma/client"
 import type { Permission } from "./users.entities"
 
 export interface IUserResponse {
@@ -6,7 +6,7 @@ export interface IUserResponse {
   name: string
   email: string
   email_verified: boolean
-  role: Role
+  role: ROLE
   is_owner: boolean
   is_active: boolean
   permissions: Permission[]

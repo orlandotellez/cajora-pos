@@ -25,7 +25,7 @@ import type {
   IStoreResponse,
   ISsoChallengeResponse,
 } from "../domain/auth.types"
-import type { Role } from "@/types/auth"
+import type { ROLE } from "@prisma/client"
 import { env } from "@/config/env"
 import { generateSsoCode, type ISsoCodeStore } from "../infrastructure/sso-code.store"
 import { mapUserToResponse, mapStoreToResponse } from "./common/auth.mappers"
@@ -89,7 +89,7 @@ export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISs
 
     const store = await getStoreInfo(storeId)
     if (!store) throw new NotFoundError("Store not found")
-    const { accessToken, refreshToken } = generateTokens(user.id, user.email, user.role as Role, store.id, store.name)
+    const { accessToken, refreshToken } = generateTokens(user.id, user.email, user.role as ROLE, store.id, store.name)
 
     await repository.session.create({
       userId: user.id,
@@ -256,7 +256,7 @@ export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISs
     const { accessToken, refreshToken } = generateTokens(
       user.id,
       user.email,
-      user.role as Role,
+      user.role as ROLE,
       user.store_id ?? null,
       store?.name ?? null,
     )
@@ -310,7 +310,7 @@ export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISs
     const { accessToken, refreshToken } = generateTokens(
       user.id,
       user.email,
-      user.role as Role,
+      user.role as ROLE,
       user.store_id ?? null,
       store?.name ?? null,
     )
@@ -368,7 +368,7 @@ export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISs
     const { accessToken, refreshToken: newRefreshToken } = generateTokens(
       user.id,
       user.email,
-      user.role as Role,
+      user.role as ROLE,
       user.store_id ?? null,
       store?.name ?? null,
     )
@@ -419,7 +419,7 @@ export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISs
     const { accessToken, refreshToken } = generateTokens(
       user.id,
       user.email,
-      user.role as Role,
+      user.role as ROLE,
       user.store_id ?? null,
       store?.name ?? null,
     )

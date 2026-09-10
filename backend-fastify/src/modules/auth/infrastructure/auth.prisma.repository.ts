@@ -1,5 +1,4 @@
 import { prisma } from "@/config/prisma"
-import type { Role } from "@/types/auth"
 import type {
   IAuthRepository,
   IUserRepository,

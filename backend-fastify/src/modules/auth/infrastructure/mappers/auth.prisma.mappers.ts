@@ -1,6 +1,5 @@
-import type { Role } from "@/types/auth"
+import type { account, session, ROLE, user, verification } from "@prisma/client"
 import type { IAccountEntity, ISessionEntity, IUserEntity, IVerificationEntity, Permission } from "../../domain/auth.entities"
-import type { account, session, user, verification } from "@prisma/client"
 
 export function mapPrismaUserToEntity(user: user): IUserEntity {
   return {
@@ -10,7 +9,7 @@ export function mapPrismaUserToEntity(user: user): IUserEntity {
     email_verified: user.email_verified,
     phone: user.phone || undefined,
     image: user.image || undefined,
-    role: user.role as Role,
+    role: user.role as ROLE,
     is_owner: user.is_owner ?? false,
     is_active: user.is_active ?? true,
     permissions: Array.isArray(user.permissions) ? (user.permissions as Permission[]) : [],

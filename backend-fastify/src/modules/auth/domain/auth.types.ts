@@ -1,10 +1,10 @@
-import type { Role } from "@/types/auth"
+import type { ROLE } from "@prisma/client"
 
 export interface IRegisterPayload {
   name: string
   email: string
   password: string
-  role?: Role
+  role?: ROLE
 }
 
 export interface ILoginPayload {
@@ -39,7 +39,7 @@ export interface IUserResponse {
   name: string
   email: string
   email_verified: boolean
-  role: Role
+  role: ROLE
   is_owner: boolean
   is_active: boolean
   permissions: string[]

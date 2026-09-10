@@ -1,4 +1,4 @@
-import type { Role } from "@/types/auth"
+import type { ROLE } from "@prisma/client"
 
 export type Permission =
   | "catalog_read"
@@ -16,7 +16,7 @@ export interface IUserEntity {
   email_verified: boolean
   phone?: string
   image?: string
-  role: Role
+  role: ROLE
   is_owner: boolean
   is_active: boolean
   permissions: Permission[]
