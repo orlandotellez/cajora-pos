@@ -110,20 +110,16 @@ const {
             }
           });
           document.querySelectorAll('[data-auth-cta="content"]').forEach(function (el) {
-            if (paid) {
+            if (hasSession) {
               el.setAttribute('href', posUrl);
               el.setAttribute('target', '_blank');
               el.setAttribute('rel', 'noopener');
               setCtaText(el, 'Ir a mi tienda');
-            } else if (hasSession) {
-              el.setAttribute('href', checkoutUrl);
-              el.removeAttribute('target');
-              el.removeAttribute('rel');
-              setCtaText(el, 'Continuar pago');
             } else {
               el.setAttribute('href', checkoutUrl);
               el.removeAttribute('target');
               el.removeAttribute('rel');
+              setCtaText(el, 'Registrar tienda');
             }
           });
           document.querySelectorAll('[data-auth-guest]').forEach(function (el) {
