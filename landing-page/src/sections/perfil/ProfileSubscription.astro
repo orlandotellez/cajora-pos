@@ -18,7 +18,10 @@
     </div>
     <div class="profile__row" data-profile-row-period>
       <dt data-profile-period-label>Próxima renovación</dt>
-      <dd data-profile-period>—</dd>
+      <dd>
+        <span data-profile-period>—</span>
+        <span class="profile__countdown" data-profile-countdown hidden></span>
+      </dd>
     </div>
     <div class="profile__row" data-profile-row-cancel hidden>
       <dt>Cancelación</dt>
@@ -76,6 +79,16 @@
     text-align: right;
     font-weight: 500;
     overflow-wrap: anywhere;
+  }
+
+  /* Cuenta regresiva relativa ("Se renueva en 30d 8h"): secundaria respecto a la
+     fecha absoluta, que es la que manda. */
+  .profile__countdown {
+    display: block;
+    margin-top: 0.15rem;
+    font-size: 0.8125rem;
+    font-weight: 400;
+    color: var(--text-muted);
   }
 
   .profile__badge {

@@ -1,4 +1,5 @@
 import { formatDate } from './format';
+import { renderCountdown } from './countdown';
 
 const apiUrl = import.meta.env.PUBLIC_API_URL;
 
@@ -20,10 +21,14 @@ interface BillingData {
 
 const OVERDUE_HINT = 'Tu período venció y no pudimos cobrar la renovación.';
 
+// Evita apilar intervalos si la facturación se vuelve a renderizar.
+let stopCountdown: (() => void) | null = null;
+
 export async function renderBilling(fetchOpts: { headers?: Record<string, string>; credentials?: RequestCredentials }): Promise<void> {
   const billingNext = document.querySelector<HTMLElement>('[data-billing-next]')!;
   const billingNextLabel = document.querySelector<HTMLElement>('[data-billing-next-label]')!;
   const billingNextDate = document.querySelector<HTMLElement>('[data-billing-next-date]')!;
+  const billingCountdown = document.querySelector<HTMLElement>('[data-billing-countdown]')!;
   const billingLoading = document.querySelector<HTMLElement>('[data-billing-loading]')!;
   const billingEmpty = document.querySelector<HTMLElement>('[data-billing-empty]')!;
   const billingTable = document.querySelector<HTMLElement>('[data-billing-table]')!;
@@ -37,6 +42,11 @@ export async function renderBilling(fetchOpts: { headers?: Record<string, string
     const data = (await res.json()) as BillingData;
 
     billingLoading.hidden = true;
+
+    stopCountdown?.();
+    stopCountdown = null;
+    billingCountdown.hidden = true;
+    billingCountdown.textContent = '';
 
     // El backend manda `next_payment_at: null` cuando el período ya venció, y
     // `overdue_since` con la fecha en que terminó. Antes se pintaba esa fecha como
@@ -57,6 +67,11 @@ export async function renderBilling(fetchOpts: { headers?: Record<string, string
       billingNext.classList.remove('is-overdue');
       billingNextLabel.textContent = 'Próxima fecha de pago';
       billingNextDate.textContent = formatDate(data.next_payment_at);
+      // Solo cuando el cobro está al día: en past_due el texto de la tarjeta ya dice
+      // que el pago falló, y anunciar una renovación lo contradiría.
+      if (data.status === 'active') {
+        stopCountdown = renderCountdown(billingCountdown, data.next_payment_at, 'renueva');
+      }
     }
 
     const payments = Array.isArray(data.payments) ? data.payments : [];
