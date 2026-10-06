@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/config/prisma"
-import { NotFoundError } from "@/core/errors/AppError"
+import { ConflictError, NotFoundError } from "@/core/errors/AppError"
 import type { ISubscriptionRepository } from "@/modules/subscriptions/domain/subscription.interface"
 import type { ISubscriptionEventRepository } from "@/modules/subscriptions/domain/subscription-event.interface"
 import type { UpdateSubscriptionInput } from "@/modules/subscriptions/domain/subscription.entities"
@@ -13,6 +13,8 @@ import type {
   ISubscriptionsListFilters,
   ISubscriptionsListResponse,
   IStoreUsersResponse,
+  IUserAccessResult,
+  UserAccessStatus,
 } from "../domain/super-admin.types"
 
 interface SuperAdminDeps {
@@ -182,6 +184,7 @@ export const createSuperAdminService = ({ subscriptionRepo, eventRepo }: SuperAd
         phone: true,
         created_at: true,
         deleted_at: true,
+        access_status: true,
       },
     })
 
@@ -460,5 +463,40 @@ export const createSuperAdminService = ({ subscriptionRepo, eventRepo }: SuperAd
       status: sub.status,
       updated_at: sub.updated_at,
     }
+  },
+
+  /**
+   * Cambia el acceso de un usuario a la plataforma desde el panel de super admin.
+   *
+   * No reusa `is_active` a propósito: ese switch lo maneja el dueño de la tienda y
+   * podría revertir la restricción en dos clics.
+   */
+  async updateUserAccess(
+    userId: string,
+    accessStatus: UserAccessStatus,
+  ): Promise<IUserAccessResult> {
+    const user = await prisma.user.findFirst({
+      where: { id: userId, deleted_at: null },
+      select: { id: true, role: true },
+    })
+    if (!user) throw new NotFoundError("User not found")
+
+    // Evita que un super admin se deje afuera del panel sin vuelta atrás.
+    if (user.role === "super_admin") {
+      throw new ConflictError("No se puede restringir el acceso de un super administrador.")
+    }
+
+    return prisma.user.update({
+      where: { id: userId },
+      data: { access_status: accessStatus },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        access_status: true,
+        updated_at: true,
+      },
+    })
   },
 })

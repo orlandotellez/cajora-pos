@@ -2,6 +2,7 @@ import type { FastifyReply, FastifyRequest } from "fastify"
 import { createSuperAdminService } from "../application/super-admin.service"
 import { SubscriptionRepository } from "@/modules/subscriptions/infrastructure/subscription.prisma.repository"
 import { SubscriptionEventRepository } from "@/modules/subscriptions/infrastructure/subscription-event.prisma.repository"
+import { USER_ACCESS_STATUSES, type UserAccessStatus } from "../domain/super-admin.types"
 
 const superAdminService = createSuperAdminService({
   subscriptionRepo: SubscriptionRepository,
@@ -71,6 +72,18 @@ export const superAdminController = {
     if (!result) {
       return reply.status(404).send({ error: "Suscripción no encontrada" })
     }
+    return reply.status(200).send(result)
+  },
+
+  updateUserAccess: async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: string }
+    const { access_status } = request.body as { access_status?: string }
+    if (!access_status || !USER_ACCESS_STATUSES.includes(access_status as UserAccessStatus)) {
+      return reply.status(400).send({
+        error: `Acceso inválido. Permitidos: ${USER_ACCESS_STATUSES.join(", ")}`,
+      })
+    }
+    const result = await superAdminService.updateUserAccess(id, access_status as UserAccessStatus)
     return reply.status(200).send(result)
   },
 }

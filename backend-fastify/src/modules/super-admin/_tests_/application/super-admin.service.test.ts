@@ -1,14 +1,14 @@
 import { describe, it, beforeEach, afterEach, mock } from "bun:test"
 import { mock as nodeMock } from "node:test"
 import assert from "node:assert/strict"
-import { NotFoundError } from "@/core/errors/AppError"
+import { ConflictError, NotFoundError } from "@/core/errors/AppError"
 import type { ISubscriptionEntity } from "@/modules/subscriptions/domain/subscription.entities"
 import type { ISubscriptionRepository } from "@/modules/subscriptions/domain/subscription.interface"
 import type { ISubscriptionEventRepository } from "@/modules/subscriptions/domain/subscription-event.interface"
 
 const prismaMocks: Record<string, any> = {
   store: { count: async () => 0, findMany: async () => [], findUnique: async () => null },
-  user: { groupBy: async () => [], findMany: async () => [] },
+  user: { groupBy: async () => [], findMany: async () => [], findFirst: async () => null, update: async () => ({}) },
   product: { count: async () => 0, groupBy: async () => [] },
   service: { groupBy: async () => [] },
   sale: { count: async () => 0 },
@@ -101,6 +101,8 @@ beforeEach(() => {
   prismaMocks.store.findUnique = async () => null
   prismaMocks.user.groupBy = async () => []
   prismaMocks.user.findMany = async () => []
+  prismaMocks.user.findFirst = async () => null
+  prismaMocks.user.update = async () => ({})
   prismaMocks.product.count = async () => 0
   prismaMocks.product.groupBy = async () => []
   prismaMocks.service.groupBy = async () => []
@@ -490,6 +492,71 @@ describe("super-admin service", () => {
 
       assert.equal(result, null)
       assert.equal(eventCalled, false)
+    })
+  })
+
+  describe("updateUserAccess", () => {
+    function makeUserRow(overrides: Record<string, any> = {}): any {
+      return {
+        id: "user-1",
+        name: "Ana",
+        email: "ana@cajorapos.com",
+        role: "admin",
+        access_status: "enabled",
+        updated_at: new Date("2026-10-06T10:00:00Z"),
+        ...overrides,
+      }
+    }
+
+    it("restringe el acceso de un usuario y devuelve el estado nuevo", async () => {
+      let updateArgs: any
+      prismaMocks.user.findFirst = async () => makeUserRow()
+      prismaMocks.user.update = async (args: any) => {
+        updateArgs = args
+        return makeUserRow({ access_status: "restricted" })
+      }
+
+      const result = await superAdminService.updateUserAccess("user-1", "restricted")
+
+      assert.deepEqual(updateArgs.where, { id: "user-1" })
+      assert.deepEqual(updateArgs.data, { access_status: "restricted" })
+      assert.equal(result?.access_status, "restricted")
+      assert.equal(result?.id, "user-1")
+    })
+
+    it("devuelve el acceso a enabled", async () => {
+      prismaMocks.user.findFirst = async () => makeUserRow({ access_status: "restricted" })
+      prismaMocks.user.update = async () => makeUserRow({ access_status: "enabled" })
+
+      const result = await superAdminService.updateUserAccess("user-1", "enabled")
+
+      assert.equal(result?.access_status, "enabled")
+    })
+
+    // Un super admin que se restringe a sí mismo se deja afuera del panel sin
+    // forma de volver a entrar desde la app.
+    it("rechaza restringir a un super administrador", async () => {
+      let updateCalled = false
+      prismaMocks.user.findFirst = async () => makeUserRow({ role: "super_admin" })
+      prismaMocks.user.update = async () => {
+        updateCalled = true
+        return makeUserRow()
+      }
+
+      await assert.rejects(
+        () => superAdminService.updateUserAccess("user-1", "restricted"),
+        (err: unknown) => err instanceof ConflictError && err.statusCode === 409,
+      )
+      assert.equal(updateCalled, false, "no debe escribir nada")
+    })
+
+    it("rechaza restringir una cuenta ya eliminada", async () => {
+      prismaMocks.user.findFirst = async () => null
+
+      await assert.rejects(
+        () => superAdminService.updateUserAccess("user-1", "restricted"),
+        (err: unknown) => err instanceof NotFoundError,
+      )
     })
   })
 })

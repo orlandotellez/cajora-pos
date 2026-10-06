@@ -46,4 +46,11 @@ export const superAdminRoutes = async (fastify: FastifyInstance, _opts: FastifyP
     schema: { tags: TAGS, description: "Cambiar estado de la suscripción de una tienda" },
     preHandler: [authGuard, superAdminGuard],
   }, superAdminController.updateSubscriptionStatus)
+
+  // Restringir o devolver el acceso de un usuario a la plataforma.
+  // Es un switch propio del super admin: el dueño de la tienda no puede revertirlo.
+  fastify.patch("/users/:id/access", {
+    schema: { tags: TAGS, description: "Restringir o habilitar el acceso de un usuario (enabled|restricted)" },
+    preHandler: [authGuard, superAdminGuard],
+  }, superAdminController.updateUserAccess)
 }
