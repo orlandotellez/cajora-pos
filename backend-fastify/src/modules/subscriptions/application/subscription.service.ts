@@ -11,6 +11,7 @@ import {
   type SubscriptionActor,
 } from "../domain/subscription-event.interface"
 import { mapToResponse } from "./common/subscriptions.mappers"
+import { resolveEntitlement } from "../domain/subscription.entitlement"
 
 const PERIOD_DAYS = 30
 const PLAN_PRICE = "15.99"
@@ -186,6 +187,8 @@ export const createSubscriptionService = (
           current_period_start: null,
           current_period_end: null,
           cancel_at_period_end: false,
+          grace_ends_at: null,
+          days_overdue: null,
         }
       }
       return mapToResponse(sub)
@@ -242,8 +245,12 @@ export const createSubscriptionService = (
       for (const p of payments) total += Number(p.amount) || 0
 
       const sub = await repository.getByStoreId(storeId)
+      // Solo se anuncia próxima fecha si el acceso sigue vigente. Con el período ya
+      // vencido la respuesta trae `null`: la UI no debe pintar "Próxima fecha de pago"
+      // con una fecha que ya pasó.
+      const entitlement = sub ? resolveEntitlement(sub) : null
       const nextPaymentAt =
-        sub && (sub.status === "active" || sub.status === "past_due") && sub.current_period_end
+        entitlement && entitlement.allowed && sub?.current_period_end
           ? sub.current_period_end.toISOString()
           : null
 
@@ -252,6 +259,10 @@ export const createSubscriptionService = (
         total_paid: total.toFixed(2),
         currency: payments[0]?.currency ?? PLAN_CURRENCY,
         next_payment_at: nextPaymentAt,
+        status: entitlement?.state ?? "active",
+        days_overdue: entitlement?.daysOverdue ?? null,
+        overdue_since:
+          entitlement && !entitlement.allowed ? (sub?.current_period_end?.toISOString() ?? null) : null,
       }
     },
   }

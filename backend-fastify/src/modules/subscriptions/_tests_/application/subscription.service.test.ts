@@ -18,8 +18,11 @@ function makeEntity(overrides: Partial<ISubscriptionEntity> = {}): ISubscription
     plan: "monthly",
     status: "pending",
     paypal_subscription_id: null,
-    current_period_start: null,
-    current_period_end: null,
+    // Período vigente por defecto: el estado se resuelve contra el reloj, así que un
+    // fixture `active` sin período ya no significaría "activa" (y las fechas fijas
+    // absolutas se pudren solas). Los tests que necesitan otra cosa lo dicen.
+    current_period_start: new Date(now.getTime() - 10 * DAY_MS),
+    current_period_end: new Date(now.getTime() + 20 * DAY_MS),
     cancel_at_period_end: false,
     created_at: now,
     updated_at: now,
@@ -507,6 +510,35 @@ describe("SubscriptionService", () => {
       assert.equal(res.mode, "cloud")
       assert.equal(res.status, "past_due")
     })
+
+    it("con fila active pero período vencido → devuelve expired (regresión: la landing nunca veía 'Vencida')", async () => {
+      const existing = makeEntity({
+        status: "active",
+        current_period_end: new Date("2026-09-11T12:00:00Z"),
+      })
+      const { repo } = makeRepo(existing)
+      const service = createSubscriptionService(repo)
+
+      const res = await service.getByStore("store-1")
+
+      assert.equal(res.status, "expired")
+      assert.equal(res.current_period_end, "2026-09-11T12:00:00.000Z", "el período pagado se sigue informando")
+      assert.equal(res.days_overdue !== null && res.days_overdue > 0, true)
+      assert.equal(res.grace_ends_at !== null, true)
+    })
+
+    it("active dentro de la gracia → sigue active, no expired", async () => {
+      const existing = makeEntity({
+        status: "active",
+        current_period_end: new Date(Date.now() - 2 * 86_400_000),
+      })
+      const { repo } = makeRepo(existing)
+      const service = createSubscriptionService(repo)
+
+      const res = await service.getByStore("store-1")
+
+      assert.equal(res.status, "active")
+    })
   })
 
   describe("getBilling", () => {
@@ -551,7 +583,8 @@ describe("SubscriptionService", () => {
         },
       }
 
-      const periodEnd = new Date("2026-09-01T12:00:00Z")
+      // Período vigente: la fecha de pago siguiente es real, no una fecha ya pasada.
+      const periodEnd = new Date("2099-09-01T12:00:00Z")
       const { repo } = makeRepo(
         makeEntity({ status: "active", current_period_end: periodEnd }),
       )
@@ -564,7 +597,36 @@ describe("SubscriptionService", () => {
       assert.equal(res.payments[0].currency, "USD")
       assert.equal(res.payments[0].paid_at, "2026-08-01T12:00:00.000Z")
       assert.equal(res.total_paid, "15.99")
-      assert.equal(res.next_payment_at, "2026-09-01T12:00:00.000Z")
+      assert.equal(res.next_payment_at, "2099-09-01T12:00:00.000Z")
+      assert.equal(res.status, "active")
+    })
+
+    it("sub active con período ya vencido → next_payment_at null y status expired (regresión: fecha pasada como 'próxima')", async () => {
+      const eventRepo = {
+        async create() {},
+        async createIdempotent() {
+          return null
+        },
+        async findMany() {
+          return []
+        },
+        async count() {
+          return 0
+        },
+      }
+      // Caso reportado: cobró el 2026-08-12, el período terminó el 2026-09-11 y
+      // la fila quedó 'active'. La API no debe anunciar otra fecha de pago.
+      const { repo } = makeRepo(
+        makeEntity({ status: "active", current_period_end: new Date("2026-09-11T12:00:00Z") }),
+      )
+      const service = createSubscriptionService(repo, eventRepo)
+
+      const res = await service.getBilling("store-1")
+
+      assert.equal(res.next_payment_at, null)
+      assert.equal(res.status, "expired")
+      assert.equal(res.overdue_since, "2026-09-11T12:00:00.000Z", "el período vencido se informa para el copy")
+      assert.equal(res.days_overdue !== null && res.days_overdue > 0, true)
     })
 
     it("sin cobros → payments vacío, total 0 y sin próxima fecha si no hay período", async () => {
@@ -886,7 +948,7 @@ describe("SubscriptionService", () => {
         },
       }
       const { repo } = makeRepo(
-        makeEntity({ status: "active", current_period_end: new Date("2026-09-01T12:00:00Z") }),
+        makeEntity({ status: "active", current_period_end: new Date("2099-09-01T12:00:00Z") }),
       )
       const service = createSubscriptionService(repo, eventRepo, webhookRepo)
 
@@ -899,7 +961,7 @@ describe("SubscriptionService", () => {
       assert.equal(res.payments[1].currency, "EUR")
       assert.equal(res.total_paid, "35.48")
       assert.equal(res.currency, "USD")
-      assert.equal(res.next_payment_at, "2026-09-01T12:00:00.000Z")
+      assert.equal(res.next_payment_at, "2099-09-01T12:00:00.000Z")
     })
   })
 })
