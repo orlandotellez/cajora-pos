@@ -13,10 +13,16 @@ interface BillingData {
   payments?: BillingPayment[];
   total_paid?: number;
   currency?: string;
+  status?: string;
+  days_overdue?: number | null;
+  overdue_since?: string | null;
 }
+
+const OVERDUE_HINT = 'Tu período venció y no pudimos cobrar la renovación.';
 
 export async function renderBilling(fetchOpts: { headers?: Record<string, string>; credentials?: RequestCredentials }): Promise<void> {
   const billingNext = document.querySelector<HTMLElement>('[data-billing-next]')!;
+  const billingNextLabel = document.querySelector<HTMLElement>('[data-billing-next-label]')!;
   const billingNextDate = document.querySelector<HTMLElement>('[data-billing-next-date]')!;
   const billingLoading = document.querySelector<HTMLElement>('[data-billing-loading]')!;
   const billingEmpty = document.querySelector<HTMLElement>('[data-billing-empty]')!;
@@ -32,8 +38,24 @@ export async function renderBilling(fetchOpts: { headers?: Record<string, string
 
     billingLoading.hidden = true;
 
-    if (data.next_payment_at) {
+    // El backend manda `next_payment_at: null` cuando el período ya venció, y
+    // `overdue_since` con la fecha en que terminó. Antes se pintaba esa fecha como
+    // "Próxima fecha de pago" aunque fuera un mes vieja.
+    const overdue = data.status === 'expired' && Boolean(data.overdue_since);
+    if (overdue) {
       billingNext.hidden = false;
+      billingNext.classList.add('is-overdue');
+      billingNextLabel.textContent = 'Período vencido';
+      billingNextDate.textContent = formatDate(data.overdue_since!);
+      const hint = billingNext.querySelector<HTMLElement>('[data-billing-next-hint]');
+      if (hint) {
+        hint.textContent = OVERDUE_HINT;
+        hint.hidden = false;
+      }
+    } else if (data.next_payment_at) {
+      billingNext.hidden = false;
+      billingNext.classList.remove('is-overdue');
+      billingNextLabel.textContent = 'Próxima fecha de pago';
       billingNextDate.textContent = formatDate(data.next_payment_at);
     }
 

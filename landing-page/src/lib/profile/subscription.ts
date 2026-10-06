@@ -6,6 +6,19 @@ export interface Subscription {
   mode?: string;
   current_period_end?: string | null;
   cancel_at_period_end?: boolean;
+  days_overdue?: number | null;
+  grace_ends_at?: string | null;
+}
+
+/**
+ * El backend ya resuelve el estado contra el reloj, así que `status === 'active'`
+ * implica período vigente y `status === 'expired'` implica período vencido. Esta capa
+ * no vuelve a calcular fechas: siaguera muestra "próxima" algo que ya pasó.
+ */
+function overdueCopy(daysOverdue: number | null, periodEnd: string | null): string {
+  const when = periodEnd ? ` el ${formatDate(periodEnd)}` : '';
+  const since = daysOverdue && daysOverdue > 0 ? ` (hace ${daysOverdue} ${daysOverdue === 1 ? 'día' : 'días'})` : '';
+  return `Tu período venció${when}${since} y no pudimos cobrar la renovación. Regularizá el pago para volver a usar el modo Cloud.`;
 }
 
 const apiUrl = import.meta.env.PUBLIC_API_URL;
@@ -98,10 +111,18 @@ export function renderSub(sub: Subscription): void {
     case 'canceled':
     case 'expired': {
       setBadge(sub.status === 'canceled' ? 'Cancelada' : 'Vencida', 'is-canceled');
-      textEl.textContent =
-        'Tu suscripción no está activa. Volvé a suscribirte para seguir usando el modo Cloud.';
+      if (sub.status === 'canceled') {
+        textEl.textContent =
+          'Tu suscripción no está activa. Volvé a suscribirte para seguir usando el modo Cloud.';
+        ctaEl.textContent = 'Suscribirme de nuevo';
+      } else {
+        periodLabelEl.textContent = 'Período vencido';
+        periodValueEl.textContent = formatDate(sub.current_period_end);
+        rowPeriodEl.hidden = false;
+        textEl.textContent = overdueCopy(sub.days_overdue ?? null, sub.current_period_end ?? null);
+        ctaEl.textContent = 'Regularizar mi pago';
+      }
       ctaEl.hidden = false;
-      ctaEl.textContent = 'Suscribirme de nuevo';
       ctaEl.href = checkoutUrl;
       break;
     }

@@ -10,8 +10,11 @@
   </p>
 
   <div class="profile__billing-next" data-billing-next hidden>
-    <span class="profile__billing-next-label">Próxima fecha de pago</span>
-    <strong data-billing-next-date>—</strong>
+    <div class="profile__billing-next-main">
+      <span class="profile__billing-next-label" data-billing-next-label>Próxima fecha de pago</span>
+      <strong data-billing-next-date>—</strong>
+    </div>
+    <span class="profile__billing-next-hint" data-billing-next-hint hidden></span>
   </div>
 
   <p data-billing-loading class="profile__billing-note">Consultando tus pagos…</p>
@@ -61,14 +64,36 @@
 
   .profile__billing-next {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
+    flex-direction: column;
+    gap: 0.35rem;
     background: var(--bg);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 0.75rem 1rem;
     margin-bottom: 1.25rem;
+  }
+
+  /* Período vencido: el recuadro deja de ser informativo y pasa a ser un aviso. */
+  .profile__billing-next.is-overdue {
+    border-color: rgba(239, 68, 68, 0.45);
+    background: rgba(239, 68, 68, 0.08);
+  }
+
+  .profile__billing-next.is-overdue .profile__billing-next-label {
+    color: #ef4444;
+    font-weight: 600;
+  }
+
+  .profile__billing-next-main {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .profile__billing-next-hint {
+    color: var(--text-muted);
+    font-size: 0.8125rem;
   }
 
   .profile__billing-next-label {
@@ -131,7 +156,7 @@
       padding: 1.25rem;
     }
 
-    .profile__billing-next {
+    .profile__billing-next-main {
       flex-direction: column;
       align-items: flex-start;
       gap: 0.25rem;
