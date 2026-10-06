@@ -6,6 +6,8 @@ import {
   Star,
   AlertTriangle,
   Search,
+  ShieldCheck,
+  Ban,
 } from "lucide-react";
 import {
   superAdminApi,
@@ -70,6 +72,25 @@ export default function AllUsers() {
     }
   }, []);
 
+  // El switch de acceso es del super admin: no lo toca el dueño de la tienda.
+  // Se actualiza local para que el select responda al instante y se revierte si
+  // el backend rechaza.
+  const handleAccessChange = useCallback(
+    async (userId: string, accessStatus: "enabled" | "restricted") => {
+      const previous = users;
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, access_status: accessStatus } : u)),
+      );
+      try {
+        await superAdminApi.updateUserAccess(userId, accessStatus);
+      } catch (err) {
+        setUsers(previous);
+        setError((err as Error)?.message || "No se pudo cambiar el acceso");
+      }
+    },
+    [users],
+  );
+
   useEffect(() => {
     load();
   }, [load]);
@@ -128,6 +149,7 @@ export default function AllUsers() {
                 <th>Tienda</th>
                 <th>Rol</th>
                 <th>Estado</th>
+                <th>Acceso</th>
                 <th className={styles.thNum}>Registro</th>
               </tr>
             </thead>
@@ -135,14 +157,14 @@ export default function AllUsers() {
               {loading && users.length === 0
                 ? Array.from({ length: 6 }).map((_, i) => (
                   <tr key={i}>
-                    <td colSpan={5} style={{ padding: "14px 20px" }}>
+                    <td colSpan={6} style={{ padding: "14px 20px" }}>
                       <div className={styles.skeleton} style={{ width: "100%", height: 22, borderRadius: 5 }} />
                     </td>
                   </tr>
                 ))
                 : filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={5}>
+                    <td colSpan={6}>
                       <div className={styles.empty}>
                         <span className={styles.emptyIcon}>
                           <Users size={22} />
@@ -190,6 +212,15 @@ export default function AllUsers() {
                       <td>
                         <UserStatusBadge user={u} />
                       </td>
+                      <td>
+                        <AccessSelect
+                          userId={u.id}
+                          role={u.role}
+                          accessStatus={u.access_status ?? "enabled"}
+                          disabled={!!u.deleted_at}
+                          onChange={handleAccessChange}
+                        />
+                      </td>
                       <td className={styles.tdNum}>
                         <span className={styles.userDate}>
                           {new Date(u.created_at).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" })}
@@ -223,5 +254,64 @@ export default function AllUsers() {
         )}
       </div>
     </>
+  );
+}
+
+/**
+ * Select de acceso a la plataforma. Escribe `access_status` vía el endpoint del
+ * super admin, no el `is_active` que maneja el dueño de la tienda.
+ *
+ * Los super admins se muestran deshabilitados: la restricción no aplica a quien
+ * administra la plataforma (el backend también lo rechaza con 409).
+ */
+function AccessSelect({
+  userId,
+  role,
+  accessStatus,
+  disabled,
+  onChange,
+}: {
+  userId: string;
+  role: string;
+  accessStatus: "enabled" | "restricted";
+  disabled: boolean;
+  onChange: (userId: string, accessStatus: "enabled" | "restricted") => void;
+}) {
+  const [changing, setChanging] = useState(false);
+
+  const handleChange = async (next: string) => {
+    if (next === accessStatus) return;
+    setChanging(true);
+    try {
+      await onChange(userId, next as "enabled" | "restricted");
+    } finally {
+      setChanging(false);
+    }
+  };
+
+  if (role === "super_admin") {
+    return <span className={styles.userDate}>—</span>;
+  }
+
+  return (
+    // El <select> nativo no puede renderizar componentes dentro de sus <option>
+    // (solo texto), así que el icono va al lado y refleja el valor actual.
+    <span className={styles.selectWithIcon}>
+      {accessStatus === "enabled" ? (
+        <ShieldCheck size={13} className={styles.stateIcon_enabled} />
+      ) : (
+        <Ban size={13} className={styles.stateIcon_restricted} />
+      )}
+      <select
+        className={`${styles.statusSelect} ${styles.accessSelect} ${styles[`accessSelect_${accessStatus}`] ?? ""}`}
+        value={accessStatus}
+        onChange={(e) => void handleChange(e.target.value)}
+        disabled={changing || disabled}
+        title={disabled ? "Usuario eliminado" : "Restringir o habilitar el acceso a la plataforma"}
+      >
+        <option value="enabled">Con acceso</option>
+        <option value="restricted">Sin acceso</option>
+      </select>
+    </span>
   );
 }

@@ -1,4 +1,4 @@
-import type { account, session, ROLE, user, verification } from "@prisma/client"
+import type { account, session, ROLE, USER_ACCESS, user, verification } from "@prisma/client"
 import type { IAccountEntity, ISessionEntity, IUserEntity, IVerificationEntity, Permission } from "../../domain/auth.entities"
 
 export function mapPrismaUserToEntity(user: user): IUserEntity {
@@ -12,6 +12,7 @@ export function mapPrismaUserToEntity(user: user): IUserEntity {
     role: user.role as ROLE,
     is_owner: user.is_owner ?? false,
     is_active: user.is_active ?? true,
+    access_status: (user.access_status ?? "enabled") as USER_ACCESS,
     permissions: Array.isArray(user.permissions) ? (user.permissions as Permission[]) : [],
     store_id: user.store_id,
     created_at: user.created_at,

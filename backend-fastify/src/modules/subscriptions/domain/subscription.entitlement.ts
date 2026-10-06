@@ -1,9 +1,8 @@
 import type { SubscriptionStatus } from "./subscription.types"
+import { DAY_MS } from "./subscription.period"
 
 /** Días de tolerancia tras `current_period_end` antes de cortar el acceso. */
 export const GRACE_DAYS = 3
-
-const DAY_MS = 86_400_000
 
 /** Campos de la suscripción que el reloj necesita para decidir el acceso. */
 export interface EntitlementInput {

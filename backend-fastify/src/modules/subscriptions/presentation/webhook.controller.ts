@@ -11,9 +11,9 @@ import type { SubscriptionEventAction } from "../domain/subscription-event.inter
 import type { UpdateSubscriptionInput } from "../domain/subscription.entities"
 import { NotificationRepository } from "@/modules/notifications/infrastructure/notification.prisma.repository"
 import { createNotificationService } from "@/modules/notifications/application/notification.service"
+import { needsFreshPeriod, periodEnd } from "../domain/subscription.period"
 
 const notificationService = createNotificationService(NotificationRepository)
-const PERIOD_DAYS = 30
 
 const STATUS_LABELS: Record<string, string> = {
   past_due: "Pago fallido",
@@ -172,9 +172,9 @@ async function dispatch(request: FastifyRequest, ev: paypal_webhook_event): Prom
       await SubscriptionRepository.update(sub.store_id, {
         status: "active",
         current_period_start: now,
-        ...(sub.current_period_end
-          ? {}
-          : { current_period_end: new Date(now.getTime() + PERIOD_DAYS * 86_400_000) }),
+        // Un período vencido no sirve como respaldo del acceso: si queda el viejo,
+        // el start pasa a hoy y el end sigue en el pasado.
+        ...(needsFreshPeriod(sub, now) ? { current_period_end: periodEnd(now) } : {}),
       })
       await SubscriptionEventRepository.create({
         store_id: sub.store_id,
@@ -192,7 +192,7 @@ async function dispatch(request: FastifyRequest, ev: paypal_webhook_event): Prom
       await applyByResource(log, ev, {
         status: "active",
         current_period_start: now,
-        current_period_end: new Date(now.getTime() + PERIOD_DAYS * 86_400_000),
+        current_period_end: periodEnd(now),
         cancel_at_period_end: false,
       }, SUBSCRIPTION_EVENT_ACTIONS.WEBHOOK_SALE_COMPLETED)
       break

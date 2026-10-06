@@ -243,6 +243,46 @@ describe("webhookController.receive", () => {
     assert.equal(data.current_period_end, undefined, "no debe pisar un período ya vigente")
   })
 
+  // Un período vencido no sirve como respaldo del acceso: el start pasaba a hoy y el
+  // end quedaba en el pasado, así que la sub seguía vencida pese al ACTIVATED.
+  it("ACTIVATED con período VENCIDO → otorga uno nuevo de ~30 días", async () => {
+    mock.property(env, "PAYPAL_WEBHOOK_ID", WEBHOOK_ID)
+    mockPayPalVerify("SUCCESS")
+    const now = Date.now()
+    const rawBody = JSON.stringify({
+      id: "evt-2d",
+      event_type: "BILLING.SUBSCRIPTION.ACTIVATED",
+      resource_type: "subscription",
+      resource: { id: "I-PAYPAL-2D", resource_type: "subscription" },
+    })
+
+    mock.method(PayPalWebhookEventRepository, "insert", async () => makeOutbox({ event_id: "evt-2d" }))
+    mock.method(PayPalWebhookEventRepository, "markProcessed", async () => {})
+    mock.method(SubscriptionRepository, "getByPaypalSubscriptionId", async () => ({
+      id: "sub-1",
+      store_id: "store-1",
+      mode: "cloud",
+      plan: "monthly",
+      status: "expired",
+      paypal_subscription_id: "I-PAYPAL-2D",
+      current_period_start: new Date(now - 55 * 86_400_000),
+      current_period_end: new Date(now - 25 * 86_400_000),
+      cancel_at_period_end: false,
+      created_at: new Date(),
+      updated_at: new Date(),
+    }))
+    const update = mock.method(SubscriptionRepository, "update", async () => null)
+
+    const { reply, state } = buildReply()
+    await webhookController.receive(buildRequest(rawBody) as never, reply as never)
+
+    assert.equal(state.status, 200)
+    const data = update.mock.calls[0].arguments[1] as { current_period_end?: Date }
+    assert.ok(data.current_period_end, "debe setear un período nuevo")
+    const days = (data.current_period_end!.getTime() - now) / 86_400_000
+    assert.ok(days > 29 && days < 31, `período de ~30 días, fue ${days}`)
+  })
+
   it("PAYMENT.SALE.COMPLETED (renovación) → extiende +30 días usando billing_agreement_id", async () => {    mock.property(env, "PAYPAL_WEBHOOK_ID", WEBHOOK_ID)
     mockPayPalVerify("SUCCESS")
     // En PAYMENT.SALE.* el resource.id es el del SALE; la sub va en billing_agreement_id (fix T1.7.6)

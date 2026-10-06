@@ -1,14 +1,14 @@
 import { describe, it, beforeEach, afterEach, mock } from "bun:test"
 import { mock as nodeMock } from "node:test"
 import assert from "node:assert/strict"
-import { NotFoundError } from "@/core/errors/AppError"
+import { ConflictError, NotFoundError } from "@/core/errors/AppError"
 import type { ISubscriptionEntity } from "@/modules/subscriptions/domain/subscription.entities"
 import type { ISubscriptionRepository } from "@/modules/subscriptions/domain/subscription.interface"
 import type { ISubscriptionEventRepository } from "@/modules/subscriptions/domain/subscription-event.interface"
 
 const prismaMocks: Record<string, any> = {
   store: { count: async () => 0, findMany: async () => [], findUnique: async () => null },
-  user: { groupBy: async () => [], findMany: async () => [] },
+  user: { groupBy: async () => [], findMany: async () => [], findFirst: async () => null, update: async () => ({}) },
   product: { count: async () => 0, groupBy: async () => [] },
   service: { groupBy: async () => [] },
   sale: { count: async () => 0 },
@@ -21,7 +21,8 @@ const prismaMocks: Record<string, any> = {
   $queryRaw: async () => [],
 }
 
-const subscriptionRepoMocks: Pick<ISubscriptionRepository, "update"> = {
+const subscriptionRepoMocks: Pick<ISubscriptionRepository, "update" | "getByStoreId"> = {
+  getByStoreId: async (_storeId) => null,
   update: async (_storeId, _data) =>
     ({
       id: "sub-1",
@@ -101,6 +102,8 @@ beforeEach(() => {
   prismaMocks.store.findUnique = async () => null
   prismaMocks.user.groupBy = async () => []
   prismaMocks.user.findMany = async () => []
+  prismaMocks.user.findFirst = async () => null
+  prismaMocks.user.update = async () => ({})
   prismaMocks.product.count = async () => 0
   prismaMocks.product.groupBy = async () => []
   prismaMocks.service.groupBy = async () => []
@@ -111,6 +114,16 @@ beforeEach(() => {
   prismaMocks.subscription_event.findMany = async () => []
   prismaMocks.subscription_event.count = async () => 0
   prismaMocks.$queryRaw = async () => []
+  subscriptionRepoMocks.getByStoreId = async () =>
+    ({
+      id: "sub-1",
+      store_id: "store-1",
+      status: "active",
+      paypal_subscription_id: "I-ABC123",
+      current_period_start: new Date("2026-09-01T10:00:00Z"),
+      current_period_end: new Date("2026-12-01T10:00:00Z"),
+      cancel_at_period_end: false,
+    }) as unknown as ISubscriptionEntity
   subscriptionRepoMocks.update = async () =>
     ({
       id: "sub-1",
@@ -448,6 +461,112 @@ describe("super-admin service", () => {
   })
 
   describe("updateSubscriptionStatus", () => {
+    // El acceso se decide contra current_period_end: marcar "active" con el período
+    // vencido dejaba la cuenta igual de bloqueada (y el panel mintiendo).
+    it("al activar con el período vencido otorga un período nuevo de 30 días", async () => {
+      let updateArgs: any
+      const now = Date.now()
+      subscriptionRepoMocks.getByStoreId = async () =>
+        ({
+          id: "sub-1",
+          store_id: "store-1",
+          status: "expired",
+          current_period_end: new Date(now - 24 * 86_400_000),
+        }) as unknown as ISubscriptionEntity
+      subscriptionRepoMocks.update = async (_storeId: string, data: any) => {
+        updateArgs = data
+        return {
+          id: "sub-1",
+          store_id: "store-1",
+          status: "active",
+          paypal_subscription_id: null,
+          updated_at: new Date(now),
+        } as unknown as ISubscriptionEntity
+      }
+
+      await superAdminService.updateSubscriptionStatus("store-1", "active")
+
+      assert.equal(updateArgs.status, "active")
+      assert.ok(updateArgs.current_period_end, "debe setear un período nuevo")
+      const days = (updateArgs.current_period_end.getTime() - now) / 86_400_000
+      assert.ok(days > 29 && days < 31, `período de ~30 días, fue ${days}`)
+    })
+
+    it("al activar con el período todavía vigente NO recorta lo ya pagado", async () => {
+      let updateArgs: any
+      subscriptionRepoMocks.getByStoreId = async () =>
+        ({
+          id: "sub-1",
+          store_id: "store-1",
+          status: "pending",
+          current_period_end: new Date(Date.now() + 20 * 86_400_000),
+        }) as unknown as ISubscriptionEntity
+      subscriptionRepoMocks.update = async (_storeId: string, data: any) => {
+        updateArgs = data
+        return {
+          id: "sub-1",
+          store_id: "store-1",
+          status: "active",
+          paypal_subscription_id: null,
+          updated_at: new Date(),
+        } as unknown as ISubscriptionEntity
+      }
+
+      await superAdminService.updateSubscriptionStatus("store-1", "active")
+
+      assert.deepEqual(updateArgs, { status: "active" }, "no debe tocar el período vigente")
+    })
+
+    it("al activar sin período guardado otorga uno nuevo", async () => {
+      let updateArgs: any
+      subscriptionRepoMocks.getByStoreId = async () =>
+        ({
+          id: "sub-1",
+          store_id: "store-1",
+          status: "pending",
+          current_period_end: null,
+        }) as unknown as ISubscriptionEntity
+      subscriptionRepoMocks.update = async (_storeId: string, data: any) => {
+        updateArgs = data
+        return {
+          id: "sub-1",
+          store_id: "store-1",
+          status: "active",
+          paypal_subscription_id: null,
+          updated_at: new Date(),
+        } as unknown as ISubscriptionEntity
+      }
+
+      await superAdminService.updateSubscriptionStatus("store-1", "active")
+
+      assert.ok(updateArgs.current_period_end, "debe setear un período nuevo")
+    })
+
+    it("los estados que no son active no tocan el período", async () => {
+      let updateArgs: any
+      subscriptionRepoMocks.getByStoreId = async () =>
+        ({
+          id: "sub-1",
+          store_id: "store-1",
+          status: "active",
+          current_period_end: new Date(Date.now() + 20 * 86_400_000),
+        }) as unknown as ISubscriptionEntity
+      subscriptionRepoMocks.update = async (_storeId: string, data: any) => {
+        updateArgs = data
+        return {
+          id: "sub-1",
+          store_id: "store-1",
+          status: "canceled",
+          paypal_subscription_id: null,
+          updated_at: new Date(),
+        } as unknown as ISubscriptionEntity
+      }
+
+      await superAdminService.updateSubscriptionStatus("store-1", "canceled")
+
+      assert.deepEqual(updateArgs, { status: "canceled" })
+    })
+
     it("updates the subscription and records an audit event", async () => {
       let updateArgs: any
       let eventArgs: any
@@ -490,6 +609,71 @@ describe("super-admin service", () => {
 
       assert.equal(result, null)
       assert.equal(eventCalled, false)
+    })
+  })
+
+  describe("updateUserAccess", () => {
+    function makeUserRow(overrides: Record<string, any> = {}): any {
+      return {
+        id: "user-1",
+        name: "Ana",
+        email: "ana@cajorapos.com",
+        role: "admin",
+        access_status: "enabled",
+        updated_at: new Date("2026-10-06T10:00:00Z"),
+        ...overrides,
+      }
+    }
+
+    it("restringe el acceso de un usuario y devuelve el estado nuevo", async () => {
+      let updateArgs: any
+      prismaMocks.user.findFirst = async () => makeUserRow()
+      prismaMocks.user.update = async (args: any) => {
+        updateArgs = args
+        return makeUserRow({ access_status: "restricted" })
+      }
+
+      const result = await superAdminService.updateUserAccess("user-1", "restricted")
+
+      assert.deepEqual(updateArgs.where, { id: "user-1" })
+      assert.deepEqual(updateArgs.data, { access_status: "restricted" })
+      assert.equal(result?.access_status, "restricted")
+      assert.equal(result?.id, "user-1")
+    })
+
+    it("devuelve el acceso a enabled", async () => {
+      prismaMocks.user.findFirst = async () => makeUserRow({ access_status: "restricted" })
+      prismaMocks.user.update = async () => makeUserRow({ access_status: "enabled" })
+
+      const result = await superAdminService.updateUserAccess("user-1", "enabled")
+
+      assert.equal(result?.access_status, "enabled")
+    })
+
+    // Un super admin que se restringe a sí mismo se deja afuera del panel sin
+    // forma de volver a entrar desde la app.
+    it("rechaza restringir a un super administrador", async () => {
+      let updateCalled = false
+      prismaMocks.user.findFirst = async () => makeUserRow({ role: "super_admin" })
+      prismaMocks.user.update = async () => {
+        updateCalled = true
+        return makeUserRow()
+      }
+
+      await assert.rejects(
+        () => superAdminService.updateUserAccess("user-1", "restricted"),
+        (err: unknown) => err instanceof ConflictError && err.statusCode === 409,
+      )
+      assert.equal(updateCalled, false, "no debe escribir nada")
+    })
+
+    it("rechaza restringir una cuenta ya eliminada", async () => {
+      prismaMocks.user.findFirst = async () => null
+
+      await assert.rejects(
+        () => superAdminService.updateUserAccess("user-1", "restricted"),
+        (err: unknown) => err instanceof NotFoundError,
+      )
     })
   })
 })

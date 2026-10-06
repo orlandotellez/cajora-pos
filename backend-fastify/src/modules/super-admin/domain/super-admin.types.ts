@@ -56,6 +56,8 @@ export interface IStoreUserRow {
   phone: string | null
   created_at: Date
   deleted_at: Date | null
+  /** Acceso a la plataforma: el switch que maneja el super admin. */
+  access_status: string
 }
 
 export interface IStoreUsersResponse {
@@ -156,4 +158,18 @@ export interface ISubscriptionsListFilters {
   search?: string
   limit: number
   offset: number
+}
+
+// --- Acceso de un usuario (control del super admin) ---
+
+export const USER_ACCESS_STATUSES = ["enabled", "restricted"] as const
+export type UserAccessStatus = (typeof USER_ACCESS_STATUSES)[number]
+
+export interface IUserAccessResult {
+  id: string
+  name: string
+  email: string
+  role: string
+  access_status: string
+  updated_at: Date
 }

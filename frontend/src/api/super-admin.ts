@@ -35,6 +35,8 @@ export interface SuperAdminStoreUser {
   phone?: string | null;
   created_at: string;
   deleted_at: string | null;
+  /** Acceso a la plataforma: switch del super admin, independiente de la tienda. */
+  access_status?: "enabled" | "restricted";
 }
 
 export interface SubscriptionHealthSummary {
@@ -150,4 +152,14 @@ export const superAdminApi = {
       `/super-admin/subscriptions/${storeId}/status`,
       { status },
     ),
+
+  updateUserAccess: (userId: string, accessStatus: "enabled" | "restricted") =>
+    api.patch<{
+      id: string;
+      name: string;
+      email: string;
+      role: string;
+      access_status: "enabled" | "restricted";
+      updated_at: string;
+    }>(`/super-admin/users/${userId}/access`, { access_status: accessStatus }),
 };

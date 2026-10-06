@@ -5,6 +5,7 @@ import {
   ConflictError,
   NotFoundError,
   InternalServerError,
+  ForbiddenError,
   PaymentRequiredError,
 } from "@/core/errors/AppError"
 import type { IAuthRepository } from "../../domain/auth.interface"
@@ -74,6 +75,7 @@ function makeUser(overrides: Partial<IUserEntity> = {}): IUserEntity {
     role: "admin",
     is_owner: false,
     is_active: true,
+    access_status: "enabled",
     permissions: [],
     store_id: "store-1",
     created_at: now,
@@ -420,6 +422,36 @@ describe("login", () => {
       (err) => err instanceof PaymentRequiredError,
     )
   })
+
+  // El super admin corta el acceso desde su panel; el usuario no debe poder ni
+  // obtener un token, en vez de entrar y fallar después en cada request.
+  it("rejects valid credentials for a user restricted by the super admin", async () => {
+    const bcrypt = await import("bcrypt")
+    const hash = await bcrypt.hash("correct-password", 4)
+
+    const { repo } = makeRepo({
+      account: {
+        async findCredentialsAccountByEmail() {
+          return makeAccount({ password: hash, user_id: "user-1" })
+        },
+      },
+      user: {
+        async findById() {
+          return makeUser({ access_status: "restricted" })
+        },
+      },
+    })
+
+    const service = createAuthService(repo, fakeSsoStore().store)
+
+    await assert.rejects(
+      () => service.login({ email: "ana@cajorapos.com", password: "correct-password" }),
+      (err) =>
+        err instanceof ForbiddenError &&
+        err.statusCode === 403 &&
+        err.code === "USER_ACCESS_RESTRICTED",
+    )
+  })
 })
 
 describe("refresh", () => {
@@ -519,6 +551,36 @@ describe("refresh", () => {
     assert.equal(deletedTokens[0], refreshToken, "the presented token must be retired")
     assert.equal(createdSessions.length, 1, "new session must be created")
     assert.equal(createdSessions[0].token, result.refreshToken, "new session must use the issued token")
+  })
+
+  it("rejects the refresh of a user restricted by the super admin", async () => {
+    const jsonwebtoken = (await import("jsonwebtoken")).default
+    const { env } = await import("@/config/env")
+    const refreshToken = jsonwebtoken.sign({ userId: "user-1" }, env.JWT_REFRESH_SECRET, { expiresIn: 604000 })
+
+    const { repo } = makeRepo({
+      session: {
+        async findByToken() {
+          return { id: "sess-1", token: refreshToken, expires_at: new Date(Date.now() + 100000), user_id: "user-1", created_at: new Date(), updated_at: new Date() } as ISessionEntity
+        },
+      },
+      user: {
+        async findById() {
+          return makeUser({ access_status: "restricted" })
+        },
+      },
+    })
+
+    const service = createAuthService(repo, fakeSsoStore().store)
+
+    // Corta el refresh: si dejáramos renovar el token, la sesión seguiría viva.
+    await assert.rejects(
+      () => service.refresh(refreshToken),
+      (err) =>
+        err instanceof ForbiddenError &&
+        err.statusCode === 403 &&
+        err.code === "USER_ACCESS_RESTRICTED",
+    )
   })
 })
 

@@ -1,4 +1,4 @@
-import type { ROLE } from "@prisma/client"
+import type { ROLE, USER_ACCESS } from "@prisma/client"
 
 export type Permission =
   | "catalog_read"
@@ -17,6 +17,8 @@ export interface IUserEntity {
   role: ROLE
   is_owner: boolean
   is_active: boolean
+  /** Acceso a la plataforma, controlado por el super admin. Independiente de is_active. */
+  access_status: USER_ACCESS
   permissions: Permission[]
   phone?: string | null
   image?: string | null

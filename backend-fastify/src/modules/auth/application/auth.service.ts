@@ -1,4 +1,4 @@
-import { ConflictError, NotFoundError, UnauthorizedError, PaymentRequiredError, InternalServerError } from "@/core/errors/AppError"
+import { ConflictError, ForbiddenError, NotFoundError, UnauthorizedError, PaymentRequiredError, InternalServerError } from "@/core/errors/AppError"
 import { comparePassword, hashPassword, generateVerificationCode } from "@/modules/auth/application/common/crypto.utils"
 import { generateTokens, verifyToken } from "@/modules/auth/application/common/token.utils"
 import { sendVerificationCodeEmail } from "../infrastructure/email-sender"
@@ -25,10 +25,11 @@ import type {
   IStoreResponse,
   ISsoChallengeResponse,
 } from "../domain/auth.types"
-import type { ROLE } from "@prisma/client"
+import type { ROLE, USER_ACCESS } from "@prisma/client"
 import { env } from "@/config/env"
 import { generateSsoCode, type ISsoCodeStore } from "../infrastructure/sso-code.store"
 import { mapUserToResponse, mapStoreToResponse } from "./common/auth.mappers"
+import { evaluateUserAccess } from "@/modules/users/domain/user-access"
 
 const ACCESS_TOKEN_EXPIRY = 15 * 60 * 1000
 const REFRESH_TOKEN_EXPIRY = 7 * 24 * 60 * 60 * 1000
@@ -42,6 +43,23 @@ async function getStoreInfo(storeId: string | null): Promise<IStoreResponse | nu
   const store = await prisma.store.findUnique({ where: { id: storeId } })
   if (!store) throw new NotFoundError("Store not found")
   return mapStoreToResponse(store)
+}
+
+function assertUserAccess(user: { is_active: boolean; access_status: USER_ACCESS }): void {
+  const access = evaluateUserAccess(user)
+
+  if (access === "restricted") {
+    throw new ForbiddenError(
+      "Tu acceso está restringido por el administrador de la plataforma.",
+      "USER_ACCESS_RESTRICTED",
+    )
+  }
+
+  if (access === "inactive") {
+    throw new PaymentRequiredError(
+      "Tu usuario está desactivado. Contacta al administrador de la tienda."
+    )
+  }
 }
 
 export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISsoCodeStore) => ({
@@ -248,9 +266,9 @@ export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISs
       throw new UnauthorizedError("Account has been deactivated")
     }
 
-    if (!user.is_active) {
-      throw new PaymentRequiredError("Tu usuario está desactivado. Contacta al administrador de la tienda.")
-    }
+    // Corta el refresh de un usuario restringido: si dejáramos renovar el token,
+    // la sesión seguiría viva y el guard sería el único que lo frena.
+    assertUserAccess(user)
 
     const store = await getStoreInfo(user.store_id)
     const { accessToken, refreshToken } = generateTokens(
@@ -302,9 +320,9 @@ export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISs
       throw new UnauthorizedError("Account has been deactivated")
     }
 
-    if (!user.is_active) {
-      throw new PaymentRequiredError("Tu usuario está desactivado. Contacta al administrador de la tienda.")
-    }
+    // Un usuario restringido no debe poder ni obtener un token: si entrara, cada
+    // request fallaría con un error confuso en vez de un mensaje claro.
+    assertUserAccess(user)
 
     const store = await getStoreInfo(user.store_id)
     const { accessToken, refreshToken } = generateTokens(
@@ -361,6 +379,10 @@ export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISs
     if (!user) {
       throw new UnauthorizedError("User not found")
     }
+
+    // Sin esto, una sesión abierta sobrevive a la restricción y al desactivado:
+    // el access token vence, el refresh lo renueva y el usuario sigue dentro.
+    assertUserAccess(user)
 
     await repository.session.delete(refreshToken)
 
