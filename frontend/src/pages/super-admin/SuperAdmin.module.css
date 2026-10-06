@@ -855,6 +855,22 @@
   background: color-mix(in srgb, #eab308 6%, transparent);
 }
 
+/* ===== Access select (usuarios) ===== */
+/* Reusa la base de .statusSelect; solo ajusta el ancho y el color por estado. */
+.accessSelect {
+  min-width: 130px;
+}
+
+.accessSelect_enabled {
+  border-color: color-mix(in srgb, #10b981 40%, transparent);
+  background: color-mix(in srgb, #10b981 6%, transparent);
+}
+
+.accessSelect_restricted {
+  border-color: color-mix(in srgb, #ef4444 40%, transparent);
+  background: color-mix(in srgb, #ef4444 6%, transparent);
+}
+
 /* ===== Drawer de tienda (slide lateral) ===== */
 .drawerOverlay {
   position: fixed;
