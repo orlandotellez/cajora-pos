@@ -13,6 +13,7 @@ function makeUser(overrides: Partial<IUserEntity> = {}): IUserEntity {
     role: "admin",
     is_owner: true,
     is_active: true,
+    access_status: "enabled",
     permissions: ["reports", "settings"],
     store_id: "store-1",
     created_at: now,

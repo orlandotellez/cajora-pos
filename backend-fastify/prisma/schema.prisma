@@ -13,6 +13,14 @@ enum ROLE {
   super_admin
 }
 
+// Acceso a la plataforma, controlado por el super admin.
+// Es independiente de user.is_active (que maneja el dueño de la tienda): un usuario
+// restringido acá NO puede ser rehabilitado desde el panel de la tienda.
+enum USER_ACCESS {
+  enabled
+  restricted
+}
+
 enum UNIT_TYPE {
   unidad
   libra
@@ -89,6 +97,7 @@ model user {
   role           ROLE    @default(cajero)
   is_owner       Boolean @default(false)
   is_active      Boolean @default(true)
+  access_status  USER_ACCESS @default(enabled)
   permissions    Json    @default("[]")
   store_id       String?
 

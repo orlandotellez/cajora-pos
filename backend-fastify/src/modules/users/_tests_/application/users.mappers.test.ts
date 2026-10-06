@@ -12,6 +12,7 @@ function makeUser(overrides: Record<string, unknown> = {}): IUserEntity {
     role: "admin",
     is_owner: true,
     is_active: true,
+    access_status: "enabled",
     permissions: ["catalog_read", "settings"],
     phone: "+5491155551234",
     image: "https://example.com/img.jpg",
