@@ -6,6 +6,8 @@ import {
   Star,
   AlertTriangle,
   Search,
+  ShieldCheck,
+  Ban,
 } from "lucide-react";
 import {
   superAdminApi,
@@ -292,15 +294,24 @@ function AccessSelect({
   }
 
   return (
-    <select
-      className={`${styles.statusSelect} ${styles.accessSelect} ${styles[`accessSelect_${accessStatus}`] ?? ""}`}
-      value={accessStatus}
-      onChange={(e) => void handleChange(e.target.value)}
-      disabled={changing || disabled}
-      title={disabled ? "Usuario eliminado" : "Restringir o habilitar el acceso a la plataforma"}
-    >
-      <option value="enabled">✅ Con acceso</option>
-      <option value="restricted">🚫 Sin acceso</option>
-    </select>
+    // El <select> nativo no puede renderizar componentes dentro de sus <option>
+    // (solo texto), así que el icono va al lado y refleja el valor actual.
+    <span className={styles.selectWithIcon}>
+      {accessStatus === "enabled" ? (
+        <ShieldCheck size={13} className={styles.stateIcon_enabled} />
+      ) : (
+        <Ban size={13} className={styles.stateIcon_restricted} />
+      )}
+      <select
+        className={`${styles.statusSelect} ${styles.accessSelect} ${styles[`accessSelect_${accessStatus}`] ?? ""}`}
+        value={accessStatus}
+        onChange={(e) => void handleChange(e.target.value)}
+        disabled={changing || disabled}
+        title={disabled ? "Usuario eliminado" : "Restringir o habilitar el acceso a la plataforma"}
+      >
+        <option value="enabled">Con acceso</option>
+        <option value="restricted">Sin acceso</option>
+      </select>
+    </span>
   );
 }

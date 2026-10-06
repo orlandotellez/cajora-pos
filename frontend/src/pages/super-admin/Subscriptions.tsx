@@ -6,6 +6,8 @@ import {
   Clock,
   Search,
   Filter,
+  Cloud,
+  Server,
 } from "lucide-react";
 import {
   superAdminApi,
@@ -13,7 +15,7 @@ import {
   type SubscriptionRow,
 } from "@/api/super-admin";
 import { initials, hueFromString, formatEventAction } from "./helpers";
-import { SubStatusBadge } from "./Badges";
+import { SubStatusBadge, SUB_STATUS_OPTIONS, subStatusIcon } from "./Badges";
 import styles from "./SuperAdmin.module.css";
 
 const STATUS_FILTERS = [
@@ -253,8 +255,9 @@ export default function Subscriptions() {
                         </div>
                       </td>
                       <td>
-                        <span className={sub.mode === "cloud" ? styles.subActive : styles.subCanceled}>
-                          {sub.mode === "cloud" ? "☁️ Cloud" : "🖥️ Self-hosted"}
+                        <span className={`${styles.subBadge} ${sub.mode === "cloud" ? styles.subActive : styles.subCanceled}`}>
+                          {sub.mode === "cloud" ? <Cloud size={11} /> : <Server size={11} />}
+                          {sub.mode === "cloud" ? "Cloud" : "Self-hosted"}
                         </span>
                       </td>
                       <td>
@@ -330,6 +333,7 @@ function StatusSelect({
   onChange: (storeId: string, status: string) => void;
 }) {
   const [changing, setChanging] = useState(false);
+  const Icon = subStatusIcon(currentStatus);
 
   const handleChange = async (newStatus: string) => {
     if (newStatus === currentStatus) return;
@@ -342,17 +346,22 @@ function StatusSelect({
   };
 
   return (
-    <select
-      className={`${styles.statusSelect} ${styles[`statusSelect_${currentStatus}`] ?? ""}`}
-      value={currentStatus}
-      onChange={(e) => handleChange(e.target.value)}
-      disabled={changing}
-    >
-      <option value="active">✅ Activa</option>
-      <option value="past_due">⚠️ Pago fallido</option>
-      <option value="pending">🕐 Pendiente</option>
-      <option value="canceled">❌ Cancelada</option>
-      <option value="expired">⏰ Expirada</option>
-    </select>
+    // El <select> nativo no puede renderizar componentes dentro de sus <option>
+    // (solo texto), así que el icono va al lado y refleja el valor actual.
+    <span className={styles.selectWithIcon}>
+      <Icon size={13} className={styles[`stateIcon_${currentStatus}`] ?? ""} />
+      <select
+        className={`${styles.statusSelect} ${styles[`statusSelect_${currentStatus}`] ?? ""}`}
+        value={currentStatus}
+        onChange={(e) => handleChange(e.target.value)}
+        disabled={changing}
+      >
+        {SUB_STATUS_OPTIONS.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+    </span>
   );
 }

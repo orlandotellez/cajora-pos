@@ -855,6 +855,41 @@
   background: color-mix(in srgb, #eab308 6%, transparent);
 }
 
+/* ===== Select con icono de estado al lado ===== */
+/* El <select> nativo no admite iconos en sus <option>, así que el estado se
+   codifica con un icono fuera del control + el color del borde del propio select. */
+.selectWithIcon {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.selectWithIcon svg {
+  flex-shrink: 0;
+}
+
+.stateIcon_active,
+.stateIcon_enabled {
+  color: #10b981;
+}
+
+.stateIcon_past_due,
+.stateIcon_restricted {
+  color: #ef4444;
+}
+
+.stateIcon_pending {
+  color: #ca8a04;
+}
+
+.stateIcon_canceled {
+  color: #6b7280;
+}
+
+.stateIcon_expired {
+  color: #f97316;
+}
+
 /* ===== Access select (usuarios) ===== */
 /* Reusa la base de .statusSelect; solo ajusta el ancho y el color por estado. */
 .accessSelect {

@@ -1,3 +1,4 @@
+import type { LucideIcon } from "lucide-react";
 import {
   Crown,
   Shield,
@@ -12,6 +13,35 @@ import {
 } from "lucide-react";
 import type { SuperAdminStoreUser } from "@/api/super-admin";
 import styles from "./SuperAdmin.module.css";
+
+/**
+ * Estados de suscripción: valor, etiqueta e icono en un solo lugar.
+ *
+ * Los comparten el badge y el select de estado. Antes cada uno tenía su propia
+ * lista y sus propios emojis, así que una etiqueta nueva se veía distinta según
+ * dónde apareciera.
+ */
+export const SUB_STATUS_OPTIONS: ReadonlyArray<{
+  value: string;
+  label: string;
+  icon: LucideIcon;
+}> = [
+  { value: "active", label: "Activa", icon: CheckCircle2 },
+  { value: "past_due", label: "Pago fallido", icon: AlertTriangle },
+  { value: "pending", label: "Pendiente", icon: Clock },
+  { value: "canceled", label: "Cancelada", icon: XCircle },
+  { value: "expired", label: "Expirada", icon: PauseCircle },
+];
+
+/** Icono del estado de suscripción. Desconocido → AlertCircle. */
+export function subStatusIcon(status: string): LucideIcon {
+  return SUB_STATUS_OPTIONS.find((o) => o.value === status)?.icon ?? AlertCircle;
+}
+
+/** Etiqueta del estado de suscripción. Desconocido → el valor crudo. */
+export function subStatusLabel(status: string): string {
+  return SUB_STATUS_OPTIONS.find((o) => o.value === status)?.label ?? status;
+}
 
 export function RoleBadge({ role }: { role: string }) {
   const isSuper = role === "super_admin";
@@ -51,20 +81,22 @@ export function UserStatusBadge({ user }: { user: SuperAdminStoreUser }) {
   );
 }
 
+const SUB_STATUS_CLASSES: Record<string, string> = {
+  active: styles.subActive,
+  past_due: styles.subPastDue,
+  canceled: styles.subCanceled,
+  expired: styles.subExpired,
+  pending: styles.subPending,
+};
+
 export function SubStatusBadge({ status }: { status: string }) {
-  const map: Record<string, { label: string; cls: string; icon: typeof CheckCircle2 }> = {
-    active: { label: "Activa", cls: styles.subActive, icon: CheckCircle2 },
-    past_due: { label: "Pago fallido", cls: styles.subPastDue, icon: AlertTriangle },
-    canceled: { label: "Cancelada", cls: styles.subCanceled, icon: XCircle },
-    expired: { label: "Expirada", cls: styles.subExpired, icon: PauseCircle },
-    pending: { label: "Pendiente", cls: styles.subPending, icon: Clock },
-  };
-  const def = map[status] ?? { label: status, cls: "", icon: AlertCircle };
-  const Icon = def.icon;
+  // Etiqueta e icono salen de SUB_STATUS_OPTIONS para que el badge y el select
+  // no muestren cosas distintas para el mismo estado.
+  const Icon = subStatusIcon(status);
   return (
-    <span className={`${styles.subBadge} ${def.cls}`}>
+    <span className={`${styles.subBadge} ${SUB_STATUS_CLASSES[status] ?? ""}`}>
       <Icon size={11} />
-      {def.label}
+      {subStatusLabel(status)}
     </span>
   );
 }
