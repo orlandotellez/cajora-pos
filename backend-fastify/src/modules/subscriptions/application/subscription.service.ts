@@ -12,8 +12,8 @@ import {
 } from "../domain/subscription-event.interface"
 import { mapToResponse } from "./common/subscriptions.mappers"
 import { resolveEntitlement } from "../domain/subscription.entitlement"
+import { periodEnd } from "../domain/subscription.period"
 
-const PERIOD_DAYS = 30
 const PLAN_PRICE = "15.99"
 const PLAN_CURRENCY = "USD"
 
@@ -155,7 +155,7 @@ export const createSubscriptionService = (
       const updated = await repository.update(storeId, {
         status: "active",
         current_period_start: now,
-        current_period_end: new Date(now.getTime() + PERIOD_DAYS * 86_400_000),
+        current_period_end: periodEnd(now),
       })
       if (!updated) throw new ConflictError("No hay suscripción activa")
 

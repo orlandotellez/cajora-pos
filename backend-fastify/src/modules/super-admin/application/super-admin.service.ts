@@ -4,6 +4,11 @@ import { ConflictError, NotFoundError } from "@/core/errors/AppError"
 import type { ISubscriptionRepository } from "@/modules/subscriptions/domain/subscription.interface"
 import type { ISubscriptionEventRepository } from "@/modules/subscriptions/domain/subscription-event.interface"
 import type { UpdateSubscriptionInput } from "@/modules/subscriptions/domain/subscription.entities"
+import {
+  PERIOD_DAYS,
+  needsFreshPeriod,
+  periodEnd,
+} from "@/modules/subscriptions/domain/subscription.period"
 import type {
   IGlobalStats,
   IStoresListResponse,
@@ -18,7 +23,7 @@ import type {
 } from "../domain/super-admin.types"
 
 interface SuperAdminDeps {
-  subscriptionRepo: Pick<ISubscriptionRepository, "update">
+  subscriptionRepo: Pick<ISubscriptionRepository, "update" | "getByStoreId">
   eventRepo: Pick<ISubscriptionEventRepository, "create">
 }
 
@@ -443,9 +448,26 @@ export const createSuperAdminService = ({ subscriptionRepo, eventRepo }: SuperAd
     storeId: string,
     status: string,
   ): Promise<Record<string, unknown> | null> {
-    const sub = await subscriptionRepo.update(storeId, {
+    const current = await subscriptionRepo.getByStoreId(storeId)
+    if (!current) return null
+
+    const now = new Date()
+    const updates: UpdateSubscriptionInput = {
       status: status as UpdateSubscriptionInput["status"],
-    })
+    }
+
+    // Marcar "active" no alcanza por sí solo: el acceso se decide contra
+    // `current_period_end`, así que una cuenta con el período vencido seguía
+    // bloqueada mientras el panel mostraba "Activa". Si el período falta o ya
+    // venció se otorga uno nuevo; si el guardado sigue vigente se respeta, porque
+    // activar no debe recortar meses ya pagados.
+    if (status === "active" && needsFreshPeriod(current, now)) {
+      updates.current_period_start = now
+      updates.current_period_end = periodEnd(now)
+      updates.cancel_at_period_end = false
+    }
+
+    const sub = await subscriptionRepo.update(storeId, updates)
     if (!sub) return null
 
     // Registrar evento de auditoría
@@ -454,7 +476,11 @@ export const createSuperAdminService = ({ subscriptionRepo, eventRepo }: SuperAd
       user_id: null,
       action: "admin_status_change",
       paypal_subscription_id: sub.paypal_subscription_id,
-      metadata: { new_status: status, source: "super_admin_panel" },
+      metadata: {
+        new_status: status,
+        source: "super_admin_panel",
+        ...(updates.current_period_end ? { granted_period_days: PERIOD_DAYS } : {}),
+      },
     })
 
     return {

@@ -21,7 +21,8 @@ const prismaMocks: Record<string, any> = {
   $queryRaw: async () => [],
 }
 
-const subscriptionRepoMocks: Pick<ISubscriptionRepository, "update"> = {
+const subscriptionRepoMocks: Pick<ISubscriptionRepository, "update" | "getByStoreId"> = {
+  getByStoreId: async (_storeId) => null,
   update: async (_storeId, _data) =>
     ({
       id: "sub-1",
@@ -113,6 +114,16 @@ beforeEach(() => {
   prismaMocks.subscription_event.findMany = async () => []
   prismaMocks.subscription_event.count = async () => 0
   prismaMocks.$queryRaw = async () => []
+  subscriptionRepoMocks.getByStoreId = async () =>
+    ({
+      id: "sub-1",
+      store_id: "store-1",
+      status: "active",
+      paypal_subscription_id: "I-ABC123",
+      current_period_start: new Date("2026-09-01T10:00:00Z"),
+      current_period_end: new Date("2026-12-01T10:00:00Z"),
+      cancel_at_period_end: false,
+    }) as unknown as ISubscriptionEntity
   subscriptionRepoMocks.update = async () =>
     ({
       id: "sub-1",
@@ -450,6 +461,112 @@ describe("super-admin service", () => {
   })
 
   describe("updateSubscriptionStatus", () => {
+    // El acceso se decide contra current_period_end: marcar "active" con el período
+    // vencido dejaba la cuenta igual de bloqueada (y el panel mintiendo).
+    it("al activar con el período vencido otorga un período nuevo de 30 días", async () => {
+      let updateArgs: any
+      const now = Date.now()
+      subscriptionRepoMocks.getByStoreId = async () =>
+        ({
+          id: "sub-1",
+          store_id: "store-1",
+          status: "expired",
+          current_period_end: new Date(now - 24 * 86_400_000),
+        }) as unknown as ISubscriptionEntity
+      subscriptionRepoMocks.update = async (_storeId: string, data: any) => {
+        updateArgs = data
+        return {
+          id: "sub-1",
+          store_id: "store-1",
+          status: "active",
+          paypal_subscription_id: null,
+          updated_at: new Date(now),
+        } as unknown as ISubscriptionEntity
+      }
+
+      await superAdminService.updateSubscriptionStatus("store-1", "active")
+
+      assert.equal(updateArgs.status, "active")
+      assert.ok(updateArgs.current_period_end, "debe setear un período nuevo")
+      const days = (updateArgs.current_period_end.getTime() - now) / 86_400_000
+      assert.ok(days > 29 && days < 31, `período de ~30 días, fue ${days}`)
+    })
+
+    it("al activar con el período todavía vigente NO recorta lo ya pagado", async () => {
+      let updateArgs: any
+      subscriptionRepoMocks.getByStoreId = async () =>
+        ({
+          id: "sub-1",
+          store_id: "store-1",
+          status: "pending",
+          current_period_end: new Date(Date.now() + 20 * 86_400_000),
+        }) as unknown as ISubscriptionEntity
+      subscriptionRepoMocks.update = async (_storeId: string, data: any) => {
+        updateArgs = data
+        return {
+          id: "sub-1",
+          store_id: "store-1",
+          status: "active",
+          paypal_subscription_id: null,
+          updated_at: new Date(),
+        } as unknown as ISubscriptionEntity
+      }
+
+      await superAdminService.updateSubscriptionStatus("store-1", "active")
+
+      assert.deepEqual(updateArgs, { status: "active" }, "no debe tocar el período vigente")
+    })
+
+    it("al activar sin período guardado otorga uno nuevo", async () => {
+      let updateArgs: any
+      subscriptionRepoMocks.getByStoreId = async () =>
+        ({
+          id: "sub-1",
+          store_id: "store-1",
+          status: "pending",
+          current_period_end: null,
+        }) as unknown as ISubscriptionEntity
+      subscriptionRepoMocks.update = async (_storeId: string, data: any) => {
+        updateArgs = data
+        return {
+          id: "sub-1",
+          store_id: "store-1",
+          status: "active",
+          paypal_subscription_id: null,
+          updated_at: new Date(),
+        } as unknown as ISubscriptionEntity
+      }
+
+      await superAdminService.updateSubscriptionStatus("store-1", "active")
+
+      assert.ok(updateArgs.current_period_end, "debe setear un período nuevo")
+    })
+
+    it("los estados que no son active no tocan el período", async () => {
+      let updateArgs: any
+      subscriptionRepoMocks.getByStoreId = async () =>
+        ({
+          id: "sub-1",
+          store_id: "store-1",
+          status: "active",
+          current_period_end: new Date(Date.now() + 20 * 86_400_000),
+        }) as unknown as ISubscriptionEntity
+      subscriptionRepoMocks.update = async (_storeId: string, data: any) => {
+        updateArgs = data
+        return {
+          id: "sub-1",
+          store_id: "store-1",
+          status: "canceled",
+          paypal_subscription_id: null,
+          updated_at: new Date(),
+        } as unknown as ISubscriptionEntity
+      }
+
+      await superAdminService.updateSubscriptionStatus("store-1", "canceled")
+
+      assert.deepEqual(updateArgs, { status: "canceled" })
+    })
+
     it("updates the subscription and records an audit event", async () => {
       let updateArgs: any
       let eventArgs: any
