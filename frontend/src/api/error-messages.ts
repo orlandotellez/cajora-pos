@@ -41,6 +41,13 @@ export function extractErrorCode(body: unknown): string | null {
 export function resolveErrorMessage(status: number, body: unknown, code?: string): string {
   const bodyMessage = extractErrorMessage(body);
 
+  // 0. Acceso restringido desde el panel de plataforma: el mensaje del backend
+  // explica qué pasó y quién lo hizo. El genérico "Acceso denegado" (403) deja al
+  // usuario sin saber si fue un bug, su contraseña o el administrador.
+  if (status === 403 && code === "USER_ACCESS_RESTRICTED" && bodyMessage !== null) {
+    return bodyMessage;
+  }
+
   // 1. Validación de formulario: confiamos en el mensaje del backend (ya es ES entendible).
   if ((status === 400 || status === 422) && bodyMessage !== null) return bodyMessage;
 
@@ -52,6 +59,5 @@ export function resolveErrorMessage(status: number, body: unknown, code?: string
 
   if (status === 0) return CONNECTION_ERROR_MESSAGE;
 
-  void code;
   return UNEXPECTED_ERROR_MESSAGE;
 }
