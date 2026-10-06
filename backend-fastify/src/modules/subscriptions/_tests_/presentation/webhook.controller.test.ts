@@ -481,6 +481,56 @@ describe("webhookController.receive", () => {
     assert.equal(markProcessed.mock.callCount(), 1)
   })
 
+  // PayPal manda este evento (y no PAYMENT.SALE.PAYMENT.FAILED) cuando falla la
+  // renovación de una suscripción. Antes caía en el `default` y se ignoraba: la fila
+  // quedaba 'active' para siempre, con el período ya vencido.
+  it("BILLING.SUBSCRIPTION.PAYMENT.FAILED → past_due y audita (renovación rechazada)", async () => {
+    mock.property(env, "PAYPAL_WEBHOOK_ID", WEBHOOK_ID)
+    mockPayPalVerify("SUCCESS")
+    const rawBody = JSON.stringify({
+      id: "evt-sub-f1",
+      event_type: "BILLING.SUBSCRIPTION.PAYMENT.FAILED",
+      resource_type: "subscription",
+      resource: { id: "I-SUBFAIL-1", resource_type: "subscription" },
+    })
+
+    mock.method(PayPalWebhookEventRepository, "insert", async () =>
+      makeOutbox({
+        event_id: "evt-sub-f1",
+        event_type: "BILLING.SUBSCRIPTION.PAYMENT.FAILED",
+        resource_id: "I-SUBFAIL-1",
+      }),
+    )
+    const markProcessed = mock.method(PayPalWebhookEventRepository, "markProcessed", async () => {})
+    mock.method(SubscriptionRepository, "getByPaypalSubscriptionId", async () => ({
+      id: "sub-1",
+      store_id: "store-subfail",
+      mode: "cloud",
+      plan: "monthly",
+      status: "active",
+      paypal_subscription_id: "I-SUBFAIL-1",
+      current_period_start: null,
+      current_period_end: null,
+      cancel_at_period_end: false,
+      created_at: new Date(),
+      updated_at: new Date(),
+    }))
+    const update = mock.method(SubscriptionRepository, "update", async () => null)
+    const audits: Array<{ action: string }> = []
+    mock.method(SubscriptionEventRepository, "create", async (data: { action: string }) => {
+      audits.push(data)
+    })
+
+    const { reply, state } = buildReply()
+    await webhookController.receive(buildRequest(rawBody) as never, reply as never)
+
+    assert.equal(state.status, 200)
+    const data = update.mock.calls[0].arguments[1] as { status?: string }
+    assert.equal(data.status, "past_due")
+    assert.equal(audits[0].action, "webhook_payment_failed")
+    assert.equal(markProcessed.mock.callCount(), 1)
+  })
+
   it("BILLING.SUBSCRIPTION.EXPIRED → expired + cancel_at_period_end y audita", async () => {
     mock.property(env, "PAYPAL_WEBHOOK_ID", WEBHOOK_ID)
     mockPayPalVerify("SUCCESS")

@@ -224,8 +224,15 @@ async function dispatch(request: FastifyRequest, ev: paypal_webhook_event): Prom
       break
     }
 
-    case "PAYMENT.SALE.PAYMENT.FAILED": {
-      const failResourceId = subscriptionIdFromEvent(ev as unknown as PayPalWebhookPayload)
+    case "PAYMENT.SALE.PAYMENT.FAILED":
+    case "BILLING.SUBSCRIPTION.PAYMENT.FAILED": {
+      // PayPal manda BILLING.SUBSCRIPTION.PAYMENT.FAILED cuando rechaza la
+      // renovación de una suscripción (PAYMENT.SALE.PAYMENT.FAILED cubre la venta).
+      // Sin este caso la fila quedaba 'active' con el período vencido.
+      const failResourceId =
+        ev.event_type === "BILLING.SUBSCRIPTION.PAYMENT.FAILED"
+          ? ev.resource_id
+          : subscriptionIdFromEvent(ev as unknown as PayPalWebhookPayload)
       await applyByResource(log, ev, { status: "past_due" }, SUBSCRIPTION_EVENT_ACTIONS.WEBHOOK_PAYMENT_FAILED)
       if (failResourceId) {
         const failSub = await SubscriptionRepository.getByPaypalSubscriptionId(failResourceId)
