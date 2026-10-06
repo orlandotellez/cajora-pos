@@ -12,7 +12,10 @@
   <div class="profile__billing-next" data-billing-next hidden>
     <div class="profile__billing-next-main">
       <span class="profile__billing-next-label" data-billing-next-label>Próxima fecha de pago</span>
-      <strong data-billing-next-date>—</strong>
+      <span class="profile__billing-next-when">
+        <strong data-billing-next-date>—</strong>
+        <span class="profile__countdown" data-billing-countdown hidden></span>
+      </span>
     </div>
     <span class="profile__billing-next-hint" data-billing-next-hint hidden></span>
   </div>
@@ -96,6 +99,21 @@
     font-size: 0.8125rem;
   }
 
+  .profile__billing-next-when {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.15rem;
+  }
+
+  /* Cuenta regresiva relativa ("Se renueva en 30d 8h"): secundaria respecto a la
+     fecha absoluta, que es la que manda. En verde, el mismo del tag "Activa". */
+  .profile__countdown {
+    font-size: 0.8125rem;
+    font-weight: 400;
+    color: var(--green);
+  }
+
   .profile__billing-next-label {
     color: var(--text-muted);
     font-size: 0.875rem;
@@ -160,6 +178,10 @@
       flex-direction: column;
       align-items: flex-start;
       gap: 0.25rem;
+    }
+
+    .profile__billing-next-when {
+      align-items: flex-start;
     }
 
     .profile__billing-total {

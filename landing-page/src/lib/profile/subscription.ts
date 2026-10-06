@@ -1,4 +1,5 @@
 import { formatDate } from './format';
+import { renderCountdown } from './countdown';
 
 export interface Subscription {
   plan: string;
@@ -32,6 +33,10 @@ function setBadge(label: string, cls: string): void {
   badge.hidden = false;
 }
 
+// `renderSub` se vuelve a llamar tras cancelar o reactivar: sin limpiar el intervalo
+// anterior se apilan timers y el texto oscila entre "renueva" y "cancela".
+let stopCountdown: (() => void) | null = null;
+
 export function renderSub(sub: Subscription): void {
   const planEl = document.querySelector<HTMLElement>('[data-profile-plan]')!;
   const textEl = document.querySelector<HTMLElement>('[data-profile-text]')!;
@@ -40,6 +45,7 @@ export function renderSub(sub: Subscription): void {
   const rowPeriodEl = document.querySelector<HTMLElement>('[data-profile-row-period]')!;
   const periodLabelEl = document.querySelector<HTMLElement>('[data-profile-period-label]')!;
   const periodValueEl = document.querySelector<HTMLElement>('[data-profile-period]')!;
+  const countdownEl = document.querySelector<HTMLElement>('[data-profile-countdown]')!;
   const rowCancelEl = document.querySelector<HTMLElement>('[data-profile-row-cancel]')!;
   const cancelDateEl = document.querySelector<HTMLElement>('[data-profile-cancel-date]')!;
   const dangerCancelEl = document.querySelector<HTMLElement>('[data-danger-cancel]')!;
@@ -56,6 +62,11 @@ export function renderSub(sub: Subscription): void {
   ctaEl.target = '_self';
   ctaEl.rel = '';
   payLinkEl.hidden = true;
+
+  stopCountdown?.();
+  stopCountdown = null;
+  countdownEl.hidden = true;
+  countdownEl.textContent = '';
 
   switch (sub.status) {
     case 'pending': {
@@ -76,6 +87,12 @@ export function renderSub(sub: Subscription): void {
       }
       periodLabelEl.textContent = 'Próxima renovación';
       periodValueEl.textContent = formatDate(sub.current_period_end);
+      // Si la cancelación ya está programada, la fecha deja de ser una renovación.
+      stopCountdown = renderCountdown(
+        countdownEl,
+        sub.current_period_end,
+        sub.cancel_at_period_end ? 'cancela' : 'renueva',
+      );
       setBadge('Activa', 'is-active');
       if (sub.cancel_at_period_end) {
         textEl.textContent =
