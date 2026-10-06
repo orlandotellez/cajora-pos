@@ -1,5 +1,5 @@
 import { env } from "@/config/env"
-import { ConflictError } from "@/core/errors/AppError"
+import { AppError, ConflictError } from "@/core/errors/AppError"
 import { paypalClient } from "../infrastructure/paypal.client"
 import type { ISubscriptionRepository } from "../domain/subscription.interface"
 import type { IBillingResponse, ISubscriptionResponse } from "../domain/subscription.types"
@@ -55,6 +55,33 @@ export const createSubscriptionService = (
     })
   }
 
+  /**
+   * Cancela en PayPal la suscripción que se está reemplazando.
+   *
+   * Un 404 de PayPal significa que ya estaba cancelada o expirada: no es un fallo.
+   * Cualquier otro error aborta el checkout, porque seguir adelante dejaría la sub
+   * vieja cobrando y la fila apuntando a una sub que no se pudo registrar.
+   */
+  const cancelPrevious = async (
+    paypalSubscriptionId: string,
+    actor: SubscriptionActor,
+    storeId: string,
+  ): Promise<void> => {
+    try {
+      await paypalClient.cancelSubscription(paypalSubscriptionId)
+    } catch (err) {
+      if (err instanceof AppError && err.statusCode === 404) return
+      throw new AppError(
+        "No pudimos cancelar tu suscripción anterior en PayPal. Intentá de nuevo en unos minutos.",
+        502,
+        "PAYPAL_CANCEL_PREVIOUS_FAILED",
+      )
+    }
+    await audit(actor, storeId, SUBSCRIPTION_EVENT_ACTIONS.CANCEL, paypalSubscriptionId, {
+      reason: "replaced_by_new_checkout",
+    })
+  }
+
   return {
     async checkout(
       storeId: string,
@@ -63,9 +90,25 @@ export const createSubscriptionService = (
       actor: SubscriptionActor = noopActor(),
     ) {
       const planId = env.PAYPAL_PLAN_ID_MONTHLY
+      const existing = await repository.getByStoreId(storeId)
+
+      // Quien ya tiene la suscripción pagada y vigente no tiene por qué volver a
+      // suscribirse. Sin este guard, el reemplazo de abajo le cancelaría una sub
+      // activa: el POS ofrece "Pagar ahora" también en estado active.
+      if (existing?.status === "active" && resolveEntitlement(existing).allowed) {
+        throw new ConflictError("Ya tenés una suscripción Cloud activa.")
+      }
+
+      // La sub vieja de PayPal queda huérfana si solo pisamos el id en la DB: seguiría
+      // activa y cobrando. Se cancela ANTES de crear la nueva, así que si la
+      // cancelación falla no queda ninguna sub nueva huérfana y la fila no se toca.
+      const previousPaypalId = existing?.paypal_subscription_id ?? null
+      if (previousPaypalId) {
+        await cancelPrevious(previousPaypalId, actor, storeId)
+      }
+
       const created = await paypalClient.createSubscription(planId, returnUrl, cancelUrl)
 
-      const existing = await repository.getByStoreId(storeId)
       if (!existing) {
         // La fila debe existir con el paypal_subscription_id ANTES de que PayPal
         // complete el pago: el webhook la busca por ese id.
