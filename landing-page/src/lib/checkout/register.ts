@@ -34,7 +34,13 @@ function mapAuthError(msg: string): string {
 
 export function initRegister(opts: {
   apiUrl: string;
-  onAuth: (storeName: string | null, email: string, emailVerified: boolean, sendCodeOnEnter: boolean) => void;
+  onAuth: (
+    storeName: string | null,
+    email: string,
+    emailVerified: boolean,
+    sendCodeOnEnter: boolean,
+    origin: "created" | "returning",
+  ) => void;
   onSummaryChange: (storeName: string | null, email: string | null) => void;
   onToken: (token: string) => void;
 }): void {
@@ -149,6 +155,7 @@ export function initRegister(opts: {
         body.user?.email ?? payload.adminEmail,
         emailVerified,
         false, // el backend ya envió el código al registrar la tienda
+        "created", // único camino que realmente creó la tienda
       );
     } catch (err) {
       showError(
@@ -164,7 +171,13 @@ export function initRegister(opts: {
 // Login del checkout: panel entrelazado con el de registro, usa loginUser compartido.
 export function initCheckoutLogin(opts: {
   apiUrl: string;
-  onAuth: (storeName: string | null, email: string, emailVerified: boolean, sendCodeOnEnter: boolean) => void;
+  onAuth: (
+    storeName: string | null,
+    email: string,
+    emailVerified: boolean,
+    sendCodeOnEnter: boolean,
+    origin: "created" | "returning",
+  ) => void;
   onToken: (token: string) => void;
 }): void {
   const loginForm = $("[data-login-form]") as HTMLFormElement | null;
@@ -211,6 +224,7 @@ export function initCheckoutLogin(opts: {
         data.user?.email ?? email,
         emailVerified,
         true, // el login no envía código → lo enviamos nosotros
+        "returning", // la tienda ya existía: acá no se crea nada
       );
     } catch (err) {
       showError(

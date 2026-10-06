@@ -66,6 +66,19 @@ import PlansModal from '../sections/checkout/PlansModal.astro';
 
     let accessToken: string | null = null;
 
+    // Solo el registro exitoso puede decir "tienda creada". Login, sesión reanudada y
+    // verificación de email llegan al mismo paso de pago con una tienda que ya existía
+    // hace meses, y ahí el copy tiene que hablar de volver a suscribirse.
+    type PayOrigin = "created" | "returning";
+    const SUCCESS_COPY: Record<PayOrigin, { prefix: string; suffix: string }> = {
+      created: { prefix: "✓ Tienda ", suffix: " creada — completá el pago abajo." },
+      returning: {
+        prefix: "✓ Volvés a ",
+        suffix: " — completá el pago para volver a activar tu plan Cloud.",
+      },
+    };
+    let flowOrigin: PayOrigin = "returning";
+
     const setSummary = (storeName: string | null, email: string | null): void => {
       summaryStore.textContent = storeName || "—";
       summaryEmail.textContent = email || "—";
@@ -75,6 +88,7 @@ import PlansModal from '../sections/checkout/PlansModal.astro';
     const resetToStart = (): void => {
       clearSession();
       accessToken = null;
+      flowOrigin = "returning";
       payButtons.innerHTML = "";
       payLoading.hidden = true;
       setSummary("—", "—");
@@ -92,7 +106,8 @@ import PlansModal from '../sections/checkout/PlansModal.astro';
     });
 
     // Tras registrarse/loguearse: si el email está verificado → pago; si no → verificación.
-    async function afterAuth(storeName: string | null, email: string, emailVerified: boolean, sendCodeOnEnter: boolean): Promise<void> {
+    async function afterAuth(storeName: string | null, email: string, emailVerified: boolean, sendCodeOnEnter: boolean, origin: PayOrigin = "returning"): Promise<void> {
+      flowOrigin = origin;
       setSummary(storeName, email);
       if (!emailVerified) {
         await enterVerify(email, sendCodeOnEnter);
@@ -109,8 +124,12 @@ import PlansModal from '../sections/checkout/PlansModal.astro';
     async function enterPay(storeName: string | null, email: string | null): Promise<void> {
       hideError(payError);
       setSummary(storeName, email);
+      paySuccess.hidden = true;
       if (storeName) {
+        const copy = SUCCESS_COPY[flowOrigin];
+        $("[data-success-prefix]")!.textContent = copy.prefix;
         $("[data-success-store]")!.textContent = storeName;
+        $("[data-success-suffix]")!.textContent = copy.suffix;
         paySuccess.hidden = false;
       }
       setStep(3, readSession());

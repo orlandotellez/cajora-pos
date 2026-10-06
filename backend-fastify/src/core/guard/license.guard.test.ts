@@ -62,11 +62,55 @@ describe("licenseGuard", () => {
     )
   })
 
-  it("cloud active → pasa", async () => {
+  it("cloud active con período vigente → pasa", async () => {
     mock.property(env, "APP_MODE", "cloud")
-    const { guard } = makeGuard(makeSub({ status: "active" }))
+    const { guard } = makeGuard(makeSub({
+      status: "active",
+      current_period_start: new Date(Date.now() - 5 * DAY_MS),
+      current_period_end: new Date(Date.now() + 25 * DAY_MS),
+    }))
 
     await assert.doesNotReject(() => guard(makeRequest("store-1") as never, {} as never))
+  })
+
+  // Regresión del bug reportado: `status === "active"` con `current_period_end` en
+  // el pasado devolvía temprano y concedía acceso indefinido. El reloj manda.
+  it("cloud active con período vencido hace 24 días → 402 (regresión: bypass por status active)", async () => {
+    mock.property(env, "APP_MODE", "cloud")
+    const { guard } = makeGuard(makeSub({
+      status: "active",
+      current_period_start: new Date("2026-08-12T12:00:00Z"),
+      current_period_end: new Date("2026-09-11T12:00:00Z"),
+    }))
+
+    await assert.rejects(
+      () => guard(makeRequest("store-1") as never, {} as never),
+      (err: unknown) =>
+        err instanceof PaymentRequiredError &&
+        err.statusCode === 402 &&
+        /Renueva tu plan Cloud/.test((err as Error).message),
+    )
+  })
+
+  it("cloud active dentro de los 3 días de gracia → pasa", async () => {
+    mock.property(env, "APP_MODE", "cloud")
+    const { guard } = makeGuard(makeSub({
+      status: "active",
+      current_period_start: new Date(Date.now() - 31 * DAY_MS),
+      current_period_end: new Date(Date.now() - 2 * DAY_MS),
+    }))
+
+    await assert.doesNotReject(() => guard(makeRequest("store-1") as never, {} as never))
+  })
+
+  it("cloud active sin current_period_end → 402 (nada pagado)", async () => {
+    mock.property(env, "APP_MODE", "cloud")
+    const { guard } = makeGuard(makeSub({ status: "active", current_period_end: null }))
+
+    await assert.rejects(
+      () => guard(makeRequest("store-1") as never, {} as never),
+      (err: unknown) => err instanceof PaymentRequiredError,
+    )
   })
 
   it("cloud pending (eligió Cloud pero no pagó) → 402", async () => {

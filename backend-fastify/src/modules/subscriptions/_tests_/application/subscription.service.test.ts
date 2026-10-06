@@ -1,5 +1,6 @@
 import { describe, it, beforeEach, afterEach, mock } from "node:test"
 import assert from "node:assert/strict"
+import { AppError, ConflictError } from "@/core/errors/AppError"
 import { createSubscriptionService } from "../../application/subscription.service"
 import { paypalClient } from "../../infrastructure/paypal.client"
 import type { ISubscriptionRepository } from "../../domain/subscription.interface"
@@ -18,8 +19,11 @@ function makeEntity(overrides: Partial<ISubscriptionEntity> = {}): ISubscription
     plan: "monthly",
     status: "pending",
     paypal_subscription_id: null,
-    current_period_start: null,
-    current_period_end: null,
+    // Período vigente por defecto: el estado se resuelve contra el reloj, así que un
+    // fixture `active` sin período ya no significaría "activa" (y las fechas fijas
+    // absolutas se pudren solas). Los tests que necesitan otra cosa lo dicen.
+    current_period_start: new Date(now.getTime() - 10 * DAY_MS),
+    current_period_end: new Date(now.getTime() + 20 * DAY_MS),
     cancel_at_period_end: false,
     created_at: now,
     updated_at: now,
@@ -109,21 +113,147 @@ describe("SubscriptionService", () => {
       assert.equal(getCurrent()!.status, "pending")
     })
 
-    it("si la tienda ya es cloud activa, no duplica la fila (mantiene status)", async () => {
-      mock.method(paypalClient, "createSubscription", async () => ({
-        id: "I-PAYPAL-2",
+    it("con suscripción activa y vigente → 409 y no toca PayPal (no se cancela una sub pagada)", async () => {
+      const create = mock.method(paypalClient, "createSubscription", async () => ({
+        id: "I-PAYPAL-NEW",
         approvalUrl: null,
         status: "APPROVAL_PENDING",
         planId: "P-PLAN-1",
       }))
-      const existing = makeEntity({ status: "active" })
+      const cancel = mock.method(paypalClient, "cancelSubscription", async () => true)
+      const existing = makeEntity({ status: "active", paypal_subscription_id: "I-PAYPAL-OLD" })
       const { repo, getCurrent } = makeRepo(existing)
       const service = createSubscriptionService(repo)
 
-      await service.checkout("store-1", "https://ok", "https://cancel")
+      await assert.rejects(
+        () => service.checkout("store-1", "https://ok", "https://cancel"),
+        (err: unknown) => err instanceof ConflictError && err.statusCode === 409,
+      )
+      assert.equal(create.mock.callCount(), 0, "no crea una sub nueva")
+      assert.equal(cancel.mock.callCount(), 0, "no cancela la sub vigente")
+      assert.equal(getCurrent()!.paypal_subscription_id, "I-PAYPAL-OLD", "la fila no se toca")
+    })
 
-      assert.equal(getCurrent()!.status, "active")
-      assert.equal(getCurrent()!.paypal_subscription_id, "I-PAYPAL-2")
+    it("con active pero período ya vencido (deriva) → permite re-suscribirse", async () => {
+      mock.method(paypalClient, "createSubscription", async () => ({
+        id: "I-PAYPAL-NEW",
+        approvalUrl: null,
+        status: "APPROVAL_PENDING",
+        planId: "P-PLAN-1",
+      }))
+      const cancel = mock.method(paypalClient, "cancelSubscription", async () => true)
+      const existing = makeEntity({
+        status: "active",
+        paypal_subscription_id: "I-PAYPAL-OLD",
+        current_period_end: new Date(Date.now() - 30 * DAY_MS),
+      })
+      const { repo, getCurrent } = makeRepo(existing)
+      const service = createSubscriptionService(repo)
+
+      const res = await service.checkout("store-1", "https://ok", "https://cancel")
+
+      assert.equal(res.paypalSubscriptionId, "I-PAYPAL-NEW")
+      assert.equal(cancel.mock.callCount(), 1, "la sub vieja se cancela aunque la fila diga active")
+      assert.equal(getCurrent()!.paypal_subscription_id, "I-PAYPAL-NEW")
+    })
+
+    it("con past_due dentro de la gracia → permite re-suscribirse (viene a arreglar el pago)", async () => {
+      mock.method(paypalClient, "createSubscription", async () => ({
+        id: "I-PAYPAL-NEW",
+        approvalUrl: null,
+        status: "APPROVAL_PENDING",
+        planId: "P-PLAN-1",
+      }))
+      const cancel = mock.method(paypalClient, "cancelSubscription", async () => true)
+      const existing = makeEntity({
+        status: "past_due",
+        paypal_subscription_id: "I-PAYPAL-OLD",
+        current_period_end: new Date(Date.now() - 1 * DAY_MS),
+      })
+      const { repo, getCurrent } = makeRepo(existing)
+      const service = createSubscriptionService(repo)
+
+      const res = await service.checkout("store-1", "https://ok", "https://cancel")
+
+      assert.equal(res.paypalSubscriptionId, "I-PAYPAL-NEW")
+      assert.equal(cancel.mock.callCount(), 1)
+      assert.equal(getCurrent()!.paypal_subscription_id, "I-PAYPAL-NEW")
+    })
+
+    it("al re-suscribirse cancela la sub vieja de PayPal antes de crear la nueva", async () => {
+      mock.method(paypalClient, "createSubscription", async () => ({
+        id: "I-PAYPAL-NEW",
+        approvalUrl: "https://paypal.com/approve/new",
+        status: "APPROVAL_PENDING",
+        planId: "P-PLAN-1",
+      }))
+      const cancel = mock.method(paypalClient, "cancelSubscription", async () => true)
+      const existing = makeEntity({
+        status: "expired",
+        paypal_subscription_id: "I-PAYPAL-OLD",
+        current_period_end: new Date(Date.now() - 30 * DAY_MS),
+      })
+      const { repo, getCurrent } = makeRepo(existing)
+      const created: Array<NewSubscriptionEvent> = []
+      const service = createSubscriptionService(repo, fakeEventRepo(created))
+
+      const res = await service.checkout("store-1", "https://ok", "https://cancel")
+
+      assert.equal(res.paypalSubscriptionId, "I-PAYPAL-NEW")
+      assert.equal(cancel.mock.callCount(), 1)
+      assert.equal(cancel.mock.calls[0].arguments[0], "I-PAYPAL-OLD")
+      assert.equal(getCurrent()!.paypal_subscription_id, "I-PAYPAL-NEW")
+      // Audita el reemplazo: sin esto la sub vieja queda sin rastro.
+      const cancelAudit = created.find((e) => e.action === "cancel")
+      assert.ok(cancelAudit, "audita la cancelación de la sub reemplazada")
+      assert.equal(cancelAudit!.paypal_subscription_id, "I-PAYPAL-OLD")
+      assert.deepEqual(cancelAudit!.metadata, {
+        ip: null,
+        userAgent: null,
+        reason: "replaced_by_new_checkout",
+      })
+    })
+
+    it("si cancelar la sub vieja falla → checkout rechaza y no crea la sub nueva", async () => {
+      const create = mock.method(paypalClient, "createSubscription", async () => ({
+        id: "I-PAYPAL-NEW",
+        approvalUrl: null,
+        status: "APPROVAL_PENDING",
+        planId: "P-PLAN-1",
+      }))
+      mock.method(paypalClient, "cancelSubscription", async () => {
+        throw new AppError("PayPal no responde", 502, "PAYPAL_UPSTREAM_ERROR")
+      })
+      const existing = makeEntity({ status: "expired", paypal_subscription_id: "I-PAYPAL-OLD" })
+      const { repo, getCurrent } = makeRepo(existing)
+      const service = createSubscriptionService(repo)
+
+      await assert.rejects(
+        () => service.checkout("store-1", "https://ok", "https://cancel"),
+        (err: unknown) => err instanceof AppError && err.statusCode === 502,
+      )
+      assert.equal(create.mock.callCount(), 0, "no queda una sub nueva huérfana en PayPal")
+      assert.equal(getCurrent()!.paypal_subscription_id, "I-PAYPAL-OLD", "la fila no se toca")
+    })
+
+    it("si la sub vieja ya estaba cancelada en PayPal (404) → checkout sigue", async () => {
+      mock.method(paypalClient, "createSubscription", async () => ({
+        id: "I-PAYPAL-NEW",
+        approvalUrl: null,
+        status: "APPROVAL_PENDING",
+        planId: "P-PLAN-1",
+      }))
+      mock.method(paypalClient, "cancelSubscription", async () => {
+        throw new AppError("Resource not found", 404, "PAYMENT_PROVIDER_REJECTED")
+      })
+      const existing = makeEntity({ status: "expired", paypal_subscription_id: "I-PAYPAL-OLD" })
+      const { repo, getCurrent } = makeRepo(existing)
+      const service = createSubscriptionService(repo)
+
+      const res = await service.checkout("store-1", "https://ok", "https://cancel")
+
+      assert.equal(res.paypalSubscriptionId, "I-PAYPAL-NEW")
+      assert.equal(getCurrent()!.paypal_subscription_id, "I-PAYPAL-NEW")
     })
 
     it("si PayPal falla al crear la sub → checkout rechaza y no crea fila", async () => {
@@ -507,6 +637,35 @@ describe("SubscriptionService", () => {
       assert.equal(res.mode, "cloud")
       assert.equal(res.status, "past_due")
     })
+
+    it("con fila active pero período vencido → devuelve expired (regresión: la landing nunca veía 'Vencida')", async () => {
+      const existing = makeEntity({
+        status: "active",
+        current_period_end: new Date("2026-09-11T12:00:00Z"),
+      })
+      const { repo } = makeRepo(existing)
+      const service = createSubscriptionService(repo)
+
+      const res = await service.getByStore("store-1")
+
+      assert.equal(res.status, "expired")
+      assert.equal(res.current_period_end, "2026-09-11T12:00:00.000Z", "el período pagado se sigue informando")
+      assert.equal(res.days_overdue !== null && res.days_overdue > 0, true)
+      assert.equal(res.grace_ends_at !== null, true)
+    })
+
+    it("active dentro de la gracia → sigue active, no expired", async () => {
+      const existing = makeEntity({
+        status: "active",
+        current_period_end: new Date(Date.now() - 2 * 86_400_000),
+      })
+      const { repo } = makeRepo(existing)
+      const service = createSubscriptionService(repo)
+
+      const res = await service.getByStore("store-1")
+
+      assert.equal(res.status, "active")
+    })
   })
 
   describe("getBilling", () => {
@@ -551,7 +710,8 @@ describe("SubscriptionService", () => {
         },
       }
 
-      const periodEnd = new Date("2026-09-01T12:00:00Z")
+      // Período vigente: la fecha de pago siguiente es real, no una fecha ya pasada.
+      const periodEnd = new Date("2099-09-01T12:00:00Z")
       const { repo } = makeRepo(
         makeEntity({ status: "active", current_period_end: periodEnd }),
       )
@@ -564,7 +724,36 @@ describe("SubscriptionService", () => {
       assert.equal(res.payments[0].currency, "USD")
       assert.equal(res.payments[0].paid_at, "2026-08-01T12:00:00.000Z")
       assert.equal(res.total_paid, "15.99")
-      assert.equal(res.next_payment_at, "2026-09-01T12:00:00.000Z")
+      assert.equal(res.next_payment_at, "2099-09-01T12:00:00.000Z")
+      assert.equal(res.status, "active")
+    })
+
+    it("sub active con período ya vencido → next_payment_at null y status expired (regresión: fecha pasada como 'próxima')", async () => {
+      const eventRepo = {
+        async create() {},
+        async createIdempotent() {
+          return null
+        },
+        async findMany() {
+          return []
+        },
+        async count() {
+          return 0
+        },
+      }
+      // Caso reportado: cobró el 2026-08-12, el período terminó el 2026-09-11 y
+      // la fila quedó 'active'. La API no debe anunciar otra fecha de pago.
+      const { repo } = makeRepo(
+        makeEntity({ status: "active", current_period_end: new Date("2026-09-11T12:00:00Z") }),
+      )
+      const service = createSubscriptionService(repo, eventRepo)
+
+      const res = await service.getBilling("store-1")
+
+      assert.equal(res.next_payment_at, null)
+      assert.equal(res.status, "expired")
+      assert.equal(res.overdue_since, "2026-09-11T12:00:00.000Z", "el período vencido se informa para el copy")
+      assert.equal(res.days_overdue !== null && res.days_overdue > 0, true)
     })
 
     it("sin cobros → payments vacío, total 0 y sin próxima fecha si no hay período", async () => {
@@ -886,7 +1075,7 @@ describe("SubscriptionService", () => {
         },
       }
       const { repo } = makeRepo(
-        makeEntity({ status: "active", current_period_end: new Date("2026-09-01T12:00:00Z") }),
+        makeEntity({ status: "active", current_period_end: new Date("2099-09-01T12:00:00Z") }),
       )
       const service = createSubscriptionService(repo, eventRepo, webhookRepo)
 
@@ -899,7 +1088,7 @@ describe("SubscriptionService", () => {
       assert.equal(res.payments[1].currency, "EUR")
       assert.equal(res.total_paid, "35.48")
       assert.equal(res.currency, "USD")
-      assert.equal(res.next_payment_at, "2026-09-01T12:00:00.000Z")
+      assert.equal(res.next_payment_at, "2099-09-01T12:00:00.000Z")
     })
   })
 })
