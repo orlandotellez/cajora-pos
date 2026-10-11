@@ -42,7 +42,14 @@ const {
         {url}
       </a>
     </div>
-    <div class="mockup-screen">
+    <div
+      class="mockup-screen"
+      role="button"
+      tabindex="0"
+      aria-label="Ampliar la captura de escritorio"
+      data-zoom={desktop}
+      data-zoom-alt={desktopAlt}
+    >
       <img
         class="mockup__img"
         src={desktop}
@@ -58,8 +65,15 @@ const {
   <div class="mockup-base"></div>
   <div class="mockup-foot"></div>
 
-  <div class="laptop" aria-hidden="true">
-    <div class="laptop__screen">
+  <div class="laptop">
+    <div
+      class="laptop__screen"
+      role="button"
+      tabindex="0"
+      aria-label="Ampliar la captura de la laptop"
+      data-zoom={laptop}
+      data-zoom-alt={desktopAlt}
+    >
       <img
         class="laptop__img"
         src={laptop}
@@ -69,17 +83,22 @@ const {
         height="1007"
       />
     </div>
-    <div class="laptop__base"></div>
+    <div class="laptop__base" aria-hidden="true"></div>
   </div>
 
-  <div class="mockup-phone" aria-hidden="true">
+  <div class="mockup-phone">
     <div class="mockup-phone__frame">
-      <div class="mockup-phone__status">
+      <div class="mockup-phone__status" aria-hidden="true">
         <span>9:41</span>
         <span class="mockup-phone__notch"></span>
       </div>
       <img
         class="mockup-phone__img"
+        role="button"
+        tabindex="0"
+        aria-label="Ampliar la captura del teléfono"
+        data-zoom={mobile}
+        data-zoom-alt={mobileAlt}
         src={mobile}
         alt={mobileAlt}
         loading="lazy"
@@ -100,6 +119,7 @@ const {
       </div>
     </div>
   </div>
+
 </div>
 
 <style>
@@ -373,4 +393,19 @@ const {
       width: 23rem;
     }
   }
+
+  /* ---------- Zoom de capturas ---------- */
+  .mockup-screen,
+  .laptop__screen,
+  .mockup-phone__img {
+    cursor: zoom-in;
+  }
+
+  .mockup-screen:focus-visible,
+  .laptop__screen:focus-visible,
+  .mockup-phone__img:focus-visible {
+    outline: 2px solid #a1a1aa;
+    outline-offset: 2px;
+  }
+
 </style>

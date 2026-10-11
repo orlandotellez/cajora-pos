@@ -1,0 +1,249 @@
+---
+import { ChevronLeft, ChevronRight, X } from 'lucide-astro';
+---
+
+<dialog class="zl" data-zoom-dialog aria-label="Captura ampliada">
+  <button
+    class="zl__nav zl__nav--prev"
+    type="button"
+    data-zoom-prev
+    aria-label="Captura anterior"
+    hidden
+  >
+    <ChevronLeft class="zl__nav-icon" aria-hidden="true" />
+  </button>
+
+  <img class="zl__img" data-zoom-img alt="" />
+
+  <button
+    class="zl__nav zl__nav--next"
+    type="button"
+    data-zoom-next
+    aria-label="Siguiente captura"
+    hidden
+  >
+    <ChevronRight class="zl__nav-icon" aria-hidden="true" />
+  </button>
+
+  <button class="zl__close" type="button" data-zoom-close aria-label="Cerrar la captura ampliada">
+    <X class="zl__close-icon" aria-hidden="true" />
+  </button>
+</dialog>
+
+<script>
+  document.querySelectorAll('[data-zoom-dialog]').forEach((dialog) => {
+    const image = dialog.querySelector('[data-zoom-img]');
+    const closeButton = dialog.querySelector('[data-zoom-close]');
+    const prevButton = dialog.querySelector('[data-zoom-prev]');
+    const nextButton = dialog.querySelector('[data-zoom-next]');
+    if (!image || !closeButton) return;
+
+    const defaultLabel = dialog.getAttribute('aria-label') || 'Captura ampliada';
+    let items = [];
+    let index = 0;
+
+    const goTo = (target) => {
+      if (items.length === 0) return;
+      index = Math.max(0, Math.min(items.length - 1, target));
+      const item = items[index];
+      image.setAttribute('src', item.src);
+      image.setAttribute('alt', item.alt);
+      if (prevButton) prevButton.disabled = index === 0;
+      if (nextButton) nextButton.disabled = index === items.length - 1;
+      dialog.setAttribute(
+        'aria-label',
+        items.length > 1 ? `Captura ampliada ${index + 1} de ${items.length}` : defaultLabel
+      );
+    };
+
+    const open = (trigger) => {
+      const src = trigger.getAttribute('data-zoom');
+      if (!src) return;
+
+      const gallery = trigger.getAttribute('data-zoom-gallery');
+      const group = gallery
+        ? Array.from(document.querySelectorAll(`[data-zoom-gallery="${gallery}"]`))
+        : [trigger];
+
+      items = group.map((el) => ({
+        src: el.getAttribute('data-zoom') || '',
+        alt: el.getAttribute('data-zoom-alt') || '',
+      }));
+
+      const many = items.length > 1;
+      if (prevButton) prevButton.hidden = !many;
+      if (nextButton) nextButton.hidden = !many;
+
+      const at = group.indexOf(trigger);
+      document.body.style.overflow = 'hidden';
+      dialog.showModal();
+      goTo(at < 0 ? 0 : at);
+    };
+
+    document.querySelectorAll('[data-zoom]').forEach((trigger) => {
+      trigger.addEventListener('click', () => open(trigger));
+      trigger.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        open(trigger);
+      });
+    });
+
+    if (prevButton) prevButton.addEventListener('click', () => goTo(index - 1));
+    if (nextButton) nextButton.addEventListener('click', () => goTo(index + 1));
+
+    closeButton.addEventListener('click', () => dialog.close());
+
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog) dialog.close();
+    });
+
+    dialog.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        goTo(index - 1);
+      } else if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        goTo(index + 1);
+      }
+    });
+
+    dialog.addEventListener('close', () => {
+      document.body.style.overflow = '';
+    });
+  });
+</script>
+
+<style>
+  .zl {
+    margin: auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+  }
+
+  .zl::backdrop {
+    background: rgba(4, 6, 9, 0.92);
+  }
+
+  .zl[open] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    max-width: none;
+    max-height: none;
+  }
+
+  .zl__img {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: min(94vw, 1400px);
+    max-height: 86vh;
+    max-height: 86dvh;
+    border-radius: var(--radius);
+    box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.85);
+  }
+
+  .zl__close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 50%;
+    background: rgba(24, 24, 27, 0.85);
+    color: #ffffff;
+    cursor: pointer;
+    transition: background-color 150ms ease, border-color 150ms ease;
+  }
+
+  .zl__close:hover {
+    background: rgba(63, 63, 70, 0.95);
+    border-color: rgba(255, 255, 255, 0.35);
+  }
+
+  .zl__close:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+  }
+
+  .zl__close-icon {
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+
+  .zl__nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 50%;
+    background: rgba(24, 24, 27, 0.85);
+    color: #ffffff;
+    cursor: pointer;
+    transition: background-color 150ms ease, opacity 150ms ease;
+  }
+
+  .zl__nav:hover {
+    background: rgba(63, 63, 70, 0.95);
+  }
+
+  .zl__nav:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+  }
+
+  .zl__nav[hidden] {
+    display: none;
+  }
+
+  .zl__nav:disabled {
+    opacity: 0.3;
+    cursor: default;
+  }
+
+  .zl__nav--prev {
+    left: 1rem;
+  }
+
+  .zl__nav--next {
+    right: 1rem;
+  }
+
+  .zl__nav-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .zl[open] {
+      animation: zl-in 160ms ease;
+    }
+  }
+
+  @keyframes zl-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+</style>

@@ -130,6 +130,12 @@ const scenes = [
                         <img
                           class="gl-slider__slide"
                           data-slider-slide
+                          role="button"
+                          tabindex="0"
+                          aria-label={`Ampliar la captura ${i + 1} de ${scene.shots.length}`}
+                          data-zoom={shot}
+                          data-zoom-alt={scene.desktopAlt}
+                          data-zoom-gallery={scene.url}
                           src={shot}
                           alt={scene.desktopAlt}
                           width="1850"
@@ -149,6 +155,12 @@ const scenes = [
                 ) : scene.desktop ? (
                   <img
                     class="gcard__img"
+                    role="button"
+                    tabindex="0"
+                    aria-label={`Ampliar la captura de ${scene.title}`}
+                    data-zoom={scene.desktop}
+                    data-zoom-alt={scene.desktopAlt}
+                    data-zoom-gallery={scene.url}
                     src={scene.desktop}
                     alt={scene.desktopAlt}
                     width={scene.desktopW}
@@ -476,6 +488,19 @@ const scenes = [
     font-size: 0.625rem;
     color: #71717a;
     white-space: nowrap;
+  }
+
+  /* ---------- Zoom (disparadores; el lightbox vive en ZoomLightbox.astro) ---------- */
+  .gl-slider__slide,
+  .gcard__img {
+    cursor: zoom-in;
+  }
+
+  /* El outline va hacia adentro: .gcard__screen y .gl-slider recortan con overflow hidden. */
+  .gl-slider__slide:focus-visible,
+  .gcard__img:focus-visible {
+    outline: 2px solid #fafafa;
+    outline-offset: -2px;
   }
 
   /* ---------- Placeholder de captura ---------- */
