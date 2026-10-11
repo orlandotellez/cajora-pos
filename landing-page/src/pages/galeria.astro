@@ -12,6 +12,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-astro';
+import DeviceCluster from '../components/DeviceCluster.astro';
 
 const base = import.meta.env.BASE_URL;
 
@@ -127,6 +128,10 @@ const scenes = [
         </a>
       </div>
     </header>
+
+    <div class="gallery__mockup" aria-label="Vista previa del sistema">
+      <DeviceCluster desktopAlt="CajoraPOS Sistema Punto de Venta Escritorio" />
+    </div>
 
     <div class="gallery__grid">
       {scenes.map((scene) => (
@@ -281,6 +286,12 @@ const scenes = [
   .gallery__head {
     text-align: center;
     margin-bottom: 3rem;
+  }
+
+  .gallery__mockup {
+    position: relative;
+    max-width: 64rem;
+    margin: 0 auto 4.5rem;
   }
 
   .gallery__title {
