@@ -6,6 +6,59 @@ const base = import.meta.env.BASE_URL;
 <section class="hero" id="inicio">
   <!-- Ambientes: cuadrícula + glow -->
   <div class="hero__grid" aria-hidden="true"></div>
+  <div class="hero__pattern" aria-hidden="true">
+    <svg class="hero__pattern-svg" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <pattern id="heroIconPattern" width="180" height="180" patternUnits="userSpaceOnUse">
+          <g fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            <g transform="translate(16 20) rotate(-12) scale(0.9)">
+              <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
+              <path d="M13 5v2" />
+              <path d="M13 17v2" />
+              <path d="M13 11v2" />
+            </g>
+            <g transform="translate(112 38) rotate(10) scale(0.9)">
+              <path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z" />
+              <path d="M12 22V12" />
+              <polyline points="3.29 7 12 12 20.71 7" />
+              <path d="m7.5 4.27 9 5.15" />
+            </g>
+            <g transform="translate(50 110) rotate(-8) scale(0.86)">
+              <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+              <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+              <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+              <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+              <path d="M8 7v10" />
+              <path d="M12 7v10" />
+              <path d="M17 7v10" />
+            </g>
+            <g transform="translate(146 146) rotate(16) scale(0.68)">
+              <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
+              <path d="M13 5v2" />
+              <path d="M13 17v2" />
+              <path d="M13 11v2" />
+            </g>
+            <g transform="translate(12 136) rotate(-14) scale(0.7)">
+              <path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z" />
+              <path d="M12 22V12" />
+              <polyline points="3.29 7 12 12 20.71 7" />
+              <path d="m7.5 4.27 9 5.15" />
+            </g>
+            <g transform="translate(146 8) rotate(8) scale(0.6)">
+              <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+              <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+              <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+              <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+              <path d="M8 7v10" />
+              <path d="M12 7v10" />
+              <path d="M17 7v10" />
+            </g>
+          </g>
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#heroIconPattern)" />
+    </svg>
+  </div>
   <div class="hero__glow" aria-hidden="true"></div>
 
   <div class="hero__inner">
@@ -139,13 +192,12 @@ const base = import.meta.env.BASE_URL;
     inset: 0;
     z-index: -1;
     pointer-events: none;
-    opacity: 0.4;
     background-size: 40px 40px;
     background-image:
       linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
       linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
-    -webkit-mask-image: linear-gradient(to bottom, black 0%, black 45%, transparent 90%);
-    mask-image: linear-gradient(to bottom, black 0%, black 45%, transparent 90%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 30%, black 45%, transparent 90%);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 30%, black 45%, transparent 90%);
     animation: grid-scroll 12s linear infinite;
     will-change: background-position;
   }
@@ -161,6 +213,47 @@ const base = import.meta.env.BASE_URL;
 
   @media (prefers-reduced-motion: reduce) {
     .hero__grid {
+      animation: none;
+    }
+  }
+
+  /* --- Ambient icon pattern (ticket / scanner / package), estilo doodle --- */
+  .hero__pattern {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    overflow: hidden;
+    color: rgba(255, 255, 255, 0.15);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 30%, black 45%, transparent 90%);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 5%, transparent 90%);
+  }
+
+  html[data-theme='light'] .hero__pattern {
+    color: rgba(24, 24, 27, 0.2);
+  }
+
+  .hero__pattern-svg {
+    position: absolute;
+    top: -180px;
+    left: -180px;
+    width: calc(100% + 360px);
+    height: calc(100% + 360px);
+    animation: pattern-scroll 54s linear infinite;
+    will-change: transform;
+  }
+
+  @keyframes pattern-scroll {
+    from {
+      transform: translate(0, 0);
+    }
+    to {
+      transform: translate(180px, 180px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero__pattern-svg {
       animation: none;
     }
   }
