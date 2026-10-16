@@ -1,7 +1,7 @@
 import { prisma } from "@/config/prisma"
 import type { IInventoryRepository } from "../domain/inventory.interface"
 import type { IInventoryMovementEntity, CreateMovementData } from "../domain/inventory.entities"
-import { Prisma } from "@prisma/client"
+import { Prisma } from "@/generated/prisma/client"
 
 type MovementRecord = Prisma.inventory_movementGetPayload<{ include: { product: { select: { name: true; unit_type: true; unit_quantity: true } } } }>
 

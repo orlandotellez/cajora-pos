@@ -1,5 +1,5 @@
 import type { FastifyReply, FastifyRequest } from "fastify"
-import type { ROLE } from "@prisma/client"
+import type { ROLE } from "@/generated/prisma/client"
 import { UnauthorizedError, ForbiddenError } from "@/core/errors/AppError"
 import { getAuthResultFromRequest } from "./auth.utils"
 

@@ -1,4 +1,4 @@
-import { PRINTER_CONN_TYPE, PRINTER_PROFILE, PRINTER_STATUS } from "@prisma/client"
+import { PRINTER_CONN_TYPE, PRINTER_PROFILE, PRINTER_STATUS } from "@/generated/prisma/client"
 
 export type PrinterConnType = (typeof PRINTER_CONN_TYPE)[keyof typeof PRINTER_CONN_TYPE]
 export type PrinterProfile = (typeof PRINTER_PROFILE)[keyof typeof PRINTER_PROFILE]

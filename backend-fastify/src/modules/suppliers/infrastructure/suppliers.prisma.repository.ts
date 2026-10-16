@@ -1,7 +1,7 @@
 import { prisma } from "@/config/prisma"
 import type { ISupplierRepository } from "../domain/suppliers.interface"
 import type { ISupplierEntity, CreateSupplierData, UpdateSupplierData } from "../domain/suppliers.entities"
-import { Prisma } from "@prisma/client"
+import { Prisma } from "@/generated/prisma/client"
 
 const supplierSelect = {
   id: true,

@@ -1,6 +1,6 @@
 import { prisma } from "@/config/prisma"
-import { Prisma } from "@prisma/client"
-import type { subscription } from "@prisma/client"
+import { Prisma } from "@/generated/prisma/client"
+import type { subscription } from "@/generated/prisma/client"
 import type { ISubscriptionRepository } from "../domain/subscription.interface"
 import type {
   ISubscriptionEntity,

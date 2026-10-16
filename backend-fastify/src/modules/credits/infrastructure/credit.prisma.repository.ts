@@ -1,7 +1,7 @@
 import { prisma } from "@/config/prisma"
 import type { ICreditRepository } from "../domain/credit.interface"
 import type { CreateCreditPaymentData } from "../domain/credit.entities"
-import { Prisma } from "@prisma/client"
+import { Prisma } from "@/generated/prisma/client"
 
 export const CreditRepository: ICreditRepository = {
   async getClientsWithDebt(params) {

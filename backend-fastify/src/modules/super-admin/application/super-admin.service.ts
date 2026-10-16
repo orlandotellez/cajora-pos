@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client"
+import { Prisma } from "@/generated/prisma/client"
 import { prisma } from "@/config/prisma"
 import { ConflictError, NotFoundError } from "@/core/errors/AppError"
 import type { ISubscriptionRepository } from "@/modules/subscriptions/domain/subscription.interface"

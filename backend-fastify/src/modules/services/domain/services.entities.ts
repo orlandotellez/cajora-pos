@@ -1,10 +1,10 @@
-import type { Decimal } from "@prisma/client/runtime/library"
+import type { Prisma } from "@/generated/prisma/client"
 
 export interface IServiceEntity {
   id: string
   name: string
   description?: string
-  base_price: Decimal
+  base_price: Prisma.Decimal
   is_active: boolean
   created_at: Date
   updated_at: Date
@@ -20,7 +20,7 @@ export interface IServiceProductEntity {
   product?: {
     id: string
     name: string
-    price: Decimal
+    price: Prisma.Decimal
   }
 }
 

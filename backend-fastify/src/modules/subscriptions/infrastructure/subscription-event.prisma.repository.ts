@@ -1,5 +1,5 @@
-import { Prisma } from "@prisma/client"
-import type { subscription_event } from "@prisma/client"
+import { Prisma } from "@/generated/prisma/client"
+import type { subscription_event } from "@/generated/prisma/client"
 import { prisma } from "@/config/prisma"
 import type {
   ISubscriptionEventEntity,

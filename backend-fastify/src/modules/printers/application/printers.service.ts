@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client"
+import { Prisma } from "@/generated/prisma/client"
 import { prisma } from "@/config/prisma"
 import { NotFoundError, ConflictError, BadRequestError } from "@/core/errors/AppError"
 import type { IPrinterRepository } from "../domain/printers.interface"

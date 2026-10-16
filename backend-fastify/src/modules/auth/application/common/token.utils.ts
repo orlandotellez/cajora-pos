@@ -1,5 +1,5 @@
 import { env } from "@/config/env"
-import type { ROLE } from "@prisma/client"
+import type { ROLE } from "@/generated/prisma/client"
 import type { FastifyRequest } from "fastify"
 import type { SignOptions } from "jsonwebtoken"
 import jwt from "jsonwebtoken"

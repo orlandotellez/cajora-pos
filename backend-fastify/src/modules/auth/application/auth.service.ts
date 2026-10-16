@@ -25,7 +25,7 @@ import type {
   IStoreResponse,
   ISsoChallengeResponse,
 } from "../domain/auth.types"
-import type { ROLE, USER_ACCESS } from "@prisma/client"
+import type { ROLE, USER_ACCESS } from "@/generated/prisma/client"
 import { env } from "@/config/env"
 import { generateSsoCode, type ISsoCodeStore } from "../infrastructure/sso-code.store"
 import { mapUserToResponse, mapStoreToResponse } from "./common/auth.mappers"

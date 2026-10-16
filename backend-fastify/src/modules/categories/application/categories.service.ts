@@ -2,7 +2,7 @@ import { NotFoundError, BadRequestError, ConflictError } from "@/core/errors/App
 import type { ICategoryRepository } from "../domain/categories.interface"
 import type { ICategoryResponse, ICategoryListResponse } from "../domain/categories.types"
 import type { CreateCategoryData, UpdateCategoryData } from "../domain/categories.entities"
-import { Prisma } from "@prisma/client"
+import { Prisma } from "@/generated/prisma/client"
 import { mapCategoryToResponse } from "./common/categories.mappers"
 
 export const createCategoryService = (repository: ICategoryRepository) => ({

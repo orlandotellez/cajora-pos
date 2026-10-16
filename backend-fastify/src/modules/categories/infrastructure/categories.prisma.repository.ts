@@ -1,7 +1,7 @@
 import { prisma } from "@/config/prisma"
 import type { ICategoryRepository } from "../domain/categories.interface"
 import type { ICategoryEntity, CreateCategoryData, UpdateCategoryData } from "../domain/categories.entities"
-import { Prisma } from "@prisma/client"
+import { Prisma } from "@/generated/prisma/client"
 
 const categorySelect = {
   id: true,

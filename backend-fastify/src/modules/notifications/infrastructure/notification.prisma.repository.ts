@@ -1,5 +1,5 @@
 import { prisma } from "@/config/prisma"
-import { Prisma } from "@prisma/client"
+import { Prisma } from "@/generated/prisma/client"
 import type {
   ICreateNotificationInput,
   INotification,

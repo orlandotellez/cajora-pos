@@ -1,4 +1,4 @@
-import type { USER_ACCESS } from "@prisma/client"
+import type { USER_ACCESS } from "@/generated/prisma/client"
 
 /**
  * Estado de acceso de un usuario a la plataforma.

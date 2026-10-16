@@ -1,4 +1,4 @@
-import { BILLING_MODE, SUBSCRIPTION_STATUS, SUBSCRIPTION_PLAN } from "@prisma/client"
+import { BILLING_MODE, SUBSCRIPTION_STATUS, SUBSCRIPTION_PLAN } from "@/generated/prisma/client"
 
 export type BillingMode = (typeof BILLING_MODE)[keyof typeof BILLING_MODE]
 export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUS)[keyof typeof SUBSCRIPTION_STATUS]
