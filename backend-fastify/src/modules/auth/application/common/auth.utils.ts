@@ -1,5 +1,5 @@
 import type { FastifyReply, FastifyRequest } from "fastify"
-import type { ROLE } from "@prisma/client"
+import type { ROLE } from "@/generated/prisma/client"
 import { clearAuthCookies } from "./cookie.utils"
 import { env } from "@/config/env"
 import jwt, { type JwtPayload } from "jsonwebtoken"

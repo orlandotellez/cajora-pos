@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { PRINTER_PROFILE } from "@prisma/client"
+import { PRINTER_PROFILE } from "@/generated/prisma/client"
 
 const IPV4_REGEX = /^(?:(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d?\d)$/
 

@@ -6,7 +6,7 @@ import { webhookController } from "../../presentation/webhook.controller"
 import { SubscriptionRepository } from "../../infrastructure/subscription.prisma.repository"
 import { PayPalWebhookEventRepository } from "../../infrastructure/paypal-webhook-event.prisma.repository"
 import { SubscriptionEventRepository } from "../../infrastructure/subscription-event.prisma.repository"
-import type { paypal_webhook_event } from "@prisma/client"
+import type { paypal_webhook_event } from "@/generated/prisma/client"
 
 const WEBHOOK_ID = "test-webhook-id-123"
 const CERT_URL = "https://api.sandbox.paypal.com/v1/notifications/certs/CERT-123"

@@ -1,7 +1,7 @@
 import { prisma } from "@/config/prisma"
 import type { IUserRepository } from "../domain/users.interface"
 import type { IUserEntity, CreateUserData, UpdateUserData, Permission } from "../domain/users.entities"
-import { Prisma } from "@prisma/client"
+import { Prisma } from "@/generated/prisma/client"
 
 const userSelect = {
   id: true,

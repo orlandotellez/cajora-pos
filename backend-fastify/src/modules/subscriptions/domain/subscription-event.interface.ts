@@ -1,5 +1,5 @@
-import type { Prisma } from "@prisma/client"
-import type { subscription_event } from "@prisma/client"
+import type { Prisma } from "@/generated/prisma/client"
+import type { subscription_event } from "@/generated/prisma/client"
 
 export interface SubscriptionActor {
   userId: string | null

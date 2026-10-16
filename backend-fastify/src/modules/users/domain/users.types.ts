@@ -1,4 +1,4 @@
-import type { ROLE } from "@prisma/client"
+import type { ROLE } from "@/generated/prisma/client"
 import type { Permission } from "./users.entities"
 
 export interface IUserResponse {

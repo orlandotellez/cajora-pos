@@ -7,9 +7,9 @@
     "build": "prisma generate && tsup",
     "start": "bun src/server.ts",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "bunx prisma migrate dev",
-    "prisma:studio": "bunx prisma studio",
-    "migrate:deploy": "bunx prisma migrate deploy",
+    "prisma:migrate": "prisma migrate dev && prisma generate",
+    "prisma:studio": "prisma studio",
+    "migrate:deploy": "prisma migrate deploy",
     "seed": "bun src/scripts/seed.ts",
     "create-super-admin": "bun src/scripts/create-super-admin.ts",
     "set-store-owner": "bun src/scripts/set-store-owner.ts",
@@ -30,7 +30,8 @@
     "@fastify/rate-limit": "^10.0.0",
     "@fastify/swagger": "^9.7.0",
     "@fastify/swagger-ui": "^6.0.0",
-    "@prisma/client": "^6.0.0",
+    "@prisma/adapter-pg": "7.10.1",
+    "@prisma/client": "7.10.1",
     "bcrypt": "^5.1.0",
     "dotenv": "^16.4.0",
     "fastify": "^5.0.0",
@@ -47,8 +48,8 @@
     "@types/node": "^22.0.0",
     "bun-types": "^1.4.2",
     "pino-pretty": "^11.0.0",
-    "prisma": "^6.0.0",
+    "prisma": "7.10.1",
     "tsup": "^8.0.0",
-    "typescript": "^5.5.0"
+    "typescript": "^5.9.0"
   }
 }

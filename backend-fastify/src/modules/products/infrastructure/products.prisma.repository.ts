@@ -1,7 +1,7 @@
 import { prisma } from "@/config/prisma"
 import type { IProductRepository } from "../domain/products.interface"
 import type { IProductEntity, CreateProductData, UpdateProductData } from "../domain/products.entities"
-import { Prisma, type UNIT_TYPE } from "@prisma/client"
+import { Prisma, type UNIT_TYPE } from "@/generated/prisma/client"
 
 const productSelect = {
   id: true,

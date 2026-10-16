@@ -1,4 +1,4 @@
-import type { Decimal } from "@prisma/client/runtime/library"
+import type { Prisma } from "@/generated/prisma/client"
 
 export interface IProductEntity {
   id: string
@@ -11,8 +11,8 @@ export interface IProductEntity {
   supplier_id?: string
   category?: { id: string; name: string } | null
   supplier?: { id: string; name: string } | null
-  price: Decimal
-  cost: Decimal
+  price: Prisma.Decimal
+  cost: Prisma.Decimal
   stock: number
   low_stock_threshold: number
   active: boolean

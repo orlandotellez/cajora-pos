@@ -1,7 +1,7 @@
 import { prisma } from "@/config/prisma"
 import type { IServiceRepository } from "../domain/services.interface"
 import type { IServiceEntity, CreateServiceData, UpdateServiceData } from "../domain/services.entities"
-import { Prisma } from "@prisma/client"
+import { Prisma } from "@/generated/prisma/client"
 
 const serviceSelect = {
   id: true,

@@ -1,4 +1,4 @@
-import type { ROLE, USER_ACCESS } from "@prisma/client"
+import type { ROLE, USER_ACCESS } from "@/generated/prisma/client"
 
 export type Permission =
   | "catalog_read"

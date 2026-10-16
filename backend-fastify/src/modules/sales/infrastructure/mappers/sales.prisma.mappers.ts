@@ -1,5 +1,5 @@
 import type { ISaleEntity, ISaleItemEntity, ISaleServiceEntity, ISaleServiceProductEntity } from "../../domain/sales.entities"
-import type { sale, sale_item, sale_service, sale_service_product } from "@prisma/client"
+import type { sale, sale_item, sale_service, sale_service_product } from "@/generated/prisma/client"
 
 type SaleWithRelations = sale & {
   items?: sale_item[]

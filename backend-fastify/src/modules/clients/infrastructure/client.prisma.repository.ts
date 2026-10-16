@@ -1,7 +1,7 @@
 import { prisma } from "@/config/prisma"
 import type { IClientRepository } from "../domain/client.interface"
 import type { IClientEntity, CreateClientData, UpdateClientData } from "../domain/client.entities"
-import { Prisma } from "@prisma/client"
+import { Prisma } from "@/generated/prisma/client"
 
 const clientSelect = {
   id: true,

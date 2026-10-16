@@ -1,5 +1,5 @@
 import { prisma } from "@/config/prisma"
-import type { PrismaClient } from "@prisma/client"
+import type { PrismaClient } from "@/generated/prisma/client"
 import { ConflictError, NotFoundError } from "@/core/errors/AppError"
 import type { ICashRegisterRepository, ICashCloseResult } from "../domain/cash-register.interface"
 import type { CreateCashSessionData, CloseCashSessionData, CreateCashExpenseData, ICashSessionEntity } from "../domain/cash-register.entities"

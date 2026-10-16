@@ -1,4 +1,4 @@
-import type { account, session, ROLE, USER_ACCESS, user, verification } from "@prisma/client"
+import type { account, session, ROLE, USER_ACCESS, user, verification } from "@/generated/prisma/client"
 import type { IAccountEntity, ISessionEntity, IUserEntity, IVerificationEntity, Permission } from "../../domain/auth.entities"
 
 export function mapPrismaUserToEntity(user: user): IUserEntity {

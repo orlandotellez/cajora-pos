@@ -1,5 +1,5 @@
-import { Prisma } from "@prisma/client"
-import type { paypal_webhook_event } from "@prisma/client"
+import { Prisma } from "@/generated/prisma/client"
+import type { paypal_webhook_event } from "@/generated/prisma/client"
 import type { FastifyReply, FastifyRequest } from "fastify"
 import { prisma } from "@/config/prisma"
 import { verifyPayPalWebhook } from "../infrastructure/paypal.webhook-verifier"

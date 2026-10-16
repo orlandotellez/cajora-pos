@@ -1,13 +1,13 @@
-import type { Decimal } from "@prisma/client/runtime/library"
+import type { Prisma } from "@/generated/prisma/client"
 
 export interface ISaleEntity {
   id: string
-  subtotal: Decimal
-  discount: Decimal
-  total: Decimal
+  subtotal: Prisma.Decimal
+  discount: Prisma.Decimal
+  total: Prisma.Decimal
   payment_method: string
-  amount_received?: Decimal
-  change_given?: Decimal
+  amount_received?: Prisma.Decimal
+  change_given?: Prisma.Decimal
   user_id: string
   user_name: string
   client_id?: string
@@ -24,8 +24,8 @@ export interface ISaleItemEntity {
   product_id: string
   product_name: string
   quantity: number
-  unit_price: Decimal
-  line_total: Decimal
+  unit_price: Prisma.Decimal
+  line_total: Prisma.Decimal
   created_at: Date
   updated_at: Date
 }
@@ -43,8 +43,8 @@ export interface ISaleServiceEntity {
   sale_id: string
   service_id: string
   service_name: string
-  base_price: Decimal
-  line_total: Decimal
+  base_price: Prisma.Decimal
+  line_total: Prisma.Decimal
   created_at: Date
   products?: ISaleServiceProductEntity[]
 }
@@ -55,8 +55,8 @@ export interface ISaleServiceProductEntity {
   product_id: string
   product_name: string
   quantity: number
-  unit_price: Decimal
-  line_total: Decimal
+  unit_price: Prisma.Decimal
+  line_total: Prisma.Decimal
   affects_price: boolean
   created_at: Date
 }

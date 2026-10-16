@@ -2,7 +2,7 @@ import { prisma } from "@/config/prisma"
 import type { ISaleRepository } from "../domain/sales.interface"
 import type { ISaleEntity, CreateSaleData, CreateSaleServiceItemProductData } from "../domain/sales.entities"
 import { mapPrismaSaleToEntity } from "./mappers/sales.prisma.mappers"
-import { Prisma } from "@prisma/client"
+import { Prisma } from "@/generated/prisma/client"
 
 type SaleWhereInput = Prisma.saleWhereInput
 

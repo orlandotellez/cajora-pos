@@ -1,7 +1,7 @@
 import { prisma } from "@/config/prisma"
 import type { ISettingsRepository } from "../domain/settings.interface"
 import type { ISettingsEntity, UpdateSettingsData } from "../domain/settings.entities"
-import type { settings } from "@prisma/client"
+import type { settings } from "@/generated/prisma/client"
 
 function mapToEntity(settings: settings): ISettingsEntity {
   return {

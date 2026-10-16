@@ -1,5 +1,5 @@
-import type { Prisma } from "@prisma/client"
-import type { paypal_webhook_event } from "@prisma/client"
+import type { Prisma } from "@/generated/prisma/client"
+import type { paypal_webhook_event } from "@/generated/prisma/client"
 
 export interface NewPayPalWebhookEvent {
   event_id: string
