@@ -415,6 +415,42 @@ Convenciones:
 | `JWT_SECRET` | Secreto para firmar JWT (mínimo 32 chars) | `cambiar-en-produccion` |
 | `JWT_EXPIRES_IN` | TTL del access token | `15m` |
 | `CORS_ORIGIN` | Orígenes permitidos (CSV) | `http://localhost:5173,http://localhost:1420` |
+| `APP_MODE` | `cloud` aplica el gateo de suscripción; `self_hosted` corre sin gateo | `self_hosted` |
+| `PAYPAL_ENABLED` | Habilita el proveedor PayPal (webhooks + reconciliación) | `false` |
+| `PAYPAL_SANDBOX` | Usa el entorno sandbox de PayPal | `true` |
+| `PAYPAL_CLIENT_ID` | Client ID OAuth2 de la app de PayPal | — |
+| `PAYPAL_CLIENT_SECRET` | Client secret OAuth2 de PayPal | — |
+| `PAYPAL_WEBHOOK_ID` | ID del webhook registrado en PayPal (verifica la firma) | — |
+| `PAYPAL_PLAN_ID_MONTHLY` | `plan_id` del plan mensual de $12.99 en PayPal | `P-...` |
+| `WHOP_ENABLED` | Habilita el proveedor Whop. **Debe ser `true` en producción**: con `false` el webhook acepta payloads sin verificar la firma | `false` |
+| `WHOP_API_KEY` | API key de cuenta de Whop (leer y cancelar memberships). Solo en el servidor | — |
+| `WHOP_WEBHOOK_SECRET` | Secreto de firma del webhook (Standard Webhooks, formato `ws_...`) | — |
+| `WHOP_PLAN_ID_MONTHLY` | `plan_...` del plan mensual de $12.99 en Whop | `plan_...` |
+| `WHOP_CHECKOUT_REF_SECRET` | Secreto que firma la referencia de checkout. Vacío ⇒ usa `JWT_SECRET` | — |
+| `RECONCILE_INTERVAL_MS` | Cada cuánto se reconcilian las suscripciones contra el proveedor | `3600000` |
+| `RECONCILE_ON_START` | Corre una reconciliación al arrancar | `true` |
+
+### Cobro de la suscripción Cloud
+
+**Whop es el proveedor primario y PayPal la segunda opción.** El cliente paga con
+tarjeta sin crear cuenta; PayPal queda para quien lo prefiera.
+
+- Ambos proveedores escriben la **misma fila** `subscriptions`; el gateo de acceso
+  (`licenseGuard`) solo lee `status` y `current_period_end`, así que no sabe cuál cobró.
+- El checkout de Whop va **embebido** en el landing y la compra se liga a la tienda con
+  una referencia firmada (`metadata.ref`): el `store_id` nunca viaja en el navegador.
+- **El webhook solo dispara; la API decide.** Ante cada evento se relee la membership,
+  porque Whop no garantiza orden ni entrega única.
+- El precio vive en el plan de cada proveedor, no en el código: para cambiar el precio hay
+  que crear un plan nuevo (los planes existentes no se pueden editar).
+  - PayPal: `bun run plan:create --force` y actualizar `PAYPAL_PLAN_ID_MONTHLY`.
+  - Whop: crear el plan en el dashboard y actualizar `WHOP_PLAN_ID_MONTHLY` y
+    `PUBLIC_WHOP_PLAN_ID` en `landing-page/.env`.
+- Migración de base: `bun run migrate:deploy` (agrega `subscriptions.provider`,
+  `whop_membership_id`, `whop_user_id` y la tabla `whop_webhook_events`).
+- Webhooks a registrar: `/api/v1/webhooks/paypal` y `/api/v1/webhooks/whop`
+  (eventos de Whop: `membership.activated`, `membership.updated`, `payment.succeeded`,
+  `payment.failed`, `invoice.past_due`).
 
 ### `alternative/backend-rust/.env`
 
