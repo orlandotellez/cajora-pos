@@ -23,6 +23,13 @@ const envSchema = z.object({
   PAYPAL_CLIENT_SECRET: z.string().default(""),
   PAYPAL_WEBHOOK_ID: z.string().default(""),
   PAYPAL_PLAN_ID_MONTHLY: z.string().default(""),
+
+  WHOP_ENABLED: z.string().default("false").transform((v) => v === "true"),
+  WHOP_API_KEY: z.string().default(""),
+  WHOP_WEBHOOK_SECRET: z.string().default(""),
+  WHOP_PLAN_ID_MONTHLY: z.string().default(""),
+  WHOP_CHECKOUT_REF_SECRET: z.string().default(""),
+
   APP_MODE: z.enum(["cloud", "self_hosted"]).default("self_hosted"),
 
   RESEND_API_KEY: z.string().default(""),
