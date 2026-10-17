@@ -55,7 +55,10 @@ function makeEntity(overrides: Partial<ISubscriptionEntity> = {}): ISubscription
     mode: "cloud",
     plan: "monthly",
     status: "active",
+    provider: "paypal",
     paypal_subscription_id: "I-ACTIVE123",
+    whop_membership_id: null,
+    whop_user_id: null,
     current_period_start: now,
     current_period_end: new Date(now.getTime() + 30 * DAY_MS),
     cancel_at_period_end: false,
@@ -72,7 +75,9 @@ function makeRepo(subs: ISubscriptionEntity[]) {
   const repo: ISubscriptionRepository = {
     async getByStoreId() { return null },
     async getByPaypalSubscriptionId() { return null },
+    async getByWhopMembershipId() { return null },
     findPaypalSubscriptions: async (skip, take) => rows.slice(skip, skip + take),
+    async findWhopSubscriptions() { return [] },
     async upsertCloud() { throw new Error("no usado en este test") },
     async update(storeId, data) {
       updated.push(data)

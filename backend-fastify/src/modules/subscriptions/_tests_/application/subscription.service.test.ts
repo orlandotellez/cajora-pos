@@ -18,8 +18,10 @@ function makeEntity(overrides: Partial<ISubscriptionEntity> = {}): ISubscription
     mode: "cloud",
     plan: "monthly",
     status: "pending",
+    provider: "paypal",
     paypal_subscription_id: null,
-    // Período vigente por defecto: el estado se resuelve contra el reloj, así que un
+    whop_membership_id: null,
+    whop_user_id: null,
     // fixture `active` sin período ya no significaría "activa" (y las fechas fijas
     // absolutas se pudren solas). Los tests que necesitan otra cosa lo dicen.
     current_period_start: new Date(now.getTime() - 10 * DAY_MS),
@@ -37,7 +39,9 @@ function makeRepo(initial: ISubscriptionEntity | null = null) {
   const repo: ISubscriptionRepository = {
     async getByStoreId() { return current },
     async getByPaypalSubscriptionId() { return null },
+    async getByWhopMembershipId() { return null },
     async findPaypalSubscriptions() { return current ? [current] : [] },
+    async findWhopSubscriptions() { return [] },
     async upsertCloud(storeId, data) {
       current = makeEntity({ store_id: storeId, ...data })
       return current
