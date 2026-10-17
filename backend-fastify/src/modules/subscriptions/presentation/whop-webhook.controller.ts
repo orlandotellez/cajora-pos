@@ -4,16 +4,14 @@ import type { FastifyReply, FastifyRequest } from "fastify"
 import { AppError } from "@/core/errors/AppError"
 import { verifyWhopWebhook } from "../infrastructure/whop.webhook-verifier"
 import { whopClient } from "../infrastructure/whop.client"
-import type { WhopMembership } from "../infrastructure/whop.client"
+import type { WhopMembership } from "../domain/whop-membership"
 import { SubscriptionRepository } from "../infrastructure/subscription.prisma.repository"
 import { WhopWebhookEventRepository } from "../infrastructure/whop-webhook-event.prisma.repository"
 import { SubscriptionEventRepository } from "../infrastructure/subscription-event.prisma.repository"
-import { SUBSCRIPTION_EVENT_ACTIONS } from "../domain/subscription-event.interface"
 import type { SubscriptionEventAction } from "../domain/subscription-event.interface"
-import type { ISubscriptionEntity, UpdateSubscriptionInput } from "../domain/subscription.entities"
-import type { SubscriptionStatus } from "../domain/subscription.types"
-import { needsFreshPeriod, periodEnd } from "../domain/subscription.period"
+import type { ISubscriptionEntity } from "../domain/subscription.entities"
 import { verifyCheckoutRef } from "../domain/whop-checkout-ref"
+import { buildMembershipUpdate, translateWhopStatus } from "../domain/whop-membership-sync"
 
 /** Envelope estándar de los webhooks de Whop. */
 interface WhopWebhookData {
@@ -45,75 +43,6 @@ function membershipIdFromPayload(event: WhopWebhookPayload): string | null {
   if (type.startsWith("membership.")) return data.id ?? null
   if (type.startsWith("payment.")) return data.membership_id ?? null
   return null
-}
-
-interface TranslatedMembership {
-  status: SubscriptionStatus
-  cancelAtPeriodEnd: boolean
-  action: SubscriptionEventAction
-}
-
-/**
- * Traduce el estado que reporta Whop a la fila local. `unresolved`/`drafting` (y
- * cualquier estado desconocido) no tocan la DB: son memberships que todavía no cobran.
- */
-function translateMembership(membership: WhopMembership): TranslatedMembership | null {
-  switch (membership.status) {
-    case "active":
-    case "trialing":
-    case "completed":
-      return {
-        status: "active",
-        // La cancelación programada se sincroniza tal cual la reporta Whop.
-        cancelAtPeriodEnd: membership.cancel_at_period_end,
-        action: SUBSCRIPTION_EVENT_ACTIONS.WEBHOOK_WHOP_ACTIVATED,
-      }
-    case "past_due":
-      return {
-        status: "past_due",
-        cancelAtPeriodEnd: false,
-        action: SUBSCRIPTION_EVENT_ACTIONS.WEBHOOK_WHOP_PAST_DUE,
-      }
-    case "canceled":
-      return {
-        status: "canceled",
-        cancelAtPeriodEnd: true,
-        action: SUBSCRIPTION_EVENT_ACTIONS.WEBHOOK_WHOP_CANCELED,
-      }
-    case "expired":
-      return {
-        status: "expired",
-        cancelAtPeriodEnd: true,
-        action: SUBSCRIPTION_EVENT_ACTIONS.WEBHOOK_WHOP_EXPIRED,
-      }
-    default:
-      return null
-  }
-}
-
-/**
- * Período del ciclo. `renewal_period_end` es la fuente de verdad cuando Whop lo
- * reporta; si falta, solo se concede un período nuevo cuando el guardado ya venció:
- * nunca se recorta un período que el cliente ya pagó.
- */
-function whopPeriod(
-  membership: WhopMembership,
-  sub: ISubscriptionEntity,
-  now: Date,
-): Pick<UpdateSubscriptionInput, "current_period_start" | "current_period_end"> {
-  if (membership.renewal_period_end) {
-    return {
-      current_period_end: new Date(membership.renewal_period_end),
-      // Sin start en el evento se conserva el guardado; si tampoco hay, arranca hoy.
-      current_period_start: membership.renewal_period_start
-        ? new Date(membership.renewal_period_start)
-        : (sub.current_period_start ?? now),
-    }
-  }
-  if (needsFreshPeriod(sub, now)) {
-    return { current_period_start: now, current_period_end: periodEnd(now) }
-  }
-  return {}
 }
 
 /**
@@ -163,26 +92,27 @@ async function applyMembershipState(
   membership: WhopMembership,
   link = false,
 ): Promise<void> {
-  const translated = translateMembership(membership)
+  const translated = translateWhopStatus(membership)
   if (!translated) {
     log.info({ whopStatus: membership.status }, "Estado de Whop sin cambio local (ignorado).")
     return
   }
 
-  const now = new Date()
-  const update: UpdateSubscriptionInput = {
-    status: translated.status,
-    cancel_at_period_end: translated.cancelAtPeriodEnd,
-    ...whopPeriod(membership, sub, now),
+  // La tabla de estados y las reglas de período viven en `domain/whop-membership-sync`
+  // para que el webhook y la reconciliación no puedan divergir.
+  const update = buildMembershipUpdate(membership, sub, new Date())
+  const linkFields = link ? { provider: "whop" as const, whop_membership_id: membership.id } : {}
+
+  if (update) {
     // Primera compra: el vínculo se escribe en la misma operación que el estado, así
     // no queda una fila vinculada sin estado ni al revés. `paypal_subscription_id`
     // no se toca: el id histórico del otro proveedor sobrevive.
-    ...(link && { provider: "whop", whop_membership_id: membership.id }),
+    await SubscriptionRepository.update(sub.store_id, { ...update, ...linkFields })
+  } else if (link) {
+    // La fila ya coincidía pero todavía no estaba vinculada: se adopta igual.
+    await SubscriptionRepository.update(sub.store_id, linkFields)
   }
-  const whopUserId = membership.user?.id
-  if (whopUserId) update.whop_user_id = whopUserId
 
-  await SubscriptionRepository.update(sub.store_id, update)
   await auditMembershipEvent(log, ev, sub, translated.action, membership.status)
 }
 

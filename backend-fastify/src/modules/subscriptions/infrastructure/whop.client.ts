@@ -1,5 +1,11 @@
 import { env } from "@/config/env"
 import { AppError } from "@/core/errors/AppError"
+import type { WhopMembership } from "../domain/whop-membership"
+
+// El contrato de la membership vive en el dominio (`domain/whop-membership.ts`),
+// porque es el dominio quien razona sobre sus estados. Acá solo se consume y se
+// re-exporta para que un llamador no tenga que conocer los dos módulos.
+export type { WhopMembership }
 
 const WHOP_BASE_URL = "https://api.whop.com/api/v1"
 
@@ -9,37 +15,6 @@ const REQUEST_TIMEOUT_MS = 10_000
 interface WhopErrorBody {
   message?: string
   error?: string
-}
-
-interface WhopMembershipUser {
-  id: string
-  email: string
-  username: string
-}
-
-/**
- * Estados que Whop reporta para una membership. Se conserva tal cual (snake_case,
- * literal union) para no inventar un mapeo aquí: el servicio decide cómo traducirlo
- * a `subscription.status`.
- */
-export interface WhopMembership {
-  id: string
-  status:
-    | "trialing"
-    | "active"
-    | "past_due"
-    | "completed"
-    | "canceled"
-    | "expired"
-    | "unresolved"
-    | "drafting"
-  user?: WhopMembershipUser | null
-  renewal_period_start: string | null
-  renewal_period_end: string | null
-  cancel_at_period_end: boolean
-  metadata?: Record<string, unknown> | null
-  plan?: { id: string } | null
-  product?: { id: string } | null
 }
 
 /**

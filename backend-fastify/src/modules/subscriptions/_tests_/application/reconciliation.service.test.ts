@@ -2,6 +2,8 @@ import { describe, it, beforeEach, afterEach, mock } from "node:test"
 import assert from "node:assert/strict"
 import { createReconciliationService } from "../../application/reconciliation.service"
 import { paypalClient } from "../../infrastructure/paypal.client"
+import { whopClient } from "../../infrastructure/whop.client"
+import type { WhopMembership } from "../../infrastructure/whop.client"
 import { env } from "@/config/env"
 import { AppError } from "@/core/errors/AppError"
 import type { ISubscriptionRepository } from "../../domain/subscription.interface"
@@ -69,15 +71,15 @@ function makeEntity(overrides: Partial<ISubscriptionEntity> = {}): ISubscription
 }
 
 /** Repositorio en memoria: pagina filas y registra updates sin tocar Prisma. */
-function makeRepo(subs: ISubscriptionEntity[]) {
-  let rows = [...subs]
+function makeRepo(subs: ISubscriptionEntity[], whopSubs: ISubscriptionEntity[] = []) {
+  const rows = [...subs, ...whopSubs]
   const updated: Array<Partial<ISubscriptionEntity>> = []
   const repo: ISubscriptionRepository = {
     async getByStoreId() { return null },
     async getByPaypalSubscriptionId() { return null },
     async getByWhopMembershipId() { return null },
-    findPaypalSubscriptions: async (skip, take) => rows.slice(skip, skip + take),
-    async findWhopSubscriptions() { return [] },
+    findPaypalSubscriptions: async (skip, take) => subs.slice(skip, skip + take),
+    findWhopSubscriptions: async (skip, take) => whopSubs.slice(skip, skip + take),
     async upsertCloud() { throw new Error("no usado en este test") },
     async update(storeId, data) {
       updated.push(data)
@@ -88,6 +90,35 @@ function makeRepo(subs: ISubscriptionEntity[]) {
     },
   }
   return { repo, getRows: () => rows, updated }
+}
+
+/** Membership de Whop tal como la devuelve la API. */
+function whopMembership(overrides: Partial<WhopMembership> = {}): WhopMembership {
+  return {
+    id: "mem-1",
+    status: "active",
+    user: { id: "whop-user-1", email: "a@b.c", username: "u" },
+    renewal_period_start: null,
+    renewal_period_end: null,
+    cancel_at_period_end: false,
+    metadata: null,
+    plan: null,
+    product: null,
+    ...overrides,
+  }
+}
+
+/** Fila local vinculada a Whop. */
+function makeWhopSub(overrides: Partial<ISubscriptionEntity> = {}): ISubscriptionEntity {
+  return makeEntity({
+    provider: "whop",
+    paypal_subscription_id: null,
+    whop_membership_id: "mem-1",
+    whop_user_id: "whop-user-1",
+    status: "active",
+    cancel_at_period_end: false,
+    ...overrides,
+  })
 }
 
 function paypalActive(nextBillingTime: string | null) {
@@ -524,5 +555,145 @@ describe("ReconciliationService", () => {
 
     assert.deepEqual(stats, { reviewed: 1, drifted: 0, errors: 1, cleaned: 0, paymentsBackfilled: 0 })
     assert.equal(getRows()[0].status, "active")
+  })
+
+  it("fila Whop desalineada → se realinea y cuenta drift", async () => {
+    mock.property(env, "PAYPAL_ENABLED", false)
+    mock.property(env, "WHOP_ENABLED", true)
+    const { repo, getRows } = makeRepo([], [
+      makeWhopSub({ current_period_end: new Date(Date.now() + 10 * DAY_MS) }),
+    ])
+    mock.method(whopClient, "getMembership", async (id: string) => {
+      assert.equal(id, "mem-1")
+      return whopMembership({ status: "past_due", renewal_period_end: null })
+    })
+    const service = createReconciliationService(repo)
+
+    const stats = await service.run(logger)
+
+    assert.deepEqual(stats, { reviewed: 1, drifted: 1, errors: 0, cleaned: 0, paymentsBackfilled: 0 })
+    assert.equal(getRows()[0].status, "past_due")
+  })
+
+  it("fila Whop ya sincronizada → no actualiza nada", async () => {
+    mock.property(env, "PAYPAL_ENABLED", false)
+    mock.property(env, "WHOP_ENABLED", true)
+    const now = new Date()
+    const start = new Date(now.getTime() - 5 * DAY_MS)
+    const end = new Date(now.getTime() + 25 * DAY_MS)
+    const { repo, updated } = makeRepo([], [
+      makeWhopSub({ current_period_start: start, current_period_end: end }),
+    ])
+    mock.method(whopClient, "getMembership", async () =>
+      whopMembership({
+        status: "active",
+        cancel_at_period_end: false,
+        renewal_period_start: start.toISOString(),
+        renewal_period_end: end.toISOString(),
+      }),
+    )
+    const service = createReconciliationService(repo)
+
+    const stats = await service.run(logger)
+
+    assert.deepEqual(stats, { reviewed: 1, drifted: 0, errors: 0, cleaned: 0, paymentsBackfilled: 0 })
+    assert.equal(updated.length, 0)
+  })
+
+  it("404 en fila Whop NO activa → desvincula y registra orphan_cleaned", async () => {
+    mock.property(env, "PAYPAL_ENABLED", false)
+    mock.property(env, "WHOP_ENABLED", true)
+    const { repo, getRows } = makeRepo([], [
+      makeWhopSub({ status: "canceled", whop_membership_id: "mem-orphan" }),
+    ])
+    mock.method(whopClient, "getMembership", async () => {
+      throw new AppError("El recurso solicitado no existe en Whop", 404, "WHOP_NOT_FOUND")
+    })
+    const created: Array<NewSubscriptionEvent> = []
+    const service = createReconciliationService(repo, fakeEventRepo(created))
+
+    const stats = await service.run(logger)
+
+    assert.deepEqual(stats, { reviewed: 1, drifted: 0, errors: 0, cleaned: 1, paymentsBackfilled: 0 })
+    assert.equal(getRows()[0].whop_membership_id, null)
+    assert.equal(created.length, 1)
+    assert.equal(created[0].action, "orphan_cleaned")
+    assert.equal(created[0].store_id, "store-1")
+    assert.deepEqual(created[0].metadata, { reason: "whop_404", status_local: "canceled" })
+  })
+
+  it("404 en fila Whop ACTIVA → NO desvincula (sospechoso): error y sin evento", async () => {
+    mock.property(env, "PAYPAL_ENABLED", false)
+    mock.property(env, "WHOP_ENABLED", true)
+    const { repo, getRows } = makeRepo([], [makeWhopSub({ status: "active" })])
+    mock.method(whopClient, "getMembership", async () => {
+      throw new AppError("El recurso solicitado no existe en Whop", 404, "WHOP_NOT_FOUND")
+    })
+    const created: Array<NewSubscriptionEvent> = []
+    const service = createReconciliationService(repo, fakeEventRepo(created))
+
+    const stats = await service.run(logger)
+
+    assert.deepEqual(stats, { reviewed: 1, drifted: 0, errors: 1, cleaned: 0, paymentsBackfilled: 0 })
+    assert.equal(getRows()[0].whop_membership_id, "mem-1")
+    assert.equal(created.length, 0)
+  })
+
+  it("error de red en UNA fila Whop → no aborta la pasada y se contabiliza", async () => {
+    mock.property(env, "PAYPAL_ENABLED", false)
+    mock.property(env, "WHOP_ENABLED", true)
+    const bad = makeWhopSub({ store_id: "store-bad", whop_membership_id: "mem-bad" })
+    const good = makeWhopSub({ store_id: "store-good", whop_membership_id: "mem-good" })
+    const { repo, getRows } = makeRepo([], [bad, good])
+    mock.method(whopClient, "getMembership", async (id: string) => {
+      if (id === "mem-bad") throw new AppError("red caída", 502, "WHOP_NETWORK_ERROR")
+      return whopMembership({ id, status: "past_due", renewal_period_end: null })
+    })
+    const service = createReconciliationService(repo)
+
+    const stats = await service.run(logger)
+
+    assert.deepEqual(stats, { reviewed: 2, drifted: 1, errors: 1, cleaned: 0, paymentsBackfilled: 0 })
+    assert.equal(getRows()[0].status, "active")
+    assert.equal(getRows()[1].status, "past_due")
+  })
+
+  it("con WHOP_ENABLED=false la rama Whop nunca consulta la API", async () => {
+    mock.property(env, "PAYPAL_ENABLED", true)
+    mock.property(env, "WHOP_ENABLED", false)
+    const getWhop = mock.method(whopClient, "getMembership", async () => whopMembership())
+    mock.method(paypalClient, "getSubscription", async (id: string) => ({
+      id,
+      status: "ACTIVE",
+      nextBillingTime: null,
+    }))
+    const { repo } = makeRepo([], [makeWhopSub()])
+    const service = createReconciliationService(repo)
+
+    const stats = await service.run(logger)
+
+    assert.equal(getWhop.mock.callCount(), 0)
+    assert.deepEqual(stats, { reviewed: 0, drifted: 0, errors: 0, cleaned: 0, paymentsBackfilled: 0 })
+  })
+
+  it("con PAYPAL_ENABLED=true la rama PayPal sigue corriendo (no-regresión S2)", async () => {
+    mock.property(env, "PAYPAL_ENABLED", true)
+    mock.property(env, "WHOP_ENABLED", false)
+    const getPaypal = mock.method(paypalClient, "getSubscription", async (id: string) => ({
+      id,
+      status: "CANCELLED",
+      nextBillingTime: null,
+    }))
+    paypalNoTransactions()
+    const { repo, getRows } = makeRepo([
+      makeEntity({ status: "active", paypal_subscription_id: "I-PAYPAL-1" }),
+    ])
+    const service = createReconciliationService(repo)
+
+    const stats = await service.run(logger)
+
+    assert.equal(getPaypal.mock.callCount(), 1)
+    assert.equal(stats.drifted, 1)
+    assert.equal(getRows()[0].status, "canceled")
   })
 })
