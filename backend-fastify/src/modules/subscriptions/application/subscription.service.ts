@@ -122,15 +122,19 @@ export const createSubscriptionService = (
 
       if (!existing) {
         // La fila debe existir con el paypal_subscription_id ANTES de que PayPal
-        // complete el pago: el webhook la busca por ese id.
+        // complete el pago: el webhook la busca por ese id. El `provider` lo fija el
+        // checkout y no quien haya tocado la fila antes: un intent de Whop abandonado
+        // dejaba `provider: "whop"` y el cancel terminaba enrutado al proveedor
+        // equivocado.
         await repository.upsertCloud(storeId, {
           mode: "cloud",
           plan: "monthly",
           status: "pending",
+          provider: "paypal",
           paypal_subscription_id: created.id,
         })
       } else {
-        await repository.update(storeId, { paypal_subscription_id: created.id })
+        await repository.update(storeId, { provider: "paypal", paypal_subscription_id: created.id })
       }
       await audit(actor, storeId, SUBSCRIPTION_EVENT_ACTIONS.CHECKOUT, created.id)
 

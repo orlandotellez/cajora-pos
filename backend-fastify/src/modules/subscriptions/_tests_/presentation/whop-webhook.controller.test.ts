@@ -122,6 +122,11 @@ describe("whopWebhookController.receive", () => {
       }),
     )
     mock.method(WhopWebhookEventRepository, "markProcessed", async () => {})
+    // Por defecto el outbox ya tiene la fila procesada: un P2002 se trata como
+    // duplicado. El test de reintento lo sobreescribe con una fila pendiente.
+    mock.method(WhopWebhookEventRepository, "findByEventId", async () =>
+      makeOutbox({ processed_at: new Date() }),
+    )
   })
   afterEach(() => mock.restoreAll())
 
@@ -444,5 +449,45 @@ describe("whopWebhookController.receive", () => {
     assert.equal(state.status, 200)
     assert.equal(byStore.mock.callCount(), 0)
     assert.equal(update.mock.callCount(), 0)
+  })
+
+  it("un dispatch fallido se recupera en el reintento con el MISMO webhook-id (B3)", async () => {
+    let stored: whop_webhook_event | null = null
+    mock.method(WhopWebhookEventRepository, "insert", async (data: Record<string, unknown>) => {
+      if (stored) throw makeP2002()
+      stored = makeOutbox({
+        event_id: data.event_id as string,
+        event_type: data.event_type as string,
+        resource_id: data.resource_id as string | null,
+        payload: data.payload as never,
+      })
+      return stored
+    })
+    mock.method(WhopWebhookEventRepository, "findByEventId", async () => stored)
+    const markProcessed = mock.method(WhopWebhookEventRepository, "markProcessed", async () => {})
+
+    let calls = 0
+    const getMembership = mock.method(whopClient, "getMembership", async () => {
+      calls++
+      if (calls === 1) throw new AppError("red caída", 502, "WHOP_NETWORK_ERROR")
+      return makeMembership()
+    })
+    mock.method(SubscriptionRepository, "getByWhopMembershipId", async () => makeLocalSub())
+    const update = mock.method(SubscriptionRepository, "update", async () => null)
+
+    const raw = body("membership.activated", { id: MEMBERSHIP_ID })
+    const headers = { "webhook-id": "whop-retry-1" }
+
+    const r1 = buildReply()
+    await whopWebhookController.receive(buildRequest(raw, headers) as never, r1.reply as never)
+    assert.equal(r1.state.status, 500, "el primer intento falla y deja la fila sin procesar")
+    assert.equal(markProcessed.mock.callCount(), 0)
+
+    const r2 = buildReply()
+    await whopWebhookController.receive(buildRequest(raw, headers) as never, r2.reply as never)
+    assert.equal(r2.state.status, 200, "el reintento recupera")
+    assert.equal(getMembership.mock.callCount(), 2, "el reintento vuelve a despachar")
+    assert.equal(markProcessed.mock.callCount(), 1)
+    assert.equal(update.mock.callCount(), 1)
   })
 })

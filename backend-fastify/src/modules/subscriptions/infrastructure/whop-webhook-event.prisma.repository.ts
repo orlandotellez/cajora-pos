@@ -10,6 +10,10 @@ export const WhopWebhookEventRepository: IWhopWebhookEventRepository = {
     return prisma.whop_webhook_event.create({ data })
   },
 
+  async findByEventId(eventId: string): Promise<whop_webhook_event | null> {
+    return prisma.whop_webhook_event.findUnique({ where: { event_id: eventId } })
+  },
+
   async markProcessed(id: string, notes?: string): Promise<void> {
     await prisma.whop_webhook_event.update({
       where: { id },

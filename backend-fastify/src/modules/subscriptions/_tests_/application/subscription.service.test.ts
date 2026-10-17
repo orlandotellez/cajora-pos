@@ -1231,4 +1231,44 @@ describe("SubscriptionService", () => {
       assert.equal(getCurrent()!.provider, "paypal")
     })
   })
+
+  // B2: un intent de Whop abandonado deja `provider: "whop"` sin membership. Si el
+  // cliente termina pagando con PayPal, el checkout debe recuperar el provider o el
+  // cancel queda enrutado a Whop y explota con ConflictError.
+  describe("provider tras un intent de Whop abandonado (B2)", () => {
+    it("el checkout de PayPal recupera provider y el cancel va a PayPal", async () => {
+      mock.property(env, "WHOP_PLAN_ID_MONTHLY", "plan_whop_1")
+      mock.method(paypalClient, "createSubscription", async () => ({
+        id: "I-PAYPAL-NEW",
+        approvalUrl: null,
+        status: "APPROVAL_PENDING",
+        planId: "P-PLAN-1",
+      }))
+      const paypalCancel = mock.method(paypalClient, "cancelSubscription", async () => true)
+      const whopCancel = mock.method(whopClient, "cancelMembership", async () => {})
+
+      const existing = makeEntity({
+        provider: "whop",
+        whop_membership_id: null,
+        status: "pending",
+        paypal_subscription_id: null,
+      })
+      const { repo, getCurrent } = makeRepo(existing)
+      const service = createSubscriptionService(repo)
+
+      // Repro: intent emitido y abandonado, después el cliente paga con PayPal.
+      await service.whopCheckoutIntent("store-1")
+      assert.equal(getCurrent()!.provider, "whop")
+
+      await service.checkout("store-1", "https://ok", "https://cancel")
+
+      assert.equal(getCurrent()!.provider, "paypal")
+      assert.equal(getCurrent()!.paypal_subscription_id, "I-PAYPAL-NEW")
+
+      await service.cancel("store-1")
+
+      assert.equal(paypalCancel.mock.callCount(), 1)
+      assert.equal(whopCancel.mock.callCount(), 0)
+    })
+  })
 })

@@ -58,24 +58,37 @@ export function translateWhopStatus(membership: WhopMembership): TranslatedWhopM
 
 /**
  * Período del ciclo. `renewal_period_end` es la fuente de verdad cuando Whop lo
- * reporta; si falta, solo se concede un período nuevo cuando el guardado ya venció:
- * nunca se recorta un período que el cliente ya pagó.
+ * reporta; si falta, solo un estado que concede acceso al activarse (`active`) puede
+ * fabricar un período nuevo: `past_due`/`canceled`/`expired` dejan el guardado
+ * intacto y deciden la gracia y el reloj, igual que el camino de PayPal (que solo
+ * otorga período en ACTIVE). Además, un período del proveedor más corto nunca
+ * recorta uno guardado que sigue vigente.
  */
 function whopPeriod(
   membership: WhopMembership,
   sub: ISubscriptionEntity,
   now: Date,
+  status: SubscriptionStatus,
 ): Pick<UpdateSubscriptionInput, "current_period_start" | "current_period_end"> {
   if (membership.renewal_period_end) {
+    const providerEnd = new Date(membership.renewal_period_end)
+    const storedEnd = sub.current_period_end
+    // No se recorta un período que el cliente ya pagó: si el guardado sigue vigente
+    // y termina más tarde, se conserva; un período más largo sí se aplica.
+    const keepStoredEnd =
+      !!storedEnd && storedEnd.getTime() > now.getTime() && storedEnd.getTime() > providerEnd.getTime()
+
     return {
-      current_period_end: new Date(membership.renewal_period_end),
+      current_period_end: keepStoredEnd ? storedEnd : providerEnd,
       // Sin start en el evento se conserva el guardado; si tampoco hay, arranca hoy.
       current_period_start: membership.renewal_period_start
         ? new Date(membership.renewal_period_start)
         : (sub.current_period_start ?? now),
     }
   }
-  if (needsFreshPeriod(sub, now)) {
+
+  // Sin período del proveedor: solo `active` concede un período nuevo.
+  if (status === "active" && needsFreshPeriod(sub, now)) {
     return { current_period_start: now, current_period_end: periodEnd(now) }
   }
   return {}
@@ -104,7 +117,7 @@ export function buildMembershipUpdate(
   const update: UpdateSubscriptionInput = {
     status: translated.status,
     cancel_at_period_end: translated.cancelAtPeriodEnd,
-    ...whopPeriod(membership, sub, now),
+    ...whopPeriod(membership, sub, now, translated.status),
   }
   const whopUserId = membership.user?.id
   if (whopUserId) update.whop_user_id = whopUserId

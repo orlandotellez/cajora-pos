@@ -173,6 +173,46 @@ async function dispatch(request: FastifyRequest, ev: whop_webhook_event): Promis
   await applyMembershipState(log, ev, sub, membership, firstPurchase)
 }
 
+/**
+ * Dispatch + marcado del outbox. Devuelve `false` cuando el dispatch falla: la fila
+ * queda sin procesar y el wrapper responde 500 para que Whop reintente.
+ */
+async function dispatchAndMark(request: FastifyRequest, outbox: whop_webhook_event): Promise<boolean> {
+  try {
+    await dispatch(request, outbox)
+    await WhopWebhookEventRepository.markProcessed(outbox.id, `dispatched:${outbox.event_type}`)
+    return true
+  } catch (err) {
+    request.log.error(
+      { err, eventId: outbox.event_id },
+      "Dispatch de Whop falló — la fila del outbox queda sin procesar para reintento.",
+    )
+    return false
+  }
+}
+
+/**
+ * Reintento de Whop con el MISMO webhook-id: el UNIQUE de `event_id` ya tiene la fila.
+ * Si el dispatch anterior falló (`processed_at` null), se reprocesa para que el
+ * reintento recupere de verdad; si ya estaba procesada, es un duplicado y solo se ACKea.
+ */
+async function handleDuplicate(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  eventId: string,
+): Promise<FastifyReply> {
+  const existing = await WhopWebhookEventRepository.findByEventId(eventId)
+  if (!existing || existing.processed_at) {
+    request.log.info({ eventId }, "Webhook de Whop duplicado — ya procesado.")
+    return reply.status(200).send({ received: true })
+  }
+
+  if (!(await dispatchAndMark(request, existing))) {
+    return reply.status(500).send({ error: "dispatch failed" })
+  }
+  return reply.status(200).send({ received: true })
+}
+
 export const whopWebhookController = {
   receive: async (request: FastifyRequest, reply: FastifyReply) => {
     const rawBody = getRawBody(request)
@@ -207,20 +247,14 @@ export const whopWebhookController = {
       })
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
-        request.log.info({ eventId }, "Webhook de Whop duplicado — ya procesado.")
-        return reply.status(200).send({ received: true })
+        return handleDuplicate(request, reply, eventId)
       }
       throw err
     }
 
-    try {
-      await dispatch(request, outbox)
-      await WhopWebhookEventRepository.markProcessed(outbox.id, `dispatched:${outbox.event_type}`)
-    } catch (err) {
-      request.log.error({ err, eventId }, "Dispatch de Whop falló — se deja sin procesar para reintento.")
+    if (!(await dispatchAndMark(request, outbox))) {
       return reply.status(500).send({ error: "dispatch failed" })
     }
-
     return reply.status(200).send({ received: true })
   },
 }

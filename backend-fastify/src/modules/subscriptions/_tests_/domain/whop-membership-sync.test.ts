@@ -1,6 +1,7 @@
 import { describe, it } from "node:test"
 import assert from "node:assert/strict"
 import { buildMembershipUpdate, translateWhopStatus } from "../../domain/whop-membership-sync"
+import { resolveEntitlement } from "../../domain/subscription.entitlement"
 import type { WhopMembership } from "../../infrastructure/whop.client"
 import type { ISubscriptionEntity } from "../../domain/subscription.entities"
 
@@ -178,5 +179,88 @@ describe("buildMembershipUpdate", () => {
     })
 
     assert.equal(buildMembershipUpdate(membership, sub, now), null)
+  })
+
+  // B1: un status que NO concede acceso al activarse nunca debe fabricar un período
+  // pagado. Se verifica por el derecho de acceso resultante, que es lo que importa.
+  it("canceled sin renewal_period_end y período vencido → NO otorga acceso (B1)", () => {
+    const now = new Date("2026-10-20T12:00:00Z")
+    const sub = makeSub({
+      status: "active",
+      current_period_end: new Date(now.getTime() - 10 * DAY_MS),
+      whop_user_id: "whop-user-1",
+    })
+    const membership = makeMembership({
+      status: "canceled",
+      renewal_period_end: null,
+      renewal_period_start: null,
+    })
+
+    const update = buildMembershipUpdate(membership, sub, now)
+    const merged = { ...sub, ...update }
+
+    assert.equal(resolveEntitlement(merged, now).allowed, false)
+  })
+
+  it("past_due sin renewal_period_end y período vencido → NO otorga acceso (B1)", () => {
+    const now = new Date("2026-10-20T12:00:00Z")
+    const sub = makeSub({
+      status: "active",
+      current_period_end: new Date(now.getTime() - 10 * DAY_MS),
+      whop_user_id: "whop-user-1",
+    })
+    const membership = makeMembership({
+      status: "past_due",
+      renewal_period_end: null,
+      renewal_period_start: null,
+    })
+
+    const update = buildMembershipUpdate(membership, sub, now)
+    const merged = { ...sub, ...update }
+
+    assert.equal(resolveEntitlement(merged, now).allowed, false)
+  })
+
+  it("active sin renewal_period_end y período vencido → SÍ otorga un período nuevo (B1)", () => {
+    const now = new Date("2026-10-20T12:00:00Z")
+    const sub = makeSub({
+      status: "active",
+      current_period_end: new Date(now.getTime() - 10 * DAY_MS),
+      whop_user_id: "whop-user-1",
+    })
+    const membership = makeMembership({
+      status: "active",
+      renewal_period_end: null,
+      renewal_period_start: null,
+    })
+
+    const update = buildMembershipUpdate(membership, sub, now)
+    const merged = { ...sub, ...update }
+
+    assert.equal(resolveEntitlement(merged, now).allowed, true)
+  })
+
+  it("active con renewal_period_end más corto que un período vigente → no lo recorta (B4)", () => {
+    const now = new Date("2026-10-20T12:00:00Z")
+    const storedEnd = new Date(now.getTime() + 20 * DAY_MS)
+    const providerEnd = new Date(now.getTime() + 5 * DAY_MS)
+    const sub = makeSub({
+      status: "active",
+      cancel_at_period_end: true, // genera drift para que aplique el update
+      current_period_end: storedEnd,
+      whop_user_id: "whop-user-1",
+    })
+    const membership = makeMembership({
+      status: "active",
+      cancel_at_period_end: false,
+      renewal_period_start: null,
+      renewal_period_end: providerEnd.toISOString(),
+    })
+
+    const update = buildMembershipUpdate(membership, sub, now)
+    const merged = { ...sub, ...update }
+
+    assert.equal(merged.current_period_end?.getTime(), storedEnd.getTime())
+    assert.equal(resolveEntitlement(merged, now).allowed, true)
   })
 })
