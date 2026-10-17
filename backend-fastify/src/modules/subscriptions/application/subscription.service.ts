@@ -14,7 +14,7 @@ import { mapToResponse } from "./common/subscriptions.mappers"
 import { resolveEntitlement } from "../domain/subscription.entitlement"
 import { periodEnd } from "../domain/subscription.period"
 
-const PLAN_PRICE = "15.99"
+const PLAN_PRICE = "12.99"
 const PLAN_CURRENCY = "USD"
 
 function noopActor(): SubscriptionActor {

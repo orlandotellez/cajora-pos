@@ -2,7 +2,7 @@
  * Crea (o reutiliza) el producto y el plan de suscripción mensual en PayPal.
  *
  * Uso:
- *   pnpm plan:create          → crea o reutiliza el plan $15.99/mes e imprime el plan_id
+ *   pnpm plan:create          → crea o reutiliza el plan $12.99/mes e imprime el plan_id
  *   pnpm plan:create --force  → fuerza la creación de un plan nuevo (ignora el .env)
  *
  * - Sandbox o live según PAYPAL_SANDBOX del .env (no toca PAYPAL_ENABLED: habla
@@ -18,9 +18,9 @@ import { env } from "@/config/env"
 
 const PRODUCT_NAME = "CajoraPOS Cloud"
 const PRODUCT_DESCRIPTION = "Plan Cloud de CajoraPOS: suscripción mensual con hosting y respaldos."
-const PLAN_NAME = "CajoraPOS Cloud — Mensual $15.99"
-const PLAN_DESCRIPTION = "Acceso al plan Cloud de CajoraPOS: $15.99 USD por mes."
-const PRICE_USD = "15.99"
+const PLAN_NAME = "CajoraPOS Cloud — Mensual $12.99"
+const PLAN_DESCRIPTION = "Acceso al plan Cloud de CajoraPOS: $12.99 USD por mes."
+const PRICE_USD = "12.99"
 
 interface PayPalProduct {
   id: string
@@ -120,7 +120,7 @@ async function ensureProduct(token: string): Promise<string> {
   return created.id
 }
 
-/** Busca el plan por nombre; si no existe, lo crea con facturación mensual de $15.99 USD. */
+/** Busca el plan por nombre; si no existe, lo crea con facturación mensual de $12.99 USD. */
 async function ensurePlan(token: string, productId: string, force: boolean): Promise<string> {
   // ⚠️ Sin page_size en este endpoint: /v1/billing/plans rechaza page_size>20
   // (a diferencia de /v1/catalogs/products que acepta 50).

@@ -154,7 +154,7 @@ export const paypalClient = {
 
     if (!planId) {
       throw new AppError(
-        "No hay PAYPAL_PLAN_ID_MONTHLY configurado (crear el plan de $15.99 en el dashboard de PayPal)",
+        "No hay PAYPAL_PLAN_ID_MONTHLY configurado (crear el plan de $12.99 en el dashboard de PayPal)",
         422,
         "PAYPAL_PLAN_NOT_CONFIGURED",
       )

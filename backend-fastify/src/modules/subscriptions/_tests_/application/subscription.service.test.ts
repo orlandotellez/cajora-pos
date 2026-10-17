@@ -783,7 +783,7 @@ describe("SubscriptionService", () => {
       assert.equal(res.next_payment_at, null)
     })
 
-    it("getBilling muestra el cobro de app_activate con el precio del plan (fallback 15.99 USD)", async () => {
+    it("getBilling muestra el cobro de app_activate con el precio del plan (fallback 12.99 USD)", async () => {
       const paidAt = new Date("2026-08-15T10:00:00Z")
       const events = [
         {
@@ -815,10 +815,10 @@ describe("SubscriptionService", () => {
       const res = await service.getBilling("store-1")
 
       assert.equal(res.payments.length, 1)
-      assert.equal(res.payments[0].amount, "15.99")
+      assert.equal(res.payments[0].amount, "12.99")
       assert.equal(res.payments[0].currency, "USD")
       assert.equal(res.payments[0].paid_at, "2026-08-15T10:00:00.000Z")
-      assert.equal(res.total_paid, "15.99")
+      assert.equal(res.total_paid, "12.99")
       assert.equal(res.currency, "USD")
     })
 
@@ -908,7 +908,7 @@ describe("SubscriptionService", () => {
       const res = await service.getBilling("store-1")
 
       assert.equal(res.payments.length, 1)
-      assert.equal(res.payments[0].amount, "15.99")
+      assert.equal(res.payments[0].amount, "12.99")
       assert.equal(res.payments[0].currency, "USD")
     })
 
@@ -955,7 +955,7 @@ describe("SubscriptionService", () => {
       const res = await service.getBilling("store-1")
 
       assert.equal(res.payments.length, 1)
-      assert.equal(res.payments[0].amount, "15.99")
+      assert.equal(res.payments[0].amount, "12.99")
       assert.equal(res.payments[0].currency, "USD")
     })
 
