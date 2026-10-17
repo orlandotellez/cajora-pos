@@ -7,6 +7,7 @@ import { SubscriptionRepository } from "../../infrastructure/subscription.prisma
 import { WhopWebhookEventRepository } from "../../infrastructure/whop-webhook-event.prisma.repository"
 import { SubscriptionEventRepository } from "../../infrastructure/subscription-event.prisma.repository"
 import { whopClient } from "../../infrastructure/whop.client"
+import { createCheckoutRef } from "../../domain/whop-checkout-ref"
 import { AppError } from "@/core/errors/AppError"
 import type { whop_webhook_event } from "@/generated/prisma/client"
 
@@ -371,5 +372,77 @@ describe("whopWebhookController.receive", () => {
     assert.equal(state.status, 200)
     assert.equal(getMembership.mock.callCount(), 1)
     assert.equal(update.mock.callCount(), 1)
+  })
+
+  it("primera compra con metadata.ref válido → vincula la tienda y activa la fila", async () => {
+    const ref = createCheckoutRef("store-1")
+    mock.method(whopClient, "getMembership", async () => makeMembership({ metadata: { ref } }))
+    mock.method(SubscriptionRepository, "getByWhopMembershipId", async () => null)
+    // Fila pendiente creada por el intent: todavía sin membership id y con un PayPal viejo.
+    mock.method(SubscriptionRepository, "getByStoreId", async () =>
+      makeLocalSub({ provider: "whop", whop_membership_id: null, paypal_subscription_id: "I-PAYPAL-OLD" }),
+    )
+    const update = mock.method(SubscriptionRepository, "update", async () => null)
+    const audits: Array<{ action?: string }> = []
+    mock.method(SubscriptionEventRepository, "create", async (data: Record<string, unknown>) => {
+      audits.push(data as never)
+    })
+    const markProcessed = mock.method(WhopWebhookEventRepository, "markProcessed", async () => {})
+
+    const { reply, state } = buildReply()
+    await whopWebhookController.receive(
+      buildRequest(body("membership.activated", { id: MEMBERSHIP_ID })) as never,
+      reply as never,
+    )
+
+    assert.equal(state.status, 200)
+    assert.equal(update.mock.calls[0].arguments[0], "store-1")
+    const data = update.mock.calls[0].arguments[1] as {
+      provider?: string
+      whop_membership_id?: string
+      status?: string
+      paypal_subscription_id?: string | null
+    }
+    assert.equal(data.provider, "whop")
+    assert.equal(data.whop_membership_id, MEMBERSHIP_ID)
+    assert.equal(data.status, "active")
+    assert.equal(data.paypal_subscription_id, undefined, "el id viejo de PayPal no se borra")
+    assert.equal(audits[0].action, "webhook_whop_activated")
+    assert.equal(markProcessed.mock.callCount(), 1)
+  })
+
+  it("primera compra con ref adulterada → ACK 200 sin tocar la DB", async () => {
+    const ref = `${createCheckoutRef("store-1")}x`
+    mock.method(whopClient, "getMembership", async () => makeMembership({ metadata: { ref } }))
+    mock.method(SubscriptionRepository, "getByWhopMembershipId", async () => null)
+    const byStore = mock.method(SubscriptionRepository, "getByStoreId", async () => makeLocalSub())
+    const update = mock.method(SubscriptionRepository, "update", async () => null)
+
+    const { reply, state } = buildReply()
+    await whopWebhookController.receive(
+      buildRequest(body("membership.activated", { id: MEMBERSHIP_ID })) as never,
+      reply as never,
+    )
+
+    assert.equal(state.status, 200)
+    assert.equal(byStore.mock.callCount(), 0, "una ref inválida no resuelve tienda")
+    assert.equal(update.mock.callCount(), 0)
+  })
+
+  it("primera compra sin ref → ACK 200 sin tocar la DB", async () => {
+    mock.method(whopClient, "getMembership", async () => makeMembership({ metadata: null }))
+    mock.method(SubscriptionRepository, "getByWhopMembershipId", async () => null)
+    const byStore = mock.method(SubscriptionRepository, "getByStoreId", async () => makeLocalSub())
+    const update = mock.method(SubscriptionRepository, "update", async () => null)
+
+    const { reply, state } = buildReply()
+    await whopWebhookController.receive(
+      buildRequest(body("membership.activated", { id: MEMBERSHIP_ID })) as never,
+      reply as never,
+    )
+
+    assert.equal(state.status, 200)
+    assert.equal(byStore.mock.callCount(), 0)
+    assert.equal(update.mock.callCount(), 0)
   })
 })

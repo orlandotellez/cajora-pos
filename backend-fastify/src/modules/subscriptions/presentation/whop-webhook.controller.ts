@@ -13,6 +13,7 @@ import type { SubscriptionEventAction } from "../domain/subscription-event.inter
 import type { ISubscriptionEntity, UpdateSubscriptionInput } from "../domain/subscription.entities"
 import type { SubscriptionStatus } from "../domain/subscription.types"
 import { needsFreshPeriod, periodEnd } from "../domain/subscription.period"
+import { verifyCheckoutRef } from "../domain/whop-checkout-ref"
 
 /** Envelope estándar de los webhooks de Whop. */
 interface WhopWebhookData {
@@ -140,6 +141,52 @@ async function auditMembershipEvent(
 }
 
 /**
+ * Resuelve la tienda desde `metadata.ref`. Whop copia el metadata del checkout a la
+ * membership, así que la primera compra se vincula sin mandar nunca el `store_id`
+ * crudo: la firma de la referencia es lo que impide apuntar a la tienda ajena.
+ */
+function storeIdFromCheckoutRef(membership: WhopMembership): string | null {
+  const ref = membership.metadata?.ref
+  if (typeof ref !== "string" || !ref) return null
+  return verifyCheckoutRef(ref)
+}
+
+/**
+ * Aplica el estado real de Whop a una fila local: traduce el estado, resuelve el
+ * período y audita. Es el paso compartido entre la fila ya vinculada y la primera
+ * compra (que además escribe el vínculo), para no duplicar la tabla de estados.
+ */
+async function applyMembershipState(
+  log: FastifyRequest["log"],
+  ev: whop_webhook_event,
+  sub: ISubscriptionEntity,
+  membership: WhopMembership,
+  link = false,
+): Promise<void> {
+  const translated = translateMembership(membership)
+  if (!translated) {
+    log.info({ whopStatus: membership.status }, "Estado de Whop sin cambio local (ignorado).")
+    return
+  }
+
+  const now = new Date()
+  const update: UpdateSubscriptionInput = {
+    status: translated.status,
+    cancel_at_period_end: translated.cancelAtPeriodEnd,
+    ...whopPeriod(membership, sub, now),
+    // Primera compra: el vínculo se escribe en la misma operación que el estado, así
+    // no queda una fila vinculada sin estado ni al revés. `paypal_subscription_id`
+    // no se toca: el id histórico del otro proveedor sobrevive.
+    ...(link && { provider: "whop", whop_membership_id: membership.id }),
+  }
+  const whopUserId = membership.user?.id
+  if (whopUserId) update.whop_user_id = whopUserId
+
+  await SubscriptionRepository.update(sub.store_id, update)
+  await auditMembershipEvent(log, ev, sub, translated.action, membership.status)
+}
+
+/**
  * El evento dispara, la API decide: Whop no garantiza orden ni entrega única, así
  * que `data.status` nunca se cree y el estado real siempre se relee de la API.
  */
@@ -167,31 +214,33 @@ async function dispatch(request: FastifyRequest, ev: whop_webhook_event): Promis
     throw err
   }
 
-  const sub = await SubscriptionRepository.getByWhopMembershipId(membership.id)
-  if (!sub) {
-    // Un pago puede llegar antes de que el checkout (T4) cree el vínculo local.
-    log.warn({ membershipId: membership.id }, "Evento Whop sin suscripción local vinculada.")
-    return
+  const byMembership = await SubscriptionRepository.getByWhopMembershipId(membership.id)
+  let sub: ISubscriptionEntity
+  let firstPurchase = false
+  if (byMembership) {
+    sub = byMembership
+  } else {
+    // Primera compra: todavía no hay fila con `whop_membership_id`. El puente es la
+    // referencia firmada que el checkout mandó como `metadata.ref`.
+    const storeId = storeIdFromCheckoutRef(membership)
+    if (!storeId) {
+      log.warn(
+        { membershipId: membership.id },
+        "Evento Whop sin suscripción local ni referencia de checkout válida.",
+      )
+      return
+    }
+    const byStore = await SubscriptionRepository.getByStoreId(storeId)
+    if (!byStore) {
+      // La referencia es válida pero la tienda no tiene fila: no se inventa una.
+      log.warn({ storeId }, "La referencia de checkout no matchea ninguna suscripción local.")
+      return
+    }
+    sub = byStore
+    firstPurchase = true
   }
 
-  const translated = translateMembership(membership)
-  if (!translated) {
-    log.info({ whopStatus: membership.status }, "Estado de Whop sin cambio local (ignorado).")
-    return
-  }
-
-  const now = new Date()
-  const update: UpdateSubscriptionInput = {
-    status: translated.status,
-    cancel_at_period_end: translated.cancelAtPeriodEnd,
-    ...whopPeriod(membership, sub, now),
-  }
-  // `provider` y `paypal_subscription_id` no se tocan: el vínculo los escribe T4.
-  const whopUserId = membership.user?.id
-  if (whopUserId) update.whop_user_id = whopUserId
-
-  await SubscriptionRepository.update(sub.store_id, update)
-  await auditMembershipEvent(log, ev, sub, translated.action, membership.status)
+  await applyMembershipState(log, ev, sub, membership, firstPurchase)
 }
 
 export const whopWebhookController = {
