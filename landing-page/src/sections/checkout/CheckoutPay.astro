@@ -1,10 +1,14 @@
 ---
+// Whop es el método primario cuando hay plan configurado. La decisión es de
+// build/render (`PUBLIC_WHOP_PLAN_ID`), no de red: sin la variable el panel queda
+// EXACTAMENTE como antes (PayPal visible, sin bloque Whop y sin switch).
+const whopConfigured = Boolean(import.meta.env.PUBLIC_WHOP_PLAN_ID);
 ---
 
 <div data-step-panel="3" hidden>
   <h1 class="checkout__title">Activá tu suscripción</h1>
   <p class="checkout__lead">
-    Elegí cómo pagar <strong>$15.99/mes</strong>. Podés cancelar cuando quieras.
+    Elegí cómo pagar <strong>$12.99/mes</strong>. Podés cancelar cuando quieras.
     <button type="button" class="checkout__link checkout__link-inline" data-plans-open>Ver planes</button>
   </p>
 
@@ -12,7 +16,21 @@
     <span data-success-prefix>✓ Tienda </span><strong data-success-store></strong><span data-success-suffix> creada — completá el pago abajo.</span>
   </div>
 
-  <div id="paypal-buttons" data-pay-buttons></div>
+  {whopConfigured && (
+    <div class="pay-whop" data-whop-block hidden>
+      <!-- Primario: el contenedor queda oculto hasta que el embed monta de verdad. -->
+      <div id="whop-checkout" data-whop-checkout hidden></div>
+      <div class="pay__loading" data-whop-loading role="status" hidden>
+        <span class="pay__spinner" aria-hidden="true"></span>
+        <span>Cargando método de pago...</span>
+      </div>
+      <p class="pay__pending" data-whop-pending role="status" hidden></p>
+    </div>
+  )}
+
+  {/* Segunda opción: PayPal. Cuando Whop está configurado arranca oculto y se
+      revela (y monta) solo si el comprador lo elige. */}
+  <div id="paypal-buttons" data-pay-buttons hidden={whopConfigured}></div>
   <div class="pay__loading" data-pay-loading role="status" hidden>
     <span class="pay__spinner" aria-hidden="true"></span>
     <span>Cargando método de pago...</span>
@@ -20,6 +38,9 @@
   <p class="pay__error" data-pay-error role="alert" hidden></p>
 
   <div class="pay__switch">
+    {whopConfigured && (
+      <button type="button" class="checkout__link" data-whop-switch>¿Preferís pagar con PayPal?</button>
+    )}
     <button type="button" class="checkout__link" data-reset>Cambiar de cuenta</button>
   </div>
 </div>
@@ -116,6 +137,20 @@
   .pay__switch {
     text-align: center;
     margin-top: 0.5rem;
+  }
+
+  .pay__switch .checkout__link + .checkout__link {
+    margin-left: 0.75rem;
+  }
+
+  .pay__pending {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.625rem 0.75rem;
+    margin-top: 0.75rem;
   }
 
   .checkout__link {

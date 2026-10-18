@@ -1,0 +1,105 @@
+# Manual de la API de Whop para CajoraPOS
+#
+# Archivo en formato .http: ejecutá cada request con la extensión REST Client
+# (VS Code) o el HTTP Client de JetBrains. Las variables de abajo se declaran una
+# sola vez y se usan con {{ }}.
+#
+# ADVERTENCIA: `@api_key` es un secreto. Si pegás tu key real acá, NO commitees
+# este archivo (dejalo en .gitignore o usá un archivo .http aparte sin versionar).
+#
+# Cómo se obtiene cada valor:
+#   @api_key       -> Dashboard de Whop > Developer > API keys
+#   @account_id    -> lo devuelve el request #1 (prefijo biz_)
+#   @membership_id -> lo devuelven los requests #3 o #4 (prefijo mem_)
+#
+# Orden recomendado:
+#   1. Crear la API key CON los scopes de la nota al final de este archivo.
+#   2. #1 -> copiar el biz_... a @account_id
+#   3. #2 -> copiar el plan_... del precio de 12.99
+#   4. #3 -> confirmar memberships y sacar un mem_... si querés probar #5 y #6
+#   5. #5 y #6 sobre una membership de prueba -> confirma el scope de escritura
+
+@base_url      = https://api.whop.com/api/v1
+@api_key       = PEGAR_TU_API_KEY_ACA
+@account_id    = PEGAR_TU_ACCOUNT_ID_ACA
+@membership_id = PEGAR_TU_MEMBERSHIP_ID_ACA
+
+
+### #1 · Mi cuenta -> de acá sale el account_id (biz_...)
+# Requiere scope de lectura de company. Si responde "forbidden", la key no tiene
+# el scope: mirá la nota al final del archivo.
+GET {{base_url}}/accounts/me
+Authorization: Bearer {{api_key}}
+Accept: application/json
+
+
+### #2 · Listar planes -> de acá sale el plan_...
+# `account_id` es obligatorio: sin él responde
+# {"error":{"type":"bad_request","message":"account_id is required"}}.
+#
+# Van a aparecer los DOS planes cargados ($1/mes y $12.99/mes). El que va en la
+# configuración es el de 12.99:
+#   WHOP_PLAN_ID_MONTHLY  -> backend-fastify/.env
+#   PUBLIC_WHOP_PLAN_ID   -> landing-page/.env
+GET {{base_url}}/plans?account_id={{account_id}}
+Authorization: Bearer {{api_key}}
+Accept: application/json
+
+
+### #3 · Listar memberships
+# Este endpoint NO necesita account_id: con una API key de cuenta ya devuelve las
+# del negocio (account_id y user_id solo filtran).
+#
+# Plan B para sacar el plan_...: cada membership incluye "plan": { "id": "plan_..." }.
+# Sirve aunque el request #1 devuelva forbidden.
+GET {{base_url}}/memberships
+Authorization: Bearer {{api_key}}
+Accept: application/json
+
+
+### #4 · Ver una membership
+# Es exactamente la llamada que hace el backend en cada webhook: la regla
+# "el evento dispara, la API decide". Muestra el status real y el
+# renewal_period_end con el que se decide el acceso.
+GET {{base_url}}/memberships/{{membership_id}}
+Authorization: Bearer {{api_key}}
+Accept: application/json
+
+
+### #5 · Cancelar al final del período  [ACCIÓN REAL, DESTRUCTIVA]
+# Programa la cancelación al final del período vigente: el cliente conserva el
+# tiempo que ya pagó y después no se renueva. Es la llamada que usa el botón
+# "Cancelar" de la app.
+#
+# Si responde "forbidden", la API key NO tiene scope de escritura y la cancelación
+# no va a funcionar en producción.
+POST {{base_url}}/memberships/{{membership_id}}/cancel
+Authorization: Bearer {{api_key}}
+Accept: application/json
+
+
+### #6 · Reactivar una membership
+# Revierte una cancelación programada para que vuelva a renovarse. Es la llamada
+# detrás de "Reactivar" en la app.
+POST {{base_url}}/memberships/{{membership_id}}/reactivate
+Authorization: Bearer {{api_key}}
+Accept: application/json
+
+
+# ---------------------------------------------------------------------------
+# Scopes de la API key
+#
+# Whop crea las API keys SIN scopes activados: hay que tildarlos al crearlas. Un
+# "forbidden" con mensaje del tipo
+#   Business account API key is not authorized for the ... scope
+# significa exactamente eso.
+#
+# Para CajoraPOS hacen falta:
+#   - Members / Memberships  -> lectura   (webhooks y reconciliación)
+#   - Company / Accounts     -> lectura   (request #1)
+#   - Memberships            -> ESCRITURA (cancelar y reactivar desde la app)
+#
+# El de escritura es el que más se olvida y no rompe el cobro: rompe la
+# cancelación. Los requests #5 y #6 son la forma de verificarlo ANTES de
+# producción.
+# ---------------------------------------------------------------------------

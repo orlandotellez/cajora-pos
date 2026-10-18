@@ -1,15 +1,19 @@
-import { BILLING_MODE, SUBSCRIPTION_STATUS, SUBSCRIPTION_PLAN } from "@/generated/prisma/client"
+import { BILLING_MODE, SUBSCRIPTION_PROVIDER, SUBSCRIPTION_STATUS, SUBSCRIPTION_PLAN } from "@/generated/prisma/client"
 
 export type BillingMode = (typeof BILLING_MODE)[keyof typeof BILLING_MODE]
 export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUS)[keyof typeof SUBSCRIPTION_STATUS]
 export type SubscriptionPlan = (typeof SUBSCRIPTION_PLAN)[keyof typeof SUBSCRIPTION_PLAN]
+export type SubscriptionProvider = (typeof SUBSCRIPTION_PROVIDER)[keyof typeof SUBSCRIPTION_PROVIDER]
 
 export interface ISubscriptionResponse {
   mode: BillingMode
   plan: SubscriptionPlan
   /** Estado resuelto contra el reloj. Una fila `active` con el período vencido devuelve `expired`. */
   status: SubscriptionStatus
+  /** Proveedor que cobra esta suscripción: `paypal` o `whop`. */
+  provider: SubscriptionProvider
   paypal_subscription_id: string | null
+  whop_membership_id: string | null
   current_period_start: string | null
   current_period_end: string | null
   cancel_at_period_end: boolean

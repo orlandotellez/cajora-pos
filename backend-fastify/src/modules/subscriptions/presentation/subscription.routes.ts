@@ -6,6 +6,7 @@ import { subscriptionController } from "./subscription.controller"
 import {
   ActivateSubscriptionDtoSchema,
   CheckoutSubscriptionDtoSchema,
+  WhopIntentDtoSchema,
 } from "./subscription.dto"
 
 const TAGS = ["Subscriptions"]
@@ -25,6 +26,15 @@ export const subscriptionRoutes = async (fastify: FastifyInstance, _opts: Fastif
     schema: { tags: TAGS, description: "Crear la suscripción en PayPal (aquí se pide la tarjeta)", body: toJsonSchema(CheckoutSubscriptionDtoSchema) },
     preHandler: [authGuard, storeGuard],
   }, subscriptionController.checkout)
+
+  fastify.post("/whop/intent", {
+    schema: {
+      tags: TAGS,
+      description: "Emitir la referencia firmada para el checkout embebido de Whop",
+      response: { 200: toJsonSchema(WhopIntentDtoSchema) },
+    },
+    preHandler: [authGuard, storeGuard],
+  }, subscriptionController.whopIntent)
 
   fastify.post("/activate", {
     schema: { tags: TAGS, description: "Activar la suscripción tras el onApprove de PayPal", body: toJsonSchema(ActivateSubscriptionDtoSchema) },

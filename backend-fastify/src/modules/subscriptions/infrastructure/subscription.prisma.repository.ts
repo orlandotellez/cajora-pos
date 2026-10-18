@@ -13,7 +13,10 @@ function mapToEntity(sub: subscription): ISubscriptionEntity {
     mode: sub.mode,
     plan: sub.plan,
     status: sub.status,
+    provider: sub.provider,
     paypal_subscription_id: sub.paypal_subscription_id,
+    whop_membership_id: sub.whop_membership_id,
+    whop_user_id: sub.whop_user_id,
     current_period_start: sub.current_period_start,
     current_period_end: sub.current_period_end,
     cancel_at_period_end: sub.cancel_at_period_end,
@@ -37,9 +40,26 @@ export const SubscriptionRepository: ISubscriptionRepository = {
     return sub ? mapToEntity(sub) : null
   },
 
+  async getByWhopMembershipId(whopMembershipId) {
+    const sub = await prisma.subscription.findUnique({
+      where: { whop_membership_id: whopMembershipId },
+    })
+    return sub ? mapToEntity(sub) : null
+  },
+
   async findPaypalSubscriptions(skip, take) {
     const subs = await prisma.subscription.findMany({
       where: { paypal_subscription_id: { not: null } },
+      orderBy: { created_at: "asc" },
+      skip,
+      take,
+    })
+    return subs.map(mapToEntity)
+  },
+
+  async findWhopSubscriptions(skip, take) {
+    const subs = await prisma.subscription.findMany({
+      where: { whop_membership_id: { not: null } },
       orderBy: { created_at: "asc" },
       skip,
       take,
@@ -55,16 +75,24 @@ export const SubscriptionRepository: ISubscriptionRepository = {
         mode: data.mode,
         plan: data.plan,
         status: data.status,
+        ...(data.provider !== undefined && { provider: data.provider }),
         ...(data.paypal_subscription_id !== undefined && {
           paypal_subscription_id: data.paypal_subscription_id,
+        }),
+        ...(data.whop_membership_id !== undefined && {
+          whop_membership_id: data.whop_membership_id,
         }),
       },
       update: {
         mode: data.mode,
         plan: data.plan,
         status: data.status,
+        ...(data.provider !== undefined && { provider: data.provider }),
         ...(data.paypal_subscription_id !== undefined && {
           paypal_subscription_id: data.paypal_subscription_id,
+        }),
+        ...(data.whop_membership_id !== undefined && {
+          whop_membership_id: data.whop_membership_id,
         }),
       },
     })
@@ -78,9 +106,14 @@ export const SubscriptionRepository: ISubscriptionRepository = {
         data: {
           ...(data.status !== undefined && { status: data.status }),
           ...(data.plan !== undefined && { plan: data.plan }),
+          ...(data.provider !== undefined && { provider: data.provider }),
           ...(data.paypal_subscription_id !== undefined && {
             paypal_subscription_id: data.paypal_subscription_id,
           }),
+          ...(data.whop_membership_id !== undefined && {
+            whop_membership_id: data.whop_membership_id,
+          }),
+          ...(data.whop_user_id !== undefined && { whop_user_id: data.whop_user_id }),
           ...(data.current_period_start !== undefined && {
             current_period_start: data.current_period_start,
           }),

@@ -52,7 +52,7 @@ export function renderSub(sub: Subscription): void {
   const dangerScheduledEl = document.querySelector<HTMLElement>('[data-danger-scheduled]')!;
   const dangerScheduledTextEl = document.querySelector<HTMLElement>('[data-danger-scheduled-text]')!;
 
-  planEl.textContent = sub.plan === 'annual' ? 'Anual' : 'Mensual ($15.99/mes)';
+  planEl.textContent = sub.plan === 'annual' ? 'Anual' : 'Mensual ($12.99/mes)';
   rowPeriodEl.hidden = sub.status === 'pending';
   rowCancelEl.hidden = true;
   dangerCancelEl.hidden = true;

@@ -9,13 +9,13 @@ export const reconciliationSchedulerPlugin = async (
   fastify: FastifyInstance,
   _opts: FastifyPluginOptions,
 ) => {
-  if (!env.PAYPAL_ENABLED) {
+  if (!env.PAYPAL_ENABLED && !env.WHOP_ENABLED) {
     // Sin esto, ninguna suscripción vence localmente: el `status` solo cambia si
     // llega un webhook, y una fila `active` con el período vencido nunca se corrige.
     // Aviso en `warn` para que alguien lo note en los logs del despliegue.
     fastify.log.warn(
-      { paypalEnabled: false },
-      "Reconciliación de suscripciones DESACTIVADA (PAYPAL_ENABLED=false): ninguna suscripción se va a vencer sola. Configurá PAYPAL_ENABLED=true en el entorno.",
+      { paypalEnabled: false, whopEnabled: false },
+      "Reconciliación de suscripciones DESACTIVADA (PAYPAL_ENABLED=false y WHOP_ENABLED=false): ninguna suscripción se va a vencer sola. Configurá PAYPAL_ENABLED=true o WHOP_ENABLED=true en el entorno.",
     )
     return
   }

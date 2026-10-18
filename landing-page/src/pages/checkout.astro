@@ -43,6 +43,7 @@ import PlansModal from '../sections/checkout/PlansModal.astro';
   import { initRegister, initCheckoutLogin } from "../lib/checkout/register";
   import { initVerify, enterVerifyPanel } from "../lib/checkout/verify";
   import { createPaypal } from "../lib/checkout/paypal";
+  import { createWhop } from "../lib/checkout/whop";
   import { initPlans } from "../lib/checkout/plans";
 
   (() => {
@@ -51,11 +52,13 @@ import PlansModal from '../sections/checkout/PlansModal.astro';
 
     const apiUrl = import.meta.env.PUBLIC_API_URL;
     const paypalClientId = import.meta.env.PUBLIC_PAYPAL_CLIENT_ID;
+    const whopPlanId = import.meta.env.PUBLIC_WHOP_PLAN_ID as string | undefined;
     const posUrl = import.meta.env.PUBLIC_POS_URL;
     const paypalSandbox = import.meta.env.PUBLIC_PAYPAL_SANDBOX === "true";
     const isNativeApp = "__TAURI__" in window;
 
     const hideError = (el: HTMLElement): void => { el.hidden = true; };
+    const showError = (el: HTMLElement, msg: string): void => { el.textContent = msg; el.hidden = false; };
 
     const summaryStore = $("[data-summary-store]")!;
     const summaryEmail = $("[data-summary-email]")!;
@@ -63,8 +66,46 @@ import PlansModal from '../sections/checkout/PlansModal.astro';
     const payButtons = $("[data-pay-buttons]")!;
     const payLoading = $("[data-pay-loading]")!;
     const paySuccess = $("[data-pay-success]")!;
+    const whopBlock = $("[data-whop-block]");
+    const whopTarget = $("[data-whop-checkout]");
+    const whopPending = $("[data-whop-pending]");
+    const whopSwitch = $("[data-whop-switch]");
+
+    // Regreso del checkout off-site de Whop: Whop agrega `payment` y `status`.
+    const returnParams = new URLSearchParams(window.location.search);
+    const whopReturn = returnParams.get("whop") === "1";
+    const whopReturnStatus = returnParams.get("status");
+    const whopReturnFailed = whopReturnStatus === "failed" || whopReturnStatus === "canceled";
+
+    // Confirmación post-Whop: pocos intentos con espera entre ellos, nunca infinita.
+    const WHOP_CONFIRM_ATTEMPTS = 8;
+    const WHOP_CONFIRM_DELAY_MS = 2500;
+    const delay = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
     let accessToken: string | null = null;
+
+    // Auth idéntico al resto del checkout: cookies en web, Bearer bajo Tauri.
+    function authFetch(path: string, init: RequestInit = {}): Promise<Response> {
+      const headers: Record<string, string> = { ...((init.headers as Record<string, string>) ?? {}) };
+      const opts: RequestInit = { ...init };
+      if (isNativeApp && accessToken) {
+        headers.Authorization = `Bearer ${accessToken}`;
+      } else if (!isNativeApp) {
+        opts.credentials = "include";
+      }
+      return fetch(`${apiUrl}${path}`, { ...opts, headers });
+    }
+
+    // Limpia `whop`/`status`/`payment` una vez manejados para que una recarga no
+    // vuelva a disparar el flujo de confirmación.
+    function clearWhopParams(): void {
+      const url = new URL(window.location.href);
+      if (!url.searchParams.has("whop") && !url.searchParams.has("status") && !url.searchParams.has("payment")) return;
+      url.searchParams.delete("whop");
+      url.searchParams.delete("status");
+      url.searchParams.delete("payment");
+      window.history.replaceState({}, "", url);
+    }
 
     // Solo el registro exitoso puede decir "tienda creada". Login, sesión reanudada y
     // verificación de email llegan al mismo paso de pago con una tienda que ya existía
@@ -91,6 +132,9 @@ import PlansModal from '../sections/checkout/PlansModal.astro';
       flowOrigin = "returning";
       payButtons.innerHTML = "";
       payLoading.hidden = true;
+      if (whopTarget) whopTarget.innerHTML = "";
+      if (whopBlock) whopBlock.hidden = true;
+      if (whopPending) whopPending.hidden = true;
       setSummary("—", "—");
       setStep(1, null);
     };
@@ -104,6 +148,32 @@ import PlansModal from '../sections/checkout/PlansModal.astro';
       onReset: () => resetToStart(),
       onActivated: () => setStep(4, readSession()),
     });
+
+    // Whop solo existe cuando hay plan configurado en el build.
+    const whop = whopPlanId
+      ? createWhop({
+          apiUrl,
+          planId: whopPlanId,
+          posBaseUrl: posUrl,
+          getToken: () => accessToken,
+          onReset: () => resetToStart(),
+          onError: (message) => showError(payError, message),
+        })
+      : null;
+
+    // Método primario del paso 3: Whop si está configurado, si no PayPal como hoy.
+    async function mountPrimary(): Promise<void> {
+      if (whop) {
+        if (whopTarget && whopTarget.childElementCount === 0) {
+          await whop.mount();
+        }
+        return;
+      }
+      if (payButtons.childElementCount === 0) {
+        await paypal.mount();
+        saveSession({ ...(readSession() ?? {}), paypalMounted: true });
+      }
+    }
 
     // Tras registrarse/loguearse: si el email está verificado → pago; si no → verificación.
     async function afterAuth(storeName: string | null, email: string, emailVerified: boolean, sendCodeOnEnter: boolean, origin: PayOrigin = "returning"): Promise<void> {
@@ -133,9 +203,56 @@ import PlansModal from '../sections/checkout/PlansModal.astro';
         paySuccess.hidden = false;
       }
       setStep(3, readSession());
-      if (payButtons.childElementCount === 0) {
-        await paypal.mount();
-        saveSession({ ...(readSession() ?? {}), paypalMounted: true });
+      await mountPrimary();
+    }
+
+    // El query param solo dice que el comprador volvió; NUNCA es prueba de pago.
+    // La única autoridad es el backend: el webhook de Whop escribe la suscripción
+    // y acá se confirma contra `GET /subscriptions/mine`.
+    async function confirmWhopPayment(): Promise<void> {
+      hideError(payError);
+      if (whopBlock) whopBlock.hidden = false;
+      if (whopTarget) whopTarget.hidden = true;
+      if (whopPending) {
+        whopPending.textContent = "Estamos confirmando el pago con Whop. Esto puede tardar unos segundos…";
+        whopPending.hidden = false;
+      }
+      setStep(3, readSession());
+
+      for (let attempt = 1; attempt <= WHOP_CONFIRM_ATTEMPTS; attempt++) {
+        let res: Response | null = null;
+        try {
+          res = await authFetch("/subscriptions/mine");
+        } catch {
+          // Error de red transitorio: se trata como "todavía no acreditado".
+          res = null;
+        }
+
+        if (res) {
+          const data = (await res.json().catch(() => null)) as { status?: string; mode?: string } | null;
+
+          if (res.ok && data?.status === "active" && data?.mode === "cloud") {
+            clearWhopParams();
+            saveSession({ ...(readSession() ?? {}), paid: true, emailVerified: true });
+            setStep(4, readSession());
+            return;
+          }
+          if (res.status === 401 || res.status === 403) {
+            clearWhopParams();
+            resetToStart();
+            return;
+          }
+        }
+        if (attempt < WHOP_CONFIRM_ATTEMPTS) await delay(WHOP_CONFIRM_DELAY_MS);
+      }
+
+      // Se agotaron los intentos: se mantiene el mensaje pendiente y NO se avanza
+      // ni se marca `paid`. El acceso se confirma por email cuando Whop acredita.
+      clearWhopParams();
+      if (whopPending) {
+        whopPending.textContent =
+          "Seguimos confirmando tu pago. Te avisamos por email en cuanto Whop lo acredite; podés cerrar esta página.";
+        whopPending.hidden = false;
       }
     }
 
@@ -155,8 +272,19 @@ import PlansModal from '../sections/checkout/PlansModal.astro';
 
     $$("[data-reset], [data-verify-change-account]").forEach((btn) => btn.addEventListener("click", () => { clearSession(); window.location.reload(); }));
 
+    // La segunda opción (PayPal) se revela y monta solo cuando el comprador la elige.
+    if (whopSwitch) {
+      whopSwitch.addEventListener("click", () => {
+        if (whopBlock) whopBlock.hidden = true;
+        if (whopPending) whopPending.hidden = true;
+        whopSwitch.hidden = true;
+        payButtons.hidden = false;
+        if (payButtons.childElementCount === 0) void paypal.mount();
+      });
+    }
+
     initPlans();
-    initStepsNavigation({ onEnterPay: () => { if (payButtons.childElementCount === 0) void paypal.mount(); } });
+    initStepsNavigation({ onEnterPay: () => { void mountPrimary(); } });
 
     initRegister({
       apiUrl,
@@ -182,28 +310,19 @@ import PlansModal from '../sections/checkout/PlansModal.astro';
       const session = readSession();
       const hasToken = isNativeApp ? !!session?.accessToken : !!session?.email;
       if (!hasToken) {
+        clearWhopParams();
         setStep(1, null);
         return;
       }
       accessToken = session?.accessToken ?? null;
 
-      const fetchHeaders: Record<string, string> = {};
-      const fetchOpts: RequestInit = {};
-      if (isNativeApp && accessToken) {
-        fetchHeaders.Authorization = `Bearer ${accessToken}`;
-      } else if (!isNativeApp) {
-        fetchOpts.credentials = 'include';
-      }
-
       try {
-        const res = await fetch(`${apiUrl}/subscriptions/mine`, {
-          ...fetchOpts,
-          headers: fetchHeaders,
-        });
+        const res = await authFetch("/subscriptions/mine");
         const data = (await res.json().catch(() => null)) as { status?: string; mode?: string } | null;
 
         // Solo una suscripción Cloud real cuenta como activa.
         if (res.ok && data?.status === "active" && data?.mode === "cloud") {
+          clearWhopParams();
           saveSession({ ...session, paid: true, emailVerified: true });
           setSummary(session.storeName ?? null, session.email ?? null);
           setStep(4, readSession());
@@ -212,17 +331,32 @@ import PlansModal from '../sections/checkout/PlansModal.astro';
         if (res.ok) {
           // Sesión válida → verificar email si falta, si no → pago.
           setSummary(session.storeName ?? null, session.email ?? null);
-          if (session.emailVerified) {
-            await enterPay(session.storeName ?? null, session.email ?? null);
-          } else {
+          if (!session.emailVerified) {
+            clearWhopParams();
             await enterVerify(session.email ?? "", false);
+            return;
           }
+          // Regreso del checkout off-site de Whop.
+          if (whopReturn) {
+            if (whopReturnFailed) {
+              // `failed`/`canceled`: no se cobró nada → volver al paso 3 con reintento.
+              clearWhopParams();
+              await enterPay(session.storeName ?? null, session.email ?? null);
+              showError(payError, "No se completó el pago y no se te cobró nada. Podés intentarlo de nuevo.");
+              return;
+            }
+            await confirmWhopPayment();
+            return;
+          }
+          await enterPay(session.storeName ?? null, session.email ?? null);
           return;
         }
         // Token inválido/vencido (401/403) o error del servidor → empezar desde cero.
+        clearWhopParams();
         resetToStart();
       } catch {
         // No se pudo verificar la sesión → checkout limpio.
+        clearWhopParams();
         resetToStart();
       }
     }

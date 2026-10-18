@@ -1,7 +1,9 @@
 import { env } from "@/config/env"
 import { AppError, ConflictError } from "@/core/errors/AppError"
 import { paypalClient } from "../infrastructure/paypal.client"
+import { whopClient } from "../infrastructure/whop.client"
 import type { ISubscriptionRepository } from "../domain/subscription.interface"
+import type { ISubscriptionEntity } from "../domain/subscription.entities"
 import type { IBillingResponse, ISubscriptionResponse } from "../domain/subscription.types"
 import type { IPayPalWebhookEventRepository } from "../domain/paypal-webhook-event.interface"
 import {
@@ -13,12 +15,24 @@ import {
 import { mapToResponse } from "./common/subscriptions.mappers"
 import { resolveEntitlement } from "../domain/subscription.entitlement"
 import { periodEnd } from "../domain/subscription.period"
+import { createCheckoutRef } from "../domain/whop-checkout-ref"
 
-const PLAN_PRICE = "15.99"
+const PLAN_PRICE = "12.99"
 const PLAN_CURRENCY = "USD"
 
 function noopActor(): SubscriptionActor {
   return { userId: null, ip: null, userAgent: null }
+}
+
+/**
+ * Quien ya tiene la suscripción pagada y vigente no tiene por qué volver a
+ * suscribirse. Se comparte entre el checkout de PayPal y el intent de Whop: sin este
+ * guard, cualquiera de los dos podría cancelar o reemplazar una sub activa.
+ */
+function assertNotAlreadySubscribed(existing: ISubscriptionEntity | null): void {
+  if (existing?.status === "active" && resolveEntitlement(existing).allowed) {
+    throw new ConflictError("Ya tenés una suscripción Cloud activa.")
+  }
 }
 
 function extractSaleAmount(payload: unknown): { amount: string; currency: string } {
@@ -92,12 +106,9 @@ export const createSubscriptionService = (
       const planId = env.PAYPAL_PLAN_ID_MONTHLY
       const existing = await repository.getByStoreId(storeId)
 
-      // Quien ya tiene la suscripción pagada y vigente no tiene por qué volver a
-      // suscribirse. Sin este guard, el reemplazo de abajo le cancelaría una sub
-      // activa: el POS ofrece "Pagar ahora" también en estado active.
-      if (existing?.status === "active" && resolveEntitlement(existing).allowed) {
-        throw new ConflictError("Ya tenés una suscripción Cloud activa.")
-      }
+      // El POS ofrece "Pagar ahora" también en estado active: este guard impide que
+      // el reemplazo de abajo le cancele una sub que el cliente ya pagó.
+      assertNotAlreadySubscribed(existing)
 
       // La sub vieja de PayPal queda huérfana si solo pisamos el id en la DB: seguiría
       // activa y cobrando. Se cancela ANTES de crear la nueva, así que si la
@@ -111,15 +122,19 @@ export const createSubscriptionService = (
 
       if (!existing) {
         // La fila debe existir con el paypal_subscription_id ANTES de que PayPal
-        // complete el pago: el webhook la busca por ese id.
+        // complete el pago: el webhook la busca por ese id. El `provider` lo fija el
+        // checkout y no quien haya tocado la fila antes: un intent de Whop abandonado
+        // dejaba `provider: "whop"` y el cancel terminaba enrutado al proveedor
+        // equivocado.
         await repository.upsertCloud(storeId, {
           mode: "cloud",
           plan: "monthly",
           status: "pending",
+          provider: "paypal",
           paypal_subscription_id: created.id,
         })
       } else {
-        await repository.update(storeId, { paypal_subscription_id: created.id })
+        await repository.update(storeId, { provider: "paypal", paypal_subscription_id: created.id })
       }
       await audit(actor, storeId, SUBSCRIPTION_EVENT_ACTIONS.CHECKOUT, created.id)
 
@@ -127,6 +142,38 @@ export const createSubscriptionService = (
         paypalSubscriptionId: created.id,
         approvalUrl: created.approvalUrl,
       }
+    },
+
+    /**
+     * Emite la intención de checkout embebido de Whop: el `plan_...` público y la
+     * referencia firmada que el landing manda como `metadata.ref`. El `store_id`
+     * nunca viaja crudo: la firma es lo que luego resuelve la tienda en el webhook.
+     */
+    async whopCheckoutIntent(storeId: string, actor: SubscriptionActor = noopActor()) {
+      const planId = env.WHOP_PLAN_ID_MONTHLY
+      if (!planId) {
+        throw new AppError(
+          "No hay WHOP_PLAN_ID_MONTHLY configurado (crear el plan de $12.99 en el dashboard de Whop)",
+          422,
+          "WHOP_PLAN_NOT_CONFIGURED",
+        )
+      }
+
+      const existing = await repository.getByStoreId(storeId)
+      assertNotAlreadySubscribed(existing)
+
+      // Fila pending con el proveedor nuevo. `upsertCloud` no recibe
+      // `paypal_subscription_id`, así que un id viejo de PayPal sobrevive: el
+      // histórico del otro proveedor no se borra por empezar un checkout de Whop.
+      await repository.upsertCloud(storeId, {
+        mode: "cloud",
+        plan: "monthly",
+        status: "pending",
+        provider: "whop",
+      })
+      await audit(actor, storeId, SUBSCRIPTION_EVENT_ACTIONS.CHECKOUT, null, { provider: "whop" })
+
+      return { planId, ref: createCheckoutRef(storeId), provider: "whop" as const }
     },
 
     async activate(
@@ -175,6 +222,22 @@ export const createSubscriptionService = (
 
     async cancel(storeId: string, actor: SubscriptionActor = noopActor()): Promise<ISubscriptionResponse> {
       const sub = await repository.getByStoreId(storeId)
+
+      // Whop cobra por su API: se programa la cancelación en el proveedor y la fila
+      // solo marca el fin de período. No se degrada a `canceled`: el cliente conserva
+      // el período que ya pagó (igual que el camino de PayPal).
+      if (sub?.provider === "whop") {
+        if (!sub.whop_membership_id) {
+          throw new ConflictError("No hay suscripción activa")
+        }
+        await whopClient.cancelMembership(sub.whop_membership_id)
+        const whopUpdated = await repository.update(storeId, { cancel_at_period_end: true })
+        if (!whopUpdated) throw new ConflictError("No hay suscripción activa")
+        await audit(actor, storeId, SUBSCRIPTION_EVENT_ACTIONS.CANCEL, null)
+        return mapToResponse(whopUpdated)
+      }
+
+      // PayPal: comportamiento sin cambios.
       if (!sub?.paypal_subscription_id) {
         throw new ConflictError("No hay suscripción activa")
       }
@@ -200,6 +263,14 @@ export const createSubscriptionService = (
         return mapToResponse(sub)
       }
       if (existing.status === "active" && existing.cancel_at_period_end) {
+        // S5: para Whop hay que reactivar en el proveedor ANTES de limpiar el flag.
+        // Si la API falla, la cancelación programada sigue vigente (no se miente al cliente).
+        if (existing.provider === "whop") {
+          if (!existing.whop_membership_id) {
+            throw new ConflictError("No hay suscripción activa")
+          }
+          await whopClient.reactivateMembership(existing.whop_membership_id)
+        }
         const updated = await repository.update(storeId, {
           cancel_at_period_end: false,
         })
@@ -226,7 +297,9 @@ export const createSubscriptionService = (
           mode: "self_hosted",
           plan: "monthly",
           status: "active",
+          provider: "paypal",
           paypal_subscription_id: null,
+          whop_membership_id: null,
           current_period_start: null,
           current_period_end: null,
           cancel_at_period_end: false,

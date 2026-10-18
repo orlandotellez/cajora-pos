@@ -17,6 +17,7 @@ import { type FastifyInstance, type FastifyPluginOptions } from "fastify";
 import { printersRoutes } from "@/modules/printers/presentation/printers.router";
 import { subscriptionRoutes } from "@/modules/subscriptions/presentation/subscription.routes";
 import { webhookRoutes } from "@/modules/subscriptions/presentation/webhook.routes";
+import { whopWebhookRoutes } from "@/modules/subscriptions/presentation/whop-webhook.routes";
 import { notificationRoutes } from "@/modules/notifications/presentation/notification.routes";
 
 export const routes = async (fastify: FastifyInstance, _opts: FastifyPluginOptions) => {
@@ -45,4 +46,6 @@ export const routes = async (fastify: FastifyInstance, _opts: FastifyPluginOptio
   fastify.register(subscriptionRoutes, { prefix: "/subscriptions" })
   fastify.register(notificationRoutes, { prefix: "/notifications" })
   fastify.register(webhookRoutes, { prefix: "/webhooks/paypal" })
+  // Mismo criterio que PayPal: fuera del bloque `business` (Whop no manda licencia).
+  fastify.register(whopWebhookRoutes, { prefix: "/webhooks/whop" })
 }

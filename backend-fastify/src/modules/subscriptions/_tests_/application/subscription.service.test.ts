@@ -1,8 +1,11 @@
 import { describe, it, beforeEach, afterEach, mock } from "node:test"
 import assert from "node:assert/strict"
 import { AppError, ConflictError } from "@/core/errors/AppError"
+import { env } from "@/config/env"
 import { createSubscriptionService } from "../../application/subscription.service"
 import { paypalClient } from "../../infrastructure/paypal.client"
+import { whopClient } from "../../infrastructure/whop.client"
+import { verifyCheckoutRef } from "../../domain/whop-checkout-ref"
 import type { ISubscriptionRepository } from "../../domain/subscription.interface"
 import type { ISubscriptionEntity } from "../../domain/subscription.entities"
 import type { NewSubscriptionEvent } from "../../domain/subscription-event.interface"
@@ -18,8 +21,10 @@ function makeEntity(overrides: Partial<ISubscriptionEntity> = {}): ISubscription
     mode: "cloud",
     plan: "monthly",
     status: "pending",
+    provider: "paypal",
     paypal_subscription_id: null,
-    // Período vigente por defecto: el estado se resuelve contra el reloj, así que un
+    whop_membership_id: null,
+    whop_user_id: null,
     // fixture `active` sin período ya no significaría "activa" (y las fechas fijas
     // absolutas se pudren solas). Los tests que necesitan otra cosa lo dicen.
     current_period_start: new Date(now.getTime() - 10 * DAY_MS),
@@ -37,9 +42,15 @@ function makeRepo(initial: ISubscriptionEntity | null = null) {
   const repo: ISubscriptionRepository = {
     async getByStoreId() { return current },
     async getByPaypalSubscriptionId() { return null },
+    async getByWhopMembershipId() { return null },
     async findPaypalSubscriptions() { return current ? [current] : [] },
+    async findWhopSubscriptions() { return [] },
     async upsertCloud(storeId, data) {
-      current = makeEntity({ store_id: storeId, ...data })
+      // Espeja al upsert real: la rama update solo toca los campos provistos, así
+      // que un campo omitido (por ejemplo `paypal_subscription_id`) sobrevive.
+      current = current
+        ? ({ ...current, ...data, store_id: storeId } as ISubscriptionEntity)
+        : makeEntity({ store_id: storeId, ...data })
       return current
     },
     async update(storeId, data) {
@@ -779,7 +790,7 @@ describe("SubscriptionService", () => {
       assert.equal(res.next_payment_at, null)
     })
 
-    it("getBilling muestra el cobro de app_activate con el precio del plan (fallback 15.99 USD)", async () => {
+    it("getBilling muestra el cobro de app_activate con el precio del plan (fallback 12.99 USD)", async () => {
       const paidAt = new Date("2026-08-15T10:00:00Z")
       const events = [
         {
@@ -811,10 +822,10 @@ describe("SubscriptionService", () => {
       const res = await service.getBilling("store-1")
 
       assert.equal(res.payments.length, 1)
-      assert.equal(res.payments[0].amount, "15.99")
+      assert.equal(res.payments[0].amount, "12.99")
       assert.equal(res.payments[0].currency, "USD")
       assert.equal(res.payments[0].paid_at, "2026-08-15T10:00:00.000Z")
-      assert.equal(res.total_paid, "15.99")
+      assert.equal(res.total_paid, "12.99")
       assert.equal(res.currency, "USD")
     })
 
@@ -904,7 +915,7 @@ describe("SubscriptionService", () => {
       const res = await service.getBilling("store-1")
 
       assert.equal(res.payments.length, 1)
-      assert.equal(res.payments[0].amount, "15.99")
+      assert.equal(res.payments[0].amount, "12.99")
       assert.equal(res.payments[0].currency, "USD")
     })
 
@@ -951,7 +962,7 @@ describe("SubscriptionService", () => {
       const res = await service.getBilling("store-1")
 
       assert.equal(res.payments.length, 1)
-      assert.equal(res.payments[0].amount, "15.99")
+      assert.equal(res.payments[0].amount, "12.99")
       assert.equal(res.payments[0].currency, "USD")
     })
 
@@ -1089,6 +1100,175 @@ describe("SubscriptionService", () => {
       assert.equal(res.total_paid, "35.48")
       assert.equal(res.currency, "USD")
       assert.equal(res.next_payment_at, "2099-09-01T12:00:00.000Z")
+    })
+  })
+
+  describe("whop (S5)", () => {
+    it("cancel de una fila whop cancela en Whop y NO toca PayPal", async () => {
+      const whopCancel = mock.method(whopClient, "cancelMembership", async () => {})
+      const paypalCancel = mock.method(paypalClient, "cancelSubscription", async () => true)
+      const existing = makeEntity({ provider: "whop", whop_membership_id: "mem-1", status: "active" })
+      const { repo, getCurrent } = makeRepo(existing)
+      const service = createSubscriptionService(repo)
+
+      const res = await service.cancel("store-1")
+
+      assert.equal(whopCancel.mock.callCount(), 1)
+      assert.equal(whopCancel.mock.calls[0].arguments[0], "mem-1")
+      assert.equal(paypalCancel.mock.callCount(), 0, "no debe tocar el cliente de PayPal")
+      assert.equal(res.status, "active", "el cliente conserva el período que ya pagó")
+      assert.equal(res.cancel_at_period_end, true)
+      assert.equal(getCurrent()!.cancel_at_period_end, true)
+    })
+
+    it("cancel de una fila whop sin membership id → ConflictError sin llamar a la API", async () => {
+      const whopCancel = mock.method(whopClient, "cancelMembership", async () => {})
+      const existing = makeEntity({ provider: "whop", whop_membership_id: null, status: "active" })
+      const { repo } = makeRepo(existing)
+      const service = createSubscriptionService(repo)
+
+      await assert.rejects(() => service.cancel("store-1"), /No hay suscripción activa/)
+      assert.equal(whopCancel.mock.callCount(), 0)
+    })
+
+    it("reactivate de una fila whop reactiva en Whop antes de limpiar el flag", async () => {
+      const whopReactivate = mock.method(whopClient, "reactivateMembership", async () => {})
+      const existing = makeEntity({
+        provider: "whop",
+        whop_membership_id: "mem-1",
+        status: "active",
+        cancel_at_period_end: true,
+      })
+      const { repo, getCurrent } = makeRepo(existing)
+      const service = createSubscriptionService(repo)
+
+      const res = await service.reactivate("store-1")
+
+      assert.equal(whopReactivate.mock.callCount(), 1)
+      assert.equal(whopReactivate.mock.calls[0].arguments[0], "mem-1")
+      assert.equal(res.status, "active")
+      assert.equal(getCurrent()!.cancel_at_period_end, false)
+    })
+
+    it("cancel de PayPal sigue llamando al cliente de PayPal (no-regresión S2)", async () => {
+      const paypalCancel = mock.method(paypalClient, "cancelSubscription", async () => true)
+      const whopCancel = mock.method(whopClient, "cancelMembership", async () => {})
+      const existing = makeEntity({
+        provider: "paypal",
+        paypal_subscription_id: "I-PAYPAL-1",
+        status: "active",
+      })
+      const { repo } = makeRepo(existing)
+      const service = createSubscriptionService(repo)
+
+      await service.cancel("store-1")
+
+      assert.equal(paypalCancel.mock.callCount(), 1)
+      assert.equal(whopCancel.mock.callCount(), 0)
+    })
+  })
+
+  describe("whopCheckoutIntent", () => {
+    it("emite plan + referencia firmada y deja la fila pending de Whop sin borrar el PayPal viejo", async () => {
+      mock.property(env, "WHOP_PLAN_ID_MONTHLY", "plan_whop_1")
+      const existing = makeEntity({ provider: "paypal", paypal_subscription_id: "I-PAYPAL-OLD" })
+      const { repo, getCurrent } = makeRepo(existing)
+      const created: Array<NewSubscriptionEvent> = []
+      const service = createSubscriptionService(repo, fakeEventRepo(created))
+
+      const res = await service.whopCheckoutIntent("store-1", {
+        userId: "user-1",
+        ip: null,
+        userAgent: null,
+      })
+
+      assert.equal(res.planId, "plan_whop_1")
+      assert.equal(res.provider, "whop")
+      assert.equal(verifyCheckoutRef(res.ref), "store-1")
+      assert.equal(getCurrent()!.status, "pending")
+      assert.equal(getCurrent()!.provider, "whop")
+      assert.equal(getCurrent()!.mode, "cloud")
+      assert.equal(getCurrent()!.plan, "monthly")
+      assert.equal(getCurrent()!.paypal_subscription_id, "I-PAYPAL-OLD", "el id viejo de PayPal sobrevive")
+      assert.equal(created.length, 1)
+      assert.equal(created[0].action, "checkout")
+      assert.equal(created[0].user_id, "user-1")
+      assert.equal((created[0].metadata as Record<string, unknown>).provider, "whop")
+    })
+
+    it("sin WHOP_PLAN_ID_MONTHLY → 422 WHOP_PLAN_NOT_CONFIGURED sin tocar la DB", async () => {
+      mock.property(env, "WHOP_PLAN_ID_MONTHLY", "")
+      const { repo, getCurrent } = makeRepo()
+      const upsert = mock.method(repo, "upsertCloud", async () => makeEntity())
+      const service = createSubscriptionService(repo)
+
+      await assert.rejects(
+        () => service.whopCheckoutIntent("store-1"),
+        (err: unknown) =>
+          err instanceof AppError &&
+          err.statusCode === 422 &&
+          (err as AppError).code === "WHOP_PLAN_NOT_CONFIGURED",
+      )
+      assert.equal(upsert.mock.callCount(), 0)
+      assert.equal(getCurrent(), null)
+    })
+
+    it("con suscripción activa y vigente → 409 sin tocar la fila", async () => {
+      mock.property(env, "WHOP_PLAN_ID_MONTHLY", "plan_whop_1")
+      const existing = makeEntity({
+        status: "active",
+        provider: "paypal",
+        paypal_subscription_id: "I-PAYPAL-1",
+      })
+      const { repo, getCurrent } = makeRepo(existing)
+      const service = createSubscriptionService(repo)
+
+      await assert.rejects(
+        () => service.whopCheckoutIntent("store-1"),
+        (err: unknown) => err instanceof ConflictError && err.statusCode === 409,
+      )
+      assert.equal(getCurrent()!.status, "active")
+      assert.equal(getCurrent()!.provider, "paypal")
+    })
+  })
+
+  // B2: un intent de Whop abandonado deja `provider: "whop"` sin membership. Si el
+  // cliente termina pagando con PayPal, el checkout debe recuperar el provider o el
+  // cancel queda enrutado a Whop y explota con ConflictError.
+  describe("provider tras un intent de Whop abandonado (B2)", () => {
+    it("el checkout de PayPal recupera provider y el cancel va a PayPal", async () => {
+      mock.property(env, "WHOP_PLAN_ID_MONTHLY", "plan_whop_1")
+      mock.method(paypalClient, "createSubscription", async () => ({
+        id: "I-PAYPAL-NEW",
+        approvalUrl: null,
+        status: "APPROVAL_PENDING",
+        planId: "P-PLAN-1",
+      }))
+      const paypalCancel = mock.method(paypalClient, "cancelSubscription", async () => true)
+      const whopCancel = mock.method(whopClient, "cancelMembership", async () => {})
+
+      const existing = makeEntity({
+        provider: "whop",
+        whop_membership_id: null,
+        status: "pending",
+        paypal_subscription_id: null,
+      })
+      const { repo, getCurrent } = makeRepo(existing)
+      const service = createSubscriptionService(repo)
+
+      // Repro: intent emitido y abandonado, después el cliente paga con PayPal.
+      await service.whopCheckoutIntent("store-1")
+      assert.equal(getCurrent()!.provider, "whop")
+
+      await service.checkout("store-1", "https://ok", "https://cancel")
+
+      assert.equal(getCurrent()!.provider, "paypal")
+      assert.equal(getCurrent()!.paypal_subscription_id, "I-PAYPAL-NEW")
+
+      await service.cancel("store-1")
+
+      assert.equal(paypalCancel.mock.callCount(), 1)
+      assert.equal(whopCancel.mock.callCount(), 0)
     })
   })
 })

@@ -7,7 +7,9 @@ import type {
 export interface ISubscriptionRepository {
   getByStoreId(storeId: string): Promise<ISubscriptionEntity | null>
   getByPaypalSubscriptionId(paypalSubscriptionId: string): Promise<ISubscriptionEntity | null>
+  getByWhopMembershipId(whopMembershipId: string): Promise<ISubscriptionEntity | null>
   findPaypalSubscriptions(skip: number, take: number): Promise<ISubscriptionEntity[]>
+  findWhopSubscriptions(skip: number, take: number): Promise<ISubscriptionEntity[]>
   upsertCloud(storeId: string, data: CloudPendingInput): Promise<ISubscriptionEntity>
   update(storeId: string, data: UpdateSubscriptionInput): Promise<ISubscriptionEntity | null>
 }

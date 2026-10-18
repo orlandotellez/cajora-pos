@@ -19,6 +19,11 @@ export const SUBSCRIPTION_EVENT_ACTIONS = {
   WEBHOOK_EXPIRED: "webhook_expired",
   WEBHOOK_SALE_COMPLETED: "webhook_sale_completed",
   WEBHOOK_PAYMENT_FAILED: "webhook_payment_failed",
+  WEBHOOK_WHOP_ACTIVATED: "webhook_whop_activated",
+  WEBHOOK_WHOP_UPDATED: "webhook_whop_updated",
+  WEBHOOK_WHOP_CANCELED: "webhook_whop_canceled",
+  WEBHOOK_WHOP_PAST_DUE: "webhook_whop_past_due",
+  WEBHOOK_WHOP_EXPIRED: "webhook_whop_expired",
   ADMIN_STATUS_CHANGE: "admin_status_change",
 } as const
 export type SubscriptionEventAction =
