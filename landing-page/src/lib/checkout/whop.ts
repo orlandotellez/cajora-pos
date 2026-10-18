@@ -111,7 +111,11 @@ export function createWhop(opts: {
 
     try {
       // Mismo manejo de auth que paypal.ts: cookies en web, Bearer bajo Tauri.
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      //
+      // Sin body no se manda `Content-Type`: Fastify rechaza un POST que declara
+      // `application/json` y viene vacío (FST_ERR_CTP_EMPTY_JSON_BODY) y responde 400
+      // antes de ejecutar el handler. Este endpoint recibe todo por la sesión.
+      const headers: Record<string, string> = {};
       const fetchOpts: RequestInit = {};
       if (isNativeApp && opts.getToken()) {
         headers.Authorization = `Bearer ${opts.getToken()}`;
