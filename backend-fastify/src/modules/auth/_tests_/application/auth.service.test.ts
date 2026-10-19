@@ -204,8 +204,23 @@ function makeRepo(overrides: AuthRepoOverrides = {}) {
 }
 
 describe("register", () => {
-  beforeEach(() => mock.restore())
-  afterEach(() => mock.restore())
+  // `register` crea la cuenta SIN verificar y el test asserta ese estado: se fija el flag
+  // para no depender del `.env`. Con `EMAIL_VERIFICATION=false` el mapper la presenta como
+  // verificada y el assert fallaría por una razón ajena a lo que se está probando.
+  let originalEmailVerification: boolean
+
+  beforeEach(async () => {
+    mock.restore()
+    const { env } = await import("@/config/env")
+    originalEmailVerification = env.EMAIL_VERIFICATION
+    env.EMAIL_VERIFICATION = true
+  })
+
+  afterEach(async () => {
+    const { env } = await import("@/config/env")
+    env.EMAIL_VERIFICATION = originalEmailVerification
+    mock.restore()
+  })
 
   it("creates a user, hashes the password and returns fresh tokens", async () => {
     const accountArgs: unknown[] = []
