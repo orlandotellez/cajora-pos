@@ -140,6 +140,11 @@ const {
     </script>
     <script>
       import { goToPosWithSso } from "../lib/sso";
+      // El refresh de sesión vive en el helper compartido: así el chequeo de este layout y
+      // el de la página comparten UNA sola promesa de refresh. Con una copia local, dos
+      // requests que vencen a la vez pedían dos refreshes y el segundo llegaba con un
+      // token ya rotado (el backend lo rota al renovar), deslogueando al usuario.
+      import { fetchWithRefresh } from "../lib/fetch-with-refresh";
       (() => {
         const isNativeApp = '__TAURI__' in window;
         const readSession = () => {
@@ -178,19 +183,6 @@ const {
           fetchHeaders['Authorization'] = `Bearer ${session.accessToken}`;
         } else if (!isNativeApp) {
           fetchOpts.credentials = 'include';
-        }
-
-        async function fetchWithRefresh(url, opts) {
-          const first = await fetch(url, opts);
-          if (isNativeApp || first.status !== 401) return first;
-          try {
-            const refreshRes = await fetch(`${apiUrl}/auth/refresh`, {
-              method: 'POST',
-              credentials: 'include',
-            });
-            if (refreshRes.ok) return fetch(url, opts);
-          } catch {}
-          return first;
         }
 
         const fetcher = isNativeApp
