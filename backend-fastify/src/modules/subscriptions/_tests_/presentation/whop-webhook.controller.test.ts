@@ -20,8 +20,9 @@ function isoFromNow(days: number): string {
 }
 
 /**
- * El verifier real se desactiva por env (`WHOP_ENABLED=false`) salvo en el test de
- * firma inválida: así el resto de los casos ejercita el controller sin firmar payloads.
+ * El verificador real se desactiva en el `beforeEach` (`WHOP_ENABLED=false`) salvo en el
+ * test de firma inválida: así el resto de los casos ejercita el controller sin firmar
+ * payloads, y el resultado no cambia según cómo esté el `.env` del entorno.
  */
 function buildRequest(rawBody: string, headers: Record<string, string> = {}) {
   return {
@@ -107,8 +108,17 @@ function body(type: string, data: Record<string, unknown>): string {
 }
 
 describe("whopWebhookController.receive", () => {
+  // Valor real del entorno, para restaurarlo al final: los tests NO deben depender del
+  // `.env`. Con `WHOP_ENABLED=true` (el valor de producción) el controller rechazaría
+  // estos payloads sin firma y los casos fallarían por una razón ajena a lo que prueban.
+  const originalWhopEnabled = env.WHOP_ENABLED
+
   beforeEach(() => {
     mock.restoreAll()
+    // Asignación directa y NO `mock.property`: el test de firma inválida vuelve a mockear
+    // esta misma propiedad, y node:test falla al restaurar dos mocks anidados sobre la
+    // misma clave ("'value' present on property with getter or setter").
+    env.WHOP_ENABLED = false
     // Auditoría a DB real: se mockea en cada test que la ejercita.
     mock.method(SubscriptionEventRepository, "create", async () => {})
     // El insert real devuelve la fila persistida (con el payload); el mock lo imita
@@ -128,7 +138,10 @@ describe("whopWebhookController.receive", () => {
       makeOutbox({ processed_at: new Date() }),
     )
   })
-  afterEach(() => mock.restoreAll())
+  afterEach(() => {
+    env.WHOP_ENABLED = originalWhopEnabled
+    mock.restoreAll()
+  })
 
   it("firma inválida → ACK 200 sin insertar en el outbox ni tocar la DB", async () => {
     mock.property(env, "WHOP_ENABLED", true)
