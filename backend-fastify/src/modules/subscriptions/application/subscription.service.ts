@@ -71,9 +71,22 @@ async function defaultFindOwnerEmail(storeId: string): Promise<string | null> {
  * guard, cualquiera de los dos podría cancelar o reemplazar una sub activa.
  */
 function assertNotAlreadySubscribed(existing: ISubscriptionEntity | null): void {
-  if (existing?.status === "active" && resolveEntitlement(existing).allowed) {
-    throw new ConflictError("Ya tenés una suscripción Cloud activa.")
-  }
+  // Se mira el ACCESO y no el `status`: una suscripción `canceled` con período vigente
+  // sigue dando acceso. Aceptar un pago nuevo ahí cobra sin sumar tiempo, porque el
+  // período que asigna el proveedor puede terminar antes que el que ya está pagado, y
+  // `buildMembershipUpdate` nunca recorta: el cliente pagaría al vicio.
+  if (!existing || !resolveEntitlement(existing).allowed) return
+
+  // Excepción deliberada: `past_due` significa que el cobro falló y el cliente viene a
+  // arreglarlo pagando. Bloquearlo ahí sería justo lo contrario de lo que necesita.
+  if (existing.status === "past_due") return
+
+  const until = existing.current_period_end
+    ? ` hasta el ${existing.current_period_end.toLocaleDateString("es-AR")}`
+    : ""
+  throw new ConflictError(
+    `Ya tenés una suscripción con acceso vigente${until}. Podés volver a suscribirte cuando termine el período.`,
+  )
 }
 
 function extractSaleAmount(payload: unknown): { amount: string; currency: string } {

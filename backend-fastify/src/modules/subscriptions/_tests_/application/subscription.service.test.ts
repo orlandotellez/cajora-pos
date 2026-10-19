@@ -1606,4 +1606,46 @@ describe("SubscriptionService", () => {
       assert.equal(created.length, 0)
     })
   })
+
+  describe("checkout · guard de suscripción vigente", () => {
+    it("canceled CON período vigente → rechaza el checkout (no se paga sin sumar tiempo)", async () => {
+      // Regresión: el guard miraba `status === "active"`. Con una cancelación ya
+      // programada el status es `canceled` aunque el período siga vigente, así que el
+      // cliente podía pagar otra vez y no ganar ni un día: `buildMembershipUpdate` nunca
+      // recorta el período ya pagado.
+      const existing = makeEntity({
+        status: "canceled",
+        cancel_at_period_end: true,
+        current_period_end: new Date(Date.now() + 20 * DAY_MS),
+      })
+      const { repo } = makeRepo(existing)
+      const service = createSubscriptionService(repo)
+
+      await assert.rejects(
+        () => service.checkout("store-1", "https://ok", "https://cancel"),
+        (err: unknown) =>
+          err instanceof ConflictError && /acceso vigente/.test((err as Error).message),
+      )
+    })
+
+    it("canceled con período VENCIDO → permite volver a suscribirse", async () => {
+      const existing = makeEntity({
+        status: "canceled",
+        current_period_end: new Date(Date.now() - 10 * DAY_MS),
+      })
+      mock.method(paypalClient, "createSubscription", async () => ({
+        id: "I-NEW",
+        approvalUrl: "https://approve",
+        status: "APPROVAL_PENDING",
+        planId: "P-1",
+      }))
+      const { repo } = makeRepo(existing)
+      const service = createSubscriptionService(repo)
+
+      const res = await service.checkout("store-1", "https://ok", "https://cancel")
+
+      assert.equal(res.paypalSubscriptionId, "I-NEW")
+    })
+  })
+
 })
