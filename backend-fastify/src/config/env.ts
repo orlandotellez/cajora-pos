@@ -4,7 +4,7 @@ import { logger } from "./logger";
 
 dotenv.config();
 
-const envSchema = z.object({
+export const envSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   PORT: z.coerce.number().default(3000),
   HOST: z.string().default("0.0.0.0"),
@@ -29,6 +29,11 @@ const envSchema = z.object({
   // default contrario mandaría datos de prueba a la cuenta real (o al revés) sin que
   // nadie lo pida. PayPal usa el default opuesto; acá se prioriza no sorprender.
   WHOP_SANDBOX: z.string().default("false").transform((v) => v === "true"),
+
+  // Verificación de correo al crear la cuenta. Con `false` la cuenta nace verificada y no
+  // se envía ningún código: sirve para dar de alta tiendas en desarrollo sin depender de un
+  // email real ni de RESEND_API_KEY. NO se permite en producción (ver el `refine` de abajo).
+  EMAIL_VERIFICATION: z.string().default("true").transform((v) => v === "true"),
   WHOP_API_KEY: z.string().default(""),
   WHOP_WEBHOOK_SECRET: z.string().default(""),
   WHOP_PLAN_ID_MONTHLY: z.string().default(""),
@@ -41,6 +46,13 @@ const envSchema = z.object({
 
   RECONCILE_INTERVAL_MS: z.coerce.number().default(3_600_000),
   RECONCILE_ON_START: z.string().default("true").transform((v) => v === "true"),
+}).refine((data) => !(data.NODE_ENV === "production" && !data.EMAIL_VERIFICATION), {
+  // Fail closed: desactivar la verificación crea cuentas ya verificadas, así que en
+  // producción cualquiera podría registrarse con un email ajeno. Preferimos que el
+  // proceso no arranque antes que aceptar altas sin comprobar el correo.
+  message:
+    "EMAIL_VERIFICATION=false no se permite con NODE_ENV=production: crearía usuarios ya verificados sin comprobar el correo.",
+  path: ["EMAIL_VERIFICATION"],
 });
 
 const _env = envSchema.safeParse(process.env);
