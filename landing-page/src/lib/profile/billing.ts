@@ -21,6 +21,8 @@ interface BillingData {
 }
 
 const OVERDUE_HINT = 'Tu período venció y no pudimos cobrar la renovación.';
+const CANCELED_HINT =
+  'Tu suscripción está cancelada: mantenés el acceso hasta esa fecha y no se renueva.';
 // Copia original del estado vacío: el catch la pisa con el error y, como la tarjeta
 // se re-renderiza, hay que poder devolverla a su lugar.
 const EMPTY_HINT = 'Todavía no hay cobros. Tu primer pago se registrará acá al activar la suscripción.';
@@ -83,9 +85,18 @@ export async function renderBilling(fetchOpts: { headers?: Record<string, string
     } else if (data.next_payment_at) {
       billingNext.hidden = false;
       billingNext.classList.remove('is-overdue');
-      // Con la cancelación ya programada no hay próximo pago: la fecha es el fin del
-      // acceso, y la cuenta regresiva usa el mismo verbo que la tarjeta de suscripción.
-      billingNextLabel.textContent = data.cancel_at_period_end ? 'Fin del período' : 'Próxima fecha de pago';
+      // Con la cancelación programada la fecha deja de ser una renovación: pasa a ser el
+      // fin del ACCESO. La etiqueta y el aviso lo dicen explícitamente, porque una fecha
+      // suelta se lee como si la suscripción todavía fuera a renovarse.
+      if (data.cancel_at_period_end) {
+        billingNextLabel.textContent = 'Acceso hasta';
+        if (hint) {
+          hint.textContent = CANCELED_HINT;
+          hint.hidden = false;
+        }
+      } else {
+        billingNextLabel.textContent = 'Próxima fecha de pago';
+      }
       billingNextDate.textContent = formatDate(data.next_payment_at);
       // Solo cuando el cobro está al día: en past_due el texto de la tarjeta ya dice
       // que el pago falló, y anunciar una renovación lo contradiría.
