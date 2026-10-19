@@ -77,7 +77,16 @@ async function whopRequest<T>(path: string, init: RequestInit = {}): Promise<T> 
   const body = (await res.json().catch(() => null)) as (T & WhopErrorBody) | null
 
   if (!res.ok) {
-    throw new AppError("Fallo temporal del proveedor de pagos", 502, "WHOP_UPSTREAM_ERROR")
+    // El status y el mensaje de Whop van en el error a propósito: un 401 por usar una key
+    // de sandbox contra la API de producción se veía como "fallo temporal del proveedor" y
+    // costó una sesión entera de diagnóstico. El statusCode sigue siendo 502 (el fallo es
+    // del upstream desde el punto de vista del cliente), pero el texto dice la verdad.
+    const detail = body?.message ?? body?.error ?? ""
+    throw new AppError(
+      `Whop respondió ${res.status}${detail ? `: ${detail}` : ""}`,
+      502,
+      "WHOP_UPSTREAM_ERROR",
+    )
   }
 
   return body as T
