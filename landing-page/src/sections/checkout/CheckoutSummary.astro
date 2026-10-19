@@ -7,7 +7,7 @@
   <div class="summary__plan">
     <div>
       <span class="summary__plan-name">Suscripción Cloud</span>
-      <span class="summary__plan-tag">Recomendado</span>
+      <span class="summary__plan-tag" data-summary-tag>Recomendado</span>
     </div>
     <div class="summary__plan-price">
       <span class="summary__amount">$12.99</span>
@@ -15,7 +15,7 @@
     </div>
   </div>
 
-  <p class="summary__note">Cancelá cuando quieras</p>
+  <p class="summary__note" data-summary-note>Cancelá cuando quieras</p>
 
   <dl class="summary__store">
     <div class="summary__store-row">
@@ -98,6 +98,18 @@
     font-size: 0.8125rem;
     font-weight: 600;
     margin: 0.75rem 0 1.25rem;
+  }
+
+  /* Paso final: el plan ya está comprado, así que la etiqueta deja de ser una
+     recomendación. El texto lo cambia `setStep`; acá solo cambia la piel. */
+  .checkout__summary.is-complete .summary__plan-tag {
+    background: var(--green);
+    color: #04120c;
+  }
+
+  /* Comparar planes no tiene sentido con la suscripción ya activa. */
+  .checkout__summary.is-complete .summary__plans-link {
+    display: none;
   }
 
   .summary__store {
