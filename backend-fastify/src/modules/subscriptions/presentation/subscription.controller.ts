@@ -62,6 +62,14 @@ export const subscriptionController = {
     return reply.status(200).send(result)
   },
 
+  whopSync: async (request: FastifyRequest, reply: FastifyReply) => {
+    const result = await subscriptionService.syncWhopMembership(
+      requireStoreId(request),
+      buildActor(request),
+    )
+    return reply.status(200).send(result)
+  },
+
   activate: async (request: FastifyRequest, reply: FastifyReply) => {
     const { paypal_subscription_id } = ActivateSubscriptionDtoSchema.parse(request.body)
     const result = await subscriptionService.activate(

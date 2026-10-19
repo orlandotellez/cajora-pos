@@ -111,3 +111,35 @@ describe("mapStoreToResponse", () => {
     assert.equal(res.phone, undefined)
   })
 })
+
+/**
+ * El flag es de desarrollo: con la verificación desactivada la cuenta se presenta como
+ * verificada para que el cliente no quede esperando un código que nunca se envía. Cubre
+ * las cuentas creadas ANTES de activar el flag, que quedaron con `email_verified: false`.
+ */
+describe("mapUserToResponse · EMAIL_VERIFICATION", () => {
+  it("desactivada → presenta la cuenta como verificada aunque la fila diga lo contrario", async () => {
+    const { env } = await import("@/config/env")
+    const original = env.EMAIL_VERIFICATION
+    env.EMAIL_VERIFICATION = false
+
+    try {
+      assert.equal(mapUserToResponse(makeUser({ email_verified: false })).email_verified, true)
+    } finally {
+      env.EMAIL_VERIFICATION = original
+    }
+  })
+
+  it("activa (default) → respeta el valor real de la fila", async () => {
+    const { env } = await import("@/config/env")
+    const original = env.EMAIL_VERIFICATION
+    env.EMAIL_VERIFICATION = true
+
+    try {
+      assert.equal(mapUserToResponse(makeUser({ email_verified: false })).email_verified, false)
+      assert.equal(mapUserToResponse(makeUser({ email_verified: true })).email_verified, true)
+    } finally {
+      env.EMAIL_VERIFICATION = original
+    }
+  })
+})

@@ -16,6 +16,15 @@ const whopConfigured = Boolean(import.meta.env.PUBLIC_WHOP_PLAN_ID);
     <span data-success-prefix>✓ Tienda </span><strong data-success-store></strong><span data-success-suffix> creada — completá el pago abajo.</span>
   </div>
 
+  {/* Confirmación del pago: SIEMPRE visible, fuera del bloque de Whop. El retorno puede
+      venir del checkout hospedado —donde no hay bloque Whop— y con el aviso adentro el
+      comprador veía un delay sin ninguna señal. Mientras confirma, las opciones de pago
+      quedan ocultas para no invitarlo a pagar dos veces. */}
+  <div class="pay__loading pay__confirming" data-pay-confirming role="status" hidden>
+    <span class="pay__spinner" aria-hidden="true"></span>
+    <span data-pay-confirming-text>Estamos confirmando tu pago…</span>
+  </div>
+
   {whopConfigured && (
     <div class="pay-whop" data-whop-block hidden>
       <!-- Primario: el contenedor queda oculto hasta que el embed monta de verdad. -->
@@ -25,6 +34,13 @@ const whopConfigured = Boolean(import.meta.env.PUBLIC_WHOP_PLAN_ID);
         <span>Cargando método de pago...</span>
       </div>
       <p class="pay__pending" data-whop-pending role="status" hidden></p>
+      <!-- Recuperación: si el pago ya se hizo pero el webhook de Whop todavía no
+           llegó (o no hubo retorno al landing), el comprador verifica acá sin
+           volver a pagar. Visible también en el estado "confirmando el pago". -->
+      <button type="button" class="checkout__link pay__sync" data-whop-sync>
+        Ya pagué, verificar
+      </button>
+      <p class="pay__sync-status" data-whop-sync-status role="status" hidden></p>
     </div>
   )}
 
@@ -117,6 +133,28 @@ const whopConfigured = Boolean(import.meta.env.PUBLIC_WHOP_PLAN_ID);
     flex-shrink: 0;
   }
 
+  /* El aviso de confirmación es el momento de más incertidumbre del checkout: el spinner
+     se agranda y el texto se destaca para que sea imposible pasar por alto. */
+  .pay__confirming {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 3rem 0;
+  }
+
+  .pay__confirming .pay__spinner {
+    width: 56px;
+    height: 56px;
+    border-width: 5px;
+  }
+
+  .pay__confirming [data-pay-confirming-text] {
+    font-size: 1rem;
+    color: var(--text);
+    text-align: center;
+    max-width: 28rem;
+    line-height: 1.5;
+  }
+
   @keyframes pay-spin {
     to {
       transform: rotate(360deg);
@@ -151,6 +189,25 @@ const whopConfigured = Boolean(import.meta.env.PUBLIC_WHOP_PLAN_ID);
     border-radius: var(--radius);
     padding: 0.625rem 0.75rem;
     margin-top: 0.75rem;
+  }
+
+  /* Recuperación manual del pago: link discreto, siempre visible cuando el panel
+     de Whop está desplegado (incluido el estado pendiente). */
+  .pay__sync {
+    display: block;
+    margin: 0.875rem auto 0;
+  }
+
+  .pay__sync:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .pay__sync-status {
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+    text-align: center;
+    margin-top: 0.5rem;
   }
 
   .checkout__link {

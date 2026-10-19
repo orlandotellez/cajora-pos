@@ -1,5 +1,6 @@
 import { formatDate } from './format';
 import { renderCountdown } from './countdown';
+import { renderBilling } from './billing';
 
 export interface Subscription {
   plan: string;
@@ -149,11 +150,37 @@ export function renderSub(sub: Subscription): void {
   }
 }
 
+/**
+ * Copy para mostrar en la zona de peligro. La API responde 409 con un mensaje
+ * accionable (por ejemplo "ya está cancelada en Whop..."), así que ese texto se muestra
+ * tal cual. Un 5xx es fallo del servidor: el detalle del upstream no le dice nada al
+ * cliente, así que ahí se usa el copy propio.
+ */
+async function errorMessage(res: Response, fallback: string): Promise<string> {
+  if (res.status >= 500) return fallback;
+  const data = (await res.json().catch(() => null)) as { message?: unknown } | null;
+  const message = typeof data?.message === 'string' ? data.message.trim() : '';
+  return message || fallback;
+}
+
 export function initSubscriptionActions(fetchOpts: { headers?: Record<string, string>; credentials?: RequestCredentials }): void {
   const cancelBtn = document.querySelector<HTMLElement>('[data-profile-cancel]')!;
   const cancelDialog = document.querySelector<HTMLDialogElement>('[data-cancel-dialog]')!;
   const cancelDismiss = document.querySelector<HTMLElement>('[data-cancel-dismiss]')!;
   const cancelConfirm = document.querySelector<HTMLElement>('[data-cancel-confirm]')!;
+  const dangerError = document.querySelector<HTMLElement>('[data-danger-error]')!;
+
+  // Un solo nodo para los dos fallos: se limpia al arrancar cada intento y se oculta
+  // cuando el pedido sale bien.
+  function showDangerError(message: string): void {
+    dangerError.textContent = message;
+    dangerError.hidden = false;
+  }
+
+  function clearDangerError(): void {
+    dangerError.textContent = '';
+    dangerError.hidden = true;
+  }
 
   cancelBtn.addEventListener('click', () => {
     cancelDialog.showModal();
@@ -167,29 +194,41 @@ export function initSubscriptionActions(fetchOpts: { headers?: Record<string, st
   });
   cancelConfirm.addEventListener('click', async () => {
     cancelDialog.close();
+    clearDangerError();
     try {
       const res = await fetch(`${apiUrl}/subscriptions/cancel`, {
         method: 'POST',
         ...fetchOpts,
       });
-      if (!res.ok) throw new Error('No se pudo cancelar la suscripción.');
+      if (!res.ok) {
+        showDangerError(await errorMessage(res, 'No se pudo cancelar la suscripción.'));
+        return;
+      }
       renderSub((await res.json()) as Subscription);
-    } catch (err) {
-      window.alert(err instanceof Error ? err.message : 'No se pudo cancelar la suscripción.');
+      // La tarjeta de Facturación también habla de la renovación: hay que refrescarla
+      // en la misma pasada o el cliente ve "se renueva" hasta que recarga a mano.
+      await renderBilling(fetchOpts);
+    } catch {
+      showDangerError('No se pudo cancelar la suscripción.');
     }
   });
 
   const reactivateBtn = document.querySelector<HTMLElement>('[data-profile-reactivate]')!;
   reactivateBtn.addEventListener('click', async () => {
+    clearDangerError();
     try {
       const res = await fetch(`${apiUrl}/subscriptions/reactivate`, {
         method: 'POST',
         ...fetchOpts,
       });
-      if (!res.ok) throw new Error('No se pudo reactivar la suscripción.');
+      if (!res.ok) {
+        showDangerError(await errorMessage(res, 'No se pudo reactivar la suscripción.'));
+        return;
+      }
       renderSub((await res.json()) as Subscription);
-    } catch (err) {
-      window.alert(err instanceof Error ? err.message : 'No se pudo reactivar la suscripción.');
+      await renderBilling(fetchOpts);
+    } catch {
+      showDangerError('No se pudo reactivar la suscripción.');
     }
   });
 }

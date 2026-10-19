@@ -8,15 +8,19 @@ import type { WhopMembership } from "../domain/whop-membership"
 import { SubscriptionRepository } from "../infrastructure/subscription.prisma.repository"
 import { WhopWebhookEventRepository } from "../infrastructure/whop-webhook-event.prisma.repository"
 import { SubscriptionEventRepository } from "../infrastructure/subscription-event.prisma.repository"
+import { SUBSCRIPTION_EVENT_ACTIONS } from "../domain/subscription-event.interface"
 import type { SubscriptionEventAction } from "../domain/subscription-event.interface"
 import type { ISubscriptionEntity } from "../domain/subscription.entities"
 import { verifyCheckoutRef } from "../domain/whop-checkout-ref"
 import { buildMembershipUpdate, translateWhopStatus } from "../domain/whop-membership-sync"
+import { OwnerLookup } from "../infrastructure/owner-lookup"
 
 /** Envelope estándar de los webhooks de Whop. */
 interface WhopWebhookData {
   id?: string
   membership_id?: string
+  /** El comprador. `GET /memberships/{id}` NO devuelve este email; el payload sí. */
+  user?: { email?: string | null } | null
 }
 
 interface WhopWebhookPayload {
@@ -55,6 +59,7 @@ async function auditMembershipEvent(
   sub: ISubscriptionEntity,
   action: SubscriptionEventAction,
   whopStatus: string,
+  extraMetadata?: Record<string, unknown>,
 ): Promise<void> {
   try {
     await SubscriptionEventRepository.create({
@@ -62,10 +67,71 @@ async function auditMembershipEvent(
       user_id: null,
       action,
       paypal_subscription_id: null,
-      metadata: { event_type: ev.event_type, event_id: ev.event_id, whop_status: whopStatus },
+      metadata: {
+        event_type: ev.event_type,
+        event_id: ev.event_id,
+        whop_status: whopStatus,
+        ...extraMetadata,
+      },
     })
   } catch (err) {
     log.warn({ err, eventId: ev.event_id }, "No se pudo auditar el evento de Whop.")
+  }
+}
+
+/**
+ * Monto del ciclo que Whop reporta en la membership: `renewal_price` manda sobre
+ * `initial_price`, y la moneda sale del MISMO objeto que aportó el monto. Si ninguno
+ * trae monto se devuelve `null` y el cobro se registra sin `amount`/`currency`: no se
+ * inventa un número, `getBilling` cae solo al precio del plan.
+ */
+function whopChargePrice(membership: WhopMembership): { amount: string; currency: string } | null {
+  const price = membership.renewal_price?.amount ? membership.renewal_price : membership.initial_price
+  if (!price?.amount) return null
+  return { amount: price.amount, currency: price.currency }
+}
+
+/**
+ * Cobro de un `membership.activated` (Whop lo emite para la compra inicial y para
+ * cada renovación exitosa). Escribe la fila `webhook_sale_completed` que `getBilling`
+ * ya sabe leer para poblar la tarjeta de Facturación.
+ *
+ * Es no fatal, igual que la auditoría: un fallo al registrar el cobro no puede
+ * convertir en 500 un update que ya se aplicó.
+ *
+ * NO se usa `createIdempotent`: su clave de unicidad incluye `paypal_subscription_id`,
+ * que en Whop es siempre NULL, y Postgres trata los NULL como distintos. La
+ * idempotencia ya la da el outbox (`event_id` UNIQUE en `whop_webhook_events`), que
+ * despacha cada evento exactamente una vez.
+ */
+async function recordWhopCharge(
+  log: FastifyRequest["log"],
+  ev: whop_webhook_event,
+  sub: ISubscriptionEntity,
+  membership: WhopMembership,
+): Promise<void> {
+  const price = whopChargePrice(membership)
+  // `renewal_period_start` es el inicio del ciclo cobrado; sin él, el momento del evento.
+  const periodStart = membership.renewal_period_start
+    ? new Date(membership.renewal_period_start)
+    : new Date()
+
+  try {
+    await SubscriptionEventRepository.create({
+      store_id: sub.store_id,
+      user_id: null,
+      action: SUBSCRIPTION_EVENT_ACTIONS.WEBHOOK_SALE_COMPLETED,
+      paypal_subscription_id: null,
+      period_start: periodStart,
+      metadata: {
+        source: "whop_webhook",
+        event_id: ev.event_id,
+        whop_membership_id: membership.id,
+        ...(price ? { amount: price.amount, currency: price.currency } : {}),
+      },
+    })
+  } catch (err) {
+    log.warn({ err, eventId: ev.event_id }, "No se pudo registrar el cobro del evento de Whop.")
   }
 }
 
@@ -91,6 +157,7 @@ async function applyMembershipState(
   sub: ISubscriptionEntity,
   membership: WhopMembership,
   link = false,
+  auditSource?: string,
 ): Promise<void> {
   const translated = translateWhopStatus(membership)
   if (!translated) {
@@ -113,7 +180,14 @@ async function applyMembershipState(
     await SubscriptionRepository.update(sub.store_id, linkFields)
   }
 
-  await auditMembershipEvent(log, ev, sub, translated.action, membership.status)
+  await auditMembershipEvent(
+    log,
+    ev,
+    sub,
+    translated.action,
+    membership.status,
+    auditSource ? { source: auditSource } : undefined,
+  )
 }
 
 /**
@@ -147,12 +221,31 @@ async function dispatch(request: FastifyRequest, ev: whop_webhook_event): Promis
   const byMembership = await SubscriptionRepository.getByWhopMembershipId(membership.id)
   let sub: ISubscriptionEntity
   let firstPurchase = false
+  let auditSource: string | undefined
   if (byMembership) {
     sub = byMembership
   } else {
     // Primera compra: todavía no hay fila con `whop_membership_id`. El puente es la
     // referencia firmada que el checkout mandó como `metadata.ref`.
-    const storeId = storeIdFromCheckoutRef(membership)
+    const refStoreId = storeIdFromCheckoutRef(membership)
+    // Orden de señales: membership id → referencia firmada → email del comprador.
+    // La referencia firmada es más fuerte que un match por email, así que nunca se
+    // saltea en su favor.
+    let storeId = refStoreId
+    let linkedByEmail = false
+    if (!storeId) {
+      // El email sale del PAYLOAD del evento, no de la respuesta de la API: `GET
+      // /memberships/{id}` no devuelve `user.email` (llega `undefined`), así que leerlo de
+      // ahí dejaba este camino muerto incluso con el email correcto. El payload sí lo trae
+      // y viene firmado por Whop.
+      const buyerEmail = event.data?.user?.email ?? membership.user?.email
+      // Compradores de la página hospedada de Whop no llevan `metadata.ref`; el
+      // email del dueño es el último recurso para no dejarlos `pending`.
+      if (buyerEmail && buyerEmail.trim()) {
+        storeId = await OwnerLookup.findStoreIdByOwnerEmail(buyerEmail)
+        linkedByEmail = storeId !== null
+      }
+    }
     if (!storeId) {
       log.warn(
         { membershipId: membership.id },
@@ -162,15 +255,30 @@ async function dispatch(request: FastifyRequest, ev: whop_webhook_event): Promis
     }
     const byStore = await SubscriptionRepository.getByStoreId(storeId)
     if (!byStore) {
-      // La referencia es válida pero la tienda no tiene fila: no se inventa una.
-      log.warn({ storeId }, "La referencia de checkout no matchea ninguna suscripción local.")
+      // La tienda resolvió, pero no tiene fila: no se inventa una.
+      log.warn(
+        { storeId },
+        linkedByEmail
+          ? "El email del comprador no matchea ninguna suscripción local."
+          : "La referencia de checkout no matchea ninguna suscripción local.",
+      )
       return
     }
     sub = byStore
     firstPurchase = true
+    // La vinculación por email se marca en la auditoría para distinguirla del
+    // vínculo firmado del checkout embebido.
+    auditSource = linkedByEmail ? "webhook_email_link" : undefined
   }
 
-  await applyMembershipState(log, ev, sub, membership, firstPurchase)
+  await applyMembershipState(log, ev, sub, membership, firstPurchase, auditSource)
+
+  // Solo un `membership.activated` que deja acceso cobra: `membership.updated`,
+  // `deactivated`, `payment.*` e `invoice.*` no registran cobro. El cobro se registra
+  // DESPUÉS de aplicar el estado, para no tocar la tabla de estados ni el período.
+  if (ev.event_type === "membership.activated" && translateWhopStatus(membership)?.status === "active") {
+    await recordWhopCharge(log, ev, sub, membership)
+  }
 }
 
 /**

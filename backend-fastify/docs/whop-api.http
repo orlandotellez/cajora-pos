@@ -20,6 +20,9 @@
 #   5. #5 y #6 sobre una membership de prueba -> confirma el scope de escritura
 
 @base_url      = https://api.whop.com/api/v1
+# Sandbox: comentá la línea de arriba y descomentá esta. OJO con el guion: la API del
+# sandbox es `sandbox-api.whop.com`; `sandbox.whop.com` es el dashboard y NO responde la API.
+# @base_url    = https://sandbox-api.whop.com/api/v1
 @api_key       = PEGAR_TU_API_KEY_ACA
 @account_id    = PEGAR_TU_ACCOUNT_ID_ACA
 @membership_id = PEGAR_TU_MEMBERSHIP_ID_ACA

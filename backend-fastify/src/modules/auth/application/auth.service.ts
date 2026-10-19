@@ -79,7 +79,8 @@ export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISs
       name,
       email: normalized,
       role,
-      email_verified: false,
+      // La cuenta nace verificada cuando la verificación está desactivada.
+      email_verified: !env.EMAIL_VERIFICATION,
       store_id: storeId,
     })
 
@@ -98,11 +99,15 @@ export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISs
     })
 
     // Enviar el código por email (falla ruidosamente si no se puede enviar).
-    const emailResult = await sendVerificationCodeEmail(user.email, verificationCode)
-    if (!emailResult.ok) {
-      throw new InternalServerError(
-        emailResult.error ?? "No se pudo enviar el código de verificación.",
-      )
+    // Con `EMAIL_VERIFICATION=false` no se envía nada: la cuenta ya nace verificada y dar de
+    // alta una tienda en desarrollo no debe depender de tener RESEND_API_KEY configurada.
+    if (env.EMAIL_VERIFICATION) {
+      const emailResult = await sendVerificationCodeEmail(user.email, verificationCode)
+      if (!emailResult.ok) {
+        throw new InternalServerError(
+          emailResult.error ?? "No se pudo enviar el código de verificación.",
+        )
+      }
     }
 
     const store = await getStoreInfo(storeId)
@@ -160,7 +165,8 @@ export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISs
           email: normalizedAdminEmail,
           role: "admin",
           is_owner: true,
-          email_verified: false,
+          // La cuenta nace verificada cuando la verificación está desactivada.
+          email_verified: !env.EMAIL_VERIFICATION,
           store_id: store.id,
         },
       })
@@ -205,17 +211,21 @@ export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISs
     })
 
     // Generar y enviar código de verificación por email (falla ruidosamente si no se puede enviar).
+    // Con `EMAIL_VERIFICATION=false` no se envía: la cuenta ya nace verificada y el alta de una
+    // tienda en desarrollo no debe depender de tener RESEND_API_KEY configurada.
     const verificationCode = generateVerificationCode()
     await repository.verification.create({
       identifier: result.user.email,
       value: verificationCode,
       expiresAt: new Date(Date.now() + VERIFICATION_CODE_EXPIRY),
     })
-    const emailResult = await sendVerificationCodeEmail(result.user.email, verificationCode)
-    if (!emailResult.ok) {
-      throw new InternalServerError(
-        emailResult.error ?? "No se pudo enviar el código de verificación.",
-      )
+    if (env.EMAIL_VERIFICATION) {
+      const emailResult = await sendVerificationCodeEmail(result.user.email, verificationCode)
+      if (!emailResult.ok) {
+        throw new InternalServerError(
+          emailResult.error ?? "No se pudo enviar el código de verificación.",
+        )
+      }
     }
 
     return {
@@ -224,7 +234,10 @@ export const createAuthService = (repository: IAuthRepository, ssoCodeStore: ISs
         id: result.user.id,
         name: result.user.name,
         email: result.user.email,
-        email_verified: false,
+        // Se lee de la fila creada, no se asume: con la verificación desactivada la cuenta
+        // nace verificada y hardcodear `false` haría que el landing pidiera un código
+        // que nunca se envió.
+        email_verified: result.user.email_verified,
         role: "admin",
         is_owner: true,
         is_active: true,

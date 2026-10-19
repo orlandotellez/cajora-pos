@@ -1,4 +1,5 @@
 import { env } from "@/config/env"
+import { prisma } from "@/config/prisma"
 import { AppError, ConflictError } from "@/core/errors/AppError"
 import { paypalClient } from "../infrastructure/paypal.client"
 import { whopClient } from "../infrastructure/whop.client"
@@ -16,12 +17,52 @@ import { mapToResponse } from "./common/subscriptions.mappers"
 import { resolveEntitlement } from "../domain/subscription.entitlement"
 import { periodEnd } from "../domain/subscription.period"
 import { createCheckoutRef } from "../domain/whop-checkout-ref"
+import { buildMembershipUpdate } from "../domain/whop-membership-sync"
 
 const PLAN_PRICE = "12.99"
 const PLAN_CURRENCY = "USD"
 
+/**
+ * Estados de Whop que conceden acceso. La reconciliación manual solo vincula con
+ * uno de estos: `past_due`/`canceled`/`expired` no deben otorgar acceso por la
+ * puerta de atrás de una sincronización por email.
+ */
+const WHOP_ACCESS_GRANTING_STATUSES = new Set(["active", "trialing", "completed"])
+
 function noopActor(): SubscriptionActor {
   return { userId: null, ip: null, userAgent: null }
+}
+
+/** Respuesta de una tienda sin fila de suscripción (self-hosted). */
+function emptySubscriptionResponse(): ISubscriptionResponse {
+  return {
+    mode: "self_hosted",
+    plan: "monthly",
+    status: "active",
+    provider: "paypal",
+    paypal_subscription_id: null,
+    whop_membership_id: null,
+    current_period_start: null,
+    current_period_end: null,
+    cancel_at_period_end: false,
+    grace_ends_at: null,
+    days_overdue: null,
+  }
+}
+
+/** Email del dueño de la tienda; se inyecta para poder testear sin Prisma. */
+export type FindOwnerEmail = (storeId: string) => Promise<string | null>
+
+/**
+ * Busca el email del dueño mirando el email de la cuenta (no el del comprador del
+ * checkout): la membresía de Whop se reconcilia contra quien pagó por la tienda.
+ */
+async function defaultFindOwnerEmail(storeId: string): Promise<string | null> {
+  const owner = await prisma.user.findFirst({
+    where: { store_id: storeId, is_owner: true, deleted_at: null },
+    select: { email: true },
+  })
+  return owner?.email ?? null
 }
 
 /**
@@ -30,9 +71,22 @@ function noopActor(): SubscriptionActor {
  * guard, cualquiera de los dos podría cancelar o reemplazar una sub activa.
  */
 function assertNotAlreadySubscribed(existing: ISubscriptionEntity | null): void {
-  if (existing?.status === "active" && resolveEntitlement(existing).allowed) {
-    throw new ConflictError("Ya tenés una suscripción Cloud activa.")
-  }
+  // Se mira el ACCESO y no el `status`: una suscripción `canceled` con período vigente
+  // sigue dando acceso. Aceptar un pago nuevo ahí cobra sin sumar tiempo, porque el
+  // período que asigna el proveedor puede terminar antes que el que ya está pagado, y
+  // `buildMembershipUpdate` nunca recorta: el cliente pagaría al vicio.
+  if (!existing || !resolveEntitlement(existing).allowed) return
+
+  // Excepción deliberada: `past_due` significa que el cobro falló y el cliente viene a
+  // arreglarlo pagando. Bloquearlo ahí sería justo lo contrario de lo que necesita.
+  if (existing.status === "past_due") return
+
+  const until = existing.current_period_end
+    ? ` hasta el ${existing.current_period_end.toLocaleDateString("es-AR")}`
+    : ""
+  throw new ConflictError(
+    `Ya tenés una suscripción con acceso vigente${until}. Podés volver a suscribirte cuando termine el período.`,
+  )
 }
 
 function extractSaleAmount(payload: unknown): { amount: string; currency: string } {
@@ -51,6 +105,7 @@ export const createSubscriptionService = (
   repository: ISubscriptionRepository,
   eventRepository: ISubscriptionEventRepository = noopSubscriptionEventRepository,
   webhookEventRepository?: IPayPalWebhookEventRepository,
+  findOwnerEmail: FindOwnerEmail = defaultFindOwnerEmail,
 ) => {
   /** Registra en la auditoría una acción disparada por un usuario. */
   const audit = async (
@@ -176,6 +231,70 @@ export const createSubscriptionService = (
       return { planId, ref: createCheckoutRef(storeId), provider: "whop" as const }
     },
 
+    /**
+     * Reconciliación manual (recuperación del doble cobro).
+     *
+     * Cuando Whop cobra pero su webhook no llega —o el comprador vuelve sin los query
+     * params de retorno— la fila queda `pending` y un segundo checkout puede cobrar de
+     * nuevo. Acá se busca la membership por el email del dueño y, si concede acceso, se
+     * vincula la fila con el MISMO mapeo de estado que usa el webhook. Si no hay match,
+     * no hay `WHOP_ENABLED`, o la fila ya está vinculada, no se toca nada: nunca se
+     * fabrica un período ni se otorga acceso a ciegas.
+     */
+    async syncWhopMembership(
+      storeId: string,
+      actor: SubscriptionActor = noopActor(),
+    ): Promise<ISubscriptionResponse> {
+      if (!env.WHOP_ENABLED) {
+        throw new ConflictError(
+          "La verificación de pagos de Whop no está habilitada en este entorno.",
+        )
+      }
+
+      const sub = await repository.getByStoreId(storeId)
+      if (!sub) {
+        return emptySubscriptionResponse()
+      }
+
+      // El dueño es el comprador de la suscripción de la tienda: por su email se
+      // busca la membership en Whop.
+      const ownerEmail = (await findOwnerEmail(storeId))?.trim().toLowerCase()
+      if (!ownerEmail) {
+        return mapToResponse(sub)
+      }
+
+      const memberships = await whopClient.listMemberships()
+      const matched = memberships.find((m) => {
+        const email = m.user?.email
+        return (
+          WHOP_ACCESS_GRANTING_STATUSES.has(m.status) &&
+          typeof email === "string" &&
+          email.trim().toLowerCase() === ownerEmail
+        )
+      })
+      if (!matched || sub.whop_membership_id === matched.id) {
+        return mapToResponse(sub)
+      }
+
+      // La tabla de estados y las reglas de período son las mismas del webhook, así que
+      // la reconciliación no puede divergir de lo que habría escrito el webhook.
+      const update = buildMembershipUpdate(matched, sub, new Date())
+      const updated = await repository.update(storeId, {
+        provider: "whop",
+        whop_membership_id: matched.id,
+        ...(update ?? {}),
+      })
+      if (!updated) {
+        return mapToResponse(sub)
+      }
+
+      await audit(actor, storeId, SUBSCRIPTION_EVENT_ACTIONS.WEBHOOK_WHOP_ACTIVATED, null, {
+        source: "manual_sync",
+        whop_status: matched.status,
+      })
+      return mapToResponse(updated)
+    },
+
     async activate(
       storeId: string,
       paypalSubscriptionId: string,
@@ -262,23 +381,42 @@ export const createSubscriptionService = (
         await audit(actor, storeId, SUBSCRIPTION_EVENT_ACTIONS.REACTIVATE)
         return mapToResponse(sub)
       }
-      if (existing.status === "active" && existing.cancel_at_period_end) {
-        // S5: para Whop hay que reactivar en el proveedor ANTES de limpiar el flag.
-        // Si la API falla, la cancelación programada sigue vigente (no se miente al cliente).
-        if (existing.provider === "whop") {
+      // Con acceso vigente, reactivar es volver a `active`: revierte la cancelación
+      // programada sin tocar el período pagado. La condición mira el ACCESO y no el
+      // `status` guardado, porque Whop reporta `canceled` en cuanto el cliente programa la
+      // cancelación, aunque el período siga vigente. Exigir `status === "active"` mandaba
+      // esos casos al ramal de abajo y los dejaba en `pending`, borrándole el acceso a
+      // alguien que ya había pagado.
+      const entitlement = resolveEntitlement(existing)
+      if (entitlement.allowed && (existing.cancel_at_period_end || existing.status !== "active")) {
+        // S5: la cancelación se revierte en el proveedor ANTES de limpiar el flag. Si la
+        // API falla, la cancelación programada sigue vigente (no se le miente al cliente).
+        // Solo se llama si hay algo que revertir: sin el flag no hay cancelación pendiente.
+        if (existing.provider === "whop" && existing.cancel_at_period_end) {
           if (!existing.whop_membership_id) {
             throw new ConflictError("No hay suscripción activa")
+          }
+          // La API decide: la fila puede decir `cancel_at_period_end` cuando Whop ya
+          // ejecutó la cancelación (`canceled_at` seteado, `renewal_period_end` nulo).
+          // Ahí no queda nada que revertir y `/reactivate` responde 4xx, que se veía como
+          // un 502 opaco. Con el estado real se corta antes con un 409 y copy accionable.
+          const membership = await whopClient.getMembership(existing.whop_membership_id)
+          if (!membership.cancel_at_period_end) {
+            throw new ConflictError(
+              "La suscripción ya está cancelada en Whop y no se puede reactivar. Para volver a activarla, suscribite de nuevo.",
+            )
           }
           await whopClient.reactivateMembership(existing.whop_membership_id)
         }
         const updated = await repository.update(storeId, {
+          status: "active",
           cancel_at_period_end: false,
         })
         if (!updated) throw new ConflictError("No hay suscripción activa")
         await audit(actor, storeId, SUBSCRIPTION_EVENT_ACTIONS.REACTIVATE, existing.paypal_subscription_id)
         return mapToResponse(updated)
       }
-      if (existing.status === "active") {
+      if (entitlement.allowed) {
         return mapToResponse(existing)
       }
       const updated = await repository.update(storeId, {
@@ -293,19 +431,7 @@ export const createSubscriptionService = (
     async getByStore(storeId: string): Promise<ISubscriptionResponse> {
       const sub = await repository.getByStoreId(storeId)
       if (!sub) {
-        return {
-          mode: "self_hosted",
-          plan: "monthly",
-          status: "active",
-          provider: "paypal",
-          paypal_subscription_id: null,
-          whop_membership_id: null,
-          current_period_start: null,
-          current_period_end: null,
-          cancel_at_period_end: false,
-          grace_ends_at: null,
-          days_overdue: null,
-        }
+        return emptySubscriptionResponse()
       }
       return mapToResponse(sub)
     },
@@ -379,6 +505,9 @@ export const createSubscriptionService = (
         days_overdue: entitlement?.daysOverdue ?? null,
         overdue_since:
           entitlement && !entitlement.allowed ? (sub?.current_period_end?.toISOString() ?? null) : null,
+        // Sin fila no hay cancelación programada. Con fila, es el flag guardado tal cual:
+        // `next_payment_at` sigue existiendo porque el período está pagado.
+        cancel_at_period_end: sub?.cancel_at_period_end ?? false,
       }
     },
   }

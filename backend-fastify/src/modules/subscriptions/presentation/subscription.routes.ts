@@ -6,6 +6,7 @@ import { subscriptionController } from "./subscription.controller"
 import {
   ActivateSubscriptionDtoSchema,
   CheckoutSubscriptionDtoSchema,
+  SubscriptionResponseDtoSchema,
   WhopIntentDtoSchema,
 } from "./subscription.dto"
 
@@ -35,6 +36,16 @@ export const subscriptionRoutes = async (fastify: FastifyInstance, _opts: Fastif
     },
     preHandler: [authGuard, storeGuard],
   }, subscriptionController.whopIntent)
+
+  fastify.post("/whop/sync", {
+    schema: {
+      tags: TAGS,
+      description:
+        "Reconciliar contra Whop una suscripción pagada pero todavía pending, buscando la membership por el email del dueño",
+      response: { 200: toJsonSchema(SubscriptionResponseDtoSchema) },
+    },
+    preHandler: [authGuard, storeGuard],
+  }, subscriptionController.whopSync)
 
   fastify.post("/activate", {
     schema: { tags: TAGS, description: "Activar la suscripción tras el onApprove de PayPal", body: toJsonSchema(ActivateSubscriptionDtoSchema) },

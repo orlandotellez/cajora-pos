@@ -28,6 +28,18 @@ export interface WhopMembershipUser {
   username: string
 }
 
+/**
+ * Precio de un ciclo de la membership tal como lo reporta Whop (`initial_price` en
+ * la primera compra, `renewal_price` en la renovación). Cualquiera de los dos puede
+ * venir ausente o nulo: sin precio no se inventa un monto y el cobro se registra sin
+ * `amount`, para que `getBilling` caiga al precio del plan.
+ */
+export interface WhopPrice {
+  currency: string
+  amount: string
+  decimals?: number
+}
+
 export interface WhopMembership {
   id: string
   status: WhopMembershipStatus
@@ -35,6 +47,10 @@ export interface WhopMembership {
   renewal_period_start: string | null
   renewal_period_end: string | null
   cancel_at_period_end: boolean
+  /** Precio cobrado en la compra inicial. */
+  initial_price?: WhopPrice | null
+  /** Precio cobrado en la renovación. */
+  renewal_price?: WhopPrice | null
   /** El checkout copia acá el `metadata` que mandó el embed (incluida la referencia firmada). */
   metadata?: Record<string, unknown> | null
   plan?: { id: string } | null

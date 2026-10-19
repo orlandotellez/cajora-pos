@@ -1,4 +1,4 @@
-import { describe, it, beforeEach, afterEach, mock } from "bun:test"
+import { describe, it, beforeEach, afterEach, mock, spyOn } from "bun:test"
 import assert from "node:assert/strict"
 import {
   UnauthorizedError,
@@ -204,8 +204,23 @@ function makeRepo(overrides: AuthRepoOverrides = {}) {
 }
 
 describe("register", () => {
-  beforeEach(() => mock.restore())
-  afterEach(() => mock.restore())
+  // `register` crea la cuenta SIN verificar y el test asserta ese estado: se fija el flag
+  // para no depender del `.env`. Con `EMAIL_VERIFICATION=false` el mapper la presenta como
+  // verificada y el assert fallaría por una razón ajena a lo que se está probando.
+  let originalEmailVerification: boolean
+
+  beforeEach(async () => {
+    mock.restore()
+    const { env } = await import("@/config/env")
+    originalEmailVerification = env.EMAIL_VERIFICATION
+    env.EMAIL_VERIFICATION = true
+  })
+
+  afterEach(async () => {
+    const { env } = await import("@/config/env")
+    env.EMAIL_VERIFICATION = originalEmailVerification
+    mock.restore()
+  })
 
   it("creates a user, hashes the password and returns fresh tokens", async () => {
     const accountArgs: unknown[] = []
@@ -860,5 +875,73 @@ describe("SSO auth flow", () => {
       () => service.ssoExchange(code),
       (err) => err instanceof UnauthorizedError && /deactivated/i.test(err.message),
     )
+  })
+})
+
+/**
+ * `EMAIL_VERIFICATION=false` saltea la verificación de correo: la cuenta nace verificada y
+ * no se envía ningún código. Es una comodidad de desarrollo (permite dar de alta tiendas sin
+ * un email real y sin RESEND_API_KEY), y en producción el arranque falla antes de llegar acá
+ * (ver `config/env.ts`).
+ */
+describe("EMAIL_VERIFICATION", () => {
+  beforeEach(() => mock.restore())
+  afterEach(() => mock.restore())
+
+  /** Intercepta el alta del dueño dentro de la transacción y devuelve lo que se persistió. */
+  function captureOwnerCreate(): () => Partial<IUserEntity> | null {
+    let captured: Partial<IUserEntity> | null = null
+    spyOn(fakeTx.user, "create").mockImplementation(async (args) => {
+      captured = args.data
+      return makeUser({ ...args.data, id: "user-1" })
+    })
+    return () => captured
+  }
+
+  const payload = {
+    storeName: "Tienda Nueva",
+    storeAddress: "",
+    storePhone: "",
+    adminName: "Ana",
+    adminEmail: "ana@test.dev",
+    adminPassword: "secreto123",
+  }
+
+  it("desactivada → el dueño se crea ya verificado y la respuesta lo refleja", async () => {
+    const { env } = await import("@/config/env")
+    const original = env.EMAIL_VERIFICATION
+    env.EMAIL_VERIFICATION = false
+
+    try {
+      const captured = captureOwnerCreate()
+      const { repo } = makeRepo()
+      const service = createAuthService(repo, fakeSsoStore().store)
+
+      const res = await service.registerStore(payload)
+
+      assert.equal(captured()?.email_verified, true)
+      assert.equal(res.user.email_verified, true)
+    } finally {
+      env.EMAIL_VERIFICATION = original
+    }
+  })
+
+  it("activa (default) → el dueño queda pendiente de verificación", async () => {
+    const { env } = await import("@/config/env")
+    const original = env.EMAIL_VERIFICATION
+    env.EMAIL_VERIFICATION = true
+
+    try {
+      const captured = captureOwnerCreate()
+      const { repo } = makeRepo()
+      const service = createAuthService(repo, fakeSsoStore().store)
+
+      const res = await service.registerStore(payload)
+
+      assert.equal(captured()?.email_verified, false)
+      assert.equal(res.user.email_verified, false)
+    } finally {
+      env.EMAIL_VERIFICATION = original
+    }
   })
 })

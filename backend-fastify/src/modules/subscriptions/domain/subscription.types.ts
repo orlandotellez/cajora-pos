@@ -41,4 +41,9 @@ export interface IBillingResponse {
   days_overdue: number | null
   /** Fin del período pagado cuando ya venció, para poder decir "venció el X". */
   overdue_since: string | null
+  /**
+   * La renovación ya está cancelada: el período sigue pago y se corta al terminar.
+   * La tarjeta de Facturación lo necesita para decir "se cancela" y no "se renueva".
+   */
+  cancel_at_period_end: boolean
 }

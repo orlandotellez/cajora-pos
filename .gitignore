@@ -3,3 +3,6 @@
 eslint.verify.tmp.config.mjs
 .codegraph
 odd
+
+# Copias locales de clientes HTTP con credenciales reales (ver backend-fastify/docs/whop-api.http)
+*.local.http
