@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   RefreshCw,
-  Clock,
   AlertTriangle,
   Filter,
 } from "lucide-react";
@@ -9,6 +8,8 @@ import {
   superAdminApi,
   type SubscriptionHealthEvent,
 } from "@/api/super-admin";
+import { DataTable, type Column } from "@/components/common/DataTable";
+import { PAGE_LIMIT } from "@/lib/constants";
 import { formatEventAction } from "./helpers";
 import { SubStatusBadge } from "./Badges";
 import styles from "./SuperAdmin.module.css";
@@ -34,8 +35,8 @@ export default function Events() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [actionFilter, setActionFilter] = useState("");
-  const [page, setPage] = useState(0);
-  const limit = 10;
+  const [page, setPage] = useState(1);
+  const limit = PAGE_LIMIT;
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -44,7 +45,7 @@ export default function Events() {
     try {
       const res = await superAdminApi.getSubscriptionEvents({
         limit,
-        offset: page * limit,
+        offset: (page - 1) * limit,
         action: actionFilter || undefined,
       });
       setEvents(res.events);
@@ -61,7 +62,54 @@ export default function Events() {
     load();
   }, [load]);
 
-  const totalPages = Math.ceil(total / limit);
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+
+  // Si la página queda fuera de rango (p. ej. un filtro redujo el total), el
+  // listado vuelve a la primera página en vez de mostrar una tabla vacía.
+  useEffect(() => {
+    if (page > totalPages) setPage(1);
+  }, [page, totalPages]);
+
+  const columns: Column<SubscriptionHealthEvent>[] = [
+    {
+      key: "store",
+      label: "Tienda",
+      render: (ev) => (
+        <span className={styles.storeName}>{ev.store_name ?? ev.store_id ?? "—"}</span>
+      ),
+    },
+    {
+      key: "user",
+      label: "Usuario",
+      render: (ev) => (
+        <div className={styles.userText}>
+          <div className={styles.userName}>{ev.user_name ?? "Sistema"}</div>
+          {ev.user_email && <div className={styles.userEmail}>{ev.user_email}</div>}
+        </div>
+      ),
+    },
+    {
+      key: "action",
+      label: "Acción",
+      render: (ev) => (
+        <>
+          <SubStatusBadge
+            status={ev.action.includes("payment_failed") ? "past_due" : ev.action.includes("cancelled") ? "canceled" : ev.action.includes("expired") ? "expired" : ev.action.includes("activate") || ev.action.includes("sale_completed") ? "active" : "pending"}
+          />
+          <span className={styles.userDate} style={{ marginLeft: 8 }}>{formatEventAction(ev.action)}</span>
+        </>
+      ),
+    },
+    {
+      key: "created_at",
+      label: "Fecha",
+      render: (ev) => (
+        <span className={styles.userDate}>
+          {new Date(ev.created_at).toLocaleDateString("es-MX", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+        </span>
+      ),
+    },
+  ];
 
   return (
     <>
@@ -70,7 +118,7 @@ export default function Events() {
           <Filter size={15} />
           <select
             value={actionFilter}
-            onChange={(e) => { setActionFilter(e.target.value); setPage(0); }}
+            onChange={(e) => { setActionFilter(e.target.value); setPage(1); }}
             className={styles.filterSelect}
           >
             {ACTION_FILTERS.map((f) => (
@@ -97,83 +145,23 @@ export default function Events() {
         </div>
       )}
 
-      <div className={styles.card}>
-        <div className={styles.tableWrapper}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Tienda</th>
-                <th>Usuario</th>
-                <th>Acción</th>
-                <th>Fecha</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading && events.length === 0
-                ? Array.from({ length: 6 }).map((_, i) => (
-                  <tr key={i}>
-                    <td colSpan={4} style={{ padding: "14px 20px" }}>
-                      <div className={styles.skeleton} style={{ width: "100%", height: 22, borderRadius: 5 }} />
-                    </td>
-                  </tr>
-                ))
-                : events.length === 0 ? (
-                  <tr>
-                    <td colSpan={4}>
-                      <div className={styles.empty}>
-                        <span className={styles.emptyIcon}>
-                          <Clock size={22} />
-                        </span>
-                        <span className={styles.emptyText}>No hay eventos que mostrar</span>
-                      </div>
-                    </td>
-                  </tr>
-                ) : events.map((ev) => (
-                  <tr key={ev.id}>
-                    <td>
-                      <span className={styles.storeName}>{ev.store_name ?? ev.store_id ?? "—"}</span>
-                    </td>
-                    <td>
-                      <div className={styles.userText}>
-                        <div className={styles.userName}>{ev.user_name ?? "Sistema"}</div>
-                        {ev.user_email && <div className={styles.userEmail}>{ev.user_email}</div>}
-                      </div>
-                    </td>
-                    <td>
-                      <SubStatusBadge
-                        status={ev.action.includes("payment_failed") ? "past_due" : ev.action.includes("cancelled") ? "canceled" : ev.action.includes("expired") ? "expired" : ev.action.includes("activate") || ev.action.includes("sale_completed") ? "active" : "pending"}
-                      />
-                      <span className={styles.userDate} style={{ marginLeft: 8 }}>{formatEventAction(ev.action)}</span>
-                    </td>
-                    <td className={styles.userDate}>
-                      {new Date(ev.created_at).toLocaleDateString("es-MX", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                    </td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Paginación */}
-        {totalPages > 1 && (
-          <div className={styles.pagination}>
-            <button
-              className={styles.pageBtn}
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-              disabled={page === 0}
-            >
-              Anterior
-            </button>
-            <button
-              className={styles.pageBtn}
-              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-              disabled={page >= totalPages - 1}
-            >
-              Siguiente
-            </button>
-          </div>
-        )}
-      </div>
+      <DataTable
+        columns={columns}
+        data={events}
+        loading={loading}
+        total={total}
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        refreshing={refreshing}
+        emptyMessage="No hay eventos que mostrar"
+        skeletonCols={[
+          { width: "160px" },
+          { width: "140px" },
+          { width: "180px" },
+          { width: "120px" },
+        ]}
+      />
     </>
   );
 }
