@@ -482,6 +482,9 @@ export const createSubscriptionService = (
         days_overdue: entitlement?.daysOverdue ?? null,
         overdue_since:
           entitlement && !entitlement.allowed ? (sub?.current_period_end?.toISOString() ?? null) : null,
+        // Sin fila no hay cancelación programada. Con fila, es el flag guardado tal cual:
+        // `next_payment_at` sigue existiendo porque el período está pagado.
+        cancel_at_period_end: sub?.cancel_at_period_end ?? false,
       }
     },
   }

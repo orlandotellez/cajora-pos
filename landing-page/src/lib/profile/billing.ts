@@ -17,9 +17,13 @@ interface BillingData {
   status?: string;
   days_overdue?: number | null;
   overdue_since?: string | null;
+  cancel_at_period_end?: boolean;
 }
 
 const OVERDUE_HINT = 'Tu período venció y no pudimos cobrar la renovación.';
+// Copia original del estado vacío: el catch la pisa con el error y, como la tarjeta
+// se re-renderiza, hay que poder devolverla a su lugar.
+const EMPTY_HINT = 'Todavía no hay cobros. Tu primer pago se registrará acá al activar la suscripción.';
 
 // Evita apilar intervalos si la facturación se vuelve a renderizar.
 let stopCountdown: (() => void) | null = null;
@@ -43,6 +47,21 @@ export async function renderBilling(fetchOpts: { headers?: Record<string, string
 
     billingLoading.hidden = true;
 
+    // Esta tarjeta se vuelve a renderizar después de cancelar o reactivar, así que
+    // primero se limpia lo que pintó la pasada anterior: si no, quedan restos (el
+    // aviso de vencido, las filas viejas o el "todavía no hay cobros").
+    billingNext.hidden = true;
+    const hint = billingNext.querySelector<HTMLElement>('[data-billing-next-hint]');
+    if (hint) {
+      hint.hidden = true;
+      hint.textContent = '';
+    }
+    billingEmpty.hidden = true;
+    billingEmpty.textContent = EMPTY_HINT;
+    billingTable.hidden = true;
+    billingBody.innerHTML = '';
+    billingTotal.hidden = true;
+
     stopCountdown?.();
     stopCountdown = null;
     billingCountdown.hidden = true;
@@ -57,7 +76,6 @@ export async function renderBilling(fetchOpts: { headers?: Record<string, string
       billingNext.classList.add('is-overdue');
       billingNextLabel.textContent = 'Período vencido';
       billingNextDate.textContent = formatDate(data.overdue_since!);
-      const hint = billingNext.querySelector<HTMLElement>('[data-billing-next-hint]');
       if (hint) {
         hint.textContent = OVERDUE_HINT;
         hint.hidden = false;
@@ -65,12 +83,18 @@ export async function renderBilling(fetchOpts: { headers?: Record<string, string
     } else if (data.next_payment_at) {
       billingNext.hidden = false;
       billingNext.classList.remove('is-overdue');
-      billingNextLabel.textContent = 'Próxima fecha de pago';
+      // Con la cancelación ya programada no hay próximo pago: la fecha es el fin del
+      // acceso, y la cuenta regresiva usa el mismo verbo que la tarjeta de suscripción.
+      billingNextLabel.textContent = data.cancel_at_period_end ? 'Fin del período' : 'Próxima fecha de pago';
       billingNextDate.textContent = formatDate(data.next_payment_at);
       // Solo cuando el cobro está al día: en past_due el texto de la tarjeta ya dice
       // que el pago falló, y anunciar una renovación lo contradiría.
       if (data.status === 'active') {
-        stopCountdown = renderCountdown(billingCountdown, data.next_payment_at, 'renueva');
+        stopCountdown = renderCountdown(
+          billingCountdown,
+          data.next_payment_at,
+          data.cancel_at_period_end ? 'cancela' : 'renueva',
+        );
       }
     }
 
@@ -81,7 +105,6 @@ export async function renderBilling(fetchOpts: { headers?: Record<string, string
     }
 
     billingTable.hidden = false;
-    billingBody.innerHTML = '';
     for (const p of payments) {
       const tr = document.createElement('tr');
       const tdDate = document.createElement('td');

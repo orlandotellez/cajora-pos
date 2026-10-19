@@ -1130,6 +1130,59 @@ describe("SubscriptionService", () => {
       assert.equal(res.currency, "USD")
       assert.equal(res.next_payment_at, "2099-09-01T12:00:00.000Z")
     })
+
+    // T36: la tarjeta de Facturación se vuelve a renderizar después de cancelar o
+    // reactivar, y sin este campo no puede saber que la renovación ya no va.
+    it("informa cancel_at_period_end de la fila guardada (T36)", async () => {
+      const eventRepo = {
+        async create() {},
+        async createIdempotent() {
+          return null
+        },
+        async findMany() {
+          return []
+        },
+        async count() {
+          return 0
+        },
+      }
+      const scheduled = makeRepo(
+        makeEntity({ status: "active", cancel_at_period_end: true }),
+      )
+      const res = await createSubscriptionService(scheduled.repo, eventRepo).getBilling("store-1")
+
+      assert.equal(res.cancel_at_period_end, true, "cancelada al fin del período")
+      assert.equal(
+        res.next_payment_at !== null,
+        true,
+        "el período sigue pago, así que la tarjeta muestra fecha y necesita el verbo 'cancela'",
+      )
+
+      const plain = makeRepo(makeEntity({ status: "active", cancel_at_period_end: false }))
+      const res2 = await createSubscriptionService(plain.repo, eventRepo).getBilling("store-1")
+
+      assert.equal(res2.cancel_at_period_end, false)
+    })
+
+    it("sin fila de suscripción → cancel_at_period_end false (T36)", async () => {
+      const eventRepo = {
+        async create() {},
+        async createIdempotent() {
+          return null
+        },
+        async findMany() {
+          return []
+        },
+        async count() {
+          return 0
+        },
+      }
+      const { repo } = makeRepo()
+
+      const res = await createSubscriptionService(repo, eventRepo).getBilling("store-1")
+
+      assert.equal(res.cancel_at_period_end, false)
+    })
   })
 
   describe("whop (S5)", () => {

@@ -1,5 +1,6 @@
 import { formatDate } from './format';
 import { renderCountdown } from './countdown';
+import { renderBilling } from './billing';
 
 export interface Subscription {
   plan: string;
@@ -174,6 +175,9 @@ export function initSubscriptionActions(fetchOpts: { headers?: Record<string, st
       });
       if (!res.ok) throw new Error('No se pudo cancelar la suscripción.');
       renderSub((await res.json()) as Subscription);
+      // La tarjeta de Facturación también habla de la renovación: hay que refrescarla
+      // en la misma pasada o el cliente ve "se renueva" hasta que recarga a mano.
+      await renderBilling(fetchOpts);
     } catch (err) {
       window.alert(err instanceof Error ? err.message : 'No se pudo cancelar la suscripción.');
     }
@@ -188,6 +192,7 @@ export function initSubscriptionActions(fetchOpts: { headers?: Record<string, st
       });
       if (!res.ok) throw new Error('No se pudo reactivar la suscripción.');
       renderSub((await res.json()) as Subscription);
+      await renderBilling(fetchOpts);
     } catch (err) {
       window.alert(err instanceof Error ? err.message : 'No se pudo reactivar la suscripción.');
     }
