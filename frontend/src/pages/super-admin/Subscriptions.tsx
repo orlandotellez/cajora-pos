@@ -14,7 +14,7 @@ import {
 } from "@/api/super-admin";
 import { DataTable, type Column } from "@/components/common/DataTable";
 import { PAGE_LIMIT } from "@/lib/constants";
-import { initials, hueFromString } from "./helpers";
+import { initials, hueFromString, timeUntil } from "./helpers";
 import { SubStatusBadge, SUB_STATUS_OPTIONS, subStatusIcon } from "./Badges";
 import styles from "./SuperAdmin.module.css";
 
@@ -194,22 +194,17 @@ export default function Subscriptions() {
       key: "days_left",
       label: "Días restantes",
       align: "right",
-      render: (sub) =>
-        sub.days_until_expiry !== null ? (
-          <span
-            className={
-              sub.days_until_expiry <= 0
-                ? styles.expiryExpired
-                : sub.days_until_expiry <= 3
-                  ? styles.expiryUrgent
-                  : styles.expiryOk
-            }
-          >
-            {sub.days_until_expiry <= 0 ? "Expirado" : `${sub.days_until_expiry}d`}
-          </span>
-        ) : (
-          <span className={styles.userDate}>—</span>
-        ),
+      render: (sub) => {
+        const remaining = timeUntil(sub.current_period_end);
+        if (!remaining) return <span className={styles.userDate}>—</span>;
+        const cls =
+          remaining.tone === "expired"
+            ? styles.expiryExpired
+            : remaining.tone === "urgent"
+              ? styles.expiryUrgent
+              : styles.expiryOk;
+        return <span className={cls}>{remaining.text}</span>;
+      },
     },
   ];
 
