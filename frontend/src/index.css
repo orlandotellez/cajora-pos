@@ -39,6 +39,9 @@
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.3 0.01 260);
   --sidebar-border: oklch(0.92 0.005 260);
+  /* Le dice al navegador que pinte los controles nativos (lista del <select>,
+     scrollbars, date pickers) en claro. */
+  color-scheme: light;
 }
 
 [data-theme="dark"] {
@@ -68,6 +71,17 @@
   --sidebar: oklch(0.12 0.01 260);
   --sidebar-foreground: oklch(0.8 0.01 260);
   --sidebar-border: oklch(0.25 0.01 260);
+  /* Sin esto la lista desplegable nativa del <select> se abre con el texto
+     claro de la variable --foreground sobre el fondo blanco del sistema. */
+  color-scheme: dark;
+}
+
+/* Refuerzo para navegadores que ignoran `color-scheme` en los <option>:
+   el popup hereda el color de texto del control pero no su fondo. */
+select option,
+select optgroup {
+  background-color: var(--popover);
+  color: var(--popover-foreground);
 }
 
 html,
@@ -89,6 +103,10 @@ textarea,
 button {
   font-family: inherit;
   font-size: inherit;
+}
+
+select {
+  color: var(--foreground);
 }
 
 .tabular {

@@ -260,60 +260,12 @@
   white-space: nowrap;
 }
 
-/* ===== Tabla de tiendas ===== */
-.tableWrapper {
-  overflow-x: auto;
-}
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.table th {
-  text-align: left;
-  padding: 10px 20px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted-foreground);
-  background: color-mix(in srgb, var(--muted) 50%, transparent);
-  white-space: nowrap;
-}
-
-.table td {
-  padding: 14px 20px;
-  font-size: 13px;
-  vertical-align: middle;
-  border-bottom: 1px solid var(--border);
-}
-
-.table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.thNum,
-.tdNum {
-  text-align: right;
-}
-
+/* Las tablas del panel usan el `DataTable` compartido (mismo estilo y
+   paginación que el resto de la app), así que acá solo quedan las celdas
+   propias del super admin. */
 .tdNum {
   font-variant-numeric: tabular-nums;
   font-weight: 600;
-}
-
-.tdChevron {
-  text-align: right;
-  width: 56px;
-}
-
-.storeRow {
-  cursor: pointer;
-}
-
-.storeRow:hover {
-  background: color-mix(in srgb, var(--accent) 70%, transparent);
 }
 
 .storeRowOpen {
@@ -373,24 +325,9 @@
   border: 1px solid var(--border);
 }
 
-.storeRow:hover .chevronBtn,
-.chevronBtnOpen {
-  color: var(--foreground);
-  background: var(--card);
-}
-
-.chevronBtnOpen {
-  transform: rotate(180deg);
-}
-
-/* ===== Fila expandida (panel de usuarios) ===== */
+/* Fila expandida (panel de usuarios) */
 .expandedRow {
   background: color-mix(in srgb, var(--accent) 45%, transparent);
-}
-
-.table td.expandedCell {
-  padding: 8px 20px 20px;
-  border-bottom: none;
 }
 
 .usersPanel {
@@ -581,33 +518,6 @@
   white-space: nowrap;
 }
 
-/* ===== Estados vacíos ===== */
-.empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding: 40px 16px;
-  color: var(--muted-foreground);
-  font-size: 13px;
-}
-
-.emptyIcon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 5px;
-  background: var(--muted);
-  border: 1px solid var(--border);
-  color: var(--muted-foreground);
-}
-
-.emptyText {
-  font-weight: 500;
-}
-
 /* ===== Skeleton ===== */
 .skeleton {
   background: color-mix(in srgb, var(--muted) 60%, var(--card));
@@ -768,36 +678,6 @@
 
 .filterSelect:focus {
   border-color: var(--primary);
-}
-
-/* ===== Pagination ===== */
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 14px 20px;
-  border-top: 1px solid var(--border);
-}
-
-.pageBtn {
-  padding: 6px 14px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--foreground);
-  cursor: pointer;
-}
-
-.pageBtn:hover:not(:disabled) {
-  background: var(--accent);
-}
-
-.pageBtn:disabled {
-  opacity: 0.4;
-  cursor: default;
 }
 
 /* ===== KPI value small (for compact KPIs) ===== */

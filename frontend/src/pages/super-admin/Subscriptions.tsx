@@ -2,19 +2,19 @@ import { useCallback, useEffect, useState } from "react";
 import {
   RefreshCw,
   AlertTriangle,
-  TrendingDown,
-  Clock,
-  Search,
-  Filter,
   Cloud,
   Server,
+  Search,
+  Filter,
 } from "lucide-react";
 import {
   superAdminApi,
   type SubscriptionHealthResponse,
   type SubscriptionRow,
 } from "@/api/super-admin";
-import { initials, hueFromString, formatEventAction } from "./helpers";
+import { DataTable, type Column } from "@/components/common/DataTable";
+import { PAGE_LIMIT } from "@/lib/constants";
+import { initials, hueFromString } from "./helpers";
 import { SubStatusBadge, SUB_STATUS_OPTIONS, subStatusIcon } from "./Badges";
 import styles from "./SuperAdmin.module.css";
 
@@ -48,8 +48,8 @@ export default function Subscriptions() {
   const [statusFilter, setStatusFilter] = useState("");
   const [modeFilter, setModeFilter] = useState("");
   const [search, setSearch] = useState("");
-  const [page, setPage] = useState(0);
-  const limit = 10;
+  const [page, setPage] = useState(1);
+  const limit = PAGE_LIMIT;
 
   const loadHealth = useCallback(async () => {
     try {
@@ -70,7 +70,7 @@ export default function Subscriptions() {
         mode: modeFilter || undefined,
         search: search || undefined,
         limit,
-        offset: page * limit,
+        offset: (page - 1) * limit,
       });
       setSubs(listRes.subscriptions);
       setTotal(listRes.total);
@@ -92,7 +92,13 @@ export default function Subscriptions() {
     loadList();
   }, [loadList]);
 
-  const totalPages = Math.ceil(total / limit);
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+
+  // Si la página queda fuera de rango (p. ej. un filtro redujo el total), el
+  // listado vuelve a la primera página en vez de mostrar una tabla vacía.
+  useEffect(() => {
+    if (page > totalPages) setPage(1);
+  }, [page, totalPages]);
 
   const handleStatusChange = useCallback(
     async (storeId: string, newStatus: string) => {
@@ -112,6 +118,100 @@ export default function Subscriptions() {
     },
     [loadHealth],
   );
+
+  const columns: Column<SubscriptionRow>[] = [
+    {
+      key: "store",
+      label: "Tienda",
+      render: (sub) => {
+        const hue = hueFromString(sub.store_name);
+        return (
+          <div className={styles.storeCell}>
+            <span
+              className={styles.storeAvatar}
+              style={{
+                background: `oklch(0.72 0.1 ${hue})`,
+                color: `oklch(0.22 0.03 ${hue})`,
+              }}
+            >
+              {initials(sub.store_name)}
+            </span>
+            <div className={styles.storeText}>
+              <div className={styles.storeName}>{sub.store_name}</div>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      key: "owner",
+      label: "Owner",
+      render: (sub) => (
+        <div className={styles.userText}>
+          <div className={styles.userName}>{sub.owner_name ?? "—"}</div>
+          <div className={styles.userEmail}>{sub.owner_email ?? "—"}</div>
+        </div>
+      ),
+    },
+    {
+      key: "mode",
+      label: "Modo",
+      render: (sub) => (
+        <span className={`${styles.subBadge} ${sub.mode === "cloud" ? styles.subActive : styles.subCanceled}`}>
+          {sub.mode === "cloud" ? <Cloud size={11} /> : <Server size={11} />}
+          {sub.mode === "cloud" ? "Cloud" : "Self-hosted"}
+        </span>
+      ),
+    },
+    {
+      key: "plan",
+      label: "Plan",
+      render: (sub) => <span className={styles.userDate}>{sub.plan}</span>,
+    },
+    {
+      key: "status",
+      label: "Estado",
+      render: (sub) => (
+        <StatusSelect
+          storeId={sub.store_id}
+          currentStatus={sub.status}
+          onChange={handleStatusChange}
+        />
+      ),
+    },
+    {
+      key: "period_end",
+      label: "Fin del período",
+      render: (sub) => (
+        <span className={styles.userDate}>
+          {sub.current_period_end
+            ? new Date(sub.current_period_end).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" })
+            : "—"}
+        </span>
+      ),
+    },
+    {
+      key: "days_left",
+      label: "Días restantes",
+      align: "right",
+      render: (sub) =>
+        sub.days_until_expiry !== null ? (
+          <span
+            className={
+              sub.days_until_expiry <= 0
+                ? styles.expiryExpired
+                : sub.days_until_expiry <= 3
+                  ? styles.expiryUrgent
+                  : styles.expiryOk
+            }
+          >
+            {sub.days_until_expiry <= 0 ? "Expirado" : `${sub.days_until_expiry}d`}
+          </span>
+        ) : (
+          <span className={styles.userDate}>—</span>
+        ),
+    },
+  ];
 
   return (
     <>
@@ -145,7 +245,7 @@ export default function Subscriptions() {
             type="text"
             placeholder="Buscar tienda o owner…"
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             className={styles.searchInput}
           />
         </div>
@@ -153,7 +253,7 @@ export default function Subscriptions() {
           <Filter size={15} />
           <select
             value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value); setPage(0); }}
+            onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
             className={styles.filterSelect}
           >
             {STATUS_FILTERS.map((f) => (
@@ -162,7 +262,7 @@ export default function Subscriptions() {
           </select>
           <select
             value={modeFilter}
-            onChange={(e) => { setModeFilter(e.target.value); setPage(0); }}
+            onChange={(e) => { setModeFilter(e.target.value); setPage(1); }}
             className={styles.filterSelect}
           >
             {MODE_FILTERS.map((f) => (
@@ -189,136 +289,30 @@ export default function Subscriptions() {
         </div>
       )}
 
-      {/* Tabla completa de suscripciones */}
-      <div className={styles.card}>
-        <div className={styles.tableWrapper}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Tienda</th>
-                <th>Owner</th>
-                <th>Modo</th>
-                <th>Plan</th>
-                <th>Estado</th>
-                <th>Fin del período</th>
-                <th className={styles.thNum}>Días restantes</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading && subs.length === 0
-                ? Array.from({ length: 6 }).map((_, i) => (
-                  <tr key={i}>
-                    <td colSpan={7} style={{ padding: "14px 20px" }}>
-                      <div className={styles.skeleton} style={{ width: "100%", height: 22, borderRadius: 5 }} />
-                    </td>
-                  </tr>
-                ))
-                : subs.length === 0 ? (
-                  <tr>
-                    <td colSpan={7}>
-                      <div className={styles.empty}>
-                        <span className={styles.emptyIcon}>
-                          <Clock size={22} />
-                        </span>
-                        <span className={styles.emptyText}>
-                          {search || statusFilter || modeFilter
-                            ? "No se encontraron suscripciones con estos filtros"
-                            : "Todavía no hay suscripciones"}
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
-                ) : subs.map((sub) => {
-                  const hue = hueFromString(sub.store_name);
-                  return (
-                    <tr key={sub.id}>
-                      <td>
-                        <div className={styles.storeCell}>
-                          <span
-                            className={styles.storeAvatar}
-                            style={{
-                              background: `oklch(0.72 0.1 ${hue})`,
-                              color: `oklch(0.22 0.03 ${hue})`,
-                            }}
-                          >
-                            {initials(sub.store_name)}
-                          </span>
-                          <div className={styles.storeText}>
-                            <div className={styles.storeName}>{sub.store_name}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <div className={styles.userText}>
-                          <div className={styles.userName}>{sub.owner_name ?? "—"}</div>
-                          <div className={styles.userEmail}>{sub.owner_email ?? "—"}</div>
-                        </div>
-                      </td>
-                      <td>
-                        <span className={`${styles.subBadge} ${sub.mode === "cloud" ? styles.subActive : styles.subCanceled}`}>
-                          {sub.mode === "cloud" ? <Cloud size={11} /> : <Server size={11} />}
-                          {sub.mode === "cloud" ? "Cloud" : "Self-hosted"}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={styles.userDate}>{sub.plan}</span>
-                      </td>
-                      <td>
-                        <StatusSelect
-                          storeId={sub.store_id}
-                          currentStatus={sub.status}
-                          onChange={handleStatusChange}
-                        />
-                      </td>
-                      <td>
-                        <span className={styles.userDate}>
-                          {sub.current_period_end
-                            ? new Date(sub.current_period_end).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" })
-                            : "—"}
-                        </span>
-                      </td>
-                      <td className={styles.tdNum}>
-                        {sub.days_until_expiry !== null ? (
-                          <span className={
-                            sub.days_until_expiry <= 0
-                              ? styles.expiryExpired
-                              : sub.days_until_expiry <= 3
-                                ? styles.expiryUrgent
-                                : styles.expiryOk
-                          }>
-                            {sub.days_until_expiry <= 0 ? "Expirado" : `${sub.days_until_expiry}d`}
-                          </span>
-                        ) : (
-                          <span className={styles.userDate}>—</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Paginación */}
-        {totalPages > 1 && (
-          <div className={styles.pagination}>
-            <button
-              className={styles.pageBtn}
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-              disabled={page === 0}
-            >
-              Anterior
-            </button>
-            <button
-              className={styles.pageBtn}
-              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-              disabled={page >= totalPages - 1}
-            >
-              Siguiente
-            </button>
-          </div>
-        )}
-      </div>
+      <DataTable
+        columns={columns}
+        data={subs}
+        loading={loading}
+        total={total}
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        refreshing={refreshing}
+        emptyMessage={
+          search || statusFilter || modeFilter
+            ? "No se encontraron suscripciones con estos filtros"
+            : "Todavía no hay suscripciones"
+        }
+        skeletonCols={[
+          { width: "160px" },
+          { width: "140px" },
+          { width: "80px" },
+          { width: "60px" },
+          { width: "130px" },
+          { width: "90px" },
+          { width: "60px", align: "right" },
+        ]}
+      />
     </>
   );
 }

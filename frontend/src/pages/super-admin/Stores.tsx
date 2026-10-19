@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   RefreshCw,
-  Store,
   Users,
   Loader2,
   Star,
@@ -22,6 +21,8 @@ import {
   type SuperAdminStoreRow,
   type SuperAdminStoreUser,
 } from "@/api/super-admin";
+import { DataTable, type Column } from "@/components/common/DataTable";
+import { PAGE_LIMIT } from "@/lib/constants";
 import { initials, hueFromString } from "./helpers";
 import { RoleBadge, UserStatusBadge, SubStatusBadge } from "./Badges";
 import styles from "./SuperAdmin.module.css";
@@ -44,11 +45,19 @@ export default function Stores() {
   const [selectedStore, setSelectedStore] = useState<SuperAdminStoreRow | null>(null);
   const [usersByStore, setUsersByStore] = useState<Record<string, SuperAdminStoreUser[]>>({});
   const [usersLoading, setUsersLoading] = useState<Record<string, boolean>>({});
-  const [page, setPage] = useState(0);
-  const limit = 10;
+  const [page, setPage] = useState(1);
+  const limit = PAGE_LIMIT;
 
+  // DataTable pagina desde 1; el resto de paneles del producto usa el mismo
+  // contrato, así que el panel super admin se alinea con ellos.
   const totalPages = Math.max(1, Math.ceil(stores.length / limit));
-  const pageStores = stores.slice(page * limit, page * limit + limit);
+  const pageStores = stores.slice((page - 1) * limit, page * limit);
+
+  // Igual que el resto de listados: si la data se achica, no dejamos la
+  // paginación apuntando a una página fuera de rango.
+  useEffect(() => {
+    if (page > totalPages) setPage(1);
+  }, [page, totalPages]);
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -109,70 +118,23 @@ export default function Stores() {
         </div>
       )}
 
-      <div className={styles.card}>
-        <div className={styles.tableWrapper}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Tienda</th>
-                <th className={styles.thNum}>Usuarios</th>
-                <th className={styles.thNum}>Productos</th>
-                <th className={styles.thNum}>Servicios</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {loading && stores.length === 0
-                ? Array.from({ length: 4 }).map((_, i) => (
-                  <tr key={i}>
-                    <td colSpan={5} style={{ padding: "14px 20px" }}>
-                      <div className={styles.skeleton} style={{ width: "100%", height: 22, borderRadius: 5 }} />
-                    </td>
-                  </tr>
-                ))
-                : stores.length === 0 ? (
-                  <tr>
-                    <td colSpan={5}>
-                      <div className={styles.empty}>
-                        <span className={styles.emptyIcon}>
-                          <Store size={22} />
-                        </span>
-                        <span className={styles.emptyText}>Todavía no hay tiendas registradas</span>
-                      </div>
-                    </td>
-                  </tr>
-                ) : pageStores.map((s) => (
-                  <StoreRow
-                    key={s.id}
-                    store={s}
-                    selected={selectedStore?.id === s.id}
-                    onOpen={() => openStore(s)}
-                  />
-                ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Paginación */}
-        {totalPages > 1 && (
-          <div className={styles.pagination}>
-            <button
-              className={styles.pageBtn}
-              onClick={() => setPage((p) => { const next = Math.max(0, p - 1); setSelectedStore(null); return next; })}
-              disabled={page === 0}
-            >
-              Anterior
-            </button>
-            <button
-              className={styles.pageBtn}
-              onClick={() => setPage((p) => { const next = Math.min(totalPages - 1, p + 1); setSelectedStore(null); return next; })}
-              disabled={page >= totalPages - 1}
-            >
-              Siguiente
-            </button>
-          </div>
-        )}
-      </div>
+      <DataTable
+        columns={STORE_COLUMNS}
+        data={pageStores}
+        loading={loading}
+        total={stores.length}
+        page={page}
+        totalPages={totalPages}
+        onPageChange={(next) => {
+          setSelectedStore(null);
+          setPage(next);
+        }}
+        onRowClick={(s) => void openStore(s)}
+        rowClassName={(s) => (selectedStore?.id === s.id ? styles.storeRowOpen : undefined)}
+        refreshing={refreshing}
+        emptyMessage="Todavía no hay tiendas registradas"
+        skeletonCols={STORE_SKELETON_COLS}
+      />
 
       {selectedStore && (
         <StoreDrawer
@@ -186,23 +148,13 @@ export default function Stores() {
   );
 }
 
-function StoreRow({
-  store,
-  selected,
-  onOpen,
-}: {
-  store: SuperAdminStoreRow;
-  selected: boolean;
-  onOpen: () => void;
-}) {
-  const storeHue = hueFromString(store.name);
-  return (
-    <tr
-      className={`${styles.storeRow} ${selected ? styles.storeRowOpen : ""}`}
-      onClick={onOpen}
-      style={{ cursor: "pointer" }}
-    >
-      <td>
+const STORE_COLUMNS: Column<SuperAdminStoreRow>[] = [
+  {
+    key: "store",
+    label: "Tienda",
+    render: (store) => {
+      const storeHue = hueFromString(store.name);
+      return (
         <div className={styles.storeCell}>
           <span
             className={styles.storeAvatar}
@@ -222,18 +174,47 @@ function StoreRow({
             )}
           </div>
         </div>
-      </td>
-      <td className={styles.tdNum}>{store.users_count}</td>
-      <td className={styles.tdNum}>{store.products_count}</td>
-      <td className={styles.tdNum}>{store.services_count}</td>
-      <td className={styles.tdChevron}>
-        <span className={styles.chevronBtn}>
-          <i className={styles.chevronArrow}>›</i>
-        </span>
-      </td>
-    </tr>
-  );
-}
+      );
+    },
+  },
+  {
+    key: "users",
+    label: "Usuarios",
+    align: "right",
+    render: (store) => <span className={styles.tdNum}>{store.users_count}</span>,
+  },
+  {
+    key: "products",
+    label: "Productos",
+    align: "right",
+    render: (store) => <span className={styles.tdNum}>{store.products_count}</span>,
+  },
+  {
+    key: "services",
+    label: "Servicios",
+    align: "right",
+    render: (store) => <span className={styles.tdNum}>{store.services_count}</span>,
+  },
+  {
+    key: "open",
+    label: "",
+    align: "right",
+    width: "56px",
+    render: () => (
+      <span className={styles.chevronBtn}>
+        <i className={styles.chevronArrow}>›</i>
+      </span>
+    ),
+  },
+];
+
+const STORE_SKELETON_COLS = [
+  { width: "40%" },
+  { width: "56px", align: "right" as const },
+  { width: "56px", align: "right" as const },
+  { width: "56px", align: "right" as const },
+  { width: "28px", align: "right" as const },
+];
 
 function StoreDrawer({
   store,

@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   RefreshCw,
-  Users,
-  Loader2,
   Star,
   AlertTriangle,
   Search,
@@ -14,6 +12,8 @@ import {
   type SuperAdminStoreRow,
   type SuperAdminStoreUser,
 } from "@/api/super-admin";
+import { DataTable, type Column } from "@/components/common/DataTable";
+import { PAGE_LIMIT } from "@/lib/constants";
 import { initials, hueFromString } from "./helpers";
 import { RoleBadge, UserStatusBadge } from "./Badges";
 import styles from "./SuperAdmin.module.css";
@@ -28,8 +28,8 @@ export default function AllUsers() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [page, setPage] = useState(0);
-  const limit = 10;
+  const [page, setPage] = useState(1);
+  const limit = PAGE_LIMIT;
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -106,7 +106,85 @@ export default function AllUsers() {
   });
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / limit));
-  const pageUsers = filtered.slice(page * limit, page * limit + limit);
+  const pageUsers = filtered.slice((page - 1) * limit, page * limit);
+
+  // Igual que el resto de listados: si la data se achica, no dejamos la
+  // paginación apuntando a una página fuera de rango.
+  useEffect(() => {
+    if (page > totalPages) setPage(1);
+  }, [page, totalPages]);
+
+  const columns: Column<UserWithStore>[] = [
+    {
+      key: "user",
+      label: "Usuario",
+      render: (u) => {
+        const hue = hueFromString(u.name);
+        return (
+          <div className={styles.storeCell}>
+            <span
+              className={styles.userAvatar}
+              style={{
+                background: `oklch(0.72 0.1 ${hue})`,
+                color: `oklch(0.22 0.03 ${hue})`,
+              }}
+            >
+              {initials(u.name)}
+            </span>
+            <div className={styles.userText}>
+              <div className={styles.userName}>
+                {u.name}
+                {u.is_owner && (
+                  <span className={styles.ownerBadge}>
+                    <Star size={10} fill="currentColor" /> Owner
+                  </span>
+                )}
+              </div>
+              <div className={styles.userEmail}>{u.email}</div>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      key: "store",
+      label: "Tienda",
+      render: (u) => <span className={styles.storeName}>{u.store_name}</span>,
+    },
+    {
+      key: "role",
+      label: "Rol",
+      render: (u) => <RoleBadge role={u.role} />,
+    },
+    {
+      key: "status",
+      label: "Estado",
+      render: (u) => <UserStatusBadge user={u} />,
+    },
+    {
+      key: "access",
+      label: "Acceso",
+      render: (u) => (
+        <AccessSelect
+          userId={u.id}
+          role={u.role}
+          accessStatus={u.access_status ?? "enabled"}
+          disabled={!!u.deleted_at}
+          onChange={handleAccessChange}
+        />
+      ),
+    },
+    {
+      key: "created_at",
+      label: "Registro",
+      align: "right",
+      render: (u) => (
+        <span className={styles.userDate}>
+          {new Date(u.created_at).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" })}
+        </span>
+      ),
+    },
+  ];
 
   return (
     <>
@@ -117,7 +195,7 @@ export default function AllUsers() {
             type="text"
             placeholder="Buscar por nombre, email o tienda…"
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             className={styles.searchInput}
           />
         </div>
@@ -140,119 +218,26 @@ export default function AllUsers() {
         </div>
       )}
 
-      <div className={styles.card}>
-        <div className={styles.tableWrapper}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Usuario</th>
-                <th>Tienda</th>
-                <th>Rol</th>
-                <th>Estado</th>
-                <th>Acceso</th>
-                <th className={styles.thNum}>Registro</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading && users.length === 0
-                ? Array.from({ length: 6 }).map((_, i) => (
-                  <tr key={i}>
-                    <td colSpan={6} style={{ padding: "14px 20px" }}>
-                      <div className={styles.skeleton} style={{ width: "100%", height: 22, borderRadius: 5 }} />
-                    </td>
-                  </tr>
-                ))
-                : filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan={6}>
-                      <div className={styles.empty}>
-                        <span className={styles.emptyIcon}>
-                          <Users size={22} />
-                        </span>
-                        <span className={styles.emptyText}>
-                          {search ? "No se encontraron usuarios" : "Todavía no hay usuarios"}
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
-                ) : pageUsers.map((u) => {
-                  const hue = hueFromString(u.name);
-                  return (
-                    <tr key={u.id} className={u.deleted_at ? styles.userDeleted : ""}>
-                      <td>
-                        <div className={styles.storeCell}>
-                          <span
-                            className={styles.userAvatar}
-                            style={{
-                              background: `oklch(0.72 0.1 ${hue})`,
-                              color: `oklch(0.22 0.03 ${hue})`,
-                            }}
-                          >
-                            {initials(u.name)}
-                          </span>
-                          <div className={styles.userText}>
-                            <div className={styles.userName}>
-                              {u.name}
-                              {u.is_owner && (
-                                <span className={styles.ownerBadge}>
-                                  <Star size={10} fill="currentColor" /> Owner
-                                </span>
-                              )}
-                            </div>
-                            <div className={styles.userEmail}>{u.email}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <span className={styles.storeName}>{u.store_name}</span>
-                      </td>
-                      <td>
-                        <RoleBadge role={u.role} />
-                      </td>
-                      <td>
-                        <UserStatusBadge user={u} />
-                      </td>
-                      <td>
-                        <AccessSelect
-                          userId={u.id}
-                          role={u.role}
-                          accessStatus={u.access_status ?? "enabled"}
-                          disabled={!!u.deleted_at}
-                          onChange={handleAccessChange}
-                        />
-                      </td>
-                      <td className={styles.tdNum}>
-                        <span className={styles.userDate}>
-                          {new Date(u.created_at).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" })}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Paginación */}
-        {totalPages > 1 && (
-          <div className={styles.pagination}>
-            <button
-              className={styles.pageBtn}
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-              disabled={page === 0}
-            >
-              Anterior
-            </button>
-            <button
-              className={styles.pageBtn}
-              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-              disabled={page >= totalPages - 1}
-            >
-              Siguiente
-            </button>
-          </div>
-        )}
-      </div>
+      <DataTable
+        columns={columns}
+        data={pageUsers}
+        loading={loading}
+        total={filtered.length}
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        rowClassName={(u) => (u.deleted_at ? styles.userDeleted : undefined)}
+        refreshing={refreshing}
+        emptyMessage={search ? "No se encontraron usuarios" : "Todavía no hay usuarios"}
+        skeletonCols={[
+          { width: "240px" },
+          { width: "120px" },
+          { width: "90px" },
+          { width: "100px" },
+          { width: "140px" },
+          { width: "90px", align: "right" },
+        ]}
+      />
     </>
   );
 }
