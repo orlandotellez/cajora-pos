@@ -1186,6 +1186,23 @@ describe("SubscriptionService", () => {
   })
 
   describe("whop (S5)", () => {
+    /** Membership como la devuelve `GET /memberships/{id}` ("la API decide"). */
+    function liveMembership(overrides: Partial<WhopMembership> = {}): WhopMembership {
+      const now = Date.now()
+      return {
+        id: "mem-1",
+        status: "active",
+        user: null,
+        renewal_period_start: new Date(now - DAY_MS).toISOString(),
+        renewal_period_end: new Date(now + 30 * DAY_MS).toISOString(),
+        cancel_at_period_end: false,
+        metadata: null,
+        plan: null,
+        product: null,
+        ...overrides,
+      }
+    }
+
     it("cancel de una fila whop cancela en Whop y NO toca PayPal", async () => {
       const whopCancel = mock.method(whopClient, "cancelMembership", async () => {})
       const paypalCancel = mock.method(paypalClient, "cancelSubscription", async () => true)
@@ -1214,6 +1231,10 @@ describe("SubscriptionService", () => {
     })
 
     it("reactivate de una fila whop reactiva en Whop antes de limpiar el flag", async () => {
+      // La cancelación sigue viva en Whop: hay algo que revertir.
+      mock.method(whopClient, "getMembership", async () =>
+        liveMembership({ cancel_at_period_end: true }),
+      )
       const whopReactivate = mock.method(whopClient, "reactivateMembership", async () => {})
       const existing = makeEntity({
         provider: "whop",
@@ -1230,6 +1251,68 @@ describe("SubscriptionService", () => {
       assert.equal(whopReactivate.mock.calls[0].arguments[0], "mem-1")
       assert.equal(res.status, "active")
       assert.equal(getCurrent()!.cancel_at_period_end, false)
+    })
+
+    it("reactivate de una fila whop consulta la membership real antes de revertir", async () => {
+      const getMembership = mock.method(whopClient, "getMembership", async () =>
+        liveMembership({ cancel_at_period_end: true }),
+      )
+      const whopReactivate = mock.method(whopClient, "reactivateMembership", async () => {})
+      const existing = makeEntity({
+        provider: "whop",
+        whop_membership_id: "mem-9",
+        status: "active",
+        cancel_at_period_end: true,
+      })
+      const { repo, getCurrent } = makeRepo(existing)
+      const service = createSubscriptionService(repo)
+
+      const res = await service.reactivate("store-1")
+
+      assert.equal(getMembership.mock.callCount(), 1)
+      assert.equal(getMembership.mock.calls[0].arguments[0], "mem-9")
+      assert.equal(whopReactivate.mock.callCount(), 1)
+      assert.equal(whopReactivate.mock.calls[0].arguments[0], "mem-9")
+      assert.equal(res.status, "active")
+      assert.equal(getCurrent()!.cancel_at_period_end, false)
+    })
+
+    it("reactivate de una fila whop cuya cancelación YA se ejecutó → ConflictError sin revertir ni escribir", async () => {
+      // Caso real del sandbox: la fila dice `cancel_at_period_end` pero Whop ya ejecutó
+      // la cancelación (`canceled_at` seteado, `renewal_period_end` nulo). Llamar a
+      // `/reactivate` ahí es un 4xx del proveedor que se veía como 502 opaco.
+      mock.method(whopClient, "getMembership", async () =>
+        liveMembership({
+          status: "canceled",
+          cancel_at_period_end: false,
+          renewal_period_end: null,
+        }),
+      )
+      const whopReactivate = mock.method(whopClient, "reactivateMembership", async () => {})
+      const existing = makeEntity({
+        provider: "whop",
+        whop_membership_id: "mem-1",
+        status: "active",
+        cancel_at_period_end: true,
+      })
+      const { repo, getCurrent } = makeRepo(existing)
+      const update = mock.method(repo, "update")
+      const created: Array<NewSubscriptionEvent> = []
+      const service = createSubscriptionService(repo, fakeEventRepo(created))
+
+      await assert.rejects(
+        () => service.reactivate("store-1"),
+        (err: unknown) => {
+          assert.ok(err instanceof ConflictError, "tiene que ser un 409, no un 502")
+          assert.match(err.message, /ya está cancelada en Whop/)
+          assert.match(err.message, /suscribite de nuevo/)
+          return true
+        },
+      )
+      assert.equal(whopReactivate.mock.callCount(), 0, "no se pide revertir algo que ya no existe")
+      assert.equal(update.mock.callCount(), 0, "sin éxito no se toca la fila")
+      assert.equal(getCurrent()!.cancel_at_period_end, true, "la fila queda como estaba")
+      assert.equal(created.length, 0, "sin éxito no se audita")
     })
 
     it("cancel de PayPal sigue llamando al cliente de PayPal (no-regresión S2)", async () => {

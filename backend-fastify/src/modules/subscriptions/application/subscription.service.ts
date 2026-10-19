@@ -383,6 +383,16 @@ export const createSubscriptionService = (
           if (!existing.whop_membership_id) {
             throw new ConflictError("No hay suscripción activa")
           }
+          // La API decide: la fila puede decir `cancel_at_period_end` cuando Whop ya
+          // ejecutó la cancelación (`canceled_at` seteado, `renewal_period_end` nulo).
+          // Ahí no queda nada que revertir y `/reactivate` responde 4xx, que se veía como
+          // un 502 opaco. Con el estado real se corta antes con un 409 y copy accionable.
+          const membership = await whopClient.getMembership(existing.whop_membership_id)
+          if (!membership.cancel_at_period_end) {
+            throw new ConflictError(
+              "La suscripción ya está cancelada en Whop y no se puede reactivar. Para volver a activarla, suscribite de nuevo.",
+            )
+          }
           await whopClient.reactivateMembership(existing.whop_membership_id)
         }
         const updated = await repository.update(storeId, {
