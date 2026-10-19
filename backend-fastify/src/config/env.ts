@@ -25,6 +25,10 @@ const envSchema = z.object({
   PAYPAL_PLAN_ID_MONTHLY: z.string().default(""),
 
   WHOP_ENABLED: z.string().default("false").transform((v) => v === "true"),
+  // Default producción a propósito: pasar a sandbox tiene que ser explícito, porque el
+  // default contrario mandaría datos de prueba a la cuenta real (o al revés) sin que
+  // nadie lo pida. PayPal usa el default opuesto; acá se prioriza no sorprender.
+  WHOP_SANDBOX: z.string().default("false").transform((v) => v === "true"),
   WHOP_API_KEY: z.string().default(""),
   WHOP_WEBHOOK_SECRET: z.string().default(""),
   WHOP_PLAN_ID_MONTHLY: z.string().default(""),

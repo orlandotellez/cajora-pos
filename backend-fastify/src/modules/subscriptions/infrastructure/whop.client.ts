@@ -7,7 +7,19 @@ import type { WhopMembership } from "../domain/whop-membership"
 // re-exporta para que un llamador no tenga que conocer los dos módulos.
 export type { WhopMembership }
 
-const WHOP_BASE_URL = "https://api.whop.com/api/v1"
+const WHOP_PRODUCTION_BASE_URL = "https://api.whop.com/api/v1"
+const WHOP_SANDBOX_BASE_URL = "https://sandbox-api.whop.com/api/v1"
+
+/**
+ * URL base de la API según el entorno. Se resuelve **por llamada** y no al importar, para
+ * que `WHOP_SANDBOX` se pueda cambiar sin recargar el módulo.
+ *
+ * El sandbox tiene su propia base y sus propias credenciales: una membership de sandbox no
+ * existe en producción ni al revés.
+ */
+export function whopBaseUrl(): string {
+  return env.WHOP_SANDBOX ? WHOP_SANDBOX_BASE_URL : WHOP_PRODUCTION_BASE_URL
+}
 
 /** Timeout de red, igual que en la verificación de PayPal. */
 const REQUEST_TIMEOUT_MS = 10_000
@@ -43,7 +55,7 @@ async function whopFetch(url: string, init: RequestInit): Promise<Response> {
 }
 
 async function whopRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const res = await whopFetch(`${WHOP_BASE_URL}${path}`, {
+  const res = await whopFetch(`${whopBaseUrl()}${path}`, {
     ...init,
     headers: {
       Authorization: `Bearer ${env.WHOP_API_KEY}`,
@@ -137,4 +149,4 @@ export const whopClient = {
   },
 }
 
-export { WHOP_BASE_URL }
+export { WHOP_PRODUCTION_BASE_URL, WHOP_SANDBOX_BASE_URL }
