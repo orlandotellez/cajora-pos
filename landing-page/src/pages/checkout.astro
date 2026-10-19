@@ -70,6 +70,8 @@ import PlansModal from '../sections/checkout/PlansModal.astro';
     const whopTarget = $("[data-whop-checkout]");
     const whopPending = $("[data-whop-pending]");
     const whopSwitch = $("[data-whop-switch]");
+    const whopSync = $("[data-whop-sync]") as HTMLButtonElement | null;
+    const whopSyncStatus = $("[data-whop-sync-status]");
 
     // Regreso del checkout off-site de Whop: Whop agrega `payment` y `status`.
     const returnParams = new URLSearchParams(window.location.search);
@@ -135,6 +137,7 @@ import PlansModal from '../sections/checkout/PlansModal.astro';
       if (whopTarget) whopTarget.innerHTML = "";
       if (whopBlock) whopBlock.hidden = true;
       if (whopPending) whopPending.hidden = true;
+      if (whopSyncStatus) whopSyncStatus.hidden = true;
       setSummary("—", "—");
       setStep(1, null);
     };
@@ -195,6 +198,7 @@ import PlansModal from '../sections/checkout/PlansModal.astro';
       hideError(payError);
       setSummary(storeName, email);
       paySuccess.hidden = true;
+      if (whopSyncStatus) whopSyncStatus.hidden = true;
       if (storeName) {
         const copy = SUCCESS_COPY[flowOrigin];
         $("[data-success-prefix]")!.textContent = copy.prefix;
@@ -254,6 +258,54 @@ import PlansModal from '../sections/checkout/PlansModal.astro';
           "Seguimos confirmando tu pago. Te avisamos por email en cuanto Whop lo acredite; podés cerrar esta página.";
         whopPending.hidden = false;
       }
+    }
+
+    // Recuperación manual: si el comprador ya pagó y la fila quedó `pending` (webhook
+    // demorado / sin retorno al landing), se reconcilia contra Whop sin volver a
+    // cobrar. La autoridad sigue siendo el backend, igual que en el polling.
+    async function syncWhopPayment(): Promise<void> {
+      if (!whopSync) return;
+      hideError(payError);
+      whopSync.disabled = true;
+      if (whopSyncStatus) {
+        whopSyncStatus.textContent = "Consultando tu pago con Whop…";
+        whopSyncStatus.hidden = false;
+      }
+
+      try {
+        // POST sin body: no se envía `Content-Type`, así Fastify no rechaza un JSON vacío.
+        const res = await authFetch("/subscriptions/whop/sync", { method: "POST" });
+        const data = (await res.json().catch(() => null)) as { status?: string; mode?: string } | null;
+
+        if (res.status === 401 || res.status === 403) {
+          resetToStart();
+          return;
+        }
+        // Solo una suscripción Cloud realmente activa habilita el paso 4.
+        if (res.ok && data?.status === "active" && data?.mode === "cloud") {
+          saveSession({ ...(readSession() ?? {}), paid: true, emailVerified: true });
+          setStep(4, readSession());
+          return;
+        }
+        // Todavía no acreditado: mensaje calmo y nunca se marca el pago a mano.
+        if (whopSyncStatus) {
+          whopSyncStatus.textContent =
+            "Todavía no vemos tu pago. Esperá un minuto y volvé a intentar; te confirmamos el acceso por email cuando Whop lo acredite.";
+          whopSyncStatus.hidden = false;
+        }
+      } catch {
+        if (whopSyncStatus) {
+          whopSyncStatus.textContent =
+            "No pudimos verificar tu pago ahora. Revisá tu conexión e intentá de nuevo en un minuto.";
+          whopSyncStatus.hidden = false;
+        }
+      } finally {
+        whopSync.disabled = false;
+      }
+    }
+
+    if (whopSync) {
+      whopSync.addEventListener("click", () => { void syncWhopPayment(); });
     }
 
     document.querySelectorAll<HTMLAnchorElement>("[data-go-pos]").forEach((a) => {

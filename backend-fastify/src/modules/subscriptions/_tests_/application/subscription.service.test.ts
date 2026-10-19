@@ -8,7 +8,9 @@ import { whopClient } from "../../infrastructure/whop.client"
 import { verifyCheckoutRef } from "../../domain/whop-checkout-ref"
 import type { ISubscriptionRepository } from "../../domain/subscription.interface"
 import type { ISubscriptionEntity } from "../../domain/subscription.entities"
+import { SUBSCRIPTION_EVENT_ACTIONS } from "../../domain/subscription-event.interface"
 import type { NewSubscriptionEvent } from "../../domain/subscription-event.interface"
+import type { WhopMembership } from "../../domain/whop-membership"
 
 const DAY_MS = 86_400_000
 
@@ -1269,6 +1271,176 @@ describe("SubscriptionService", () => {
 
       assert.equal(paypalCancel.mock.callCount(), 1)
       assert.equal(whopCancel.mock.callCount(), 0)
+    })
+  })
+
+  // Recuperación del doble cobro: cuando Whop no vuelve al landing y la fila queda
+  // `pending`, el cliente puede reconciliar contra la API de Whop por el email del
+  // dueño en vez de volver a pagar.
+  describe("syncWhopMembership", () => {
+    /** Membership como la devuelve el listado de Whop. */
+    function makeWhopMembership(overrides: Partial<WhopMembership> = {}): WhopMembership {
+      const now = Date.now()
+      return {
+        id: "mem-1",
+        status: "active",
+        user: { id: "whop-user-1", email: "dueno@cajora.com", username: "dueno" },
+        renewal_period_start: new Date(now - DAY_MS).toISOString(),
+        renewal_period_end: new Date(now + 30 * DAY_MS).toISOString(),
+        cancel_at_period_end: false,
+        metadata: null,
+        plan: { id: "plan_1" },
+        product: null,
+        ...overrides,
+      }
+    }
+
+    /** Email del dueño inyectado: los tests no tocan Prisma. */
+    const ownerEmail =
+      (email: string | null) =>
+      async (): Promise<string | null> =>
+        email
+
+    it("vincula la membership cuando el email del dueño coincide (case-insensitive)", async () => {
+      mock.property(env, "WHOP_ENABLED", true)
+      const list = mock.method(whopClient, "listMemberships", async () => [makeWhopMembership()])
+      const existing = makeEntity({ status: "pending", provider: "whop", whop_membership_id: null })
+      const { repo, getCurrent } = makeRepo(existing)
+      const created: Array<NewSubscriptionEvent> = []
+      const service = createSubscriptionService(
+        repo,
+        fakeEventRepo(created),
+        undefined,
+        ownerEmail("Dueno@Cajora.com"),
+      )
+
+      const res = await service.syncWhopMembership("store-1", {
+        userId: "user-1",
+        ip: null,
+        userAgent: null,
+      })
+
+      assert.equal(list.mock.callCount(), 1)
+      assert.equal(getCurrent()!.provider, "whop")
+      assert.equal(getCurrent()!.whop_membership_id, "mem-1")
+      assert.equal(getCurrent()!.whop_user_id, "whop-user-1")
+      assert.equal(getCurrent()!.status, "active")
+      assert.equal(res.status, "active")
+      assert.equal(res.whop_membership_id, "mem-1")
+      assert.equal(created.length, 1)
+      assert.equal(created[0].action, SUBSCRIPTION_EVENT_ACTIONS.WEBHOOK_WHOP_ACTIVATED)
+      assert.equal(created[0].user_id, "user-1")
+      assert.equal((created[0].metadata as Record<string, unknown>).source, "manual_sync")
+      assert.equal((created[0].metadata as Record<string, unknown>).whop_status, "active")
+    })
+
+    it("NO vincula cuando el email no coincide con el del dueño", async () => {
+      mock.property(env, "WHOP_ENABLED", true)
+      mock.method(whopClient, "listMemberships", async () => [
+        makeWhopMembership({ user: { id: "otro", email: "otro@example.com", username: "otro" } }),
+      ])
+      const existing = makeEntity({ status: "pending", provider: "whop", whop_membership_id: null })
+      const { repo, getCurrent } = makeRepo(existing)
+      const created: Array<NewSubscriptionEvent> = []
+      const service = createSubscriptionService(
+        repo,
+        fakeEventRepo(created),
+        undefined,
+        ownerEmail("dueno@cajora.com"),
+      )
+
+      const res = await service.syncWhopMembership("store-1")
+
+      assert.equal(getCurrent()!.whop_membership_id, null)
+      assert.equal(getCurrent()!.status, "pending")
+      assert.equal(res.status, "pending")
+      assert.equal(created.length, 0)
+    })
+
+    it("NO vincula cuando la membership no concede acceso (expired)", async () => {
+      mock.property(env, "WHOP_ENABLED", true)
+      mock.method(whopClient, "listMemberships", async () => [makeWhopMembership({ status: "expired" })])
+      const existing = makeEntity({ status: "pending", provider: "whop", whop_membership_id: null })
+      const { repo, getCurrent } = makeRepo(existing)
+      const created: Array<NewSubscriptionEvent> = []
+      const service = createSubscriptionService(
+        repo,
+        fakeEventRepo(created),
+        undefined,
+        ownerEmail("dueno@cajora.com"),
+      )
+
+      const res = await service.syncWhopMembership("store-1")
+
+      assert.equal(getCurrent()!.whop_membership_id, null)
+      assert.equal(getCurrent()!.status, "pending")
+      assert.equal(res.status, "pending")
+      assert.equal(created.length, 0)
+    })
+
+    it("devuelve el estado actual sin cambios cuando no hay memberships", async () => {
+      mock.property(env, "WHOP_ENABLED", true)
+      mock.method(whopClient, "listMemberships", async () => [])
+      const existing = makeEntity({ status: "pending", provider: "whop", whop_membership_id: null })
+      const { repo, getCurrent } = makeRepo(existing)
+      const created: Array<NewSubscriptionEvent> = []
+      const service = createSubscriptionService(
+        repo,
+        fakeEventRepo(created),
+        undefined,
+        ownerEmail("dueno@cajora.com"),
+      )
+
+      const res = await service.syncWhopMembership("store-1")
+
+      assert.equal(getCurrent()!.status, "pending")
+      assert.equal(getCurrent()!.whop_membership_id, null)
+      assert.equal(res.status, "pending")
+      assert.equal(res.whop_membership_id, null)
+      assert.equal(created.length, 0)
+    })
+
+    it("con WHOP_ENABLED=false → ConflictError y la fila no se toca", async () => {
+      mock.property(env, "WHOP_ENABLED", false)
+      const list = mock.method(whopClient, "listMemberships", async () => [makeWhopMembership()])
+      const existing = makeEntity({ status: "pending", provider: "whop", whop_membership_id: null })
+      const { repo, getCurrent } = makeRepo(existing)
+      const service = createSubscriptionService(
+        repo,
+        fakeEventRepo([]),
+        undefined,
+        ownerEmail("dueno@cajora.com"),
+      )
+
+      await assert.rejects(
+        () => service.syncWhopMembership("store-1"),
+        (err: unknown) => err instanceof ConflictError && err.statusCode === 409,
+      )
+      assert.equal(list.mock.callCount(), 0, "no debe consultar la API de Whop")
+      assert.equal(getCurrent()!.status, "pending")
+      assert.equal(getCurrent()!.whop_membership_id, null)
+    })
+
+    it("si la fila ya tiene esa membership, devuelve el estado actual sin reescribir", async () => {
+      mock.property(env, "WHOP_ENABLED", true)
+      mock.method(whopClient, "listMemberships", async () => [makeWhopMembership()])
+      const existing = makeEntity({ status: "active", provider: "whop", whop_membership_id: "mem-1" })
+      const { repo, getCurrent } = makeRepo(existing)
+      const update = mock.method(repo, "update", async () => getCurrent())
+      const created: Array<NewSubscriptionEvent> = []
+      const service = createSubscriptionService(
+        repo,
+        fakeEventRepo(created),
+        undefined,
+        ownerEmail("dueno@cajora.com"),
+      )
+
+      const res = await service.syncWhopMembership("store-1")
+
+      assert.equal(update.mock.callCount(), 0)
+      assert.equal(getCurrent()!.whop_membership_id, "mem-1")
+      assert.equal(res.whop_membership_id, "mem-1")
+      assert.equal(created.length, 0)
     })
   })
 })

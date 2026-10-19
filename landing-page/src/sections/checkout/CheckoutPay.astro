@@ -25,6 +25,13 @@ const whopConfigured = Boolean(import.meta.env.PUBLIC_WHOP_PLAN_ID);
         <span>Cargando método de pago...</span>
       </div>
       <p class="pay__pending" data-whop-pending role="status" hidden></p>
+      <!-- Recuperación: si el pago ya se hizo pero el webhook de Whop todavía no
+           llegó (o no hubo retorno al landing), el comprador verifica acá sin
+           volver a pagar. Visible también en el estado "confirmando el pago". -->
+      <button type="button" class="checkout__link pay__sync" data-whop-sync>
+        Ya pagué, verificar
+      </button>
+      <p class="pay__sync-status" data-whop-sync-status role="status" hidden></p>
     </div>
   )}
 
@@ -151,6 +158,25 @@ const whopConfigured = Boolean(import.meta.env.PUBLIC_WHOP_PLAN_ID);
     border-radius: var(--radius);
     padding: 0.625rem 0.75rem;
     margin-top: 0.75rem;
+  }
+
+  /* Recuperación manual del pago: link discreto, siempre visible cuando el panel
+     de Whop está desplegado (incluido el estado pendiente). */
+  .pay__sync {
+    display: block;
+    margin: 0.875rem auto 0;
+  }
+
+  .pay__sync:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .pay__sync-status {
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+    text-align: center;
+    margin-top: 0.5rem;
   }
 
   .checkout__link {

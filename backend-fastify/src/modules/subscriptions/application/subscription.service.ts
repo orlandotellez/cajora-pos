@@ -1,4 +1,5 @@
 import { env } from "@/config/env"
+import { prisma } from "@/config/prisma"
 import { AppError, ConflictError } from "@/core/errors/AppError"
 import { paypalClient } from "../infrastructure/paypal.client"
 import { whopClient } from "../infrastructure/whop.client"
@@ -16,12 +17,52 @@ import { mapToResponse } from "./common/subscriptions.mappers"
 import { resolveEntitlement } from "../domain/subscription.entitlement"
 import { periodEnd } from "../domain/subscription.period"
 import { createCheckoutRef } from "../domain/whop-checkout-ref"
+import { buildMembershipUpdate } from "../domain/whop-membership-sync"
 
 const PLAN_PRICE = "12.99"
 const PLAN_CURRENCY = "USD"
 
+/**
+ * Estados de Whop que conceden acceso. La reconciliación manual solo vincula con
+ * uno de estos: `past_due`/`canceled`/`expired` no deben otorgar acceso por la
+ * puerta de atrás de una sincronización por email.
+ */
+const WHOP_ACCESS_GRANTING_STATUSES = new Set(["active", "trialing", "completed"])
+
 function noopActor(): SubscriptionActor {
   return { userId: null, ip: null, userAgent: null }
+}
+
+/** Respuesta de una tienda sin fila de suscripción (self-hosted). */
+function emptySubscriptionResponse(): ISubscriptionResponse {
+  return {
+    mode: "self_hosted",
+    plan: "monthly",
+    status: "active",
+    provider: "paypal",
+    paypal_subscription_id: null,
+    whop_membership_id: null,
+    current_period_start: null,
+    current_period_end: null,
+    cancel_at_period_end: false,
+    grace_ends_at: null,
+    days_overdue: null,
+  }
+}
+
+/** Email del dueño de la tienda; se inyecta para poder testear sin Prisma. */
+export type FindOwnerEmail = (storeId: string) => Promise<string | null>
+
+/**
+ * Busca el email del dueño mirando el email de la cuenta (no el del comprador del
+ * checkout): la membresía de Whop se reconcilia contra quien pagó por la tienda.
+ */
+async function defaultFindOwnerEmail(storeId: string): Promise<string | null> {
+  const owner = await prisma.user.findFirst({
+    where: { store_id: storeId, is_owner: true, deleted_at: null },
+    select: { email: true },
+  })
+  return owner?.email ?? null
 }
 
 /**
@@ -51,6 +92,7 @@ export const createSubscriptionService = (
   repository: ISubscriptionRepository,
   eventRepository: ISubscriptionEventRepository = noopSubscriptionEventRepository,
   webhookEventRepository?: IPayPalWebhookEventRepository,
+  findOwnerEmail: FindOwnerEmail = defaultFindOwnerEmail,
 ) => {
   /** Registra en la auditoría una acción disparada por un usuario. */
   const audit = async (
@@ -176,6 +218,70 @@ export const createSubscriptionService = (
       return { planId, ref: createCheckoutRef(storeId), provider: "whop" as const }
     },
 
+    /**
+     * Reconciliación manual (recuperación del doble cobro).
+     *
+     * Cuando Whop cobra pero su webhook no llega —o el comprador vuelve sin los query
+     * params de retorno— la fila queda `pending` y un segundo checkout puede cobrar de
+     * nuevo. Acá se busca la membership por el email del dueño y, si concede acceso, se
+     * vincula la fila con el MISMO mapeo de estado que usa el webhook. Si no hay match,
+     * no hay `WHOP_ENABLED`, o la fila ya está vinculada, no se toca nada: nunca se
+     * fabrica un período ni se otorga acceso a ciegas.
+     */
+    async syncWhopMembership(
+      storeId: string,
+      actor: SubscriptionActor = noopActor(),
+    ): Promise<ISubscriptionResponse> {
+      if (!env.WHOP_ENABLED) {
+        throw new ConflictError(
+          "La verificación de pagos de Whop no está habilitada en este entorno.",
+        )
+      }
+
+      const sub = await repository.getByStoreId(storeId)
+      if (!sub) {
+        return emptySubscriptionResponse()
+      }
+
+      // El dueño es el comprador de la suscripción de la tienda: por su email se
+      // busca la membership en Whop.
+      const ownerEmail = (await findOwnerEmail(storeId))?.trim().toLowerCase()
+      if (!ownerEmail) {
+        return mapToResponse(sub)
+      }
+
+      const memberships = await whopClient.listMemberships()
+      const matched = memberships.find((m) => {
+        const email = m.user?.email
+        return (
+          WHOP_ACCESS_GRANTING_STATUSES.has(m.status) &&
+          typeof email === "string" &&
+          email.trim().toLowerCase() === ownerEmail
+        )
+      })
+      if (!matched || sub.whop_membership_id === matched.id) {
+        return mapToResponse(sub)
+      }
+
+      // La tabla de estados y las reglas de período son las mismas del webhook, así que
+      // la reconciliación no puede divergir de lo que habría escrito el webhook.
+      const update = buildMembershipUpdate(matched, sub, new Date())
+      const updated = await repository.update(storeId, {
+        provider: "whop",
+        whop_membership_id: matched.id,
+        ...(update ?? {}),
+      })
+      if (!updated) {
+        return mapToResponse(sub)
+      }
+
+      await audit(actor, storeId, SUBSCRIPTION_EVENT_ACTIONS.WEBHOOK_WHOP_ACTIVATED, null, {
+        source: "manual_sync",
+        whop_status: matched.status,
+      })
+      return mapToResponse(updated)
+    },
+
     async activate(
       storeId: string,
       paypalSubscriptionId: string,
@@ -293,19 +399,7 @@ export const createSubscriptionService = (
     async getByStore(storeId: string): Promise<ISubscriptionResponse> {
       const sub = await repository.getByStoreId(storeId)
       if (!sub) {
-        return {
-          mode: "self_hosted",
-          plan: "monthly",
-          status: "active",
-          provider: "paypal",
-          paypal_subscription_id: null,
-          whop_membership_id: null,
-          current_period_start: null,
-          current_period_end: null,
-          cancel_at_period_end: false,
-          grace_ends_at: null,
-          days_overdue: null,
-        }
+        return emptySubscriptionResponse()
       }
       return mapToResponse(sub)
     },

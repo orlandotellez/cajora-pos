@@ -12,9 +12,22 @@ const WHOP_BASE_URL = "https://api.whop.com/api/v1"
 /** Timeout de red, igual que en la verificación de PayPal. */
 const REQUEST_TIMEOUT_MS = 10_000
 
+/** Cuántas páginas del listado se siguen como máximo (la búsqueda es por email). */
+const MEMBERSHIP_LIST_MAX_PAGES = 3
+
 interface WhopErrorBody {
   message?: string
   error?: string
+}
+
+/**
+ * Envelope paginado del listado de memberships. La API puede devolver el array
+ * pelado o dentro de `data`; ambas formas se aceptan para no depender del detalle
+ * de versión del endpoint.
+ */
+interface WhopMembershipListPage {
+  data?: WhopMembership[]
+  page_info?: { has_next_page?: boolean; end_cursor?: string | null }
 }
 
 /**
@@ -62,6 +75,40 @@ export const whopClient = {
   /** Lee el estado real de la membership: los webhooks de Whop solo disparan, la API decide. */
   async getMembership(id: string): Promise<WhopMembership> {
     return whopRequest<WhopMembership>(`/memberships/${encodeURIComponent(id)}`)
+  },
+
+  /**
+   * Lista las memberships de la cuenta. Se usa para reconciliar una compra que Whop
+   * no llegó a notificar por webhook (el evento pudo perderse o demorarse).
+   *
+   * Como el objetivo es encontrar UNA membership por el email del comprador, alcanza
+   * con unas pocas páginas: no se recorre el historial completo del negocio. Si la
+   * respuesta trae cursor, se siguen como máximo `MEMBERSHIP_LIST_MAX_PAGES` páginas.
+   */
+  async listMemberships(limit = 100): Promise<WhopMembership[]> {
+    const collected: WhopMembership[] = []
+    let after: string | null = null
+
+    for (let page = 0; page < MEMBERSHIP_LIST_MAX_PAGES; page++) {
+      const query: string = after ? `?after=${encodeURIComponent(after)}` : ""
+      const body: WhopMembershipListPage | WhopMembership[] = await whopRequest<
+        WhopMembershipListPage | WhopMembership[]
+      >(`/memberships${query}`)
+
+      // Envelope variable según versión de la API: array pelado o `{ data }`.
+      if (Array.isArray(body)) {
+        collected.push(...body)
+        break
+      }
+      const items: WhopMembership[] = Array.isArray(body?.data) ? body.data : []
+      collected.push(...items)
+
+      const info: WhopMembershipListPage["page_info"] = body?.page_info
+      if (!info?.has_next_page || !info.end_cursor) break
+      after = info.end_cursor
+    }
+
+    return collected.slice(0, Math.max(0, limit))
   },
 
   /**
