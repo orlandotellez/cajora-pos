@@ -8,6 +8,7 @@ import type { WhopMembership } from "../domain/whop-membership"
 import { SubscriptionRepository } from "../infrastructure/subscription.prisma.repository"
 import { WhopWebhookEventRepository } from "../infrastructure/whop-webhook-event.prisma.repository"
 import { SubscriptionEventRepository } from "../infrastructure/subscription-event.prisma.repository"
+import { SUBSCRIPTION_EVENT_ACTIONS } from "../domain/subscription-event.interface"
 import type { SubscriptionEventAction } from "../domain/subscription-event.interface"
 import type { ISubscriptionEntity } from "../domain/subscription.entities"
 import { verifyCheckoutRef } from "../domain/whop-checkout-ref"
@@ -75,6 +76,62 @@ async function auditMembershipEvent(
     })
   } catch (err) {
     log.warn({ err, eventId: ev.event_id }, "No se pudo auditar el evento de Whop.")
+  }
+}
+
+/**
+ * Monto del ciclo que Whop reporta en la membership: `renewal_price` manda sobre
+ * `initial_price`, y la moneda sale del MISMO objeto que aportó el monto. Si ninguno
+ * trae monto se devuelve `null` y el cobro se registra sin `amount`/`currency`: no se
+ * inventa un número, `getBilling` cae solo al precio del plan.
+ */
+function whopChargePrice(membership: WhopMembership): { amount: string; currency: string } | null {
+  const price = membership.renewal_price?.amount ? membership.renewal_price : membership.initial_price
+  if (!price?.amount) return null
+  return { amount: price.amount, currency: price.currency }
+}
+
+/**
+ * Cobro de un `membership.activated` (Whop lo emite para la compra inicial y para
+ * cada renovación exitosa). Escribe la fila `webhook_sale_completed` que `getBilling`
+ * ya sabe leer para poblar la tarjeta de Facturación.
+ *
+ * Es no fatal, igual que la auditoría: un fallo al registrar el cobro no puede
+ * convertir en 500 un update que ya se aplicó.
+ *
+ * NO se usa `createIdempotent`: su clave de unicidad incluye `paypal_subscription_id`,
+ * que en Whop es siempre NULL, y Postgres trata los NULL como distintos. La
+ * idempotencia ya la da el outbox (`event_id` UNIQUE en `whop_webhook_events`), que
+ * despacha cada evento exactamente una vez.
+ */
+async function recordWhopCharge(
+  log: FastifyRequest["log"],
+  ev: whop_webhook_event,
+  sub: ISubscriptionEntity,
+  membership: WhopMembership,
+): Promise<void> {
+  const price = whopChargePrice(membership)
+  // `renewal_period_start` es el inicio del ciclo cobrado; sin él, el momento del evento.
+  const periodStart = membership.renewal_period_start
+    ? new Date(membership.renewal_period_start)
+    : new Date()
+
+  try {
+    await SubscriptionEventRepository.create({
+      store_id: sub.store_id,
+      user_id: null,
+      action: SUBSCRIPTION_EVENT_ACTIONS.WEBHOOK_SALE_COMPLETED,
+      paypal_subscription_id: null,
+      period_start: periodStart,
+      metadata: {
+        source: "whop_webhook",
+        event_id: ev.event_id,
+        whop_membership_id: membership.id,
+        ...(price ? { amount: price.amount, currency: price.currency } : {}),
+      },
+    })
+  } catch (err) {
+    log.warn({ err, eventId: ev.event_id }, "No se pudo registrar el cobro del evento de Whop.")
   }
 }
 
@@ -215,6 +272,13 @@ async function dispatch(request: FastifyRequest, ev: whop_webhook_event): Promis
   }
 
   await applyMembershipState(log, ev, sub, membership, firstPurchase, auditSource)
+
+  // Solo un `membership.activated` que deja acceso cobra: `membership.updated`,
+  // `deactivated`, `payment.*` e `invoice.*` no registran cobro. El cobro se registra
+  // DESPUÉS de aplicar el estado, para no tocar la tabla de estados ni el período.
+  if (ev.event_type === "membership.activated" && translateWhopStatus(membership)?.status === "active") {
+    await recordWhopCharge(log, ev, sub, membership)
+  }
 }
 
 /**

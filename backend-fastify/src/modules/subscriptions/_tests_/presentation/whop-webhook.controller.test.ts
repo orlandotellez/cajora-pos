@@ -651,4 +651,113 @@ describe("whopWebhookController.receive", () => {
     assert.equal(update.mock.callCount(), 1, "debe vincular la fila")
   })
 
+  it("membership.activated con renewal_price → registra el cobro con el monto renovado (T33)", async () => {
+    const start = isoFromNow(0)
+    mock.method(whopClient, "getMembership", async () =>
+      makeMembership({
+        renewal_period_start: start,
+        initial_price: { currency: "usd", amount: "0.00", decimals: 2 },
+        renewal_price: { currency: "usd", amount: "12.99", decimals: 2 },
+      }),
+    )
+    mock.method(SubscriptionRepository, "getByWhopMembershipId", async () => makeLocalSub())
+    mock.method(SubscriptionRepository, "update", async () => null)
+    const events: Array<Record<string, unknown>> = []
+    mock.method(SubscriptionEventRepository, "create", async (data: Record<string, unknown>) => {
+      events.push(data)
+    })
+
+    const { reply, state } = buildReply()
+    await whopWebhookController.receive(
+      buildRequest(body("membership.activated", { id: MEMBERSHIP_ID })) as never,
+      reply as never,
+    )
+
+    assert.equal(state.status, 200)
+    const charge = events.find((e) => e.action === "webhook_sale_completed")
+    assert.ok(charge, "membership.activated de acceso debe registrar el cobro")
+    assert.equal(charge.store_id, "store-1")
+    assert.equal(charge.user_id, null)
+    assert.equal(charge.paypal_subscription_id, null)
+    assert.equal((charge.period_start as Date).getTime(), new Date(start).getTime())
+    const meta = charge.metadata as Record<string, unknown>
+    assert.equal(meta.source, "whop_webhook")
+    assert.equal(meta.amount, "12.99", "toma el renewal_price, no el initial_price")
+    assert.equal(meta.currency, "usd")
+    assert.equal(meta.whop_membership_id, MEMBERSHIP_ID)
+  })
+
+  it("membership.activated sin precios → registra el cobro igual y SIN amount en el metadata (T33)", async () => {
+    mock.method(whopClient, "getMembership", async () => makeMembership())
+    mock.method(SubscriptionRepository, "getByWhopMembershipId", async () => makeLocalSub())
+    mock.method(SubscriptionRepository, "update", async () => null)
+    const events: Array<Record<string, unknown>> = []
+    mock.method(SubscriptionEventRepository, "create", async (data: Record<string, unknown>) => {
+      events.push(data)
+    })
+
+    const { reply, state } = buildReply()
+    await whopWebhookController.receive(
+      buildRequest(body("membership.activated", { id: MEMBERSHIP_ID })) as never,
+      reply as never,
+    )
+
+    assert.equal(state.status, 200)
+    const charge = events.find((e) => e.action === "webhook_sale_completed")
+    assert.ok(charge, "sin precios el cobro se registra igual")
+    const meta = charge.metadata as Record<string, unknown>
+    assert.equal("amount" in meta, false, "no se inventa un monto: getBilling cae al precio del plan")
+    assert.equal("currency" in meta, false)
+    assert.equal(meta.source, "whop_webhook")
+  })
+
+  it("membership.updated que concede acceso → NO registra cobro (T33)", async () => {
+    mock.method(whopClient, "getMembership", async () =>
+      makeMembership({ renewal_price: { currency: "usd", amount: "12.99", decimals: 2 } }),
+    )
+    mock.method(SubscriptionRepository, "getByWhopMembershipId", async () => makeLocalSub())
+    const update = mock.method(SubscriptionRepository, "update", async () => null)
+    const events: Array<Record<string, unknown>> = []
+    mock.method(SubscriptionEventRepository, "create", async (data: Record<string, unknown>) => {
+      events.push(data)
+    })
+
+    const { reply, state } = buildReply()
+    await whopWebhookController.receive(
+      buildRequest(body("membership.updated", { id: MEMBERSHIP_ID })) as never,
+      reply as never,
+    )
+
+    assert.equal(state.status, 200)
+    assert.equal(update.mock.callCount(), 1, "el update de acceso sí se aplica")
+    assert.equal(
+      events.some((e) => e.action === "webhook_sale_completed"),
+      false,
+      "solo membership.activated cobra",
+    )
+  })
+
+  it("fallo al registrar el cobro → el webhook responde 200 y la fila igual se actualiza (T33)", async () => {
+    mock.method(whopClient, "getMembership", async () =>
+      makeMembership({ renewal_price: { currency: "usd", amount: "12.99", decimals: 2 } }),
+    )
+    mock.method(SubscriptionRepository, "getByWhopMembershipId", async () => makeLocalSub())
+    const update = mock.method(SubscriptionRepository, "update", async () => null)
+    const events: Array<Record<string, unknown>> = []
+    mock.method(SubscriptionEventRepository, "create", async (data: Record<string, unknown>) => {
+      if (data.action === "webhook_sale_completed") throw new Error("DB caída al registrar el cobro")
+      events.push(data)
+    })
+
+    const { reply, state } = buildReply()
+    await whopWebhookController.receive(
+      buildRequest(body("membership.activated", { id: MEMBERSHIP_ID })) as never,
+      reply as never,
+    )
+
+    assert.equal(state.status, 200, "un fallo del cobro no puede volver 500 un update ya aplicado")
+    assert.equal(update.mock.callCount(), 1, "la suscripción se actualiza igual")
+    assert.equal(events[0]?.action, "webhook_whop_activated", "la auditoría no fatal sigue escribiéndose")
+  })
+
 })
