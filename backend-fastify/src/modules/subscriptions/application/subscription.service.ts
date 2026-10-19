@@ -368,23 +368,32 @@ export const createSubscriptionService = (
         await audit(actor, storeId, SUBSCRIPTION_EVENT_ACTIONS.REACTIVATE)
         return mapToResponse(sub)
       }
-      if (existing.status === "active" && existing.cancel_at_period_end) {
-        // S5: para Whop hay que reactivar en el proveedor ANTES de limpiar el flag.
-        // Si la API falla, la cancelación programada sigue vigente (no se miente al cliente).
-        if (existing.provider === "whop") {
+      // Con acceso vigente, reactivar es volver a `active`: revierte la cancelación
+      // programada sin tocar el período pagado. La condición mira el ACCESO y no el
+      // `status` guardado, porque Whop reporta `canceled` en cuanto el cliente programa la
+      // cancelación, aunque el período siga vigente. Exigir `status === "active"` mandaba
+      // esos casos al ramal de abajo y los dejaba en `pending`, borrándole el acceso a
+      // alguien que ya había pagado.
+      const entitlement = resolveEntitlement(existing)
+      if (entitlement.allowed && (existing.cancel_at_period_end || existing.status !== "active")) {
+        // S5: la cancelación se revierte en el proveedor ANTES de limpiar el flag. Si la
+        // API falla, la cancelación programada sigue vigente (no se le miente al cliente).
+        // Solo se llama si hay algo que revertir: sin el flag no hay cancelación pendiente.
+        if (existing.provider === "whop" && existing.cancel_at_period_end) {
           if (!existing.whop_membership_id) {
             throw new ConflictError("No hay suscripción activa")
           }
           await whopClient.reactivateMembership(existing.whop_membership_id)
         }
         const updated = await repository.update(storeId, {
+          status: "active",
           cancel_at_period_end: false,
         })
         if (!updated) throw new ConflictError("No hay suscripción activa")
         await audit(actor, storeId, SUBSCRIPTION_EVENT_ACTIONS.REACTIVATE, existing.paypal_subscription_id)
         return mapToResponse(updated)
       }
-      if (existing.status === "active") {
+      if (entitlement.allowed) {
         return mapToResponse(existing)
       }
       const updated = await repository.update(storeId, {

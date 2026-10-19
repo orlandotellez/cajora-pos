@@ -561,8 +561,14 @@ describe("SubscriptionService", () => {
       assert.equal(created[0].action, "reactivate")
     })
 
-    it("reabre el flujo desde canceled (queda pending para pagar de nuevo)", async () => {
-      const existing = makeEntity({ status: "canceled", paypal_subscription_id: "I-PAYPAL-1" })
+    it("reabre el flujo desde canceled SIN período vigente (queda pending para pagar de nuevo)", async () => {
+      // Fuera del grace (3 días): sin período vigente no hay acceso que conservar y
+      // corresponde reabrir el pago.
+      const existing = makeEntity({
+        status: "canceled",
+        current_period_end: new Date(Date.now() - 10 * DAY_MS),
+        paypal_subscription_id: "I-PAYPAL-1",
+      })
       const { repo, getCurrent } = makeRepo(existing)
       const service = createSubscriptionService(repo)
 
@@ -570,6 +576,27 @@ describe("SubscriptionService", () => {
 
       assert.equal(res.status, "pending")
       assert.equal(getCurrent()!.status, "pending")
+      assert.equal(getCurrent()!.cancel_at_period_end, false)
+    })
+
+    it("canceled CON período vigente → vuelve a active y conserva el acceso (no pending)", async () => {
+      // Regresión: Whop reporta `canceled` en cuanto el cliente programa la cancelación,
+      // aunque el período pagado siga vigente. Exigir `status === "active"` mandaba esos
+      // casos al ramal de reapertura y los dejaba en `pending`, borrándole el mes pagado.
+      const existing = makeEntity({
+        status: "canceled",
+        cancel_at_period_end: true,
+        current_period_end: new Date(Date.now() + 20 * DAY_MS),
+        paypal_subscription_id: "I-PAYPAL-1",
+      })
+      const { repo, getCurrent } = makeRepo(existing)
+      const service = createSubscriptionService(repo)
+
+      const res = await service.reactivate("store-1")
+
+      assert.equal(res.status, "active")
+      assert.equal(res.cancel_at_period_end, false)
+      assert.equal(getCurrent()!.status, "active")
       assert.equal(getCurrent()!.cancel_at_period_end, false)
     })
   })
