@@ -24,6 +24,24 @@ export function getCurrentStep(): number {
   return currentStep;
 }
 
+/**
+ * Ajusta el resumen lateral al paso actual. En el último el plan ya está comprado, así que
+ * "Recomendado" y "Cancelá cuando quieras" dejan de tener sentido.
+ */
+function syncSummary(step: number): void {
+  const summary = $(".checkout__summary");
+  if (!summary) return;
+
+  const complete = step === 4;
+  summary.classList.toggle("is-complete", complete);
+
+  const tag = $("[data-summary-tag]");
+  if (tag) tag.textContent = complete ? "Activa" : "Recomendado";
+
+  const note = $("[data-summary-note]");
+  if (note) note.textContent = complete ? "Tu plan ya está activo" : "Cancelá cuando quieras";
+}
+
 export function setStep(target: number, session: SessionData | null): number {
   let current = target;
   if (!canVisit(current, session)) {
@@ -65,6 +83,7 @@ export function setStep(target: number, session: SessionData | null): number {
     saveSession({ ...persisted, maxStep: current });
   }
 
+  syncSummary(current);
   currentStep = current;
   return current;
 }
