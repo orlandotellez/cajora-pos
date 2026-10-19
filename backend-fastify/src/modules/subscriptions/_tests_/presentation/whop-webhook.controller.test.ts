@@ -7,6 +7,7 @@ import { SubscriptionRepository } from "../../infrastructure/subscription.prisma
 import { WhopWebhookEventRepository } from "../../infrastructure/whop-webhook-event.prisma.repository"
 import { SubscriptionEventRepository } from "../../infrastructure/subscription-event.prisma.repository"
 import { whopClient } from "../../infrastructure/whop.client"
+import { OwnerLookup } from "../../infrastructure/owner-lookup"
 import { createCheckoutRef } from "../../domain/whop-checkout-ref"
 import { AppError } from "@/core/errors/AppError"
 import type { whop_webhook_event } from "@/generated/prisma/client"
@@ -137,6 +138,10 @@ describe("whopWebhookController.receive", () => {
     mock.method(WhopWebhookEventRepository, "findByEventId", async () =>
       makeOutbox({ processed_at: new Date() }),
     )
+    // El fallback por email de T21: por defecto no matchea ninguna tienda. Los casos
+    // del fallback lo sobreescriben; el resto de los tests prueban que sin ref y sin
+    // match no se escribe nada.
+    mock.method(OwnerLookup, "findStoreIdByOwnerEmail", async () => null)
   })
   afterEach(() => {
     env.WHOP_ENABLED = originalWhopEnabled
@@ -503,4 +508,147 @@ describe("whopWebhookController.receive", () => {
     assert.equal(markProcessed.mock.callCount(), 1)
     assert.equal(update.mock.callCount(), 1)
   })
+
+  it("primera compra sin ref con email del comprador que matchea dueño → vincula y activa la fila (T21)", async () => {
+    mock.method(whopClient, "getMembership", async () =>
+      makeMembership({
+        metadata: null,
+        user: { id: "whop-user-1", email: "duenio@cajora.com", username: "u" },
+      }),
+    )
+    mock.method(SubscriptionRepository, "getByWhopMembershipId", async () => null)
+    const lookup = mock.method(OwnerLookup, "findStoreIdByOwnerEmail", async (email: string) => {
+      assert.equal(email, "duenio@cajora.com")
+      return "store-1"
+    })
+    mock.method(SubscriptionRepository, "getByStoreId", async () =>
+      makeLocalSub({ whop_membership_id: null, status: "pending" }),
+    )
+    const update = mock.method(SubscriptionRepository, "update", async () => null)
+    const audits: Array<{ action?: string; metadata?: Record<string, unknown> }> = []
+    mock.method(SubscriptionEventRepository, "create", async (data: Record<string, unknown>) => {
+      audits.push(data as never)
+    })
+
+    const { reply, state } = buildReply()
+    await whopWebhookController.receive(
+      buildRequest(body("membership.activated", { id: MEMBERSHIP_ID })) as never,
+      reply as never,
+    )
+
+    assert.equal(state.status, 200)
+    assert.equal(lookup.mock.callCount(), 1)
+    assert.equal(update.mock.calls[0].arguments[0], "store-1")
+    const data = update.mock.calls[0].arguments[1] as {
+      provider?: string
+      whop_membership_id?: string
+      whop_user_id?: string
+      status?: string
+    }
+    assert.equal(data.provider, "whop")
+    assert.equal(data.whop_membership_id, MEMBERSHIP_ID)
+    assert.equal(data.whop_user_id, "whop-user-1")
+    assert.equal(data.status, "active")
+    assert.equal(audits[0].action, "webhook_whop_activated")
+    assert.equal((audits[0].metadata as Record<string, unknown>).source, "webhook_email_link")
+    assert.equal((audits[0].metadata as Record<string, unknown>).whop_status, "active")
+  })
+
+  it("primera compra sin ref con email sin dueño → nada escrito (T21)", async () => {
+    mock.method(whopClient, "getMembership", async () => makeMembership({ metadata: null }))
+    mock.method(SubscriptionRepository, "getByWhopMembershipId", async () => null)
+    const lookup = mock.method(OwnerLookup, "findStoreIdByOwnerEmail", async () => null)
+    const byStore = mock.method(SubscriptionRepository, "getByStoreId", async () => makeLocalSub())
+    const update = mock.method(SubscriptionRepository, "update", async () => null)
+    const audit = mock.method(SubscriptionEventRepository, "create", async () => {})
+
+    const { reply, state } = buildReply()
+    await whopWebhookController.receive(
+      buildRequest(body("membership.activated", { id: MEMBERSHIP_ID })) as never,
+      reply as never,
+    )
+
+    assert.equal(state.status, 200)
+    assert.equal(lookup.mock.callCount(), 1)
+    assert.equal(byStore.mock.callCount(), 0, "un email sin dueño no resuelve tienda")
+    assert.equal(update.mock.callCount(), 0)
+    assert.equal(audit.mock.callCount(), 0)
+  })
+
+  it("primera compra sin ref y sin email del comprador → no consulta el fallback ni escribe (T21)", async () => {
+    mock.method(whopClient, "getMembership", async () =>
+      makeMembership({ metadata: null, user: { id: "whop-user-1", email: null, username: "u" } }),
+    )
+    mock.method(SubscriptionRepository, "getByWhopMembershipId", async () => null)
+    // El mock devolvería tienda si se lo consultara; el test prueba que no se lo llama.
+    const lookup = mock.method(OwnerLookup, "findStoreIdByOwnerEmail", async () => "store-1")
+    const update = mock.method(SubscriptionRepository, "update", async () => null)
+
+    const { reply, state } = buildReply()
+    await whopWebhookController.receive(
+      buildRequest(body("membership.activated", { id: MEMBERSHIP_ID })) as never,
+      reply as never,
+    )
+
+    assert.equal(state.status, 200)
+    assert.equal(lookup.mock.callCount(), 0, "sin email no hay último recurso")
+    assert.equal(update.mock.callCount(), 0)
+  })
+
+  it("orden de resolución: con metadata.ref válido NO se consulta el email del comprador (T21)", async () => {
+    const ref = createCheckoutRef("store-1")
+    mock.method(whopClient, "getMembership", async () => makeMembership({ metadata: { ref } }))
+    mock.method(SubscriptionRepository, "getByWhopMembershipId", async () => null)
+    // Si el fallback por email se consultara, devolvería OTRA tienda y el test fallaría.
+    const lookup = mock.method(OwnerLookup, "findStoreIdByOwnerEmail", async () => "store-otra")
+    mock.method(SubscriptionRepository, "getByStoreId", async () =>
+      makeLocalSub({ whop_membership_id: null }),
+    )
+    const update = mock.method(SubscriptionRepository, "update", async () => null)
+    mock.method(SubscriptionEventRepository, "create", async () => {})
+
+    const { reply, state } = buildReply()
+    await whopWebhookController.receive(
+      buildRequest(body("membership.activated", { id: MEMBERSHIP_ID })) as never,
+      reply as never,
+    )
+
+    assert.equal(state.status, 200)
+    assert.equal(lookup.mock.callCount(), 0, "la referencia firmada nunca se saltea por email")
+    assert.equal(update.mock.calls[0].arguments[0], "store-1")
+  })
+
+  it("el email del comprador sale del payload, no de la API (que no lo devuelve) (T21)", async () => {
+    // `GET /memberships/{id}` NO incluye `user.email`: leerlo solo de ahí dejaba este
+    // camino muerto. El payload del webhook sí lo trae, y viene firmado por Whop.
+    mock.method(whopClient, "getMembership", async () =>
+      makeMembership({ metadata: null, user: null }),
+    )
+    mock.method(SubscriptionRepository, "getByWhopMembershipId", async () => null)
+    const lookup = mock.method(OwnerLookup, "findStoreIdByOwnerEmail", async (email: string) => {
+      assert.equal(email, "duenio@cajora.com")
+      return "store-1"
+    })
+    mock.method(SubscriptionRepository, "getByStoreId", async () =>
+      makeLocalSub({ whop_membership_id: null, status: "pending" }),
+    )
+    const update = mock.method(SubscriptionRepository, "update", async () => null)
+    mock.method(SubscriptionEventRepository, "create", async () => {})
+
+    const { reply, state } = buildReply()
+    await whopWebhookController.receive(
+      buildRequest(
+        body("membership.activated", {
+          id: MEMBERSHIP_ID,
+          user: { id: "whop-user-1", email: "duenio@cajora.com", username: "u" },
+        }),
+      ) as never,
+      reply as never,
+    )
+
+    assert.equal(state.status, 200)
+    assert.equal(lookup.mock.callCount(), 1, "debe buscar por el email del payload")
+    assert.equal(update.mock.callCount(), 1, "debe vincular la fila")
+  })
+
 })
