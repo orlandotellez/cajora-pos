@@ -35,8 +35,19 @@ export const getAuthResultFromRequest = (
   return fromCookies.userId ? fromCookies : fromBearer
 }
 
+/**
+ * Resuelve la sesión a partir de la cookie de acceso.
+ *
+ * Solo se acepta `accessToken`: el `refreshToken` existe únicamente para cambiarlo en
+ * `/auth/refresh` y **nunca** autentica una request normal. Cuando se aceptaba como
+ * respaldo, una sesión sin storeId pasaba `authGuard` y moría en `storeGuard` con
+ * 403 STORE_CONTEXT_REQUIRED, un error que el cliente no sabe interpretar: el landing
+ * se creía deslogueado a los 15 minutos (lo que dura el access token). Sin credencial
+ * válida se devuelve el resultado vacío, y `authGuard` responde 401 — la señal que el
+ * cliente sí sabe manejar pidiendo un refresh.
+ */
 export const getUserIdFromCookies = (request: FastifyRequest): AuthResult => {
-  const token = request.cookies.accessToken || request.cookies.refreshToken
+  const token = request.cookies.accessToken
   if (!token) return { userId: null, role: null, storeId: null, storeName: null }
 
   try {
@@ -48,12 +59,7 @@ export const getUserIdFromCookies = (request: FastifyRequest): AuthResult => {
       storeName: decoded.storeName ?? null,
     }
   } catch {
-    try {
-      const decoded = jwt.verify(token, env.JWT_REFRESH_SECRET) as JwtPayload & { userId?: string }
-      return { userId: decoded.userId ?? null, role: null, storeId: null, storeName: null }
-    } catch {
-      return { userId: null, role: null, storeId: null, storeName: null }
-    }
+    return { userId: null, role: null, storeId: null, storeName: null }
   }
 }
 
