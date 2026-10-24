@@ -164,8 +164,12 @@ import type { SaleItem } from "./types";
 ## Mobile / responsive
 
 - Mobile-first CSS.
-- Breakpoints en `index.css` via vars.
-- Sidebar colapsa a iconos-only en <768px.
+- Breakpoints en `index.css` via vars (`--bp-sm|md|lg|xl|2xl`); en CSS Modules el
+  corte real usado es `max-width: 767px` / `min-width: 768px`.
+- Navegación: sidebar en escritorio; en <768px la barra inferior de 4 tabs
+  (`MobileTabBar`) + drawer del botón ☰ para el resto del menú.
+- El contenido de `main` reserva `var(--mobile-tabbar-offset)` abajo en móvil;
+  cualquier barra fija propia de una page se apila con el mismo token.
 - Tablas en pantallas chicas: scroll horizontal con `min-width` fijo pero wrapper `overflow-x: auto`.
 
 ---

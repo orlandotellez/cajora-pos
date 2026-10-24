@@ -287,6 +287,29 @@ const form = useForm<FormValues>({
 - Sidebar 240px (colapsable a 64px en pantallas chicas).
 - Main scroll independiente.
 
+### Layout móvil (<768px)
+
+```
+┌─────────────────────────────────────┐
+│ [☰]                    [theme]      │  barra superior (50px)
+├─────────────────────────────────────┤
+│                                     │
+│  MAIN CONTENT (routed page)         │
+│                                     │
+├─────────────────────────────────────┤
+│ Vender │ Productos │ Ventas │ …      │  tab bar inferior (52px + safe-area)
+└─────────────────────────────────────┘
+```
+
+- Sin sidebar: la navegación primaria es la barra inferior de 4 tabs
+  (`MobileTabBar`), con el POS siempre primero.
+- El resto de los módulos, el tema y el menú de usuario viven en el drawer que
+  abre el botón ☰.
+- Alto reservado: `--mobile-tabbar-height` (52px) +
+  `--mobile-tabbar-offset` (alto + safe-area inferior). Cualquier elemento fijo
+  propio de una page (p. ej. la barra "Ir a cobrar" del POS) se apila con
+  `bottom: var(--mobile-tabbar-offset)`.
+
 ---
 
 ## Performance

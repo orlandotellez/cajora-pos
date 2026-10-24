@@ -9,6 +9,11 @@
 :root {
   --radius: 0.5rem;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  /* Barra de navegación inferior móvil: alto del contenido (sin safe-area) y
+     espacio total a reservar para que la barra no tape el contenido de las
+     páginas ni la acción principal del POS. */
+  --mobile-tabbar-height: 52px;
+  --mobile-tabbar-offset: calc(var(--mobile-tabbar-height) + env(safe-area-inset-bottom));
 }
 
 [data-theme="light"],

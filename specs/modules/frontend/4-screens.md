@@ -269,18 +269,30 @@ Pantalla generica 404 con link a `/pos`.
 
 ## Sidebar / Header (layout global) ✅
 
-Definido en `App.tsx` + `App.module.css`.
+Definido en `components/layout/AppShell.tsx` + `AppShell.module.css`.
 
 **Header**:
 - Logo + nombre del store (de `AuthContext.store.name`).
 - Theme toggle (sun / moon).
 - User menu (avatar, nombre, role badge, dropdown con `Logout`).
 
-**Sidebar**:
-- Lista de nav links (cada uno disabled si `RequireAdmin` y user no es admin).
-- Active state con var(--color-primary) en background.
+**Sidebar** (escritorio, ≥768px):
+- Lista de nav links agrupada por sección (Punto de venta, Catálogo, Operaciones, Administración, Super Admin).
+- Cada ítem se oculta si el usuario no tiene el permiso asociado.
+- Active state con `var(--accent)` en background.
 - Iconos (lucide).
-- Colapsable a iconos-only en <768px.
+
+**Navegación móvil** (<768px):
+- Barra inferior fija con 4 tabs (`MobileTabBar`), resuelta desde
+  `layout/navigation.ts`: `/pos` (POS, siempre primero), `/products`,
+  `/sales`, `/cash-register`, y fallback `/clients`, `/inventory`,
+  `/credits`, `/reports`, `/settings` hasta completar 4. El POS se rotula
+  "Vender" para no confundirlo con "Ventas".
+- El módulo de caja desactivado (o un permiso faltante) se saltea sin dejar
+  huecos: la barra siempre tiene 4 tabs.
+- El resto de los módulos se abre desde el drawer del botón ☰ (con tema y menú
+  de usuario).
+- El super admin no ve tabs de tienda: usa solo el drawer del panel global.
 
 ---
 

@@ -1,110 +1,22 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { type ReactNode, useState, useEffect, useCallback } from "react";
-import {
-  ScanBarcode,
-  Package,
-  Wrench,
-  BarChart3,
-  Settings,
-  Boxes,
-  Users,
-  Receipt,
-  Truck,
-  Tag,
-  Globe,
-  Menu,
-  X,
-  Moon,
-  Sun,
-  Download,
-  UserCheck,
-  DollarSign,
-  Wallet,
-  CreditCard,
-  Store,
-  Clock,
-} from "lucide-react";
+import { Menu, X, Moon, Sun, Download } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
 import { useUpdate } from "@/context/UpdateContext";
 import { useAppVersion } from "@/hooks/useAppVersion";
 import { UserMenu } from "./UserMenu";
+import { MobileTabBar } from "./MobileTabBar";
+import { isNavItemVisible, navGroups } from "./navigation";
 import { PaywallOverlay } from "@/components/pages/auth/PaywallOverlay";
 import logoDark from "@/assets/logo_dark.svg";
 import logoLight from "@/assets/logo_light.svg";
 import styles from "./AppShell.module.css";
 
-import type { Permission } from "@/api/auth";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useSettingsStore } from "@/store/settingsStore";
 import { useCatalogoStore } from "@/store/catalogoStore";
 import { subscribeCatalogRealtime } from "@/lib/catalog-realtime";
-
-interface NavItem {
-  to: string;
-  label: string;
-  icon: React.ComponentType<{ className?: string; size?: number }>;
-  /** Si se especifica, el usuario necesita este permiso para ver el ítem. */
-  permission?: Permission;
-  /**
-   * Activo solo en la ruta EXACTA (útil para rutas raíz que son prefijo de
-   * otras, p. ej. /super-admin vs /super-admin/stores).
-   */
-  end?: boolean;
-}
-
-interface NavGroup {
-  label: string;
-  adminOnly?: boolean;
-  superAdminOnly?: boolean;
-  items: NavItem[];
-}
-
-const navGroups: NavGroup[] = [
-  {
-    label: "PUNTO DE VENTA",
-    items: [{ to: "/pos", label: "Venta", icon: ScanBarcode }],
-  },
-  {
-    label: "CATÁLOGO",
-    items: [
-      { to: "/products", label: "Productos", icon: Package },
-      { to: "/services", label: "Servicios", icon: Wrench },
-      { to: "/suppliers", label: "Proveedores", icon: Truck, permission: "catalog_write" },
-      { to: "/categories", label: "Categorías", icon: Tag, permission: "catalog_write" },
-      { to: "/clients", label: "Clientes", icon: UserCheck },
-      { to: "/inventory", label: "Inventario", icon: Boxes, permission: "inventory_write" },
-    ],
-  },
-  {
-    label: "OPERACIONES",
-    items: [
-      { to: "/sales", label: "Ventas", icon: Receipt },
-      { to: "/credits", label: "Cuentas por Cobrar", icon: DollarSign },
-      { to: "/cash-register", label: "Caja", icon: Wallet },
-      { to: "/reports", label: "Reportes", icon: BarChart3, permission: "reports" },
-    ],
-  },
-  {
-    label: "ADMINISTRACIÓN",
-    adminOnly: true,
-    items: [
-      { to: "/settings", label: "Ajustes", icon: Settings },
-      { to: "/users", label: "Usuarios", icon: Users },
-    ],
-  },
-  {
-    label: "SUPER ADMIN",
-    superAdminOnly: true,
-    items: [
-      { to: "/super-admin", label: "Panel Global", icon: Globe, end: true },
-      { to: "/super-admin/subscriptions", label: "Suscripciones", icon: CreditCard },
-      { to: "/super-admin/stores", label: "Tiendas", icon: Store },
-      { to: "/super-admin/users", label: "Usuarios", icon: Users },
-      { to: "/super-admin/events", label: "Eventos", icon: Clock },
-    ],
-  },
-];
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { theme, toggle } = useTheme();
@@ -187,8 +99,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       // Filtrar ítems que el usuario no tiene permiso para ver, y ocultar el
       // módulo de caja si está desactivado desde Ajustes.
       const visibleItems = group.items.filter((it) =>
-        (!it.permission || has(it.permission)) &&
-        (it.to !== "/cash-register" || cashRegisterEnabled)
+        isNavItemVisible(it, { has, cashRegisterEnabled }),
       );
       if (visibleItems.length === 0) return null;
       return (
@@ -322,6 +233,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       <main className={styles.main}>{children}</main>
+
+      {/* Barra de navegación inferior: solo móvil, oculta en escritorio y para
+          el super admin (que navega con el drawer del panel global). */}
+      <MobileTabBar />
 
       {/* Muro de pago global: se muestra sobre cualquier pantalla cuando el
           backend responde 402 Payment Required (suscripción Cloud no activa). */}
