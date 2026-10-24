@@ -73,6 +73,11 @@ export default function Pos() {
     },
   });
 
+  const handleToggleScanner = () => {
+    toggleScanner();
+    setShowResults(false);
+  };
+
   const cart = usePosStore((s) => s.cart);
   const discountPct = usePosStore((s) => s.discountPct);
   const payment = usePosStore((s) => s.payment);
@@ -413,11 +418,11 @@ export default function Pos() {
       )}
 
       {/* ─── Main POS view ─────────────────────────────────── */}
-      <div className={`${styles.leftPanel} ${scannerActive ? styles["left-panel-scanner-active"] : ""}`}>
+      <div className={styles.leftPanel}>
         {isMobile && (
           <PosScannerSection
             active={scannerActive}
-            onToggle={toggleScanner}
+            onToggle={handleToggleScanner}
             onDismiss={clearScannerError}
             toggleRef={scannerButtonRef}
             elementId={scannerElementId}
@@ -425,19 +430,21 @@ export default function Pos() {
           />
         )}
 
-        <PosSearchBar
-          searchTerm={scan}
-          showResults={showResults}
-          searchResults={searchResults}
-          searchLoading={searchLoading}
-          searchWrapperRef={searchWrapperRef}
-          inputRef={scanRef}
-          onSearchChange={(v) => { setScan(v); setShowResults(true); }}
-          onFocus={() => { if (scan.trim()) setShowResults(true); }}
-          onKeyDown={(e) => { if (e.key === "Escape") setShowResults(false); }}
-          onSubmit={handleSubmit}
-          onAddToCart={addToCart}
-        />
+        {!(isMobile && scannerActive) && (
+          <PosSearchBar
+            searchTerm={scan}
+            showResults={showResults}
+            searchResults={searchResults}
+            searchLoading={searchLoading}
+            searchWrapperRef={searchWrapperRef}
+            inputRef={scanRef}
+            onSearchChange={(v) => { setScan(v); setShowResults(true); }}
+            onFocus={() => { if (scan.trim()) setShowResults(true); }}
+            onKeyDown={(e) => { if (e.key === "Escape") setShowResults(false); }}
+            onSubmit={handleSubmit}
+            onAddToCart={addToCart}
+          />
+        )}
 
         <div className={styles.cartArea}>
           <PosCartTable

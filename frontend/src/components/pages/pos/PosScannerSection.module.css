@@ -80,25 +80,22 @@
 }
 
 .scanner-container {
+  --scanner-height: 240px;
   overflow: hidden;
-  transition: max-height 0.35s ease, opacity 0.3s ease;
+  transition: max-height 0.35s ease, opacity 0.3s ease, margin-top 0.35s ease;
   background: #000;
-  border-radius: 0px 0px 25px 25px;
-}
-
-@media (max-width: 767px) {
-  .scanner-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 15;
-  }
+  border-radius: 0px 0px 16px 16px;
 }
 
 .scanner-container-active {
-  max-height: 350px;
+  max-height: var(--scanner-height);
   opacity: 1;
+}
+
+@media (max-width: 767px) {
+  .scanner-container-active {
+    margin-top: calc(-1 * (var(--mobile-topbar-height) + env(safe-area-inset-top)));
+  }
 }
 
 .scanner-container-inactive {
@@ -108,25 +105,28 @@
 
 .scanner-viewfinder {
   width: 100%;
-  height: 350px;
+  height: var(--scanner-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .scanner-camera-wrap {
   position: relative;
   width: 100%;
-  height: 350px;
+  height: var(--scanner-height);
   overflow: hidden;
 }
 
 .scanner-overlay-brackets {
   position: absolute;
-  top: 50%;
+  bottom: 40px;
   left: 50%;
-  transform: translate(-50%, -50%);
-  width: 280px;
-  height: 200px;
+  transform: translateX(-50%);
+  width: min(350px, 90%);
+  aspect-ratio: 2.6;
   border: 2px solid rgba(255, 255, 255, 0.6);
-  border-radius: 5px;
+  border-radius: 9px 9px 16px 16px;
   pointer-events: none;
   box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4);
   z-index: 2;

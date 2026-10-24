@@ -4,6 +4,12 @@
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+@media (max-width: 767px) {
+  .shell {
+    padding-bottom: 0;
+  }
+}
+
 .sidebar {
   display: none;
   position: fixed;
@@ -339,9 +345,10 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .main {
-    padding-top: calc(50px + env(safe-area-inset-top));
+    padding-top: calc(var(--mobile-topbar-height) + env(safe-area-inset-top));
+    padding-bottom: var(--mobile-tabbar-offset);
   }
 }
 
