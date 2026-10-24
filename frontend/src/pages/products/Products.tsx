@@ -11,7 +11,7 @@ import { useToast } from "@/components/common/ui/Toast";
 import { usePosStore } from "@/store/posStore";
 import { usePermissions } from "@/hooks/usePermissions";
 import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
-import { ProductTable } from "@/components/pages/products/ProductTable";
+import { ProductGrid } from "@/components/pages/products/ProductGrid";
 import { BarcodeScanner } from "@/components/common/BarcodeScanner";
 import styles from "./Products.module.css";
 import { Header } from "@/components/pages/products/Header";
@@ -268,14 +268,13 @@ export default function Products() {
         </div>
       )}
 
-      <ProductTable
+      <ProductGrid
         products={products}
         loading={loading}
-        total={total}
         page={page}
         totalPages={totalPages}
         onPageChange={setPage}
-        onRowClick={(p) => setEditing(p)}
+        onProductClick={(p) => setEditing(p)}
         onAddToCart={(p) => {
           const inCart = usePosStore
             .getState()
@@ -295,7 +294,6 @@ export default function Products() {
           addToCart(p);
           toast(`"${p.name}" agregado a la lista de venta (${inCartQty + 1} en total)`, "success", { dedupeKey: p.id });
         }}
-        dimmed={false}
         refreshing={refreshing}
         selectable={editMode && isAdmin}
         selectedIds={selectedIds}
