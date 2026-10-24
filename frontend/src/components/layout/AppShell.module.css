@@ -4,7 +4,6 @@
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* En móvil el safe-area inferior lo consume la barra de tabs, no el shell. */
 @media (max-width: 767px) {
   .shell {
     padding-bottom: 0;
@@ -348,8 +347,6 @@
 
 @media (max-width: 767px) {
   .main {
-    /* Arriba, la barra del botón de menú; abajo, el alto de la barra de
-       navegación inferior más el safe-area del dispositivo. */
     padding-top: calc(var(--mobile-topbar-height) + env(safe-area-inset-top));
     padding-bottom: var(--mobile-tabbar-offset);
   }

@@ -234,8 +234,6 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <main className={styles.main}>{children}</main>
 
-      {/* Barra de navegación inferior: solo móvil, oculta en escritorio y para
-          el super admin (que navega con el drawer del panel global). */}
       <MobileTabBar />
 
       {/* Muro de pago global: se muestra sobre cualquier pantalla cuando el

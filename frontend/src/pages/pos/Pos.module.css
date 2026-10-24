@@ -1,13 +1,11 @@
 .grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   height: 100vh;
   height: 100dvh;
 }
 
 @media (max-width: 767px) {
-  /* Descontar la barra superior del menú y la barra de navegación inferior
-     (--mobile-tabbar-offset) para que el grid termine justo arriba de ella. */
   .grid {
     height: calc(100vh - 50px - env(safe-area-inset-top) - var(--mobile-tabbar-offset));
     height: calc(100dvh - 50px - env(safe-area-inset-top) - var(--mobile-tabbar-offset));
@@ -27,13 +25,10 @@
   overflow: hidden;
   border-right: 1px solid var(--border);
   position: relative;
+  min-width: 0;
 }
 
 @media (max-width: 767px) {
-  /* El escáner móvil vive en el flujo del panel y se estira hasta el borde
-     superior de la pantalla. Se recorta el desborde horizontal (el borde
-     derecho del panel puede caer en una fracción de píxel y abriría scroll
-     lateral) pero se deja libre el vertical para que la banda suba. */
   .leftPanel {
     position: relative;
     overflow-x: clip;
@@ -474,7 +469,6 @@
   .mobile-bottom-bar {
     display: flex;
     position: fixed;
-    /* Apilada sobre la barra de navegación inferior, nunca encima de ella. */
     bottom: var(--mobile-tabbar-offset);
     left: 0;
     right: 0;

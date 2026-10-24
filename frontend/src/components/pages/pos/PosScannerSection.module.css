@@ -80,8 +80,6 @@
 }
 
 .scanner-container {
-  /* Alto del viewfinder: una banda ancha alcanza para leer un código de
-     barras y deja más alto para el carrito. */
   --scanner-height: 240px;
   overflow: hidden;
   transition: max-height 0.35s ease, opacity 0.3s ease, margin-top 0.35s ease;
@@ -95,12 +93,8 @@
 }
 
 @media (max-width: 767px) {
-  /* La banda arranca pegada al borde superior de la pantalla: el margen
-     negativo cancela el padding-top que main reserva para el botón de menú. */
   .scanner-container-active {
-    margin-top: calc(
-      -1 * (var(--mobile-topbar-height) + env(safe-area-inset-top))
-    );
+    margin-top: calc(-1 * (var(--mobile-topbar-height) + env(safe-area-inset-top)));
   }
 }
 
@@ -109,8 +103,6 @@
   opacity: 0;
 }
 
-/* html5-qrcode monta el <video> con el ancho del contenedor y su alto natural
-   (cámara 1:1), así que se centra y se recorta dentro de la banda. */
 .scanner-viewfinder {
   width: 100%;
   height: var(--scanner-height);
@@ -128,15 +120,13 @@
 
 .scanner-overlay-brackets {
   position: absolute;
-  /* Debajo de la barra superior (menú + toggle): el marco guía ocupa la parte
-     baja de la banda, que es donde se apunta el código. */
-  top: calc(env(safe-area-inset-top) + 76px);
-  bottom: 16px;
+  bottom: 40px;
   left: 50%;
   transform: translateX(-50%);
-  width: min(300px, 80%);
+  width: min(350px, 90%);
+  aspect-ratio: 2.6;
   border: 2px solid rgba(255, 255, 255, 0.6);
-  border-radius: 5px;
+  border-radius: 9px 9px 16px 16px;
   pointer-events: none;
   box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4);
   z-index: 2;

@@ -73,8 +73,6 @@ export default function Pos() {
     },
   });
 
-  // Al abrir la cámara el input se desmonta: cerramos los resultados para que
-  // no reaparezca un dropdown viejo cuando se vuelve a la búsqueda manual.
   const handleToggleScanner = () => {
     toggleScanner();
     setShowResults(false);
@@ -432,8 +430,6 @@ export default function Pos() {
           />
         )}
 
-        {/* Con el escáner activo la cámara ocupa el lugar del input: se oculta
-            para dejar más alto al carrito. En escritorio el input siempre está. */}
         {!(isMobile && scannerActive) && (
           <PosSearchBar
             searchTerm={scan}

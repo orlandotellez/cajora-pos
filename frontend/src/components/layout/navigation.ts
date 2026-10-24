@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 import type { Permission } from "@/api/auth";
 
-/** Props que acepta cualquier icono de lucide usado en la navegación. */
 export interface NavIconProps {
   className?: string;
   size?: number;
@@ -30,12 +29,7 @@ export interface NavItem {
   to: string;
   label: string;
   icon: ComponentType<NavIconProps>;
-  /** Si se especifica, el usuario necesita este permiso para ver el ítem. */
   permission?: Permission;
-  /**
-   * Activo solo en la ruta EXACTA (útil para rutas raíz que son prefijo de
-   * otras, p. ej. /super-admin vs /super-admin/stores).
-   */
   end?: boolean;
 }
 
@@ -46,10 +40,6 @@ export interface NavGroup {
   items: NavItem[];
 }
 
-/**
- * Fuente única de verdad de la navegación: el sidebar de escritorio, el drawer
- * móvil y la barra inferior de tabs salen todos de acá.
- */
 export const navGroups: NavGroup[] = [
   {
     label: "PUNTO DE VENTA",
@@ -101,30 +91,18 @@ const navItemByPath = new Map<string, NavItem>(
 );
 
 export interface NavAccess {
-  /** Mismo `has` de `usePermissions`. */
   has: (permission: Permission) => boolean;
-  /** Módulo de caja opcional (Ajustes → caja). */
   cashRegisterEnabled: boolean;
 }
 
-/** Un ítem es visible si el usuario tiene el permiso y el módulo está activo. */
 export function isNavItemVisible(item: NavItem, access: NavAccess): boolean {
   if (item.permission && !access.has(item.permission)) return false;
   if (item.to === "/cash-register" && !access.cashRegisterEnabled) return false;
   return true;
 }
 
-/** Cuántos tabs entran en la barra inferior móvil. */
 export const MOBILE_TAB_LIMIT = 4;
 
-/**
- * Orden de prioridad de los tabs móviles. Se toma el primero que exista y sea
- * visible hasta completar `MOBILE_TAB_LIMIT`, así la barra siempre tiene 4 tabs
- * para cualquier rol y con el módulo de caja activo o desactivado.
- *
- * `/pos`, `/products`, `/sales` y `/clients` no tienen permiso asociado, por lo
- * que los 4 tabs siempre se pueden completar.
- */
 const MOBILE_TAB_CANDIDATES: { to: string; tabLabel?: string }[] = [
   { to: "/pos", tabLabel: "Vender" },
   { to: "/products" },
