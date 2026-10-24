@@ -30,10 +30,14 @@
 }
 
 @media (max-width: 767px) {
-  /* El escáner móvil vive en el flujo del panel (no superpuesto), así que
-     reserva su propio alto y no necesita padding compensatorio. */
+  /* El escáner móvil vive en el flujo del panel y se estira hasta el borde
+     superior de la pantalla. Se recorta el desborde horizontal (el borde
+     derecho del panel puede caer en una fracción de píxel y abriría scroll
+     lateral) pero se deja libre el vertical para que la banda suba. */
   .leftPanel {
     position: relative;
+    overflow-x: clip;
+    overflow-y: visible;
   }
 }
 

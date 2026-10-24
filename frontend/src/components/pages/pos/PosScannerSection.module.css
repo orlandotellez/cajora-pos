@@ -82,9 +82,9 @@
 .scanner-container {
   /* Alto del viewfinder: una banda ancha alcanza para leer un código de
      barras y deja más alto para el carrito. */
-  --scanner-height: 200px;
+  --scanner-height: 240px;
   overflow: hidden;
-  transition: max-height 0.35s ease, opacity 0.3s ease;
+  transition: max-height 0.35s ease, opacity 0.3s ease, margin-top 0.35s ease;
   background: #000;
   border-radius: 0px 0px 16px 16px;
 }
@@ -92,6 +92,16 @@
 .scanner-container-active {
   max-height: var(--scanner-height);
   opacity: 1;
+}
+
+@media (max-width: 767px) {
+  /* La banda arranca pegada al borde superior de la pantalla: el margen
+     negativo cancela el padding-top que main reserva para el botón de menú. */
+  .scanner-container-active {
+    margin-top: calc(
+      -1 * (var(--mobile-topbar-height) + env(safe-area-inset-top))
+    );
+  }
 }
 
 .scanner-container-inactive {
@@ -118,11 +128,13 @@
 
 .scanner-overlay-brackets {
   position: absolute;
-  top: 50%;
+  /* Debajo de la barra superior (menú + toggle): el marco guía ocupa la parte
+     baja de la banda, que es donde se apunta el código. */
+  top: calc(env(safe-area-inset-top) + 76px);
+  bottom: 16px;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translateX(-50%);
   width: min(300px, 80%);
-  height: 55%;
   border: 2px solid rgba(255, 255, 255, 0.6);
   border-radius: 5px;
   pointer-events: none;

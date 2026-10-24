@@ -348,9 +348,9 @@
 
 @media (max-width: 767px) {
   .main {
-    /* 50px = barra superior con el botón de menú; abajo, el alto de la barra de
+    /* Arriba, la barra del botón de menú; abajo, el alto de la barra de
        navegación inferior más el safe-area del dispositivo. */
-    padding-top: calc(50px + env(safe-area-inset-top));
+    padding-top: calc(var(--mobile-topbar-height) + env(safe-area-inset-top));
     padding-bottom: var(--mobile-tabbar-offset);
   }
 }

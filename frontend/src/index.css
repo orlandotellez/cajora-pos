@@ -9,9 +9,10 @@
 :root {
   --radius: 0.5rem;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  /* Barra de navegación inferior móvil: alto del contenido (sin safe-area) y
-     espacio total a reservar para que la barra no tape el contenido de las
-     páginas ni la acción principal del POS. */
+  /* Barra superior móvil (botón de menú) y barra de navegación inferior: alto
+     del contenido (sin safe-area) y espacio total a reservar para que ninguna
+     barra fija tape el contenido de las páginas. */
+  --mobile-topbar-height: 50px;
   --mobile-tabbar-height: 52px;
   --mobile-tabbar-offset: calc(var(--mobile-tabbar-height) + env(safe-area-inset-bottom));
 }
