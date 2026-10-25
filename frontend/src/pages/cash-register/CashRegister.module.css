@@ -4,6 +4,12 @@
   margin: 0 auto;
 }
 
+@media (max-width: 768px) {
+  .page {
+    padding: 24px 15px;
+  }
+}
+
 .header {
   display: flex;
   align-items: flex-start;
