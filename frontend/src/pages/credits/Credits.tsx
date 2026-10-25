@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/common/PageTitle";
 import { useMemo, useState } from "react"
 import { creditsApi, type ClientDebtSummary, type ClientDebtResponse } from "@/api/credits"
 import { money } from "@/lib/format"
@@ -160,7 +161,7 @@ export default function Credits() {
     <div className={styles.page}>
       <header className={styles.header}>
         <div>
-          <h1 className={styles.h1}>Cuentas por Cobrar</h1>
+          <PageTitle path="/credits" className={styles.h1}>Cuentas por Cobrar</PageTitle>
           <p className={styles.subtitle}>
             {loading && rawClients.length === 0 ? (
               <span className={styles.headerSkeleton} aria-hidden="true" />

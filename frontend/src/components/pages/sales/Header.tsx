@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/common/PageTitle";
 import { RefreshCw } from "lucide-react"
 import styles from "./Header.module.css"
 
@@ -13,7 +14,7 @@ export const Header = ({ total, refreshing = false, onRefresh, loading = false }
     <>
       <header className={styles.header}>
         <div>
-          <h1 className={styles.h1}>Ventas</h1>
+          <PageTitle path="/sales" className={styles.h1}>Ventas</PageTitle>
           <p className={styles.subtitle}>
             {loading && total === 0 ? (
               <span className={styles.skeleton} aria-hidden="true" />

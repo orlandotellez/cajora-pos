@@ -1,0 +1,21 @@
+.title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 5px;
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+.text {
+  min-width: 0;
+}

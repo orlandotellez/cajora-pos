@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/common/PageTitle";
 import { useEffect, useState } from "react";
 import { Wallet } from "lucide-react";
 import { settingsApi, type UpdateSettingsPayload } from "@/api/settings";
@@ -43,7 +44,7 @@ export default function Settings() {
     <div className={styles.page}>
       <header className={styles.header}>
         <div>
-          <h1 className={styles.h1}>Ajustes</h1>
+          <PageTitle path="/settings" className={styles.h1}>Ajustes</PageTitle>
           <p className={styles.subtitle}>Datos del negocio y configuración general</p>
         </div>
       </header>

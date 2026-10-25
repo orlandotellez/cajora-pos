@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/common/PageTitle";
 import { Download, Loader2 } from "lucide-react";
 import type { Range } from "@/lib/date-range";
 import styles from "./Header.module.css";
@@ -16,7 +17,7 @@ export function Header({ range, onRangeChange, loading = false, onExport, export
   return (
     <header className={styles.header}>
       <div>
-        <h1 className={styles.h1}>Reportes</h1>
+        <PageTitle path="/reports" className={styles.h1}>Reportes</PageTitle>
         <p className={styles.subtitle}>Resumen de ventas y productos</p>
       </div>
       <div className={styles.headerActions}>

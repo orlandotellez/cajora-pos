@@ -1,5 +1,7 @@
+import { PageTitle } from "@/components/common/PageTitle";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { CreditCard } from "lucide-react";
 import {
   subscriptionsApi,
   type SubscriptionMine,
@@ -156,7 +158,7 @@ export default function Subscription() {
   if (user && !user.is_owner) {
     return (
       <div className={styles.page}>
-        <h1 className={styles.title}>Suscripción</h1>
+        <PageTitle icon={CreditCard} className={styles.title}>Suscripción</PageTitle>
         <div className={styles.errorBox}>
           <p className={styles.errorText}>Solo el propietario de la tienda puede gestionar la suscripción.</p>
         </div>
@@ -232,7 +234,7 @@ export default function Subscription() {
 
   return (
     <div className={styles.page}>
-      <h1 className={styles.title}>Suscripción</h1>
+      <PageTitle icon={CreditCard} className={styles.title}>Suscripción</PageTitle>
 
       {loading && <p className={styles.note}>Consultando tu suscripción…</p>}
 

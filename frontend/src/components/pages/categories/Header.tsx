@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/common/PageTitle";
 import { Plus, Pencil } from "lucide-react"
 import styles from "./Header.module.css"
 
@@ -15,7 +16,7 @@ export const Header = ({ total, setEditing, loading = false, showEditMode = fals
     <>
       <header className={styles.header}>
         <div>
-          <h1 className={styles.h1}>Categorías</h1>
+          <PageTitle path="/categories" className={styles.h1}>Categorías</PageTitle>
           <p className={styles.subtitle}>
             {loading && total === 0 ? (
               <span className={styles.skeleton} aria-hidden="true" />

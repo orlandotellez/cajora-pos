@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/common/PageTitle";
 import { useCallback, useEffect, useState } from "react";
 import { Wallet, Plus, Lock, Unlock, History, ChevronLeft, ChevronRight } from "lucide-react";
 import { cashRegisterApi, type CashSession, type CashCloseReportResponse } from "@/api/cash-register";
@@ -139,7 +140,7 @@ export default function CashRegister() {
     <div className={styles.page}>
       <header className={styles.header}>
         <div>
-          <h1 className={styles.h1}>Caja</h1>
+          <PageTitle path="/cash-register" className={styles.h1}>Caja</PageTitle>
           <p className={styles.subtitle}>
             {canSellCash
               ? "Hay caja abierta: podés cobrar en efectivo."

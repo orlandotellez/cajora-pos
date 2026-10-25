@@ -1,61 +1,35 @@
-import { Plus, Upload, Pencil, Loader2 } from "lucide-react"
+import { PageTitle } from "@/components/common/PageTitle";
+import { Loader2 } from "lucide-react"
 import { CartIndicator } from "@/components/common/CartIndicator"
 import styles from "./Header.module.css"
 
 interface HeaderProps {
   total: number
-  setEditing: () => void
   loading?: boolean
   filling?: boolean
-  showCreateButton?: boolean
-  onImport?: () => void
-  showEditMode?: boolean
-  editMode?: boolean
-  onToggleEditMode?: () => void
 }
 
-export const Header = ({ total, setEditing, loading = false, filling = false, showCreateButton = true, onImport, showEditMode = false, editMode = false, onToggleEditMode }: HeaderProps) => {
+export const Header = ({ total, loading = false, filling = false }: HeaderProps) => {
   return (
-    <>
-      <header className={styles.header}>
-        <div>
-          <h1 className={styles.h1}>Productos</h1>
-          <p className={styles.subtitle}>
-            {loading && total === 0 ? (
-              <span className={styles.skeleton} aria-hidden="true" />
-            ) : (
-              <>
-                {total} productos en catálogo
-                {filling && (
-                  <Loader2 size={12} className={styles.fillingSpinner} aria-label="Cargando el resto…" />
-                )}
-              </>
-            )}
-          </p>
-        </div>
-        <div className={styles.headerActions}>
-          <CartIndicator />
-          {showEditMode && (
-            <button
-              onClick={onToggleEditMode}
-              className={`${styles.editModeBtn} ${editMode ? styles.editModeBtnActive : ""}`}
-              title="Activar o desactivar la selección múltiple (solo admin)"
-            >
-              <Pencil size={14} /> <span className={styles.editModeLabel}>Modo edición</span>
-            </button>
+    <header className={styles.header}>
+      <div>
+        <PageTitle path="/products" className={styles.h1}>Catálogo</PageTitle>
+        <p className={styles.subtitle}>
+          {loading && total === 0 ? (
+            <span className={styles.skeleton} aria-hidden="true" />
+          ) : (
+            <>
+              {total} productos en catálogo
+              {filling && (
+                <Loader2 size={12} className={styles.fillingSpinner} aria-label="Cargando el resto…" />
+              )}
+            </>
           )}
-          {showCreateButton && onImport && (
-            <button onClick={onImport} className={styles.secondaryBtn}>
-              <Upload size={16} /> <span className={styles.importLabel}>Importar</span>
-            </button>
-          )}
-          {showCreateButton && (
-            <button onClick={setEditing} className={styles.primaryBtn}>
-              <Plus size={16} /> Nuevo
-            </button>
-          )}
-        </div>
-      </header>
-    </>
+        </p>
+      </div>
+      <div className={styles.headerActions}>
+        <CartIndicator />
+      </div>
+    </header>
   )
 }

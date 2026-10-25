@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/common/PageTitle";
 import { Plus, Pencil } from "lucide-react"
 import { CartIndicator } from "@/components/common/CartIndicator"
 import styles from "./Header.module.css"
@@ -18,7 +19,7 @@ export const Header = ({ total, setEditing, loading = false, showCreateButton = 
     <>
       <header className={styles.header}>
         <div>
-          <h1 className={styles.h1}>Servicios</h1>
+          <PageTitle path="/services" className={styles.h1}>Servicios</PageTitle>
           <p className={styles.subtitle}>
             {loading && total === 0 ? (
               <span className={styles.skeleton} aria-hidden="true" />
