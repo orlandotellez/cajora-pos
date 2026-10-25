@@ -1,6 +1,6 @@
 import { PageTitle } from "@/components/common/PageTitle";
 import { useMemo, useState } from "react"
-import { creditsApi, type ClientDebtSummary, type ClientDebtResponse } from "@/api/credits"
+import { creditsApi, type ClientDebtSummary, type ClientDebtResponse, type CreditSummary } from "@/api/credits"
 import { money } from "@/lib/format"
 import { usePosStore } from "@/store/posStore"
 import { useCrudPagination } from "@/hooks/useCrudPagination"
@@ -45,23 +45,24 @@ export default function Credits() {
     setPage,
     refreshImmediate,
   } = useCrudPagination<DebtRow>({
+    pollMs: 20_000,
+    realtimeEvents: ["credit.payment.created", "client.deleted", "sale.created"],
     fetcher: ({ page, limit, search, extraFilters }) =>
       creditsApi
         .list({ search: search || undefined, page, limit, filter: (extraFilters.filter as FilterTab) || "todos" })
-        .then((res) => ({
-          items: res.clients.map((c) => ({ ...c, id: c.client_id })),
-          total: res.total,
-        })),
+        .then((res) => {
+          setSummary(res.summary)
+          return {
+            items: res.clients.map((c) => ({ ...c, id: c.client_id })),
+            total: res.total,
+          }
+        }),
     extraFilters: { filter: activeTab },
   })
 
-  const [totalPending, setTotalPending] = useState(0)
-  useMemo(() => {
-    creditsApi.getTotal().then((res) => setTotalPending(res.total)).catch(() => {})
-  }, [])
+  const [summary, setSummary] = useState<CreditSummary | null>(null)
 
-  const overdueCount = rawClients.filter((c) => c.oldest_pending_days != null && c.oldest_pending_days > OVERDUE_DAYS).length
-  const creditSalesCount = rawClients.reduce((acc, c) => acc + c.sale_count, 0)
+  const showSkeleton = summary === null && loading && rawClients.length === 0
 
   async function openDetail(clientId: string) {
     setLoadingDetail(true)
@@ -112,7 +113,12 @@ export default function Credits() {
       {
         key: "client_name",
         label: "Cliente",
-        render: (c) => <span style={{ fontWeight: 500 }}>{c.client_name}</span>,
+        render: (c) => (
+          <span className={styles.clientCell}>
+            <span style={{ fontWeight: 500 }}>{c.client_name}</span>
+            {c.client_deleted && <span className={styles.deletedBadge}>Cliente eliminado</span>}
+          </span>
+        ),
       },
       {
         key: "client_phone",
@@ -163,10 +169,10 @@ export default function Credits() {
         <div>
           <PageTitle path="/credits" className={styles.h1}>Cuentas por Cobrar</PageTitle>
           <p className={styles.subtitle}>
-            {loading && rawClients.length === 0 ? (
+            {showSkeleton ? (
               <span className={styles.headerSkeleton} aria-hidden="true" />
             ) : (
-              <>Total pendiente: <strong>{money(totalPending, currency)}</strong></>
+              <>Total pendiente: <strong>{money(summary?.total_pending ?? 0, currency)}</strong></>
             )}
           </p>
         </div>
@@ -182,19 +188,19 @@ export default function Credits() {
       <div className={styles.statsGrid}>
         <div className={styles.statCard}>
           <span className={styles.statLabel}>Total pendiente</span>
-          <span className={styles.statValue}>{loading && rawClients.length === 0 ? <span className={styles.skeleton} aria-hidden="true" /> : money(totalPending, currency)}</span>
+          <span className={styles.statValue}>{showSkeleton ? <span className={styles.skeleton} aria-hidden="true" /> : money(summary?.total_pending ?? 0, currency)}</span>
         </div>
         <div className={styles.statCard}>
           <span className={styles.statLabel}>Clientes adeudando</span>
-          <span className={styles.statValue}>{loading && rawClients.length === 0 ? <span className={styles.skeleton} aria-hidden="true" /> : rawClients.length}</span>
+          <span className={styles.statValue}>{showSkeleton ? <span className={styles.skeleton} aria-hidden="true" /> : summary?.debtors_count ?? 0}</span>
         </div>
         <div className={styles.statCard}>
           <span className={styles.statLabel}>Morosos (+{OVERDUE_DAYS} días)</span>
-          <span className={`${styles.statValue} ${overdueCount > 0 && !(loading && rawClients.length === 0) ? styles.statDanger : ""}`}>{loading && rawClients.length === 0 ? <span className={styles.skeleton} aria-hidden="true" /> : overdueCount}</span>
+          <span className={`${styles.statValue} ${(summary?.overdue_count ?? 0) > 0 && !showSkeleton ? styles.statDanger : ""}`}>{showSkeleton ? <span className={styles.skeleton} aria-hidden="true" /> : summary?.overdue_count ?? 0}</span>
         </div>
         <div className={styles.statCard}>
           <span className={styles.statLabel}>Ventas a crédito</span>
-          <span className={styles.statValue}>{loading && rawClients.length === 0 ? <span className={styles.skeleton} aria-hidden="true" /> : creditSalesCount}</span>
+          <span className={styles.statValue}>{showSkeleton ? <span className={styles.skeleton} aria-hidden="true" /> : summary?.credit_sales_count ?? 0}</span>
         </div>
       </div>
 
@@ -234,6 +240,11 @@ export default function Credits() {
             <div className={styles.detailHeader}>
               <h2 className={styles.clientName}>{selected.client.client_name}</h2>
               {selected.client.client_phone && <span className={styles.clientPhone}>{selected.client.client_phone}</span>}
+              {selected.client.client_deleted && (
+                <span className={styles.deletedNotice}>
+                  Cliente eliminado. La deuda sigue registrada y es cobrable; cuando quede saldada dejará de aparecer.
+                </span>
+              )}
               <div className={styles.debtSummary}>
                 <span className={styles.debtLabel}>Deuda total</span>
                 <span className={styles.debtAmount}>{money(selected.client.total_debt, currency)}</span>

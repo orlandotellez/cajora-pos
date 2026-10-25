@@ -4,25 +4,38 @@ import type { CreateCreditPaymentData } from "../domain/credit.entities"
 import type { IClientsWithDebtResponse, IClientDebtResponse, ICreditPaymentResponse } from "../domain/credit.types"
 import { prisma } from "@/config/prisma"
 
+const PENDING_TOLERANCE = 0.009
+const MS_PER_DAY = 86_400_000
+
 export const createCreditService = (repository: ICreditRepository) => ({
   getClientsWithDebt: async (params?: { search?: string; page?: number; limit?: number; storeId?: string; filter?: "todos" | "morosos" | "saldados" }): Promise<IClientsWithDebtResponse> => {
-    return repository.getClientsWithDebt(params)
+    const [list, summary] = await Promise.all([
+      repository.getClientsWithDebt(params),
+      repository.getSummary(params?.storeId),
+    ])
+
+    return { ...list, summary }
   },
 
   getClientDebt: async (clientId: string, storeId?: string): Promise<IClientDebtResponse> => {
-    // Verify client exists
     const client = await prisma.client.findFirst({
-      where: { id: clientId, deleted_at: null, ...(storeId && { store_id: storeId }) },
-      select: { id: true, name: true, phone: true },
+      where: { id: clientId, ...(storeId && { store_id: storeId }) },
+      select: { id: true, name: true, phone: true, deleted_at: true },
     })
     if (!client) throw new NotFoundError("Cliente no encontrado")
 
-    const [sales, totalDebt] = await Promise.all([
-      repository.getClientCreditSales(clientId, storeId),
-      repository.getClientsWithDebt({ storeId }),
-    ])
+    const sales = await repository.getClientCreditSales(clientId, storeId)
 
-    const clientSummary = totalDebt.clients.find((c) => c.client_id === clientId)
+    const pendingSales = sales.filter((sale) => sale.pending > PENDING_TOLERANCE)
+    const totalDebt = pendingSales.reduce((sum, sale) => sum + sale.pending, 0)
+    const oldestPending = pendingSales.reduce<Date | null>((oldest, sale) => {
+      const createdAt = sale.created_at instanceof Date ? sale.created_at : new Date(sale.created_at)
+      if (!oldest || createdAt < oldest) return createdAt
+      return oldest
+    }, null)
+    const oldestPendingDays = oldestPending
+      ? Math.max(0, Math.floor((Date.now() - oldestPending.getTime()) / MS_PER_DAY))
+      : null
 
     // Get all payments for this client's credit sales
     const allPayments: ICreditPaymentResponse[] = []
@@ -60,10 +73,12 @@ export const createCreditService = (repository: ICreditRepository) => ({
         client_id: client.id,
         client_name: client.name,
         client_phone: client.phone ?? undefined,
-        total_debt: clientSummary?.total_debt ?? 0,
-        sale_count: clientSummary?.sale_count ?? 0,
+        total_debt: totalDebt,
+        sale_count: sales.length,
+        client_deleted: Boolean(client.deleted_at),
+        oldest_pending_days: oldestPendingDays,
       },
-      sales: sales.filter((s) => s.pending > 0.009).map((s) => ({
+      sales: pendingSales.map((s) => ({
         id: s.id,
         total: s.total,
         paid: s.paid,
@@ -94,7 +109,7 @@ export const createCreditService = (repository: ICreditRepository) => ({
     const pending = Number(sale.total) - totalPaid
 
     if (data.amount <= 0) throw new BadRequestError("El monto debe ser mayor a 0")
-    if (data.amount > pending + 0.009) throw new BadRequestError(`El monto excede el saldo pendiente de C$ ${pending.toFixed(2)}`)
+    if (data.amount > pending + PENDING_TOLERANCE) throw new BadRequestError(`El monto excede el saldo pendiente de C$ ${pending.toFixed(2)}`)
 
     const payment = await repository.createPayment(data, userId, storeId)
 

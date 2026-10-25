@@ -77,6 +77,9 @@ function makeCreditRepo(
     async createPayment(data, userId, storeId) {
       return makePayment({ ...data, id: "payment-1", user_name: "Usuario Uno" } as any)
     },
+    async getSummary(storeId) {
+      return { total_pending: 1500, debtors_count: 1, overdue_count: 0, credit_sales_count: 2 }
+    },
     async getTotalPending(storeId) {
       return 1500
     },
@@ -118,16 +121,89 @@ describe("credit service", () => {
       assert.equal(result.total, 1)
       assert.equal(result.clients[0].client_name, "Cliente Uno")
     })
+
+    it("returns the store summary alongside the list", async () => {
+      let receivedStoreId: string | undefined
+      const repo = makeCreditRepo({
+        async getSummary(storeId) {
+          receivedStoreId = storeId
+          return { total_pending: 900, debtors_count: 2, overdue_count: 1, credit_sales_count: 5 }
+        },
+      })
+
+      const result = await createCreditService(repo).getClientsWithDebt({ storeId: "store-1" })
+
+      assert.equal(receivedStoreId, "store-1")
+      assert.deepEqual(result.summary, {
+        total_pending: 900,
+        debtors_count: 2,
+        overdue_count: 1,
+        credit_sales_count: 5,
+      })
+      assert.equal(result.clients[0].total_debt, 300)
+    })
   })
 
   describe("getClientDebt", () => {
     it("throws NotFound when the client does not exist", async () => {
-      prismaMocks.client.findFirst = async () => null
+      let receivedWhere: any
+      prismaMocks.client.findFirst = async (args: any) => {
+        receivedWhere = args.where
+        return null
+      }
 
       await assert.rejects(
         createCreditService(makeCreditRepo()).getClientDebt("missing", "store-1"),
         NotFoundError,
       )
+      assert.deepEqual(receivedWhere, { id: "missing", store_id: "store-1" })
+    })
+
+    it("reports a soft-deleted client whose debt comes from its credit sales", async () => {
+      const now = Date.now()
+      prismaMocks.client.findFirst = async () => ({
+        id: "client-1",
+        name: "Cliente Eliminado",
+        phone: null,
+        deleted_at: new Date("2026-09-01T00:00:00Z"),
+      })
+      prismaMocks.credit_payment.findMany = async () => []
+
+      const repo = makeCreditRepo({
+        async getClientCreditSales() {
+          return [
+            makeCreditSale({
+              id: "sale-1",
+              total: 400,
+              paid: 50,
+              pending: 350,
+              created_at: new Date(now - 40.5 * 86400000),
+            }),
+            makeCreditSale({
+              id: "sale-2",
+              total: 200,
+              paid: 200,
+              pending: 0,
+              created_at: new Date(now - 400 * 86400000),
+            }),
+          ]
+        },
+        async getSalePayments(saleId) {
+          return [makePayment({ id: "payment-1", sale_id: saleId })]
+        },
+        async getClientsWithDebt() {
+          throw new Error("getClientDebt must not scan the paginated debt list")
+        },
+      })
+
+      const result = await createCreditService(repo).getClientDebt("client-1", "store-1")
+
+      assert.equal(result.client.client_deleted, true)
+      assert.equal(result.client.total_debt, 350)
+      assert.equal(result.client.sale_count, 2)
+      assert.equal(result.client.oldest_pending_days, 40)
+      assert.equal(result.sales.length, 1)
+      assert.equal(result.sales[0].id, "sale-1")
     })
 
     it("includes only sales with pending balance and maps payments with user names", async () => {
@@ -163,7 +239,9 @@ describe("credit service", () => {
 
       assert.equal(result.client.client_name, "Cliente Uno")
       assert.equal(result.client.client_phone, "555-1234")
-      assert.equal(result.client.total_debt, 300)
+      assert.equal(result.client.client_deleted, false)
+      assert.equal(result.client.total_debt, 150)
+      assert.equal(result.client.sale_count, 2)
       assert.equal(result.sales.length, 1)
       assert.equal(result.sales[0].id, "sale-1")
       assert.equal(result.payments.length, 2)
@@ -349,6 +427,25 @@ describe("credit service", () => {
 
       assert.equal(result, 700)
       assert.equal(receivedStoreId, "store-1")
+    })
+
+    it("matches the total pending reported by the list summary", async () => {
+      const repo = makeCreditRepo({
+        async getSummary() {
+          return { total_pending: 700, debtors_count: 1, overdue_count: 0, credit_sales_count: 2 }
+        },
+        async getTotalPending() {
+          return 700
+        },
+      })
+
+      const service = createCreditService(repo)
+      const [total, list] = await Promise.all([
+        service.getTotalPending("store-1"),
+        service.getClientsWithDebt({ storeId: "store-1" }),
+      ])
+
+      assert.equal(total, list.summary.total_pending)
     })
   })
 })

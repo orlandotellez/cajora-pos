@@ -201,13 +201,23 @@ export function ClientDetailModal({ clientId, onClose, onDelete }: ClientDetailM
           {onDelete && (
             <section className={styles.dangerZone}>
               <h3 className={styles.dangerTitle}>Zona de peligro</h3>
-              <p className={styles.dangerHint}>
-                Eliminar este cliente es una acción permanente y no se puede deshacer.
-              </p>
-              <button onClick={onDelete} className={styles.dangerBtn}>
-                <Trash2 size={14} />
-                Eliminar cliente
-              </button>
+              {clientDebt > 0 ? (
+                <p className={styles.dangerHint}>
+                  Este cliente tiene una deuda pendiente de <strong>{money(clientDebt, currency)}</strong>.
+                  Registrá el pago en Cuentas por Cobrar o desactivalo desde Editar: no se puede eliminar
+                  mientras deba dinero.
+                </p>
+              ) : (
+                <>
+                  <p className={styles.dangerHint}>
+                    Eliminar este cliente es una acción permanente y no se puede deshacer.
+                  </p>
+                  <button onClick={onDelete} className={styles.dangerBtn}>
+                    <Trash2 size={14} />
+                    Eliminar cliente
+                  </button>
+                </>
+              )}
             </section>
           )}
         </div>

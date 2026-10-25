@@ -7,6 +7,14 @@ export interface ClientDebtSummary {
   total_debt: number
   sale_count: number
   oldest_pending_days?: number | null
+  client_deleted?: boolean
+}
+
+export interface CreditSummary {
+  total_pending: number
+  debtors_count: number
+  overdue_count: number
+  credit_sales_count: number
 }
 
 export interface CreditSaleDetail {
@@ -40,6 +48,7 @@ export interface ClientsWithDebtResponse {
   total: number
   page: number
   limit: number
+  summary: CreditSummary
 }
 
 export interface RegisterPaymentPayload {

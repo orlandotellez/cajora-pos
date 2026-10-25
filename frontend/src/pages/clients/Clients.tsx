@@ -232,7 +232,7 @@ export default function Clients() {
       <ConfirmDialog
         open={deleteTarget !== null}
         title="Eliminar cliente"
-        message={`¿Estás seguro de que querés eliminar al cliente "${deleteTarget?.name}"? Esta acción no se puede deshacer.`}
+        message={`¿Estás seguro de que querés eliminar al cliente "${deleteTarget?.name}"? Los clientes con deuda pendiente no se pueden eliminar. Esta acción no se puede deshacer.`}
         confirmLabel="Sí, eliminar"
         cancelLabel="Cancelar"
         onConfirm={() => {
@@ -245,7 +245,7 @@ export default function Clients() {
       <ConfirmDialog
         open={bulkDeleteConfirm}
         title="Eliminar clientes"
-        message={`¿Estás seguro de que querés eliminar ${selectedIds.size} ${selectedIds.size === 1 ? "cliente" : "clientes"}? Esta acción no se puede deshacer.`}
+        message={`¿Estás seguro de que querés eliminar ${selectedIds.size} ${selectedIds.size === 1 ? "cliente" : "clientes"}? Si alguno tiene deuda pendiente no se elimina ninguno. Esta acción no se puede deshacer.`}
         confirmLabel={bulkDeleting ? "Eliminando…" : "Sí, eliminar"}
         cancelLabel="Cancelar"
         onConfirm={() => handleBulkDelete()}

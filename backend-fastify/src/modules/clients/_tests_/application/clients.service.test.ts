@@ -77,6 +77,7 @@ function fakeRepository(tracker: Tracker, overrides: Partial<IClientRepository> 
     getSaleCount: async () => 0,
     getTotalSpent: async () => 0,
     getRecentSales: async () => [],
+    getOutstandingDebts: async () => new Map<string, number>(),
     ...overrides,
   }
 }
@@ -324,6 +325,48 @@ describe("createClientService.delete", () => {
 
     await assert.rejects(() => svc.delete("cli-1"), NotFoundError)
   })
+
+  it("blocks the delete and reports the amount when the client owes money", async () => {
+    const tracker = newTracker()
+    tracker.findById.results.set("cli-1", makeClient({ name: "Juan Pérez" }))
+    const debtCalls: [string[], string | undefined][] = []
+    const svc = createClientService(
+      fakeRepository(tracker, {
+        getOutstandingDebts: async (clientIds, storeId) => {
+          debtCalls.push([clientIds, storeId])
+          return new Map([["cli-1", 350]])
+        },
+      }),
+    )
+
+    let error: any = null
+    try {
+      await svc.delete("cli-1", "store-1")
+    } catch (e) {
+      error = e
+    }
+
+    assert.ok(error instanceof BadRequestError)
+    assert.match(error.message, /Juan Pérez/)
+    assert.match(error.message, /C\$ 350\.00/)
+    assert.match(error.message, /desactivalo/)
+    assert.deepEqual(debtCalls, [[["cli-1"], "store-1"]])
+    assert.equal(tracker.deleted, null)
+  })
+
+  it("deletes when the pending balance is within the money tolerance", async () => {
+    const tracker = newTracker()
+    tracker.findById.results.set("cli-1", makeClient())
+    const svc = createClientService(
+      fakeRepository(tracker, {
+        getOutstandingDebts: async () => new Map([["cli-1", 0.005]]),
+      }),
+    )
+
+    await svc.delete("cli-1", "store-1")
+
+    assert.deepEqual(tracker.deleted, { id: "cli-1", storeId: "store-1" })
+  })
 })
 
 describe("createClientService.deleteMany", () => {
@@ -335,5 +378,81 @@ describe("createClientService.deleteMany", () => {
 
     assert.deepEqual(tracker.deletedMany, { ids: ["a", "b"], storeId: "store-1" })
     assert.deepEqual(res, { deleted: 2 })
+  })
+
+  it("deletes every client when none has pending debt", async () => {
+    const tracker = newTracker()
+    const debtCalls: [string[], string | undefined][] = []
+    const svc = createClientService(
+      fakeRepository(tracker, {
+        getOutstandingDebts: async (clientIds, storeId) => {
+          debtCalls.push([clientIds, storeId])
+          return new Map()
+        },
+      }),
+    )
+
+    const res = await svc.deleteMany(["a", "b"], "store-1")
+
+    assert.deepEqual(debtCalls, [[["a", "b"], "store-1"]])
+    assert.deepEqual(tracker.deletedMany, { ids: ["a", "b"], storeId: "store-1" })
+    assert.deepEqual(res, { deleted: 2 })
+  })
+
+  it("blocks the whole bulk delete when one client owes money", async () => {
+    const tracker = newTracker()
+    tracker.findById.results.set("a", makeClient({ id: "a", name: "Ana López" }))
+    tracker.findById.results.set("b", makeClient({ id: "b", name: "Juan Pérez" }))
+    const svc = createClientService(
+      fakeRepository(tracker, {
+        getOutstandingDebts: async () => new Map([["b", 350]]),
+      }),
+    )
+
+    let error: any = null
+    try {
+      await svc.deleteMany(["a", "b"], "store-1")
+    } catch (e) {
+      error = e
+    }
+
+    assert.ok(error instanceof BadRequestError)
+    assert.match(error.message, /Juan Pérez/)
+    assert.match(error.message, /C\$ 350\.00/)
+    assert.match(error.message, /no se elimin/i)
+    assert.equal(tracker.deletedMany, null)
+  })
+
+  it("names at most three debtors and totals every debt in the bulk error", async () => {
+    const tracker = newTracker()
+    for (const id of ["a", "b", "c", "d"]) {
+      tracker.findById.results.set(id, makeClient({ id, name: `Deudor ${id}` }))
+    }
+    const svc = createClientService(
+      fakeRepository(tracker, {
+        getOutstandingDebts: async () =>
+          new Map([
+            ["a", 10],
+            ["b", 20],
+            ["c", 30],
+            ["d", 40],
+          ]),
+      }),
+    )
+
+    let error: any = null
+    try {
+      await svc.deleteMany(["a", "b", "c", "d"], "store-1")
+    } catch (e) {
+      error = e
+    }
+
+    assert.ok(error instanceof BadRequestError)
+    assert.match(error.message, /Deudor a/)
+    assert.match(error.message, /Deudor b/)
+    assert.match(error.message, /Deudor c/)
+    assert.doesNotMatch(error.message, /Deudor d/)
+    assert.match(error.message, /C\$ 100\.00/)
+    assert.equal(tracker.deletedMany, null)
   })
 })
