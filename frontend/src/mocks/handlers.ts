@@ -977,6 +977,15 @@ export const handlers = [
     await delay(200);
     const idx = clients.findIndex((c) => c.id === params.id);
     if (idx === -1) return HttpResponse.json({ message: "Cliente no encontrado" }, { status: 404 });
+    const debt = creditDebts.find((c) => c.client_id === params.id);
+    if (debt && debt.total_debt > 0.009) {
+      return HttpResponse.json(
+        {
+          message: `No se puede eliminar a "${debt.client_name}": tiene una deuda pendiente de C$ ${debt.total_debt.toFixed(2)}. Registrá el pago en Cuentas por Cobrar o desactivalo.`,
+        },
+        { status: 400 },
+      );
+    }
     clients.splice(idx, 1);
     return HttpResponse.json({ message: "Cliente eliminado" });
   }),
@@ -1007,7 +1016,13 @@ export const handlers = [
       filtered = filtered.filter((c) => c.total_debt === 0);
     }
     const { items, total } = paginate(filtered, page, limit);
-    return HttpResponse.json({ clients: items, total, page, limit });
+    const summary = {
+      total_pending: creditDebts.reduce((acc, c) => acc + Math.max(0, c.total_debt), 0),
+      debtors_count: creditDebts.filter((c) => c.total_debt > 0.009).length,
+      overdue_count: creditDebts.filter((c) => c.total_debt > 0.009 && c.oldest_pending_days != null && c.oldest_pending_days > 30).length,
+      credit_sales_count: creditDebts.reduce((acc, c) => acc + c.sale_count, 0),
+    };
+    return HttpResponse.json({ clients: items, total, page, limit, summary });
   }),
 
   http.get(`${API}/credits/:clientId`, async ({ params }) => {
