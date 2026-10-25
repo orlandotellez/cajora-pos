@@ -154,6 +154,37 @@ export const ClientRepository: IClientRepository = {
     return Number(result._sum.total ?? 0)
   },
 
+  async getOutstandingDebts(clientIds: string[], storeId?: string) {
+    const debts = new Map<string, number>()
+    if (clientIds.length === 0) return debts
+
+    const sales = await prisma.sale.findMany({
+      where: {
+        client_id: { in: clientIds },
+        payment_method: "credito",
+        ...(storeId && { store_id: storeId }),
+      },
+      select: {
+        client_id: true,
+        total: true,
+        credit_payments: { select: { amount: true } },
+      },
+    })
+
+    for (const sale of sales) {
+      if (!sale.client_id) continue
+      const paid = sale.credit_payments.reduce((sum, payment) => sum + Number(payment.amount), 0)
+      const pending = Number(sale.total) - paid
+      debts.set(sale.client_id, (debts.get(sale.client_id) ?? 0) + pending)
+    }
+
+    for (const [clientId, pending] of debts) {
+      if (pending <= 0.009) debts.delete(clientId)
+    }
+
+    return debts
+  },
+
   async getRecentSales(clientId: string, limit = 5) {
     const sales = await prisma.sale.findMany({
       where: { client_id: clientId },

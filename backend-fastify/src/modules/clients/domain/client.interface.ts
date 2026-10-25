@@ -10,5 +10,6 @@ export interface IClientRepository {
   softDeleteMany(ids: string[], storeId?: string): Promise<{ count: number }>
   getSaleCount(clientId: string): Promise<number>
   getTotalSpent(clientId: string): Promise<number>
+  getOutstandingDebts(clientIds: string[], storeId?: string): Promise<Map<string, number>>
   getRecentSales(clientId: string, limit?: number): Promise<{ id: string; total: number; payment_method: string; created_at: Date; items: { name: string; quantity: number; line_total: number }[]; service_items: { name: string; quantity: number; line_total: number }[] }[]>
 }

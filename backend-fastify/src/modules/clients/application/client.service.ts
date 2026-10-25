@@ -86,10 +86,39 @@ export const createClientService = (repository: IClientRepository) => ({
     if (!existing || existing.deleted_at) {
       throw new NotFoundError("Client not found")
     }
+
+    const debts = await repository.getOutstandingDebts([id], storeId)
+    const pending = debts.get(id) ?? 0
+    if (pending > 0.009) {
+      throw new BadRequestError(
+        `No se puede eliminar a "${existing.name}": tiene una deuda pendiente de C$ ${pending.toFixed(2)}. Registrá el pago en Cuentas por Cobrar o desactivalo.`,
+      )
+    }
+
     await repository.softDelete(id, storeId)
   },
 
   deleteMany: async (ids: string[], storeId?: string): Promise<{ deleted: number }> => {
+    const debts = await repository.getOutstandingDebts(ids, storeId)
+    const debtorIds = ids.filter((id) => (debts.get(id) ?? 0) > 0.009)
+
+    if (debtorIds.length > 0) {
+      const names: string[] = []
+      for (const debtorId of debtorIds.slice(0, 3)) {
+        const client = await repository.findById(debtorId, storeId)
+        if (client) names.push(`"${client.name}"`)
+      }
+      const total = debtorIds.reduce((sum, debtorId) => sum + (debts.get(debtorId) ?? 0), 0)
+      const remaining = debtorIds.length - 3
+      const label = names.length > 0
+        ? `${names.join(", ")}${remaining > 0 ? ` y ${remaining} más` : ""}`
+        : `${debtorIds.length} clientes`
+
+      throw new BadRequestError(
+        `No se puede eliminar: ${label}. Deuda pendiente total: C$ ${total.toFixed(2)}. No se eliminó ningún cliente; registrá el pago en Cuentas por Cobrar o desactivá los clientes que deben.`,
+      )
+    }
+
     const result = await repository.softDeleteMany(ids, storeId)
     return { deleted: result.count }
   },
