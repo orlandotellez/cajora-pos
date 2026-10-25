@@ -42,3 +42,26 @@ export function rangeLabel(r: Range) {
     case "1y": return "1 año";
   }
 }
+
+export type SalesPeriod = "today" | "7d" | "30d" | "custom";
+
+export function toInputDate(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+export function periodRange(period: Exclude<SalesPeriod, "custom">): { start: string; end: string } {
+  const end = new Date();
+  const start = new Date();
+  if (period === "7d") start.setDate(start.getDate() - 6);
+  if (period === "30d") start.setDate(start.getDate() - 29);
+  return { start: toInputDate(start), end: toInputDate(end) };
+}
+
+export function detectPeriod(start: string, end: string): SalesPeriod {
+  for (const p of ["today", "7d", "30d"] as const) {
+    const range = periodRange(p);
+    if (range.start === start && range.end === end) return p;
+  }
+  return "custom";
+}

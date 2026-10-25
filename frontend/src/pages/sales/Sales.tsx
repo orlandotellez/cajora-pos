@@ -10,10 +10,12 @@ import { Header } from "@/components/pages/sales/Header";
 import { Filter } from "@/components/pages/sales/Filter";
 import { PrinterSaleModal } from "@/components/pages/sales/PrinterSaleModal";
 import { PrinterLoad } from "@/components/common/PrinterLoad";
+import { periodRange, toLocalISOString } from "@/lib/date-range";
 
 export default function Sales() {
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const initialRange = periodRange("today");
+  const [startDate, setStartDate] = useState(initialRange.start);
+  const [endDate, setEndDate] = useState(initialRange.end);
   const [paymentFilter, setPaymentFilter] = useState("");
   const [userNameFilter, setUserNameFilter] = useState("");
   const [minItemsFilter, setMinItemsFilter] = useState("");
@@ -56,8 +58,12 @@ export default function Sales() {
       const res = await salesApi.list({
         page,
         limit,
-        start_date: extraFilters.startDate || undefined,
-        end_date: extraFilters.endDate || undefined,
+        start_date: extraFilters.startDate
+          ? toLocalISOString(new Date(`${extraFilters.startDate}T00:00:00`))
+          : undefined,
+        end_date: extraFilters.endDate
+          ? toLocalISOString(new Date(`${extraFilters.endDate}T23:59:59.999`))
+          : undefined,
         payment_method: extraFilters.paymentFilter || undefined,
         q: extraFilters.userName?.trim() || undefined,
         min_items_count: minItemsNum > 0 ? minItemsNum : undefined,
@@ -71,13 +77,10 @@ export default function Sales() {
     setPage(1);
   }, [startDate, endDate, paymentFilter, userNameFilter, minItemsFilter]);
 
-  const hasActiveFilters = Boolean(
-    startDate || endDate || paymentFilter || userNameFilter || minItemsFilter
-  );
-
   function clearFilters() {
-    setStartDate("");
-    setEndDate("");
+    const range = periodRange("today");
+    setStartDate(range.start);
+    setEndDate(range.end);
     setPaymentFilter("");
     setUserNameFilter("");
     setMinItemsFilter("");
@@ -112,7 +115,6 @@ export default function Sales() {
         setUserNameFilter={setUserNameFilter}
         minItemsFilter={minItemsFilter}
         setMinItemsFilter={setMinItemsFilter}
-        hasActiveFilters={hasActiveFilters}
         clearFilters={clearFilters}
       />
 

@@ -1,15 +1,84 @@
+.wrapper {
+  margin-bottom: 16px;
+}
+
+@media (max-width: 767px) {
+  .wrapper {
+    padding: 0 15px;
+  }
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.periodSelect {
+  height: 36px;
+  padding: 6px 10px;
+  border: 1px solid var(--input);
+  border-radius: 5px;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+}
+
+.periodSelect:focus {
+  border-color: var(--ring);
+}
+
+.filtersBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--foreground);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.filtersBtn:hover {
+  background: var(--accent);
+}
+
+.filtersBtnActive {
+  border-color: var(--foreground);
+  background: var(--accent);
+}
+
+.filtersCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--foreground);
+  color: var(--background);
+  font-size: 11px;
+  font-weight: 600;
+}
+
 .filters {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 16px;
+  margin-top: 10px;
   flex-wrap: wrap;
-}
-
-@media (max-width: 768px) {
-  .filters {
-    padding: 0px 15px 10px 15px;
-  }
 }
 
 .filterInput {
@@ -34,20 +103,15 @@
 
 .filterSelect {
   height: 36px;
-  padding: 6px 32px 6px 10px;
+  padding: 6px 10px;
   border: 1px solid var(--input);
   border-radius: 5px;
   background: var(--background);
   color: var(--foreground);
   font-size: 13px;
+  font-family: inherit;
   outline: none;
   cursor: pointer;
-  font-family: inherit;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-  background-size: 14px;
 }
 
 .filterSelect:focus {
