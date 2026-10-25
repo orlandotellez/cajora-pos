@@ -1,7 +1,7 @@
 import type { ComponentType } from "react";
 import {
   ScanBarcode,
-  Package,
+  ShoppingBag,
   Wrench,
   BarChart3,
   Settings,
@@ -48,7 +48,7 @@ export const navGroups: NavGroup[] = [
   {
     label: "CATÁLOGO",
     items: [
-      { to: "/products", label: "Productos", icon: Package },
+      { to: "/products", label: "Catálogo", icon: ShoppingBag },
       { to: "/services", label: "Servicios", icon: Wrench },
       { to: "/suppliers", label: "Proveedores", icon: Truck, permission: "catalog_write" },
       { to: "/categories", label: "Categorías", icon: Tag, permission: "catalog_write" },
@@ -86,6 +86,12 @@ export const navGroups: NavGroup[] = [
   },
 ];
 
+export type NavIcon = ComponentType<NavIconProps>;
+
+export function navIconFor(path: string): NavIcon | undefined {
+  return navItemByPath.get(path)?.icon;
+}
+
 const navItemByPath = new Map<string, NavItem>(
   navGroups.flatMap((group) => group.items.map((item) => [item.to, item] as const)),
 );
@@ -93,6 +99,7 @@ const navItemByPath = new Map<string, NavItem>(
 export interface NavAccess {
   has: (permission: Permission) => boolean;
   cashRegisterEnabled: boolean;
+  isAdmin: boolean;
 }
 
 export function isNavItemVisible(item: NavItem, access: NavAccess): boolean {
@@ -108,12 +115,14 @@ const MOBILE_TAB_CANDIDATES: { to: string; tabLabel?: string }[] = [
   { to: "/products" },
   { to: "/sales" },
   { to: "/cash-register" },
-  { to: "/clients" },
   { to: "/inventory" },
+  { to: "/clients" },
   { to: "/credits" },
   { to: "/reports" },
   { to: "/settings" },
 ];
+
+export const ADMIN_MOBILE_TAB_LIMIT = 5;
 
 export interface MobileTab {
   to: string;
@@ -123,7 +132,7 @@ export interface MobileTab {
 
 export function resolveMobileTabs(
   access: NavAccess,
-  limit: number = MOBILE_TAB_LIMIT,
+  limit: number = access.isAdmin ? ADMIN_MOBILE_TAB_LIMIT : MOBILE_TAB_LIMIT,
 ): MobileTab[] {
   const tabs: MobileTab[] = [];
   for (const candidate of MOBILE_TAB_CANDIDATES) {

@@ -7,8 +7,8 @@
 
 @media (max-width: 767px) {
   .grid {
-    height: calc(100vh - 50px - env(safe-area-inset-top) - var(--mobile-tabbar-offset));
-    height: calc(100dvh - 50px - env(safe-area-inset-top) - var(--mobile-tabbar-offset));
+    height: calc(100vh - 50px - env(safe-area-inset-top) - var(--mobile-tabbar-offset) - var(--mobile-content-gap));
+    height: calc(100dvh - 50px - env(safe-area-inset-top) - var(--mobile-tabbar-offset) - var(--mobile-content-gap));
   }
 }
 

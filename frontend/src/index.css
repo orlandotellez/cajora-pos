@@ -14,6 +14,7 @@
   --mobile-topbar-height: 50px;
   --mobile-tabbar-height: 60px;
   --mobile-tabbar-offset: calc(var(--mobile-tabbar-height) + env(safe-area-inset-bottom));
+  --mobile-content-gap: 20px;
 }
 
 [data-theme="light"],

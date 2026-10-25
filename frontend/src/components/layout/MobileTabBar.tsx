@@ -8,12 +8,12 @@ import styles from "./MobileTabBar.module.css";
 export function MobileTabBar() {
   const { pathname } = useLocation();
   const { user } = useAuth();
-  const { has } = usePermissions();
+  const { has, isAdmin } = usePermissions();
   const cashRegisterEnabled = useSettingsStore((s) => s.cashRegisterEnabled);
 
   if (user?.role === "super_admin") return null;
 
-  const tabs = resolveMobileTabs({ has, cashRegisterEnabled });
+  const tabs = resolveMobileTabs({ has, cashRegisterEnabled, isAdmin });
 
   return (
     <nav className={styles.tabBar} aria-label="Navegación principal">

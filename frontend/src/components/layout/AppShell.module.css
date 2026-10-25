@@ -350,7 +350,7 @@
   .main {
     min-height: 100dvh;
     padding-top: calc(var(--mobile-topbar-height) + env(safe-area-inset-top));
-    padding-bottom: var(--mobile-tabbar-offset);
+    padding-bottom: calc(var(--mobile-tabbar-offset) + var(--mobile-content-gap));
   }
 }
 

@@ -99,7 +99,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       // Filtrar ítems que el usuario no tiene permiso para ver, y ocultar el
       // módulo de caja si está desactivado desde Ajustes.
       const visibleItems = group.items.filter((it) =>
-        isNavItemVisible(it, { has, cashRegisterEnabled }),
+        isNavItemVisible(it, { has, cashRegisterEnabled, isAdmin: !!isAdmin }),
       );
       if (visibleItems.length === 0) return null;
       return (
