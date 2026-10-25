@@ -16,6 +16,13 @@
   border-radius: 5px;
   background: var(--card);
   overflow: hidden;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.cardHighlight {
+  border-color: var(--primary, #3b82f6);
+  background: color-mix(in srgb, var(--primary, #3b82f6) 12%, var(--card));
+  box-shadow: inset 3px 0 0 var(--primary, #3b82f6);
 }
 
 .cardMain {

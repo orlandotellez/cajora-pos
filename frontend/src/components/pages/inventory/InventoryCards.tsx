@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { PackagePlus, Pencil } from "lucide-react";
 import { money } from "@/lib/format";
 import { UNIT_TYPE_LABELS, unitQuantitySuffix } from "@/lib/constants";
@@ -5,6 +6,7 @@ import { getVisiblePages } from "@/lib/pagination";
 import { RefreshBadge } from "@/components/common/RefreshBadge";
 import type { Product } from "@/api";
 import { ProductThumb } from "@/components/common/ProductThumb";
+import { useScrollHighlightIntoView } from "@/hooks/useScrollHighlightIntoView";
 import styles from "./InventoryCards.module.css";
 
 interface InventoryCardsProps {
@@ -16,6 +18,7 @@ interface InventoryCardsProps {
   onEdit: (product: Product) => void;
   onAdjust: (product: Product) => void;
   onRowClick?: (product: Product) => void;
+  highlightedProductId?: string;
   refreshing?: boolean;
 }
 
@@ -28,10 +31,14 @@ export function InventoryCards({
   onEdit,
   onAdjust,
   onRowClick,
+  highlightedProductId,
   refreshing,
 }: InventoryCardsProps) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  useScrollHighlightIntoView(wrapperRef, highlightedProductId, products, "data-card-id");
+
   return (
-    <div className={styles.wrapper}>
+    <div className={styles.wrapper} ref={wrapperRef}>
       <RefreshBadge refreshing={refreshing} />
 
       {loading && products.length === 0 ? (
@@ -48,7 +55,11 @@ export function InventoryCards({
             const outOfStock = p.stock <= 0;
             const lowStock = !outOfStock && p.stock <= p.low_stock_threshold;
             return (
-              <article key={p.id} className={styles.card}>
+              <article
+                key={p.id}
+                data-card-id={p.id}
+                className={`${styles.card} ${highlightedProductId === p.id ? styles.cardHighlight : ""}`}
+              >
                 <button
                   type="button"
                   className={styles.cardMain}

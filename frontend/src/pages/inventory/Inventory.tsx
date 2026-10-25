@@ -79,18 +79,7 @@ export default function Inventory() {
   const [barcodeScannerOpen, setBarcodeScannerOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const openedFromQuery = useRef(false);
-
-  useEffect(() => {
-    if (openedFromQuery.current) return;
-    const productId = searchParams.get("product");
-    if (!productId) return;
-    openedFromQuery.current = true;
-    productsApi
-      .getById(productId)
-      .then((product) => setDetailProduct(product))
-      .catch(() => {})
-      .finally(() => setSearchParams({}, { replace: true }));
-  }, [searchParams, setSearchParams]);
+  const [focusProductId, setFocusProductId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<InventoryTab>("inventory");
   const categories = useCategories();
   const [categoryId, setCategoryId] = useState("");
@@ -146,6 +135,33 @@ export default function Inventory() {
       return { items: productRes.products, total: productRes.total };
     },
   });
+
+  useEffect(() => {
+    if (openedFromQuery.current) return;
+    const productId = searchParams.get("product");
+    if (!productId) return;
+    openedFromQuery.current = true;
+    productsApi
+      .getById(productId)
+      .then((product) => {
+        setDetailProduct(product);
+        if (!product.active) return;
+        setCategoryId("");
+        setUnitType("");
+        setStockFilter("");
+        setSearch(product.barcode || product.name);
+        setPage(1);
+        setFocusProductId(product.id);
+      })
+      .catch(() => {})
+      .finally(() => setSearchParams({}, { replace: true }));
+  }, [searchParams, setSearchParams, setSearch, setPage]);
+
+  useEffect(() => {
+    if (!focusProductId || detailProduct) return;
+    const timer = window.setTimeout(() => setFocusProductId(null), 6_000);
+    return () => window.clearTimeout(timer);
+  }, [focusProductId, detailProduct]);
 
   const {
     items: movements,
@@ -225,6 +241,11 @@ export default function Inventory() {
   );
 
   const handleEdit = useCallback((product: Product) => setEditProduct(product), []);
+
+  const handleRowClick = useCallback((product: Product) => {
+    setFocusProductId((current) => (current === product.id ? current : null));
+    setDetailProduct(product);
+  }, []);
 
   function openCreate() {
     setForm(emptyForm);
@@ -374,7 +395,8 @@ export default function Inventory() {
             onViewAlerts={() => setActiveTab("alerts")}
             onEdit={handleEdit}
             onAdjust={handleAdjust}
-            onRowClick={setDetailProduct}
+            onRowClick={handleRowClick}
+            highlightedProductId={focusProductId ?? undefined}
             refreshing={refreshingProducts}
           />
         )}

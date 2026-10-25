@@ -124,6 +124,18 @@
   background: color-mix(in srgb, var(--primary, #3b82f6) 8%, transparent);
 }
 
+.table tbody tr.trHighlight {
+  background: color-mix(in srgb, var(--primary, #3b82f6) 14%, transparent);
+}
+
+.table tbody tr.trHighlight:hover {
+  background: color-mix(in srgb, var(--primary, #3b82f6) 20%, transparent);
+}
+
+.table tbody tr.trHighlight td:first-child {
+  box-shadow: inset 3px 0 0 var(--primary, #3b82f6);
+}
+
 .empty {
   padding: 40px 16px;
   text-align: center;

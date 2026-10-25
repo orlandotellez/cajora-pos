@@ -4,6 +4,7 @@ import TableSkeleton, { type SkeletonCol } from "@/components/common/TableSkelet
 import { RefreshBadge } from "@/components/common/RefreshBadge";
 import { getVisiblePages } from "@/lib/pagination";
 import { useLongPress } from "@/hooks/useLongPress";
+import { useScrollHighlightIntoView } from "@/hooks/useScrollHighlightIntoView";
 import styles from "./DataTable.module.css";
 
 export interface Column<T> {
@@ -29,6 +30,7 @@ interface DataTableProps<T> {
   emptyMessage?: string;
   skeletonCols?: SkeletonCol[];
   rowClassName?: (item: T) => string | undefined;
+  highlightedRowId?: string;
   dimmed?: boolean;
   refreshing?: boolean;
   selectable?: boolean;
@@ -50,6 +52,7 @@ export function DataTable<T extends { id: string }>({
   emptyMessage = "Sin datos",
   skeletonCols,
   rowClassName,
+  highlightedRowId,
   dimmed,
   refreshing,
   selectable = false,
@@ -61,6 +64,9 @@ export function DataTable<T extends { id: string }>({
   const loadingCols = Array.from({ length: columnCount }, (_, i) =>
     skeletonCols?.[i] ?? { width: "auto" as const },
   );
+
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  useScrollHighlightIntoView(wrapperRef, highlightedRowId, data);
 
   const longPressRowId = useRef<string | null>(null);
   const longPress = useLongPress(() => {
@@ -103,7 +109,7 @@ export function DataTable<T extends { id: string }>({
   return (
     <div className={styles.tableCard}>
       <RefreshBadge refreshing={refreshing} />
-      <div className={styles.tableWrapper}>
+      <div className={styles.tableWrapper} ref={wrapperRef}>
         <table className={styles.table}>
           <thead>
             <tr>
@@ -148,7 +154,7 @@ export function DataTable<T extends { id: string }>({
                   <tr
                     key={item.id}
                     data-row-id={item.id}
-                    className={`${onRowClick && !selectable ? styles.trClickable : ""} ${dimmed || loading ? styles.trDim : ""} ${selectedIds?.has(item.id) ? styles.trSelected : ""} ${rowClassName?.(item) ?? ""}`}
+                    className={`${onRowClick && !selectable ? styles.trClickable : ""} ${dimmed || loading ? styles.trDim : ""} ${selectedIds?.has(item.id) ? styles.trSelected : ""} ${highlightedRowId === item.id ? styles.trHighlight : ""} ${rowClassName?.(item) ?? ""}`}
                     onClick={() => {
                       if (longPress.consumeClick()) return;
                       if (selectable) {

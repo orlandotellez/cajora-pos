@@ -16,11 +16,12 @@ interface InventoryTableProps {
   onEdit: (product: Product) => void;
   onAdjust: (product: Product) => void;
   onRowClick?: (product: Product) => void;
+  highlightedProductId?: string;
   dimmed?: boolean;
   refreshing?: boolean;
 }
 
-export function InventoryTable({ products, loading, total, page, totalPages, onPageChange, onEdit, onAdjust, onRowClick, dimmed, refreshing }: InventoryTableProps) {
+export function InventoryTable({ products, loading, total, page, totalPages, onPageChange, onEdit, onAdjust, onRowClick, highlightedProductId, dimmed, refreshing }: InventoryTableProps) {
   const columns: Column<Product>[] = useMemo(() => [
     {
       key: "name",
@@ -105,6 +106,7 @@ export function InventoryTable({ products, loading, total, page, totalPages, onP
       totalPages={totalPages}
       onPageChange={onPageChange}
       onRowClick={onRowClick}
+      highlightedRowId={highlightedProductId}
       emptyMessage="Sin productos"
       skeletonCols={[
         { width: "40%" },

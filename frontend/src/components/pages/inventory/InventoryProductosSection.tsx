@@ -34,6 +34,7 @@ interface Props {
   onEdit: (product: Product) => void;
   onAdjust: (product: Product) => void;
   onRowClick?: (product: Product) => void;
+  highlightedProductId?: string;
   refreshing?: boolean;
 }
 
@@ -61,6 +62,7 @@ export function InventoryProductosSection(props: Props) {
     onEdit,
     onAdjust,
     onRowClick,
+    highlightedProductId,
     refreshing,
   } = props;
 
@@ -187,6 +189,7 @@ export function InventoryProductosSection(props: Props) {
           onEdit={onEdit}
           onAdjust={onAdjust}
           onRowClick={onRowClick}
+          highlightedProductId={highlightedProductId}
           refreshing={refreshing}
         />
       ) : (
@@ -200,6 +203,7 @@ export function InventoryProductosSection(props: Props) {
           onEdit={onEdit}
           onAdjust={onAdjust}
           onRowClick={onRowClick}
+          highlightedProductId={highlightedProductId}
           refreshing={refreshing}
         />
       )}
