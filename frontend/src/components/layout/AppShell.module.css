@@ -6,6 +6,7 @@
 
 @media (max-width: 767px) {
   .shell {
+    padding-top: 0;
     padding-bottom: 0;
   }
 }
@@ -347,6 +348,7 @@
 
 @media (max-width: 767px) {
   .main {
+    min-height: 100dvh;
     padding-top: calc(var(--mobile-topbar-height) + env(safe-area-inset-top));
     padding-bottom: var(--mobile-tabbar-offset);
   }
