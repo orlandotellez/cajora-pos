@@ -466,9 +466,6 @@ export default function Pos() {
         {cart.length > 0 && (
           <div className={styles["mobile-bottom-bar"]}>
             <div className={styles["mobile-bottom-bar-totals"]}>
-              <span className={styles["mobile-bottom-subtotal"]}>
-                Subtotal: {money(totals.subtotal, currency)}
-              </span>
               <span className={styles["mobile-bottom-total"]}>
                 Total: {money(totals.total, currency)}
               </span>

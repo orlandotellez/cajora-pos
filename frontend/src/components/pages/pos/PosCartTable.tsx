@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Trash2, X, ScanBarcode, Wrench, PackagePlus } from "lucide-react";
+import { Trash2, X, ScanBarcode, Wrench, PackagePlus, Image as ImageIcon, Minus, Plus } from "lucide-react";
 import { money } from "@/lib/format";
 import { UNIT_TYPE_LABELS } from "@/lib/constants";
 import { stripAccents } from "@/lib/catalog";
@@ -62,8 +62,7 @@ export function PosCartTable({
         <tr>
           <th className={styles.thLeft}>Producto / Servicio</th>
           <th className={styles.thCenter}>Cantidad</th>
-          <th className={styles.thRight}>Precio</th>
-          <th className={styles.thRight}>Subtotal</th>
+          <th className={styles.thRight}>Total</th>
           {!readOnly && <th className={styles.thAction}></th>}
         </tr>
       </thead>
@@ -71,46 +70,71 @@ export function PosCartTable({
         {cart.map((x) => (
           <tr key={x.id}>
             <td className={styles.tdProduct}>
-              <div className={styles.productName}>
-                {x._type === "service" && <Wrench size={12} style={{ display: "inline", marginRight: 4, verticalAlign: "middle", opacity: 0.5 }} />}
-                {x.name}
-                {x._type === "product" && (x as ProductCartItem).unit_type && (
-                  <span className={styles.unitTag}>
-                    {UNIT_TYPE_LABELS[(x as ProductCartItem).unit_type!] || (x as ProductCartItem).unit_type}
-                  </span>
-                )}
+              <div className={styles.productCell}>
+                <span className={styles.productThumb}>
+                  {x._type === "service" ? <Wrench size={16} /> : <ImageIcon size={16} />}
+                </span>
+                <div className={styles.productCellBody}>
+                  <div className={styles.productName}>
+                    {x.name}
+                    {x._type === "product" && (x as ProductCartItem).unit_type && (
+                      <span className={styles.unitTag}>
+                        {UNIT_TYPE_LABELS[(x as ProductCartItem).unit_type!] || (x as ProductCartItem).unit_type}
+                      </span>
+                    )}
+                  </div>
+                  {x._type === "product" && (x as ProductCartItem).barcode && (
+                    <div className={styles.productBarcode}>{(x as ProductCartItem).barcode}</div>
+                  )}
+                  <div className={styles.productPrice}>{money(getItemPrice(x), currency)}</div>
+                  {x._type === "service" && !readOnly && (
+                    <ServiceProductManager
+                      svc={x as ServiceCartItem}
+                      products={products}
+                      addingToService={addingToService}
+                      serviceProductSearch={serviceProductSearch}
+                      onAddingToService={onAddingToService}
+                      onServiceProductSearch={onServiceProductSearch}
+                      onAddServiceProduct={onAddServiceProduct}
+                      onUpdateServiceProductQty={onUpdateServiceProductQty}
+                      showAlert={showAlert}
+                    />
+                  )}
+                </div>
               </div>
-              {x._type === "product" && (x as ProductCartItem).barcode && (
-                <div className={styles.productBarcode}>{(x as ProductCartItem).barcode}</div>
-              )}
-              {x._type === "service" && !readOnly && (
-                <ServiceProductManager
-                  svc={x as ServiceCartItem}
-                  products={products}
-                  addingToService={addingToService}
-                  serviceProductSearch={serviceProductSearch}
-                  onAddingToService={onAddingToService}
-                  onServiceProductSearch={onServiceProductSearch}
-                  onAddServiceProduct={onAddServiceProduct}
-                  onUpdateServiceProductQty={onUpdateServiceProductQty}
-                  showAlert={showAlert}
-                />
-              )}
             </td>
             <td className={styles.tdQty}>
               {readOnly ? (
                 <span className={styles.qtyValue}>{x.quantity}</span>
               ) : (
-                <QtyInputCell
-                  value={x.quantity}
-                  min={1}
-                  onUpdate={(qty) => onSetQty(x, qty)}
-                  ariaLabel="Cantidad"
-                  className={styles.qtyInput}
-                />
+                <div className={styles.qtyControls}>
+                  <button
+                    type="button"
+                    className={styles.qtyBtn}
+                    onClick={() => onSetQty(x, x.quantity - 1)}
+                    disabled={x.quantity <= 1}
+                    aria-label="Restar una unidad"
+                  >
+                    <Minus size={14} />
+                  </button>
+                  <QtyInputCell
+                    value={x.quantity}
+                    min={1}
+                    onUpdate={(qty) => onSetQty(x, qty)}
+                    ariaLabel="Cantidad"
+                    className={styles.qtyInput}
+                  />
+                  <button
+                    type="button"
+                    className={styles.qtyBtn}
+                    onClick={() => onSetQty(x, x.quantity + 1)}
+                    aria-label="Sumar una unidad"
+                  >
+                    <Plus size={14} />
+                  </button>
+                </div>
               )}
             </td>
-            <td className={styles.tdRight}>{money(getItemPrice(x), currency)}</td>
             <td className={styles.tdRightBold}>{money(getItemSubtotal(x), currency)}</td>
             {!readOnly && (
               <td className={styles.tdAction}>
