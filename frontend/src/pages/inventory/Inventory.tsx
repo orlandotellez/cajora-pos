@@ -1,16 +1,21 @@
 import { useCallback, useState } from "react";
-import { productsApi, type Product } from "@/api/products";
+import { productsApi, type CreateProductPayload, type Product } from "@/api/products";
 import { inventoryApi, type InventoryMovement, type LowStockProduct, type BatchResponse } from "@/api/inventory";
 import { cacheClear } from "@/lib/simple-cache";
 import { useCrudPagination } from "@/hooks/useCrudPagination";
 import { useCategories, useSuppliers } from "@/hooks/useCatalogLists";
+import { usePermissions } from "@/hooks/usePermissions";
+import { EditProductModal } from "@/components/pages/products/EditProductModal";
+import { ImportCsvModal } from "@/components/pages/products/ImportCsvModal";
+import { ProductDetailModal } from "@/components/pages/products/ProductDetailModal";
+import { BarcodeScanner } from "@/components/common/BarcodeScanner";
+import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
 import { useToast } from "@/components/common/ui/Toast";
 import { AdjustStockModal } from "@/components/pages/inventory/AdjustStockModal";
 import { MovementDetailModal } from "@/components/pages/inventory/MovementDetailModal";
 import { InventoryProductDetailModal } from "@/components/pages/inventory/InventoryProductDetailModal";
 import { BatchMovementModal } from "@/components/pages/inventory/BatchMovementModal";
 import { BatchDetailModal } from "@/components/pages/inventory/BatchDetailModal";
-import { EditInventoryModal } from "@/components/pages/inventory/EditInventoryModal";
 import { MovementHistoryTable } from "@/components/pages/inventory/MovementHistoryTable";
 import { BatchHistoryTable } from "@/components/pages/inventory/BatchHistoryTable";
 import styles from "./Inventory.module.css";
@@ -27,6 +32,19 @@ const TAB_LABELS: Record<InventoryTab, string> = {
 };
 const TAB_ID = (t: InventoryTab) => `inventory-tab-${t}`;
 const PANEL_ID = (t: InventoryTab) => `inventory-panel-${t}`;
+
+const emptyForm = {
+  name: "",
+  barcode: "",
+  unit_type: "",
+  unit_quantity: 0,
+  category_id: "",
+  supplier_id: "",
+  price: 0,
+  cost: 0,
+  stock: 0,
+  low_stock_threshold: 5,
+};
 
 type AdjustState = {
   id: string;
@@ -48,6 +66,14 @@ function withProductUnit(m: InventoryMovement, products: Product[]): InventoryMo
 
 export default function Inventory() {
   const { toast } = useToast();
+  const { has } = usePermissions();
+  const canWrite = has("catalog_write");
+  const [creating, setCreating] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [form, setForm] = useState(emptyForm);
+  const [submitting, setSubmitting] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
+  const [barcodeScannerOpen, setBarcodeScannerOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<InventoryTab>("inventory");
   const categories = useCategories();
   const [categoryId, setCategoryId] = useState("");
@@ -106,7 +132,6 @@ export default function Inventory() {
 
   const {
     items: movements,
-    total: movementsTotal,
     page: movementPage,
     totalPages: movementsTotalPages,
     loading: movementsLoading,
@@ -128,7 +153,6 @@ export default function Inventory() {
 
   const {
     items: batches,
-    total: batchesTotal,
     page: batchPage,
     totalPages: batchesTotalPages,
     loading: batchesLoading,
@@ -185,6 +209,50 @@ export default function Inventory() {
 
   const handleEdit = useCallback((product: Product) => setEditProduct(product), []);
 
+  function openCreate() {
+    setForm(emptyForm);
+    setCreating(true);
+  }
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      const data: CreateProductPayload = {
+        name: form.name,
+        barcode: form.barcode || undefined,
+        unit_type: form.unit_type || undefined,
+        unit_quantity: form.unit_quantity || undefined,
+        category_id: form.category_id || undefined,
+        supplier_id: form.supplier_id || undefined,
+        price: form.price,
+        cost: form.cost || undefined,
+        stock: form.stock,
+        low_stock_threshold: form.low_stock_threshold,
+      };
+      await productsApi.create(data);
+      setCreating(false);
+      refetchAll();
+      toast("Producto guardado correctamente", "success");
+    } catch (err) {
+      console.error("Error al guardar producto:", err);
+      toast((err as Error)?.message || "Error al guardar producto", "error");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function remove(id: string) {
+    try {
+      await productsApi.delete(id);
+      refetchAll();
+      toast("Producto eliminado", "success");
+    } catch (err) {
+      console.error("Error al eliminar producto:", err);
+      toast((err as Error)?.message || "Error al eliminar producto", "error");
+    }
+  }
+
   // Desde el detalle: cerrar el detalle y abrir la acción pedida.
   const handleDetailEdit = useCallback((product: Product) => {
     setDetailProduct(null);
@@ -221,7 +289,12 @@ export default function Inventory() {
 
   return (
     <div className={styles.page}>
-      <Header setBatchModalOpen={() => setBatchModalOpen(true)} />
+      <Header
+        setBatchModalOpen={() => setBatchModalOpen(true)}
+        onCreateProduct={canWrite ? openCreate : undefined}
+        onImport={canWrite ? () => setImportOpen(true) : undefined}
+        canWrite={canWrite}
+      />
 
       <div
         className={styles.tabs}
@@ -325,14 +398,61 @@ export default function Inventory() {
       )}
 
       {editProduct && (
-        <EditInventoryModal
+        <ProductDetailModal
           product={editProduct}
           categories={categories}
           suppliers={suppliers}
           onClose={() => setEditProduct(null)}
           onSaved={refetchAll}
+          onDelete={canWrite ? (p) => { setEditProduct(null); setDeleteTarget(p); } : undefined}
+          readOnly={!canWrite}
         />
       )}
+
+      {creating && (
+        <EditProductModal
+          setEditing={() => setCreating(false)}
+          form={form}
+          setForm={setForm}
+          handleSave={handleSave}
+          submitting={submitting}
+          setBarcodeScannerOpen={setBarcodeScannerOpen}
+          categories={categories}
+          suppliers={suppliers}
+        />
+      )}
+
+      <BarcodeScanner
+        open={barcodeScannerOpen}
+        onScan={(code) => {
+          setForm({ ...form, barcode: code });
+          setBarcodeScannerOpen(false);
+        }}
+        onClose={() => setBarcodeScannerOpen(false)}
+      />
+
+      {importOpen && (
+        <ImportCsvModal
+          setOpen={() => setImportOpen(false)}
+          onImported={() => {
+            refetchAll();
+            toast("Productos importados correctamente", "success");
+          }}
+        />
+      )}
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Eliminar producto"
+        message={`¿Estás seguro de que querés eliminar el producto "${deleteTarget?.name}"? Esta acción no se puede deshacer.`}
+        confirmLabel="Sí, eliminar"
+        cancelLabel="Cancelar"
+        onConfirm={() => {
+          if (deleteTarget) remove(deleteTarget.id);
+          setDeleteTarget(null);
+        }}
+        onCancel={() => setDeleteTarget(null)}
+      />
 
       {selectedMovement && (
         <MovementDetailModal

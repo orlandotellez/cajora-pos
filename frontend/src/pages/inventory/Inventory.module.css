@@ -16,6 +16,17 @@
   border-bottom: 1px solid var(--border);
   padding-inline: 24px;
   overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .tabs {
+    padding-inline: 15px;
+  }
 }
 
 .tab {

@@ -5,7 +5,7 @@
   margin-bottom: 16px;
 }
 
-@media (max-width: 767px) {
+@media (max-width: 768px) {
   .toolbar {
     padding: 0 15px 10px;
   }
@@ -42,92 +42,4 @@
 
 .searchInput::placeholder {
   color: var(--muted-foreground);
-}
-
-.chipsRow {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.chips {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-}
-
-.chips::-webkit-scrollbar {
-  display: none;
-}
-
-@media (max-width: 767px) {
-  .chips {
-    margin: 0 -15px;
-    padding: 0 15px;
-  }
-}
-
-.arrow {
-  display: none;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--card);
-  color: var(--foreground);
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
-}
-
-.arrow:hover {
-  border-color: var(--ring);
-  background: var(--accent);
-}
-
-@media (min-width: 768px) {
-  .arrow {
-    display: flex;
-  }
-}
-
-.chip {
-  flex: 0 0 auto;
-  height: 34px;
-  padding: 0 14px;
-  border: none;
-  border-radius: 999px;
-  background: var(--secondary);
-  color: var(--muted-foreground);
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 500;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-
-.chip:hover {
-  color: var(--foreground);
-}
-
-.chipActive {
-  background: var(--brand);
-  color: var(--brand-foreground);
-}
-
-.chipActive:hover {
-  color: var(--brand-foreground);
-}
-
-.chip:focus-visible {
-  outline: 2px solid var(--ring);
-  outline-offset: 2px;
 }

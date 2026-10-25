@@ -3,31 +3,29 @@
   inset: 0;
   background: rgba(0, 0, 0, 0.3);
   display: flex;
-  align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
   z-index: 50;
-  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
 }
 
 .detailModal {
   width: 100%;
-  max-width: 420px;
+  max-width: 480px;
+  height: 100%;
+  overflow-y: auto;
   background: var(--background);
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  overflow: hidden;
-  animation: fadeIn 0.15s ease;
+  border-left: 1px solid var(--border);
+  animation: slideIn 0.2s ease;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-@keyframes fadeIn {
+@keyframes slideIn {
   from {
-    opacity: 0;
-    transform: scale(0.95);
+    transform: translateX(100%);
   }
 
   to {
-    opacity: 1;
-    transform: scale(1);
+    transform: translateX(0);
   }
 }
 
@@ -93,6 +91,7 @@
 
 .movementBadge {
   display: inline-flex;
+  align-self: flex-start;
   align-items: center;
   gap: 4px;
   padding: 2px 8px;

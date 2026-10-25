@@ -1,4 +1,4 @@
-import { Loader2, Eye } from "lucide-react";
+import { Loader2, ArrowDownRight, ArrowUpRight, RefreshCw, Eye } from "lucide-react";
 import type { BatchResponse } from "@/api/inventory";
 import { RefreshBadge } from "@/components/common/RefreshBadge";
 import { getVisiblePages } from "@/lib/pagination";
@@ -41,6 +41,9 @@ export function BatchHistoryTable({ batches, page, totalPages, loading = false, 
                   </td>
                   <td className={styles.tdLeft}>
                     <span className={`${styles.movementBadge} ${styles[`movement_${b.movement_type}`] ?? ""}`}>
+                      {b.movement_type === "entrada" && <ArrowDownRight size={14} />}
+                      {b.movement_type === "salida" && <ArrowUpRight size={14} />}
+                      {b.movement_type === "ajuste" && <RefreshCw size={14} />}
                       {b.movement_type === "entrada" && " Entrada"}
                       {b.movement_type === "salida" && " Salida"}
                       {b.movement_type === "ajuste" && " Ajuste"}

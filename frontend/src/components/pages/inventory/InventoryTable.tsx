@@ -3,6 +3,7 @@ import { DataTable, type Column } from "@/components/common/DataTable";
 import type { Product } from "@/api";
 import { UNIT_TYPE_LABELS, unitQuantitySuffix } from "@/lib/constants";
 import { money } from "@/lib/format";
+import { ProductThumb } from "@/components/common/ProductThumb";
 import styles from "./InventoryTable.module.css";
 
 interface InventoryTableProps {
@@ -25,10 +26,13 @@ export function InventoryTable({ products, loading, total, page, totalPages, onP
       key: "name",
       label: "Producto",
       render: (p) => (
+        <div className={styles["inventory-product-cell"]}>
+          <ProductThumb size={36} />
           <div>
             <div className={styles["inventory-name"]}>{p.name}</div>
             {p.barcode && <div className={styles["inventory-barcode"]}>{p.barcode}</div>}
           </div>
+        </div>
       ),
     },
     {
