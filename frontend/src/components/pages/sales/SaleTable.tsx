@@ -69,9 +69,8 @@ export function SaleTable({ sales, loading, total, page, totalPages, onPageChang
       totalPages={totalPages}
       onPageChange={onPageChange}
       onRowClick={onView}
-      onEdit={onView}
       emptyMessage="Sin ventas"
-      skeletonCols={[{ width: "35%" }, { width: "20%", align: "right" }, { width: "20%" }, { width: "20%" }, { width: "10%" }]}
+      skeletonCols={[{ width: "35%" }, { width: "20%", align: "right" }, { width: "20%" }, { width: "20%" }]}
       dimmed={dimmed}
       refreshing={refreshing}
     />

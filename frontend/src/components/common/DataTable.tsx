@@ -57,6 +57,10 @@ export function DataTable<T extends { id: string }>({
   onSelectionChange,
 }: DataTableProps<T>) {
   const hasEditDelete = onEdit || onDelete;
+  const columnCount = columns.length + (hasEditDelete ? 1 : 0) + (selectable ? 1 : 0);
+  const loadingCols = Array.from({ length: columnCount }, (_, i) =>
+    skeletonCols?.[i] ?? { width: "auto" as const },
+  );
 
   const longPressRowId = useRef<string | null>(null);
   const longPress = useLongPress(() => {
@@ -137,7 +141,7 @@ export function DataTable<T extends { id: string }>({
             onContextMenu={longPress.onContextMenu}
           >
             {loading && data.length === 0 ? (
-              <TableSkeleton cols={skeletonCols ?? columns.map(() => ({ width: "auto" }))} />
+              <TableSkeleton cols={loadingCols} />
             ) : data.length > 0 ? (
               <>
                 {data.map((item) => (
