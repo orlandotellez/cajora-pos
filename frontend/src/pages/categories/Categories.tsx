@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { usePermissions } from "@/hooks/usePermissions";
+import { clearCachedCategories } from "@/lib/catalog-lists-cache";
 import { categoriesApi, type Category, type CreateCategoryPayload, type UpdateCategoryPayload } from "@/api/categories";
 import { useCachedCrudList } from "@/hooks/useCachedCrudList";
 import { fetchAllPages } from "@/lib/fetch-all-pages";
@@ -82,6 +83,7 @@ export default function Categories() {
         await categoriesApi.update(editing.id, data as UpdateCategoryPayload);
       }
       setEditing(null);
+      clearCachedCategories();
       refreshImmediate();
       toast(
         isNew ? "Categoría creada correctamente" : "Categoría actualizada correctamente",
@@ -98,6 +100,7 @@ export default function Categories() {
   async function remove(id: string) {
     try {
       await categoriesApi.delete(id);
+      clearCachedCategories();
       refreshImmediate();
       toast("Categoría eliminada", "success");
     } catch (err) {

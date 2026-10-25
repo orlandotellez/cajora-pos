@@ -1,15 +1,14 @@
 import { useEffect, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { productsApi, type CreateProductPayload } from "@/api/products";
-import { categoriesApi } from "@/api/categories";
-import { suppliersApi } from "@/api/suppliers";
-import type { Product, Category, Supplier } from "@/api";
+import type { Product } from "@/api";
 import { useCachedCrudList } from "@/hooks/useCachedCrudList";
 import { fetchAllPages, fetchFirstPage, fetchPageFrom } from "@/lib/fetch-all-pages";
 import { stripAccents } from "@/lib/catalog";
 import { useToast } from "@/components/common/ui/Toast";
 import { usePosStore } from "@/store/posStore";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useCategories, useSuppliers } from "@/hooks/useCatalogLists";
 import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
 import { ProductGrid } from "@/components/pages/products/ProductGrid";
 import { BarcodeScanner } from "@/components/common/BarcodeScanner";
@@ -46,8 +45,8 @@ export default function Products() {
   const [deleteAllDeleting, setDeleteAllDeleting] = useState(false);
   const [categoryId, setCategoryId] = useState("");
   const [unitType, setUnitType] = useState("");
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const categories = useCategories();
+  const suppliers = useSuppliers();
   const [editing, setEditing] = useState<Product | null | "new">(null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -120,18 +119,6 @@ export default function Products() {
       "supplier.deleted",
     ],
   });
-
-  // Cargar categorías y proveedores una vez para los dropdowns del modal.
-  // Separado del hook porque son fetches one-shot (no se re-piden con
-  // cada cambio de search/page).
-  useEffect(() => {
-    if (categories.length === 0) {
-      categoriesApi.list().then(setCategories).catch(() => { });
-    }
-    if (suppliers.length === 0) {
-      suppliersApi.list().then((res) => setSuppliers(res.suppliers)).catch(() => { });
-    }
-  }, [categories.length, suppliers.length]);
 
   // Sincronizar filtros externos con el hook caché cada vez que cambian.
   useEffect(() => {

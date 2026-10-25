@@ -1,11 +1,9 @@
 import { useCallback, useState } from "react";
 import { productsApi, type Product } from "@/api/products";
-import { categoriesApi, type Category } from "@/api/categories";
 import { inventoryApi, type InventoryMovement, type LowStockProduct, type BatchResponse } from "@/api/inventory";
-import { suppliersApi } from "@/api/suppliers";
-import type { Supplier } from "@/api";
 import { cacheClear } from "@/lib/simple-cache";
 import { useCrudPagination } from "@/hooks/useCrudPagination";
+import { useCategories, useSuppliers } from "@/hooks/useCatalogLists";
 import { useToast } from "@/components/common/ui/Toast";
 import { AdjustStockModal } from "@/components/pages/inventory/AdjustStockModal";
 import { MovementDetailModal } from "@/components/pages/inventory/MovementDetailModal";
@@ -51,12 +49,12 @@ function withProductUnit(m: InventoryMovement, products: Product[]): InventoryMo
 export default function Inventory() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<InventoryTab>("inventory");
-  const [categories, setCategories] = useState<Category[]>([]);
+  const categories = useCategories();
   const [categoryId, setCategoryId] = useState("");
   const [unitType, setUnitType] = useState("");
   const [stockFilter, setStockFilter] = useState<"" | "low" | "out">("");
   const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([]);
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const suppliers = useSuppliers();
   const [adjust, setAdjust] = useState<AdjustState>(null);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [detailProduct, setDetailProduct] = useState<Product | null>(null);
@@ -88,7 +86,7 @@ export default function Inventory() {
     ],
     extraFilters: { categoryId, unitType, stockFilter },
     fetcher: async ({ page, limit, search, extraFilters }) => {
-      const [productRes, lowStockRes, cats, sups] = await Promise.all([
+      const [productRes, lowStockRes] = await Promise.all([
         productsApi.list({
           page,
           limit,
@@ -100,12 +98,8 @@ export default function Inventory() {
           out_of_stock: extraFilters.stockFilter === "out" || undefined,
         }),
         inventoryApi.lowStock(),
-        categories.length === 0 ? categoriesApi.list() : Promise.resolve(undefined),
-        suppliers.length === 0 ? suppliersApi.list() : Promise.resolve(undefined),
       ]);
       setLowStockProducts(lowStockRes.products);
-      if (cats) setCategories(cats);
-      if (sups) setSuppliers(sups.suppliers);
       return { items: productRes.products, total: productRes.total };
     },
   });

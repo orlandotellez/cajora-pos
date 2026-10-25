@@ -1,3 +1,4 @@
+import { clearCachedSuppliers } from "@/lib/catalog-lists-cache";
 import { useEffect, useState } from "react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { suppliersApi, type CreateSupplierPayload, type UpdateSupplierPayload } from "@/api/suppliers";
@@ -106,6 +107,7 @@ export default function Suppliers() {
         await suppliersApi.update(editing.id, data as UpdateSupplierPayload);
       }
       setEditing(null);
+      clearCachedSuppliers();
       refreshImmediate();
       toast("Proveedor guardado correctamente", "success");
     } catch (err) {
@@ -119,6 +121,7 @@ export default function Suppliers() {
   async function remove(id: string) {
     try {
       await suppliersApi.delete(id);
+      clearCachedSuppliers();
       refreshImmediate();
       toast("Proveedor eliminado", "success");
     } catch (err) {
@@ -137,6 +140,7 @@ export default function Suppliers() {
     setBulkDeleting(true);
     try {
       await suppliersApi.bulkDelete([...selectedIds]);
+      clearCachedSuppliers();
       refreshImmediate();
       setEditMode(false);
       setSelectedIds(new Set());
