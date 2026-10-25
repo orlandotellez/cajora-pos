@@ -75,6 +75,10 @@ export function MovementDetailModal({ movement, onClose }: MovementDetailModalPr
             </>
           )}
           <div className={styles.detailField}>
+            <span className={styles.detailLabel}>Usuario</span>
+            <span className={styles.detailValue}>{movement.user_name ?? "—"}</span>
+          </div>
+          <div className={styles.detailField}>
             <span className={styles.detailLabel}>Fecha</span>
             <span className={styles.detailValue}>
               {new Date(movement.created_at).toLocaleString("es-MX")}
