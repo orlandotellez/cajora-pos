@@ -35,6 +35,18 @@ describe("mapMovementToResponse", () => {
     assert.equal(result.created_at, "2026-09-01T10:00:00Z")
   })
 
+  it("exposes the user that created the movement", () => {
+    const result = mapMovementToResponse(makeMovement({ user_name: "Ana Martínez" }))
+
+    assert.equal(result.user_name, "Ana Martínez")
+  })
+
+  it("leaves user_name undefined when the user name is missing", () => {
+    const result = mapMovementToResponse(makeMovement())
+
+    assert.equal(result.user_name, undefined)
+  })
+
   it("uses provided productName over movement product_name", () => {
     const result = mapMovementToResponse(makeMovement({ product_name: "Legacy" }), "Fresh")
 

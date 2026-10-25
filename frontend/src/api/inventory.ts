@@ -11,6 +11,7 @@ export interface InventoryMovement {
   unit_quantity?: number | null;
   note?: string;
   user_id: string;
+  user_name?: string;
   batch_id?: string;
   created_at: string;
 }

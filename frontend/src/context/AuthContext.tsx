@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useCallback, useEffect, type React
 import { useNavigate } from "react-router-dom";
 import { authApi, type AuthUser, type Store, type RegisterStorePayload } from "@/api/auth";
 import { clearAllCrudCache } from "@/lib/crud-list-cache";
+import { usePosStore } from "@/store/posStore";
 
 const REFRESH_INTERVAL = 14 * 60 * 1000;
 
@@ -110,6 +111,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => clearInterval(interval);
   }, []);
 
+  const activeStoreId = store?.id;
+
+  useEffect(() => {
+    if (loading || !activeStoreId) return;
+    void usePosStore.persist.rehydrate();
+  }, [loading, activeStoreId]);
+
   const login = useCallback(async (email: string, password: string) => {
     setLoading(true);
     try {
@@ -151,6 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Limpiar la caché client-side de listas admin para no mezclar datos
     // entre usuarios en el mismo dispositivo/terminal.
     clearAllCrudCache();
+    usePosStore.getState().clearCart();
     localStorage.removeItem("auth-token");
     localStorage.removeItem("auth-refresh-token");
     navigate("/auth");

@@ -11,6 +11,7 @@ export function mapMovementToResponse(movement: IInventoryMovementEntity, produc
     unit_cost: movement.unit_cost ?? null,
     note: movement.note || undefined,
     user_id: movement.user_id,
+    user_name: movement.user_name,
     created_at: movement.created_at instanceof Date ? movement.created_at.toISOString() : movement.created_at,
   }
 }

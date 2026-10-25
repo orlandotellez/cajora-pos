@@ -566,6 +566,7 @@ export const handlers = [
       unit_cost: body.unit_cost ?? null,
       note: body.note,
       user_id: DEMO_USER.id,
+      user_name: DEMO_USER.name,
       created_at: new Date().toISOString(),
     };
     movements.unshift(movement);

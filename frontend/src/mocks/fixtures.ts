@@ -702,6 +702,7 @@ const DEMO_MOVEMENTS: InventoryMovement[] = [
     quantity: 50,
     note: "Compra a Distribuidora La Colonia",
     user_id: DEMO_USER.id,
+    user_name: "Ana Martínez",
     batch_id: "demo-batch-1",
     created_at: "2026-08-18T09:00:00.000Z",
   },
@@ -713,6 +714,7 @@ const DEMO_MOVEMENTS: InventoryMovement[] = [
     quantity: 6,
     note: "Venta del día",
     user_id: "demo-user-cashier-1",
+    user_name: "Carlos Ruiz",
     created_at: "2026-08-18T11:12:00.000Z",
   },
   {
@@ -723,6 +725,7 @@ const DEMO_MOVEMENTS: InventoryMovement[] = [
     quantity: 2,
     note: "Venta del día",
     user_id: "demo-user-cashier-1",
+    user_name: "Carlos Ruiz",
     created_at: "2026-08-15T16:45:00.000Z",
   },
   {
@@ -733,6 +736,7 @@ const DEMO_MOVEMENTS: InventoryMovement[] = [
     quantity: 30,
     note: "Reposición de stock",
     user_id: DEMO_USER.id,
+    user_name: "Ana Martínez",
     batch_id: "demo-batch-2",
     created_at: "2026-08-14T09:00:00.000Z",
   },
@@ -744,6 +748,7 @@ const DEMO_MOVEMENTS: InventoryMovement[] = [
     quantity: -3,
     note: "Ajuste por merma",
     user_id: DEMO_USER.id,
+    user_name: "Ana Martínez",
     created_at: "2026-08-13T09:00:00.000Z",
   },
   {
@@ -754,6 +759,7 @@ const DEMO_MOVEMENTS: InventoryMovement[] = [
     quantity: 24,
     note: "Compra semanal",
     user_id: DEMO_USER.id,
+    user_name: "Ana Martínez",
     batch_id: "demo-batch-1",
     created_at: "2026-08-12T09:00:00.000Z",
   },
