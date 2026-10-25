@@ -15,11 +15,11 @@
 
 @media (max-width: 768px) {
   .header {
-    padding: 16px 24px;
+    padding: 16px 15px;
   }
 
   .form {
-    padding-inline: 24px;
+    padding-inline: 15px;
   }
 }
 
@@ -41,7 +41,7 @@
   gap: 4px;
   margin-bottom: 24px;
   border-bottom: 1px solid var(--border);
-  padding-inline: 24px;
+  padding-inline: 15px;
   overflow-x: auto;
 }
 
@@ -76,7 +76,7 @@
 }
 
 .tabPanel {
-  padding-inline: 24px;
+  padding-inline: 15px;
 }
 
 .form {

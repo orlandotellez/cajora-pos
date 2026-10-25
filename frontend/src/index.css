@@ -9,6 +9,8 @@
 :root {
   --radius: 0.5rem;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --brand: #2f6b4f;
+  --brand-foreground: #ffffff;
   --mobile-topbar-height: 50px;
   --mobile-tabbar-height: 60px;
   --mobile-tabbar-offset: calc(var(--mobile-tabbar-height) + env(safe-area-inset-bottom));

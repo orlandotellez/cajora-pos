@@ -1,35 +1,18 @@
 .toolbar {
   display: flex;
-  gap: 8px;
+  flex-direction: column;
+  gap: 10px;
   margin-bottom: 16px;
 }
 
-@media(max-width: 768px) {
+@media (max-width: 767px) {
   .toolbar {
-    padding: 0px 24px 10px 24px;
-  }
-}
-
-@media (max-width: 760px) {
-  .toolbar {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-
-  .searchWrapper {
-    grid-column: 1 / -1;
-  }
-
-  .filterSelect {
-    width: 100%;
-    min-width: 0;
+    padding: 0 15px 10px;
   }
 }
 
 .searchWrapper {
   position: relative;
-  flex: 1;
 }
 
 .searchIcon {
@@ -38,6 +21,7 @@
   top: 50%;
   transform: translateY(-50%);
   color: var(--muted-foreground);
+  pointer-events: none;
 }
 
 .searchInput {
@@ -60,24 +44,90 @@
   color: var(--muted-foreground);
 }
 
-.filterSelect {
-  height: 40px;
-  padding: 8px 36px 8px 12px;
-  border: 1px solid var(--input);
-  border-radius: 5px;
-  background: var(--background);
-  color: var(--foreground);
-  font-size: 14px;
-  outline: none;
-  cursor: pointer;
-  min-width: 200px;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 16px;
+.chipsRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.filterSelect:focus {
+.chips {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.chips::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .chips {
+    margin: 0 -15px;
+    padding: 0 15px;
+  }
+}
+
+.arrow {
+  display: none;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--foreground);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.arrow:hover {
   border-color: var(--ring);
+  background: var(--accent);
+}
+
+@media (min-width: 768px) {
+  .arrow {
+    display: flex;
+  }
+}
+
+.chip {
+  flex: 0 0 auto;
+  height: 34px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 999px;
+  background: var(--secondary);
+  color: var(--muted-foreground);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.chip:hover {
+  color: var(--foreground);
+}
+
+.chipActive {
+  background: var(--brand);
+  color: var(--brand-foreground);
+}
+
+.chipActive:hover {
+  color: var(--brand-foreground);
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
 }

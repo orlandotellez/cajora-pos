@@ -178,8 +178,8 @@
   height: 40px;
   margin-top: auto;
   border: none;
-  background: #2f6b4f;
-  color: #fff;
+  background: var(--brand);
+  color: var(--brand-foreground);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -187,7 +187,7 @@
 }
 
 .addBtn:hover:not(:disabled) {
-  background: #357a59;
+  background: color-mix(in srgb, var(--brand) 88%, #fff);
 }
 
 .addBtn:disabled {
