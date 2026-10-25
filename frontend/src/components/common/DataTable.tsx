@@ -1,8 +1,9 @@
-import { type ReactNode } from "react";
+import { type ReactNode, useRef } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import TableSkeleton, { type SkeletonCol } from "@/components/common/TableSkeleton";
 import { RefreshBadge } from "@/components/common/RefreshBadge";
 import { getVisiblePages } from "@/lib/pagination";
+import { useLongPress } from "@/hooks/useLongPress";
 import styles from "./DataTable.module.css";
 
 export interface Column<T> {
@@ -22,6 +23,7 @@ interface DataTableProps<T> {
   totalPages: number;
   onPageChange: (page: number) => void;
   onRowClick?: (item: T) => void;
+  onRowLongPress?: (item: T) => void;
   onEdit?: (item: T) => void;
   onDelete?: (item: T) => void;
   emptyMessage?: string;
@@ -42,6 +44,7 @@ export function DataTable<T extends { id: string }>({
   totalPages,
   onPageChange,
   onRowClick,
+  onRowLongPress,
   onEdit,
   onDelete,
   emptyMessage = "Sin datos",
@@ -54,6 +57,22 @@ export function DataTable<T extends { id: string }>({
   onSelectionChange,
 }: DataTableProps<T>) {
   const hasEditDelete = onEdit || onDelete;
+
+  const longPressRowId = useRef<string | null>(null);
+  const longPress = useLongPress(() => {
+    const id = longPressRowId.current;
+    longPressRowId.current = null;
+    if (!id) return;
+    const item = data.find((d) => d.id === id);
+    if (item) onRowLongPress?.(item);
+  });
+
+  function handleRowPointerDown(e: React.PointerEvent) {
+    if (!onRowLongPress) return;
+    const row = (e.target as HTMLElement).closest("tr[data-row-id]");
+    longPressRowId.current = row?.getAttribute("data-row-id") ?? null;
+    if (longPressRowId.current) longPress.onPointerDown(e);
+  }
 
   const pageIds = data.map((d) => d.id);
   const allPageSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds?.has(id));
@@ -110,7 +129,13 @@ export function DataTable<T extends { id: string }>({
               )}
             </tr>
           </thead>
-          <tbody>
+          <tbody
+            onPointerDown={handleRowPointerDown}
+            onPointerMove={longPress.onPointerMove}
+            onPointerUp={longPress.onPointerUp}
+            onPointerCancel={longPress.onPointerCancel}
+            onContextMenu={longPress.onContextMenu}
+          >
             {loading && data.length === 0 ? (
               <TableSkeleton cols={skeletonCols ?? columns.map(() => ({ width: "auto" }))} />
             ) : data.length > 0 ? (
@@ -118,9 +143,15 @@ export function DataTable<T extends { id: string }>({
                 {data.map((item) => (
                   <tr
                     key={item.id}
+                    data-row-id={item.id}
                     className={`${onRowClick && !selectable ? styles.trClickable : ""} ${dimmed || loading ? styles.trDim : ""} ${selectedIds?.has(item.id) ? styles.trSelected : ""} ${rowClassName?.(item) ?? ""}`}
                     onClick={() => {
-                      if (!selectable) onRowClick?.(item);
+                      if (longPress.consumeClick()) return;
+                      if (selectable) {
+                        toggleSelect(item.id);
+                        return;
+                      }
+                      onRowClick?.(item);
                     }}
                   >
                     {selectable && (

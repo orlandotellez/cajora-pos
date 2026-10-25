@@ -176,8 +176,11 @@ export default function Users() {
               ? `${selectedIds.size} ${selectedIds.size === 1 ? "usuario seleccionado" : "usuarios seleccionados"}`
               : `Modo edición activo`}
           </span>
-          {selectedIds.size > 0 && (
-            <div className={styles.bulkActions}>
+          <div className={styles.bulkActions}>
+            <button className={styles.bulkCancelBtn} onClick={toggleEditMode}>
+              Salir
+            </button>
+            {selectedIds.size > 0 && (
               <button
                 className={styles.bulkDeleteBtn}
                 onClick={() => setBulkDeleteConfirm(true)}
@@ -185,8 +188,8 @@ export default function Users() {
               >
                 Eliminar {selectedIds.size}
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
 
@@ -199,6 +202,10 @@ export default function Users() {
         totalPages={totalPages}
         onPageChange={setPage}
         onRowClick={(u) => setEditing(u)}
+        onRowLongPress={(u) => {
+          setEditMode(true);
+          setSelectedIds(new Set([u.id]));
+        }}
         onToggleActive={handleToggleActive}
         dimmed={false}
         refreshing={refreshing}

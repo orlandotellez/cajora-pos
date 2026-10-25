@@ -164,3 +164,9 @@
     display: none;
   }
 }
+
+@media (max-width: 767px) {
+  .editModeBtn {
+    display: none !important;
+  }
+}

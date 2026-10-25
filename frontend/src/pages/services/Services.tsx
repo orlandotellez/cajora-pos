@@ -210,8 +210,11 @@ export default function Services() {
               ? `${selectedIds.size} ${selectedIds.size === 1 ? "servicio seleccionado" : "servicios seleccionados"}`
               : `Modo edición activo`}
           </span>
-          {selectedIds.size > 0 && (
-            <div className={styles.bulkActions}>
+          <div className={styles.bulkActions}>
+            <button className={styles.bulkCancelBtn} onClick={toggleEditMode}>
+              Salir
+            </button>
+            {selectedIds.size > 0 && (
               <button
                 className={styles.bulkDeleteBtn}
                 onClick={() => setBulkDeleteConfirm(true)}
@@ -219,8 +222,8 @@ export default function Services() {
               >
                 Eliminar {selectedIds.size}
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
 
@@ -232,6 +235,11 @@ export default function Services() {
         totalPages={totalPages}
         onPageChange={setPage}
         onRowClick={canWrite ? (s) => setEditing(s) : undefined}
+        onRowLongPress={(s) => {
+          if (!isAdmin) return;
+          setEditMode(true);
+          setSelectedIds(new Set([s.id]));
+        }}
         onAddToCart={handleAddToCart}
         blockedIds={blockedServiceIds}
         dimmed={false}

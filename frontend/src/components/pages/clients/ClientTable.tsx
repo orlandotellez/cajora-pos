@@ -16,6 +16,7 @@ interface ClientTableProps {
   onDelete?: (client: Client) => void;
   /** Si se define, se usa para el click en la fila (separado de onEdit). */
   onRowClick?: (client: Client) => void;
+  onRowLongPress?: (client: Client) => void;
   dimmed?: boolean;
   refreshing?: boolean;
   selectable?: boolean;
@@ -33,6 +34,7 @@ export function ClientTable({
   onEdit,
   onDelete,
   onRowClick,
+  onRowLongPress,
   dimmed,
   refreshing,
   selectable = false,
@@ -92,6 +94,7 @@ export function ClientTable({
       totalPages={totalPages}
       onPageChange={onPageChange}
       onRowClick={selectable ? undefined : (onRowClick ?? onEdit)}
+      onRowLongPress={onRowLongPress}
       onEdit={selectable ? undefined : onEdit}
       onDelete={selectable ? undefined : onDelete}
       emptyMessage="Sin clientes"

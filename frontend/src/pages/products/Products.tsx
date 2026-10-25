@@ -247,6 +247,9 @@ export default function Products() {
               : `Modo edición activo`}
           </span>
           <div className={styles.bulkActions}>
+            <button className={styles.bulkCancelBtn} onClick={toggleEditMode}>
+              Salir
+            </button>
             <button
               className={styles.bulkDeleteAllBtn}
               onClick={() => setDeleteAllConfirm(true)}
@@ -275,6 +278,11 @@ export default function Products() {
         totalPages={totalPages}
         onPageChange={setPage}
         onProductClick={(p) => setEditing(p)}
+        onProductLongPress={(p) => {
+          if (!isAdmin) return;
+          setEditMode(true);
+          setSelectedIds(new Set([p.id]));
+        }}
         onAddToCart={(p) => {
           const inCart = usePosStore
             .getState()

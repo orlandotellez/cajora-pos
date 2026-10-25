@@ -1,4 +1,5 @@
 import { Check, Plus } from "lucide-react";
+import { useLongPress } from "@/hooks/useLongPress";
 import { money } from "@/lib/format";
 import { getVisiblePages } from "@/lib/pagination";
 import { RefreshBadge } from "@/components/common/RefreshBadge";
@@ -53,10 +54,94 @@ interface ProductGridProps {
   onPageChange: (page: number) => void;
   onProductClick: (product: Product) => void;
   onAddToCart?: (product: Product) => void;
+  onProductLongPress?: (product: Product) => void;
   refreshing?: boolean;
   selectable?: boolean;
   selectedIds?: Set<string>;
   onSelectionChange?: (ids: Set<string>) => void;
+}
+
+interface ProductCardProps {
+  product: Product;
+  selected: boolean;
+  selectable: boolean;
+  onActivate: (product: Product) => void;
+  onAdd?: (product: Product) => void;
+  onLongPress: (product: Product) => void;
+}
+
+function ProductCard({
+  product: p,
+  selected,
+  selectable,
+  onActivate,
+  onAdd,
+  onLongPress,
+}: ProductCardProps) {
+  const longPress = useLongPress(() => onLongPress(p));
+
+  function activate() {
+    if (longPress.consumeClick()) return;
+    onActivate(p);
+  }
+
+  const outOfStock = p.stock <= 0;
+  const lowStock = !outOfStock && p.stock <= p.low_stock_threshold;
+
+  return (
+    <article
+      className={`${styles.card} ${selected ? styles.cardSelected : ""}`}
+      onPointerDown={longPress.onPointerDown}
+      onPointerMove={longPress.onPointerMove}
+      onPointerUp={longPress.onPointerUp}
+      onPointerCancel={longPress.onPointerCancel}
+      onContextMenu={longPress.onContextMenu}
+    >
+      <div className={styles.cover} style={{ background: coverColor(p.id) }}>
+        <button
+          type="button"
+          className={styles.coverTap}
+          onClick={activate}
+          aria-label={selectable ? `Seleccionar ${p.name}` : `Ver ${p.name}`}
+        />
+        <span className={styles.coverName}>{p.name}</span>
+        <span
+          className={`${styles.stock} ${outOfStock ? styles.stockOut : lowStock ? styles.stockLow : ""}`}
+        >
+          {p.stock} {unitLabel(p.unit_type)}
+        </span>
+        {selectable && (
+          <span className={`${styles.check} ${selected ? styles.checkOn : ""}`}>
+            {selected && <Check size={14} strokeWidth={3} />}
+          </span>
+        )}
+      </div>
+
+      <button
+        type="button"
+        className={styles.bodyTap}
+        onClick={activate}
+        aria-label={selectable ? `Seleccionar ${p.name}` : `Ver ${p.name}`}
+      >
+        <span className={styles.name}>{p.name}</span>
+        <span className={styles.price}>{money(p.price)}</span>
+      </button>
+
+      {!selectable && (
+        <button
+          type="button"
+          className={styles.addBtn}
+          onClick={() => onAdd?.(p)}
+          disabled={outOfStock}
+          title={outOfStock ? "Sin stock" : "Agregar a la lista de venta"}
+          aria-label={`Agregar ${p.name} a la lista de venta`}
+        >
+          <Plus size={16} strokeWidth={3} />
+          {outOfStock ? "Sin stock" : "Agregar"}
+        </button>
+      )}
+    </article>
+  );
 }
 
 export function ProductGrid({
@@ -67,6 +152,7 @@ export function ProductGrid({
   onPageChange,
   onProductClick,
   onAddToCart,
+  onProductLongPress,
   refreshing,
   selectable = false,
   selectedIds,
@@ -112,61 +198,17 @@ export function ProductGrid({
         <p className={styles.empty}>Sin productos</p>
       ) : (
         <div className={styles.grid}>
-          {products.map((p) => {
-            const selected = selectedIds?.has(p.id) ?? false;
-            const outOfStock = p.stock <= 0;
-            const lowStock = !outOfStock && p.stock <= p.low_stock_threshold;
-            return (
-              <article
-                key={p.id}
-                className={`${styles.card} ${selected ? styles.cardSelected : ""}`}
-              >
-                <div className={styles.cover} style={{ background: coverColor(p.id) }}>
-                  <button
-                    type="button"
-                    className={styles.coverTap}
-                    onClick={() => (selectable ? toggleOne(p.id) : onProductClick(p))}
-                    aria-label={selectable ? `Seleccionar ${p.name}` : `Ver ${p.name}`}
-                  />
-                  <span className={styles.coverName}>{p.name}</span>
-                  <span
-                    className={`${styles.stock} ${outOfStock ? styles.stockOut : lowStock ? styles.stockLow : ""}`}
-                  >
-                    {p.stock} {unitLabel(p.unit_type)}
-                  </span>
-                  {selectable && (
-                    <span className={`${styles.check} ${selected ? styles.checkOn : ""}`}>
-                      {selected && <Check size={14} strokeWidth={3} />}
-                    </span>
-                  )}
-                </div>
-
-                <button
-                  type="button"
-                  className={styles.bodyTap}
-                  onClick={() => (selectable ? toggleOne(p.id) : onProductClick(p))}
-                  aria-label={selectable ? `Seleccionar ${p.name}` : `Ver ${p.name}`}
-                >
-                  <span className={styles.name}>{p.name}</span>
-                  <span className={styles.price}>{money(p.price)}</span>
-                </button>
-
-                {!selectable && (
-                  <button
-                    type="button"
-                    className={styles.addBtn}
-                    onClick={() => onAddToCart?.(p)}
-                    disabled={outOfStock}
-                    title={outOfStock ? "Sin stock" : "Agregar a la lista de venta"}
-                    aria-label={`Agregar ${p.name} a la lista de venta`}
-                  >
-                    <Plus size={16} strokeWidth={3} />
-                    {outOfStock ? "Sin stock" : "Agregar"}
-                  </button>
-                )}
-              </article>
-            );
-          })}
+          {products.map((p) => (
+            <ProductCard
+              key={p.id}
+              product={p}
+              selected={selectedIds?.has(p.id) ?? false}
+              selectable={selectable}
+              onActivate={(prod) => (selectable ? toggleOne(prod.id) : onProductClick(prod))}
+              onAdd={onAddToCart}
+              onLongPress={(prod) => onProductLongPress?.(prod)}
+            />
+          ))}
         </div>
       )}
 

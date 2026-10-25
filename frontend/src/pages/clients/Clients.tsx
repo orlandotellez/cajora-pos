@@ -170,8 +170,11 @@ export default function Clients() {
               ? `${selectedIds.size} ${selectedIds.size === 1 ? "cliente seleccionado" : "clientes seleccionados"}`
               : `Modo edición activo`}
           </span>
-          {selectedIds.size > 0 && (
-            <div className={styles.bulkActions}>
+          <div className={styles.bulkActions}>
+            <button className={styles.bulkCancelBtn} onClick={toggleEditMode}>
+              Salir
+            </button>
+            {selectedIds.size > 0 && (
               <button
                 className={styles.bulkDeleteBtn}
                 onClick={() => setBulkDeleteConfirm(true)}
@@ -179,8 +182,8 @@ export default function Clients() {
               >
                 Eliminar {selectedIds.size}
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
 
@@ -192,6 +195,11 @@ export default function Clients() {
         totalPages={totalPages}
         onPageChange={setPage}
         onRowClick={(c) => setEditing(c)}
+        onRowLongPress={(c) => {
+          if (!isAdmin) return;
+          setEditMode(true);
+          setSelectedIds(new Set([c.id]));
+        }}
         dimmed={false}
         refreshing={refreshing}
         selectable={editMode && isAdmin}

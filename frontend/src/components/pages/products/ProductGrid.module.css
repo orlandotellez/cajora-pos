@@ -49,6 +49,13 @@
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
 }
 
+@media (max-width: 767px) {
+  .card {
+    -webkit-touch-callout: none;
+    user-select: none;
+  }
+}
+
 .cardSelected {
   border-color: var(--foreground);
   box-shadow: 0 0 0 1px var(--foreground);

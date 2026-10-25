@@ -58,3 +58,19 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+.bulkCancelBtn {
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--foreground);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.bulkCancelBtn:hover {
+  background: var(--accent);
+}

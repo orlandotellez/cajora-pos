@@ -19,6 +19,7 @@ interface UserTableProps {
   onToggleActive: (user: UserResponse) => void;
   /** Si se define, se usa para el click en la fila (separado de onEdit). */
   onRowClick?: (user: UserResponse) => void;
+  onRowLongPress?: (user: UserResponse) => void;
   dimmed?: boolean;
   refreshing?: boolean;
   selectable?: boolean;
@@ -26,7 +27,7 @@ interface UserTableProps {
   onSelectionChange?: (ids: Set<string>) => void;
 }
 
-export function UserTable({ users, currentUserId, loading, total, page, totalPages, onPageChange, onEdit, onDelete, onRowClick, onToggleActive, dimmed, refreshing, selectable = false, selectedIds, onSelectionChange }: UserTableProps) {
+export function UserTable({ users, currentUserId, loading, total, page, totalPages, onPageChange, onEdit, onDelete, onRowClick, onRowLongPress, onToggleActive, dimmed, refreshing, selectable = false, selectedIds, onSelectionChange }: UserTableProps) {
   const columns: Column<UserResponse>[] = useMemo(() => [
     {
       key: "name", label: "Nombre", render: (u) => (
@@ -71,6 +72,7 @@ export function UserTable({ users, currentUserId, loading, total, page, totalPag
       totalPages={totalPages}
       onPageChange={onPageChange}
       onRowClick={selectable ? undefined : (onRowClick ?? onEdit)}
+      onRowLongPress={onRowLongPress}
       onEdit={selectable ? undefined : onEdit}
       onDelete={selectable ? undefined : onDelete}
       emptyMessage="Sin usuarios"

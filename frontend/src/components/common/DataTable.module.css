@@ -208,3 +208,10 @@
   border-color: var(--foreground, #111827) !important;
   font-weight: 600;
 }
+
+@media (max-width: 767px) {
+  .table tbody tr {
+    -webkit-touch-callout: none;
+    user-select: none;
+  }
+}
