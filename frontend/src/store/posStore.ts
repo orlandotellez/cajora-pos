@@ -1,4 +1,5 @@
-import { create } from "zustand";
+import { create, type StateCreator } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
 import type { Product } from "@/api/products";
 import type { ServiceProduct } from "@/api/services";
 import type { CurrencyCode } from "@/lib/constants";
@@ -79,7 +80,25 @@ function isProduct(item: Product | { id: string; service_id: string; name: strin
   return "price" in item && typeof (item as Product).price === "number" && !("service_id" in item);
 }
 
-export const usePosStore = create<PosState>()((set, get) => ({
+const POS_CART_STORAGE_KEY = "caja-pos-cart";
+
+function currentStoreId(): string | null {
+  try {
+    const raw = localStorage.getItem("auth-store");
+    if (!raw) return null;
+    const store = JSON.parse(raw) as { id?: string };
+    return store?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+type PosSnapshot = Pick<
+  PosState,
+  "cart" | "discountPct" | "payment" | "received" | "manualAmount" | "clientId" | "clientName"
+> & { storeId: string | null };
+
+const posStateCreator: StateCreator<PosState> = (set, get) => ({
   cart: [],
   discountPct: 0,
   payment: "efectivo",
@@ -251,4 +270,38 @@ export const usePosStore = create<PosState>()((set, get) => ({
   setCurrency: (currency) => set({ currency }),
   setClient: (clientId, clientName) => set({ clientId, clientName }),
   clearClient: () => set({ clientId: null, clientName: null }),
-}));
+});
+
+export const usePosStore = create<PosState>()(
+  persist<PosState, [], [], PosSnapshot>(posStateCreator, {
+    name: POS_CART_STORAGE_KEY,
+    version: 1,
+    skipHydration: true,
+    storage: createJSONStorage(() => localStorage),
+    partialize: (state): PosSnapshot => ({
+      cart: state.cart,
+      discountPct: state.discountPct,
+      payment: state.payment,
+      received: state.received,
+      manualAmount: state.manualAmount,
+      clientId: state.clientId,
+      clientName: state.clientName,
+      storeId: currentStoreId(),
+    }),
+    merge: (persisted, current): PosState => {
+      const saved = persisted as Partial<PosSnapshot> | undefined;
+      if (!saved || !Array.isArray(saved.cart)) return current;
+      if (saved.storeId !== currentStoreId()) return current;
+      return {
+        ...current,
+        cart: saved.cart,
+        discountPct: saved.discountPct ?? current.discountPct,
+        payment: saved.payment ?? current.payment,
+        received: saved.received ?? current.received,
+        manualAmount: saved.manualAmount ?? current.manualAmount,
+        clientId: saved.clientId ?? null,
+        clientName: saved.clientName ?? null,
+      };
+    },
+  }),
+);
