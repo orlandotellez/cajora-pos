@@ -15,6 +15,8 @@ export interface IClientDebtSummary {
   client_phone?: string | null
   total_debt: number
   sale_count: number
+  client_deleted?: boolean
+  oldest_pending_days?: number | null
 }
 
 export interface ICreditSaleDetail {
@@ -32,9 +34,20 @@ export interface IClientDebtResponse {
   payments: ICreditPaymentResponse[]
 }
 
-export interface IClientsWithDebtResponse {
+export interface ICreditSummary {
+  total_pending: number
+  debtors_count: number
+  overdue_count: number
+  credit_sales_count: number
+}
+
+export interface IClientsWithDebtListResponse {
   clients: IClientDebtSummary[]
   total: number
   page: number
   limit: number
+}
+
+export interface IClientsWithDebtResponse extends IClientsWithDebtListResponse {
+  summary: ICreditSummary
 }

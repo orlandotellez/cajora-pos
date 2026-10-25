@@ -4,6 +4,7 @@ import { storeGuard } from "@/core/guard/store.guard"
 import { createCreditService } from "../application/credit.service"
 import { CreditRepository } from "../infrastructure/credit.prisma.repository"
 import { RegisterPaymentDtoSchema } from "./credit.dto"
+import { sseBroadcast } from "@/config/sse"
 
 const service = createCreditService(CreditRepository)
 
@@ -50,6 +51,7 @@ export async function creditRoutes(fastify: FastifyInstance) {
     const userId = (req as any).userId as string
     const body = RegisterPaymentDtoSchema.parse(req.body)
     const result = await service.registerPayment(body, userId, storeId)
+    sseBroadcast(storeId, "credit.payment.created", { client_id: result.client_id, sale_id: result.sale_id })
     return reply.status(201).send(result)
   })
 }

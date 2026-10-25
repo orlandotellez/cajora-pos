@@ -1,7 +1,58 @@
 import { prisma } from "@/config/prisma"
 import type { ICreditRepository } from "../domain/credit.interface"
 import type { CreateCreditPaymentData } from "../domain/credit.entities"
+import type { ICreditSummary } from "../domain/credit.types"
 import { Prisma } from "@/generated/prisma/client"
+
+const PENDING_TOLERANCE = 0.009
+
+function salePendingCte(storeId?: string): string {
+  return `sale_pending AS (
+    SELECT s.id, s.client_id, s.created_at, s.total - COALESCE(p.paid, 0) AS pending
+    FROM sales s
+    LEFT JOIN (
+      SELECT sale_id, SUM(amount) AS paid
+      FROM credit_payments
+      GROUP BY sale_id
+    ) p ON p.sale_id = s.id
+    WHERE s.payment_method = 'credito' AND s.client_id IS NOT NULL
+    ${storeId ? `AND s.store_id = $1::text` : ""}
+  )`
+}
+
+async function querySummary(storeId?: string): Promise<ICreditSummary> {
+  const rows = await prisma.$queryRawUnsafe<Array<{
+    total_pending: unknown
+    debtors_count: unknown
+    overdue_count: unknown
+    credit_sales_count: unknown
+  }>>(
+    `WITH ${salePendingCte(storeId)},
+    client_debt AS (
+      SELECT sp.client_id,
+        SUM(sp.pending) AS debt,
+        MIN(sp.created_at) FILTER (WHERE sp.pending > ${PENDING_TOLERANCE}) AS oldest_pending,
+        COUNT(*)::int AS sale_count
+      FROM sale_pending sp
+      GROUP BY sp.client_id
+    )
+    SELECT
+      CAST(COALESCE(SUM(debt) FILTER (WHERE debt > ${PENDING_TOLERANCE}), 0) AS DECIMAL(12,2)) AS total_pending,
+      COUNT(*) FILTER (WHERE debt > ${PENDING_TOLERANCE})::int AS debtors_count,
+      COUNT(*) FILTER (WHERE debt > ${PENDING_TOLERANCE} AND oldest_pending < NOW() - INTERVAL '30 days')::int AS overdue_count,
+      COALESCE(SUM(sale_count), 0)::int AS credit_sales_count
+    FROM client_debt`,
+    ...(storeId ? [storeId] : []),
+  )
+
+  const row = rows[0]
+  return {
+    total_pending: Number(row?.total_pending ?? 0),
+    debtors_count: Number(row?.debtors_count ?? 0),
+    overdue_count: Number(row?.overdue_count ?? 0),
+    credit_sales_count: Number(row?.credit_sales_count ?? 0),
+  }
+}
 
 export const CreditRepository: ICreditRepository = {
   async getClientsWithDebt(params) {
@@ -10,8 +61,6 @@ export const CreditRepository: ICreditRepository = {
     const skip = (page - 1) * limit
     const filter = params?.filter || "todos"
 
-    // Build dynamic SQL conditions
-    const storeCond = params?.storeId ? `AND s.store_id = $1::text` : ""
     const searchCond = params?.search
       ? `AND (c.name ILIKE $${params.storeId ? 2 : 1}::text OR c.phone ILIKE $${params.storeId ? 2 : 1}::text)`
       : ""
@@ -19,45 +68,36 @@ export const CreditRepository: ICreditRepository = {
     const searchArgs = params?.search ? [`%${params.search}%`] : []
     const paramOffset = storeArgs.length + searchArgs.length
 
-    // Filter conditions
-    let havingClause = `HAVING CAST(COALESCE(SUM(s.total), 0) - COALESCE(SUM(paid.total_paid), 0) AS DECIMAL(10,2)) > 0.009`
+    let havingClause = `HAVING SUM(sp.pending) > ${PENDING_TOLERANCE}`
     if (filter === "saldados") {
-      // Clients fully paid: total_debt <= 0 but had credit sales
-      havingClause = `HAVING CAST(COALESCE(SUM(s.total), 0) - COALESCE(SUM(paid.total_paid), 0) AS DECIMAL(10,2)) <= 0.009 AND CAST(COALESCE(SUM(s.total), 0) - COALESCE(SUM(paid.total_paid), 0) AS DECIMAL(10,2)) >= -0.009`
+      havingClause = `HAVING ABS(SUM(sp.pending)) <= ${PENDING_TOLERANCE} AND c.deleted_at IS NULL`
     } else if (filter === "morosos") {
-      // Clients with oldest unpaid sale > 30 days
-      havingClause = `HAVING CAST(COALESCE(SUM(s.total), 0) - COALESCE(SUM(paid.total_paid), 0) AS DECIMAL(10,2)) > 0.009 AND MIN(s.created_at) < NOW() - INTERVAL '30 days'`
+      havingClause = `HAVING SUM(sp.pending) > ${PENDING_TOLERANCE} AND MIN(sp.created_at) FILTER (WHERE sp.pending > ${PENDING_TOLERANCE}) < NOW() - INTERVAL '30 days'`
     }
 
-    // Aggregate debt per client using raw SQL for performance
     const rows = await prisma.$queryRawUnsafe<Array<{
       client_id: string
       client_name: string
       client_phone: string | null
-      total_debt: number
+      client_deleted: boolean
+      total_debt: unknown
       sale_count: number
       oldest_pending_days: number | null
     }>>(
-      `SELECT
+      `WITH ${salePendingCte(params?.storeId)}
+      SELECT
         c.id as client_id,
         c.name as client_name,
         c.phone as client_phone,
-        CAST(COALESCE(SUM(s.total), 0) - COALESCE(SUM(paid.total_paid), 0) AS DECIMAL(10,2)) as total_debt,
-        COUNT(DISTINCT s.id)::int as sale_count,
-        EXTRACT(DAY FROM NOW() - MIN(s.created_at))::int as oldest_pending_days
-      FROM sales s
-      JOIN clients c ON c.id = s.client_id
-      LEFT JOIN (
-        SELECT sale_id, SUM(amount) as total_paid
-        FROM credit_payments
-        GROUP BY sale_id
-      ) paid ON paid.sale_id = s.id
-      WHERE s.payment_method = 'credito'
-        AND s.client_id IS NOT NULL
-        AND c.deleted_at IS NULL
-        ${storeCond}
+        (c.deleted_at IS NOT NULL) as client_deleted,
+        CAST(SUM(sp.pending) AS DECIMAL(12,2)) as total_debt,
+        COUNT(*)::int as sale_count,
+        EXTRACT(DAY FROM NOW() - MIN(sp.created_at) FILTER (WHERE sp.pending > ${PENDING_TOLERANCE}))::int as oldest_pending_days
+      FROM sale_pending sp
+      JOIN clients c ON c.id = sp.client_id
+      WHERE 1 = 1
         ${searchCond}
-      GROUP BY c.id, c.name, c.phone
+      GROUP BY c.id, c.name, c.phone, c.deleted_at
       ${havingClause}
       ORDER BY total_debt DESC
       LIMIT $${paramOffset + 1}::int OFFSET $${paramOffset + 2}::int`,
@@ -67,23 +107,15 @@ export const CreditRepository: ICreditRepository = {
       skip,
     )
 
-    // Count total clients
     const countRows = await prisma.$queryRawUnsafe<Array<{ total: number }>>(
-      `SELECT COUNT(*)::int as total FROM (
+      `WITH ${salePendingCte(params?.storeId)}
+      SELECT COUNT(*)::int as total FROM (
         SELECT c.id
-        FROM sales s
-        JOIN clients c ON c.id = s.client_id
-        LEFT JOIN (
-          SELECT sale_id, SUM(amount) as total_paid
-          FROM credit_payments
-          GROUP BY sale_id
-        ) paid ON paid.sale_id = s.id
-        WHERE s.payment_method = 'credito'
-          AND s.client_id IS NOT NULL
-          AND c.deleted_at IS NULL
-          ${storeCond}
+        FROM sale_pending sp
+        JOIN clients c ON c.id = sp.client_id
+        WHERE 1 = 1
           ${searchCond}
-        GROUP BY c.id
+        GROUP BY c.id, c.deleted_at
         ${havingClause}
       ) sub`,
       ...storeArgs,
@@ -97,7 +129,8 @@ export const CreditRepository: ICreditRepository = {
         client_phone: r.client_phone,
         total_debt: Number(r.total_debt),
         sale_count: r.sale_count,
-        oldest_pending_days: r.oldest_pending_days,
+        client_deleted: Boolean(r.client_deleted),
+        oldest_pending_days: r.oldest_pending_days ?? null,
       })),
       total: Number(countRows[0]?.total ?? 0),
       page,
@@ -183,21 +216,12 @@ export const CreditRepository: ICreditRepository = {
     }
   },
 
-  async getTotalPending(storeId) {
-    const rows = await prisma.$queryRawUnsafe<Array<{ total: number }>>(
-      `SELECT CAST(COALESCE(SUM(s.total), 0) - COALESCE(SUM(paid.total_paid), 0) AS DECIMAL(10,2)) as total
-       FROM sales s
-       LEFT JOIN (
-         SELECT sale_id, SUM(amount) as total_paid
-         FROM credit_payments
-         GROUP BY sale_id
-       ) paid ON paid.sale_id = s.id
-       WHERE s.payment_method = 'credito'
-         AND s.client_id IS NOT NULL
-         ${storeId ? `AND s.store_id = $1::text` : ""}`,
-      ...(storeId ? [storeId] : []),
-    )
+  async getSummary(storeId) {
+    return querySummary(storeId)
+  },
 
-    return Number(rows[0]?.total ?? 0)
+  async getTotalPending(storeId) {
+    const summary = await querySummary(storeId)
+    return summary.total_pending
   },
 }

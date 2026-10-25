@@ -1,4 +1,5 @@
 import type { ICreditPaymentEntity, CreateCreditPaymentData } from "./credit.entities"
+import type { ICreditSummary } from "./credit.types"
 
 export interface ICreditRepository {
   /** List clients with outstanding credit balance */
@@ -9,6 +10,7 @@ export interface ICreditRepository {
       client_phone?: string | null
       total_debt: number
       sale_count: number
+      client_deleted?: boolean
       oldest_pending_days?: number | null
     }[]
     total: number
@@ -31,6 +33,8 @@ export interface ICreditRepository {
 
   /** Register a partial payment */
   createPayment(data: CreateCreditPaymentData, userId: string, storeId: string): Promise<ICreditPaymentEntity>
+
+  getSummary(storeId?: string): Promise<ICreditSummary>
 
   /** Get total outstanding across all clients */
   getTotalPending(storeId: string): Promise<number>
