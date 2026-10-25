@@ -1,5 +1,6 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { productsApi, type CreateProductPayload, type Product } from "@/api/products";
+import { useSearchParams } from "react-router-dom";
 import { inventoryApi, type InventoryMovement, type LowStockProduct, type BatchResponse } from "@/api/inventory";
 import { cacheClear } from "@/lib/simple-cache";
 import { useCrudPagination } from "@/hooks/useCrudPagination";
@@ -21,14 +22,16 @@ import { BatchHistoryTable } from "@/components/pages/inventory/BatchHistoryTabl
 import styles from "./Inventory.module.css";
 import { Header } from "@/components/pages/inventory/Header";
 import { InventoryProductosSection } from "@/components/pages/inventory/InventoryProductosSection";
+import { InventoryAlerts } from "@/components/pages/inventory/InventoryAlerts";
 
-type InventoryTab = "inventory" | "movements" | "batches";
+type InventoryTab = "inventory" | "movements" | "batches" | "alerts";
 
-const TAB_ORDER: InventoryTab[] = ["inventory", "movements", "batches"];
+const TAB_ORDER: InventoryTab[] = ["inventory", "movements", "batches", "alerts"];
 const TAB_LABELS: Record<InventoryTab, string> = {
   inventory: "Inventario",
   movements: "Movimientos",
   batches: "Movimientos agrupados",
+  alerts: "Alertas",
 };
 const TAB_ID = (t: InventoryTab) => `inventory-tab-${t}`;
 const PANEL_ID = (t: InventoryTab) => `inventory-panel-${t}`;
@@ -74,6 +77,20 @@ export default function Inventory() {
   const [submitting, setSubmitting] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
   const [barcodeScannerOpen, setBarcodeScannerOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const openedFromQuery = useRef(false);
+
+  useEffect(() => {
+    if (openedFromQuery.current) return;
+    const productId = searchParams.get("product");
+    if (!productId) return;
+    openedFromQuery.current = true;
+    productsApi
+      .getById(productId)
+      .then((product) => setDetailProduct(product))
+      .catch(() => {})
+      .finally(() => setSearchParams({}, { replace: true }));
+  }, [searchParams, setSearchParams]);
   const [activeTab, setActiveTab] = useState<InventoryTab>("inventory");
   const categories = useCategories();
   const [categoryId, setCategoryId] = useState("");
@@ -259,6 +276,15 @@ export default function Inventory() {
     setEditProduct(product);
   }, []);
 
+  const handleAlertAdjust = useCallback(async (productId: string) => {
+    try {
+      const product = await productsApi.getById(productId);
+      handleAdjust(product);
+    } catch (err) {
+      toast((err as Error)?.message || "No se pudo abrir el producto", "error");
+    }
+  }, [handleAdjust, toast]);
+
   const handleDetailAdjust = useCallback((product: Product) => {
     setDetailProduct(null);
     handleAdjust(product);
@@ -315,6 +341,9 @@ export default function Inventory() {
             onClick={() => setActiveTab(tab)}
           >
             {TAB_LABELS[tab]}
+            {tab === "alerts" && lowStockProducts.length > 0 && (
+              <span className={styles.tabCount}>{lowStockProducts.length}</span>
+            )}
           </button>
         ))}
       </div>
@@ -342,6 +371,7 @@ export default function Inventory() {
             stockFilter={stockFilter}
             setStockFilter={setStockFilter}
             lowStockProducts={lowStockProducts}
+            onViewAlerts={() => setActiveTab("alerts")}
             onEdit={handleEdit}
             onAdjust={handleAdjust}
             onRowClick={setDetailProduct}
@@ -361,6 +391,12 @@ export default function Inventory() {
               onSelect={setSelectedMovement}
               refreshing={refreshingMovements}
             />
+          </section>
+        )}
+
+        {activeTab === "alerts" && (
+          <section className={styles.movementSection}>
+            <InventoryAlerts alerts={lowStockProducts} onAdjust={handleAlertAdjust} />
           </section>
         )}
 
@@ -406,6 +442,7 @@ export default function Inventory() {
           onSaved={refetchAll}
           onDelete={canWrite ? (p) => { setEditProduct(null); setDeleteTarget(p); } : undefined}
           readOnly={!canWrite}
+          showInventoryLink={false}
         />
       )}
 

@@ -20,6 +20,7 @@ interface ProductDetailModalProps {
   onDelete?: (product: Product) => void;
   /** Si es true, oculta el botón de editar (modo solo lectura para cajeros). */
   readOnly?: boolean;
+  showInventoryLink?: boolean;
 }
 
 type Form = {
@@ -31,7 +32,7 @@ type Form = {
   supplier_id: string;
 };
 
-export function ProductDetailModal({ product, categories, suppliers, onClose, onSaved, onDelete, readOnly }: ProductDetailModalProps) {
+export function ProductDetailModal({ product, categories, suppliers, onClose, onSaved, onDelete, readOnly, showInventoryLink = true }: ProductDetailModalProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
   // Botón de retroceso de Android / gesto de regreso cierra el modal.
@@ -286,19 +287,23 @@ export function ProductDetailModal({ product, categories, suppliers, onClose, on
                 <span className={styles.detailValue}>{productData.low_stock_threshold}</span>
               </div>
             </div>
-            <p className={styles.sectionHint}>
-              Precio, costo y stock se gestionan desde la sección Inventario.
-            </p>
-            <button
-              onClick={() => {
-                onClose();
-                navigate("/inventory");
-              }}
-              className={styles.inventoryBtn}
-            >
-              Ir a Inventario
-              <ArrowRight size={14} />
-            </button>
+            {showInventoryLink && (
+              <>
+                <p className={styles.sectionHint}>
+                  Precio, costo y stock se gestionan desde la sección Inventario.
+                </p>
+                <button
+                  onClick={() => {
+                    onClose();
+                    navigate(`/inventory?product=${productData.id}`);
+                  }}
+                  className={styles.inventoryBtn}
+                >
+                  Ir a Inventario
+                  <ArrowRight size={14} />
+                </button>
+              </>
+            )}
           </section>
 
           <button onClick={onClose} className={styles.closeBtn}>

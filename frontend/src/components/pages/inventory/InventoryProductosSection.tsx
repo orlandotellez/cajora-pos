@@ -30,6 +30,7 @@ interface Props {
   setStockFilter: (value: StockFilter) => void;
 
   lowStockProducts: LowStockProduct[];
+  onViewAlerts: () => void;
   onEdit: (product: Product) => void;
   onAdjust: (product: Product) => void;
   onRowClick?: (product: Product) => void;
@@ -56,6 +57,7 @@ export function InventoryProductosSection(props: Props) {
     stockFilter,
     setStockFilter,
     lowStockProducts,
+    onViewAlerts,
     onEdit,
     onAdjust,
     onRowClick,
@@ -75,7 +77,7 @@ export function InventoryProductosSection(props: Props) {
       {lowStockProducts.length > 0 && (
         <div className={styles.alert}>
           <AlertTriangle size={16} className={styles.alertIcon} />
-          <div>
+          <div className={styles.alertBody}>
             <div className={styles.alertTitle}>
               {lowStockProducts.length} producto(s) con stock bajo
             </div>
@@ -84,6 +86,9 @@ export function InventoryProductosSection(props: Props) {
               {lowStockProducts.length > 5 ? "…" : ""}
             </div>
           </div>
+          <button type="button" className={styles.alertAction} onClick={onViewAlerts}>
+            Ver alertas
+          </button>
         </div>
       )}
 
